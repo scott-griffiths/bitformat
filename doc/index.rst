@@ -1,6 +1,8 @@
 
 .. currentmodule:: bitformat
 
+.. image:: bitformat_logo.png
+   :width: 400px
 
 `bitformat <https://github.com/scott-griffiths/bitformat/>`_ is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
 

@@ -1,5 +1,6 @@
 
-bitformat
+![bitformat](https://raw.githubusercontent.com/scott-griffiths/bitformat/main/doc/bitformat_logo_small.png "bitstring")
+
 ---------
 
 **bitformat** is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
