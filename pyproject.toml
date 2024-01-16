@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bitformat"
+version = "0.0.1"
+authors = [
+  { name="Scott Griffiths", email="dr.scottgriffiths@gmail.com" },
+]
+description = "A library for creating and interpreting binary formats."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+keywords = ["binary", "bitarray", "bitvector", "bitfield", "bitstring"]
+dependencies = [
+  "bitstring >= 4.2.0, < 5.0.0",
+]
+
+[project.urls]
+homepage = "https://github.com/scott-griffiths/bitformat"
+documentation = "https://bitformat.readthedocs.io/"
+
+[tool.setuptools]
+packages = ["bitformat"]

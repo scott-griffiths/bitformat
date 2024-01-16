@@ -1,0 +1,9 @@
+venv
+.git
+*cache*
+.idea
+build
+dist
+manifest
+*egg-info
+doc/_build
