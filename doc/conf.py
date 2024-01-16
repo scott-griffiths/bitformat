@@ -37,3 +37,5 @@ html_theme_options = {
     "globaltoc_maxdepth": 2,
     "source_url": 'https://github.com/scott-griffiths/bitformat/',
 }
+
+html_logo = './bitformat_logo_small_white.png'

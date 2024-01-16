@@ -33,12 +33,30 @@ __author__ = "Scott Griffiths"
 
 
 from bitstring import Bits, Dtype
-from typing import Iterable, Union
+from typing import Iterable, Union, Any
 
 class Format:
 
     def __init__(self, fmt: Union[Union[Bits, Dtype, str, Format, None], Iterable[Union[Bits, Dtype, str, Format]]] = None) -> None:
-        self.fmt = fmt
+        if isinstance(fmt, Bits):
+            self.tokens = [fmt]
+        else:
+            if not isinstance(fmt, Iterable):
+                fmt = [fmt]
+            self.tokens = fmt
+
+    def pack(self, *values: Iterable[Any]) -> Bits:
+        out_bits = []
+        value_iter = iter(values)
+        for token in self.tokens:
+            if isinstance(token, Bits):
+                out_bits.append(token)
+            elif isinstance(token, Dtype):
+                b = Bits()
+                token.set_fn(b, next(value_iter))
+                out_bits.append(b)
+        out = Bits().join(out_bits)
+        return out
 
 
 __all__ = ['Bits', 'Dtype', 'Format']
