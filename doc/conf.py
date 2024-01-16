@@ -35,5 +35,5 @@ html_theme_options = {
     "banner_hiding": "permanent",
     "show_theme_credit": False,
     "globaltoc_maxdepth": 2,
-    "source_url": 'https://github.com/scott-griffiths/bitstring/',
+    "source_url": 'https://github.com/scott-griffiths/bitformat/',
 }
