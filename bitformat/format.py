@@ -4,35 +4,79 @@ from bitstring import Bits, Dtype
 from typing import Sequence, Any, Iterator
 import copy
 
+
+class Colour:
+    def __new__(cls, use_colour: bool) -> Colour:
+        x = super().__new__(cls)
+        if use_colour:
+            cls.blue = '\033[34m'
+            cls.purple = '\033[35m'
+            cls.green = '\033[32m'
+            cls.off = '\033[0m'
+        else:
+            cls.blue = cls.purple = cls.green = cls.off = ''
+        return x
+
+colour = Colour(False)
+
+# TODO: Does this even need a bits member? Isn't it just the value?
+
 class Field:
-    def __init__(self, name: str | None, dtype_or_bits: Dtype | Bits | str, value: Any = None):
+    def __init__(self, name: str | None, dtype: Dtype | Bits | str | None = None, value: Any = None):
         if name == '':
             name = None
+        if name is not None and dtype is None and value is None:
+            if name.startswith('<'):
+                # This is a format string
+                p = name.find('>')
+                if p == -1:
+                    raise ValueError(f"Found opening '<' for name field but not closing '>' in '{name}'.")
+                q = name.find('=')
+                if q != -1:
+                    if value is not None:
+                        raise ValueError(f"A value was supplied in the formatted name '{name}' as well as in the value parameter.")
+                    if dtype is not None:
+                        raise ValueError(f"A formatted name was supplied as well as a dtype parameter.")
+
+                dtype = name[p + 1:]
+                name = name[1: p]
+            else:
+                dtype = name
+                name = None
+
+
         self.name = name
-        self.bits = None
+        self._bits = None
+        self._value = None
         self.dtype = None
-        if isinstance(dtype_or_bits, str):
-            # Try to convert to Bits first
+        if isinstance(dtype, str):
+            # Try to convert to Bits type first
             try:
-                self.bits = Bits(dtype_or_bits)
+                self._bits = Bits(dtype)
             except ValueError:
                 try:
-                    self.dtype = Dtype(dtype_or_bits)
+                    self.dtype = Dtype(dtype)
                 except ValueError:
-                    raise ValueError(f"Can't convert '{dtype_or_bits}' to either a Bits or a Dtype.")
-        elif isinstance(dtype_or_bits, Bits):
-            self.bits = dtype_or_bits
-        elif isinstance(dtype_or_bits, Dtype):
-            self.dtype = dtype_or_bits
+                    raise ValueError(f"Can't convert '{dtype}' to either a Bits or a Dtype.")
+                else:
+                    if value is not None:
+                        self.value = value
+            else:
+                self.dtype = Dtype('bits', len(self._bits))
+                self.value = self._bits
+            return
+        elif isinstance(dtype, Bits):
+            self.dtype = Dtype('bits', len(dtype))
+            self.value = dtype
+            return
+        elif isinstance(dtype, Dtype):
+            self.dtype = dtype
+            if value is not None:
+                self._setvalue(value)
+            return
         else:
-            raise ValueError(f"Can't use '{dtype_or_bits}' of type '{type(dtype_or_bits)} to initialise Field.")
-        if self.bits is not None and value is not None:
-            raise ValueError(f"value supplied for a field that is a bit literal")
+            raise ValueError(f"Can't use '{dtype}' of type '{type(dtype)} to initialise Field.")
 
-        if self.dtype is not None and value is not None:
-            self._setvalue(value)
-        else:
-            self._value = value
 
     def _getvalue(self) -> Any:
         return self._value
@@ -44,17 +88,22 @@ class Field:
         b = Bits()
         try:
             self.dtype.set_fn(b, value)
+            self._bits = b
         except ValueError:
             raise ValueError(f"Can't use the value {value} with the dtype {self.dtype}.")
-        self.bits = b
+
+    def _getbits(self) -> Bits | None:
+        return self._bits
 
     value = property(_getvalue, _setvalue)
+    bits = property(_getbits)
+
 
     def __str__(self) -> str:
-        n = "'" if self.name is None else f"'<{self.name}> "
-        x = self.dtype if self.dtype is not None else self.bits
+        n = "'" if self.name is None else f"'<{colour.green}{self.name}{colour.off}> "
+        x = self.dtype
         v = f" = {self.value}'" if self.value is not None else "'"
-        return f"{n}{x}{v}"
+        return f"{n}{colour.purple}{x}{colour.off}{v}"
 
     def __repr__(self) -> str:
         return f"Field({self.__str__()})"
@@ -64,8 +113,6 @@ class Field:
             return False
         if self.dtype != other.dtype:
             return False
-        if self.bits != other.bits:
-            return False
         if self.value != other.value:
             return False
         return True
@@ -74,7 +121,7 @@ class Field:
 class Format:
 
     def __init__(self, name: str | None = None,
-                 fields: Sequence[Field | Format | Sequence] | None = None) -> None:
+                 fields: Sequence[Field | Format | str] | None = None) -> None:
         self.name = name
         if self.name == '':
             self.name = None
@@ -82,12 +129,6 @@ class Format:
             fields = []
         self.empty_fields = 0
 
-        if isinstance(fields, Bits):
-            fields = [fields]
-        else:
-            if fields is not None and not isinstance(fields, Sequence):
-                fields = [fields]
-            fields = fields
         self.fields = []
         for field in fields:
             if isinstance(field, Format):
@@ -97,22 +138,23 @@ class Format:
             if isinstance(field, Field):
                 pass
             elif isinstance(field, str):
-                field = Field(None, field)
+                field = Field(field)
             else:
-                field = Field(*field)
-            if field.bits is None:
+                raise ValueError(f"Invalid Field of type {type(field)}.")
+            if field.value is None:
                 self.empty_fields += 1
             self.fields.append(field)
 
 
     def _str(self, indent: int=0) -> str:
-        indent_str = '    ' * indent
-        s = f"{indent_str}Format('{self.name}',\n"
+        indent_size = 7  # To line things up under the 'Format('
+        indent_str = ' ' * indent_size * indent
+        s = f"{indent_str}Format('{colour.blue}{self.name}{colour.off}',\n"
         for field in self.fields:
             if isinstance(field, Format):
                 s += field._str(indent + 1)
             else:
-                s += f"    {indent_str}{field},\n"
+                s += ' ' * indent_size + f"{indent_str}{field},\n"
         s += f"{indent_str})\n"
         return s
 

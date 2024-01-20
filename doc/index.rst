@@ -6,23 +6,33 @@
 
 `bitformat <https://github.com/scott-griffiths/bitformat/>`_ is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
 
-It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module, but is currently at a planning stage and is not yet recommended for use.
+It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module.
+
+.. warning::
+    This library is in the early planning stages.
+    The API will be very unstable and I do not recommend its use for anything serious.
+
+    I am hoping to make a first proper release later in 2024.
 
 ----
 
-The `bitformat` module provides the ``Format`` class which is used to define how to create and parse binary formats. ::
+Documentation
+^^^^^^^^^^^^^
 
-    from bitformat import Format, Dtype, Bits
+.. toctree::
+   :hidden:
 
-    f1 = Format([Bits('0xabc')])  # A bit literal (12 bits long)
-    f2 = Format([Dtype('u5')])    # A 5-bit unsigned integer
+   self
 
-    f3 = Format([f1, f2, f2])   # A format made of other formats
+.. toctree::
 
-    d = f3.pack(3, 10)          # A Bits object packed with the values 3 and 10
-    f3.parse(d)
+    format
 
+Installation and download
+^^^^^^^^^^^^^^^^^^^^^^^^^
+To install just ``pip install bitformat``.
 
+To download the module, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
 
 
 These docs are styled using the `Piccolo theme <https://github.com/piccolo-orm/piccolo_theme>`_.
