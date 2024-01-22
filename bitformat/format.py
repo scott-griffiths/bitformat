@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bitstring import Bits, Dtype
-from typing import Sequence, Any, Iterator
+from typing import Sequence, Any, Iterator, Tuple
 import copy
 
 
@@ -18,7 +18,6 @@ class Colour:
         return x
 
 colour = Colour(True)
-
 
 class Field:
     def __init__(self, dtype: Dtype | Bits | str, name: str | None = None, value: Any = None):
@@ -190,7 +189,11 @@ class Format:
             raise ValueError('Format is empty')
         for field in self.fields:
             if field.name == key:
-                return field.value
+                if isinstance(field, Field):
+                    return field.value
+                if isinstance(field, Format):
+                    return field
+                raise ValueError('Unknown field type.')
         raise KeyError(key)
 
     def __setitem__(self, key, value) -> None:
@@ -205,6 +208,9 @@ class Format:
     def flatten(self):
         # Just return a flat list of fields (no Format objects, no name)
         pass
+
+    def append(self, value: Any) -> None:
+        self.__add__(value)
 
     def build(self, *values) -> Format:
         if len(values) != self.empty_fields:
@@ -251,18 +257,26 @@ class Format:
     def tobytes(self) -> bytes:
         return self.tobits().tobytes()
 
-    def parse(self, b: Bits) -> Format:
-        out_format = copy.deepcopy(self)
+    @staticmethod
+    def _parse(fmt: Format, b: Bits, start: int, format_name_stack: List[str]) -> Tuple[Format, int]:
         pos = 0
-        for field in out_format.fields:
+        format_name_stack.append(fmt.name)
+        for field in fmt.fields:
             if isinstance(field, Format):
-                assert False  # TODO.
+                nested_format, pos = Format._parse(field, b, pos, format_name_stack)
+                continue
             if field.bits is not None:
-                value = b[pos: pos + len(field.bits)]
+                value = b[start + pos: start + pos + len(field.bits)]
                 pos += len(field.bits)
                 if value != field.bits:
-                    raise ValueError(f"Field {field} at position {pos} does not match parsed bits {value}.")
+                    raise ValueError(f"Field {':'.join(colour.blue + fn + colour.off for fn in format_name_stack)}:{field} at bit position {start + pos} does not match parsed bits {value}.")
             else:
-                field.value = field.dtype.get_fn(b[pos: pos + field.dtype.bitlength])
+                field.value = field.dtype.get_fn(b[start + pos: start + pos + field.dtype.bitlength])
                 pos += field.dtype.bitlength
-        return out_format
+        format_name_stack.pop()
+        return fmt, start + pos
+
+    def parse(self, b: Bits) -> Format:
+        out_format = copy.deepcopy(self)
+        f, pos = Format._parse(out_format, b, 0, [])
+        return f

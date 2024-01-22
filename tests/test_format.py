@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 import unittest
 from bitformat import Format, Dtype, Bits, Field
+import bitformat
 
+def setUpModule():
+    bitformat.format.colour = bitformat.format.Colour(False)
 
 class Creation(unittest.TestCase):
 
@@ -68,6 +71,16 @@ class Creation(unittest.TestCase):
         self.assertEqual(f3.empty_fields, 0)
         self.assertEqual(f3.tobits(), Bits('0x000001b3, u12=100, u12=288, 0b1') + b'12345')
 
+    def testNestedFormats(self):
+        header = Format('header', ['0x000001b3', 'u12<width>', 'u12<height>', 'bool<f1>', 'bool<f2>'])
+        main = Format('main', ['0b1', 'i7<v1>', 'i9<v2>'])
+        f = Format('all', [header, main, '0x47'])
+        b = Bits('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
+        f2 = f.parse(b)
+        t = f2['header']
+        self.assertEqual(t['width'], 100)
+        self.assertEqual(f2['header']['width'], 100)
+        self.assertEqual(f2['main']['v2'], -99)
 
 class Addition(unittest.TestCase):
 
