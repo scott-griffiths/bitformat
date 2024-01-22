@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import unittest
-from bitformat import Format, Dtype, Bits, Field
+from bitformat import Format, Dtype, Bits, Field, Array
 import bitformat
 
 def setUpModule():
@@ -95,7 +95,21 @@ class Addition(unittest.TestCase):
         self.assertEqual(f['penguin'], -2)
 
 
-# class Array(unittest.TestCase):
+class ArrayTests(unittest.TestCase):
+
+    def testSimpleArray(self):
+        array_field = Field('u8', 'my_array', items=20)
+        f = Format('a', [array_field])
+        self.assertEqual(f.fields[0].items, 20)
+        fp = f.build([*range(20)])
+        a = fp.tobits()
+
+        f2 = Format('b', ['u8*20 <new_array>'])
+        self.assertEqual(f2.fields[0].items, 20)
+        self.assertEqual(f2.fields[0].value, None)
+        f2['new_array'] = a
+        self.assertEqual(fp, f2)
+
 #
 #     def testExampleWithArray(self):
 #         f = Format('construct_example', [

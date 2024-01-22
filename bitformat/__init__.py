@@ -32,8 +32,8 @@ __version__ = "0.0.1"
 __author__ = "Scott Griffiths"
 
 
-from bitstring import Bits, Dtype
+from bitstring import Bits, Dtype, Array
 from .format import Format, Field
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array']

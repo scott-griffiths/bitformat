@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from bitstring import Bits, Dtype
-from typing import Sequence, Any, Iterator, Tuple
+from bitstring import Bits, Dtype, Array
+from typing import Sequence, Any, Iterator, Tuple, List
 import copy
 
 
@@ -20,34 +20,33 @@ class Colour:
 colour = Colour(True)
 
 class Field:
-    def __init__(self, dtype: Dtype | Bits | str, name: str | None = None, value: Any = None):
+    def __init__(self, dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: int = 1):
         if name == '':
             name = None
         self._bits = None
         self._value = None
-        self.name = name
+
 
         if isinstance(dtype, str):
-            # Check to see if it includes a value:
-            q = dtype.find('=')
-            if q != -1:
-                if value is not None:
-                    raise ValueError(f"A value was supplied in the formatted dtype '{dtype}' as well as in the value parameter.")
-                value = dtype[q + 1:]
-                dtype = dtype[:q]
-            # Check if it has a name:
-            name_start = dtype.find('<')
-            if name_start != -1:
-                name_end = dtype.find('>')
-                if name_end == -1:
-                    raise ValueError(f"An opening '<' was supplied in the formatted dtype '{dtype} but without a closing '>'.")
+            d, n, v, i = Field._parse_dtype_str(dtype)
+            if n is not None:
                 if name is not None:
-                    raise ValueError(f"A name was supplied in the formatted dtype '{dtype}' as well as in the name parameter.")
-                self.name = dtype[name_start + 1:name_end]
-                chars_after_name = dtype[name_end + 1:]
-                if chars_after_name != '' and not chars_after_name.isspace():
-                    raise ValueError(f"There should be no trailing characters after the <name>.")
-                dtype = dtype[:name_start]
+                    raise ValueError(
+                        f"A name was supplied in the formatted dtype '{dtype}' as well as in the name parameter.")
+                else:
+                    name = n
+            if v is not None:
+                if value is not None:
+                    raise ValueError(
+                        f"A value was supplied in the formatted dtype '{dtype}' as well as in the value parameter.")
+                else:
+                    value = v
+            if i != 1:
+                if items != 1:
+                    raise ValueError(f"An multiplier was supplied in the formatted dtype '{dtype}' as well as in the items parameter.")
+                else:
+                    items = i
+            dtype = d
             # Try to convert to Bits type first
             try:
                 self._bits = Bits(dtype)
@@ -56,23 +55,51 @@ class Field:
                     self.dtype = Dtype(dtype)
                 except ValueError:
                     raise ValueError(f"Can't convert '{dtype}' to either a Bits or a Dtype.")
-                else:
-                    if value is not None:
-                        self.value = value
             else:
                 self.dtype = Dtype('bits', len(self._bits))
-                self.value = self._bits
+                value = self._bits
         elif isinstance(dtype, Bits):
             self.dtype = Dtype('bits', len(dtype))
-            self.value = dtype
-            return
+            value = dtype
         elif isinstance(dtype, Dtype):
             self.dtype = dtype
-            if value is not None:
-                self._setvalue(value)
-            return
         else:
             raise ValueError(f"Can't use '{dtype}' of type '{type(dtype)} to initialise Field.")
+        self.name = name
+        self.items = items
+        if value is not None:
+            if self.items == 1:
+                self._setvalue(value)
+            else:
+                self._setvalue(value)
+
+    @staticmethod
+    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int]:
+        name = value = None
+        items = 1
+        # Check to see if it includes a value:
+        q = dtype_str.find('=')
+        if q != -1:
+            value = dtype_str[q + 1:]
+            dtype_str = dtype_str[:q]
+        # Check if it has a name:
+        name_start = dtype_str.find('<')
+        if name_start != -1:
+            name_end = dtype_str.find('>')
+            if name_end == -1:
+                raise ValueError(
+                    f"An opening '<' was supplied in the formatted dtype '{dtype_str} but without a closing '>'.")
+            name = dtype_str[name_start + 1:name_end]
+            chars_after_name = dtype_str[name_end + 1:]
+            if chars_after_name != '' and not chars_after_name.isspace():
+                raise ValueError(f"There should be no trailing characters after the <name>.")
+            dtype_str = dtype_str[:name_start]
+        multiply_pos = dtype_str.find('*')
+        if multiply_pos != -1:
+            items = dtype_str[multiply_pos + 1:]
+            items = int(items)
+            dtype_str = dtype_str[:multiply_pos]
+        return dtype_str, name, value, items
 
     def _getvalue(self) -> Any:
         return self._value
@@ -80,13 +107,20 @@ class Field:
     def _setvalue(self, value: Any) -> None:
         if self.dtype is None:
             raise ValueError(f"Can't set a value for field without a Dtype.")
-        b = Bits()
-        try:
-            self.dtype.set_fn(b, value)
-            self._bits = b
-        except ValueError:
-            raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
-        self._value = self.dtype.get_fn(self._bits)
+        if self.items == 1:
+            b = Bits()
+            try:
+                self.dtype.set_fn(b, value)
+                self._bits = b
+            except ValueError:
+                raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
+            self._value = self.dtype.get_fn(self._bits)
+        else:
+            a = Array(self.dtype, value)
+            if len(a) != self.items:
+                raise ValueError(f"For Field {self}, {len(a)} values were provided, but expected {self.items}.")
+            self._value = a
+            self._bits = a.data
 
     def _getbits(self) -> Bits | None:
         return self._bits
@@ -97,9 +131,13 @@ class Field:
 
     def __str__(self) -> str:
         d = f"{colour.purple}{self.dtype}{colour.off}"
+        i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
         n = '' if self.name is None else f" <{colour.green}{self.name}{colour.off}>"
-        v = '' if self.value is None else f" = {self.value}"
-        return f"'{d}{n}{v}'"
+        if isinstance(self.value, Array):
+            v = f" = {self.value.tolist()}"
+        else:
+            v = '' if self.value is None else f" = {self.value}"
+        return f"'{d}{i}{n}{v}'"
 
     def __repr__(self) -> str:
         return f"Field({self.__str__()})"
@@ -107,9 +145,12 @@ class Field:
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
             return False
-        if self.name != other.name:
-            return False
-        if self.value != other.value:
+        if isinstance(self.value, Array):
+            if not isinstance(other.value, Array):
+                return False
+            if not self.value.equals(other.value):
+                return False
+        elif self.value != other.value:
             return False
         return True
 
@@ -153,6 +194,11 @@ class Format:
                 s += ' ' * indent_size + f"{indent_str}{field},\n"
         s += f"{indent_str})\n"
         return s
+
+    def __eq__(self, other):
+        a = self.flatten()
+        b = other.flatten()
+        return self.flatten() == other.flatten()
 
     def __str__(self) -> str:
         return self._str()
@@ -205,9 +251,16 @@ class Format:
                 return
         raise KeyError(key)
 
-    def flatten(self):
+
+    def flatten(self) -> List[Field]:
         # Just return a flat list of fields (no Format objects, no name)
-        pass
+        flattened_fields = []
+        for field in self.fields:
+            if isinstance(field, Format):
+                flattened_fields.extend(field.flatten())
+            else:
+                flattened_fields.append(field)
+        return flattened_fields
 
     def append(self, value: Any) -> None:
         self.__add__(value)
@@ -236,12 +289,13 @@ class Format:
                 out_fields.append(f)
                 continue
             if field.bits is None:
-                field = Field(field.dtype, field.name, next(value_iter))
+                field = Field(field.dtype, field.name, next(value_iter), field.items)
             out_fields.append(field)
         return out_fields
 
 
     def tobits(self) -> Bits:
+        errors = []
         if self.fields is None:
             return Bits()
         out_bits = []
@@ -250,8 +304,11 @@ class Format:
                 out_bits.append(field.tobits())
                 continue
             if field.bits is None:
-                raise ValueError(f"Field {field} needs a value specified")
-            out_bits.append(field.bits)
+                errors.append(f"Field {field} needs a value specified.")
+            else:
+                out_bits.append(field.bits)
+        if errors:
+            raise ValueError('\n'.join(errors))
         return Bits().join(out_bits)
 
     def tobytes(self) -> bytes:

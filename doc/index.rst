@@ -14,7 +14,7 @@ It is intended to complement the `bitstring <https://github.com/scott-griffiths/
 
     I am hoping to make a first proper release later in 2024.
 
-----
+
 
 Documentation
 ^^^^^^^^^^^^^
