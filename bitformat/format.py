@@ -12,6 +12,8 @@ class Colour:
             cls.blue = '\033[34m'
             cls.purple = '\033[35m'
             cls.green = '\033[32m'
+            cls.red = '\033[31m'
+            cls.cyan = '\033[36m'
             cls.off = '\033[0m'
         else:
             cls.blue = cls.purple = cls.green = cls.off = ''
@@ -134,9 +136,9 @@ class Field:
         i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
         n = '' if self.name is None else f" <{colour.green}{self.name}{colour.off}>"
         if isinstance(self.value, Array):
-            v = f" = {self.value.tolist()}"
+            v = f" = {colour.cyan}{self.value.tolist()}{colour.off}"
         else:
-            v = '' if self.value is None else f" = {self.value}"
+            v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
         return f"'{d}{i}{n}{v}'"
 
     def __repr__(self) -> str:
@@ -230,7 +232,7 @@ class Format:
         x += other
         return x
 
-    def __getitem__(self, key) -> Any:
+    def __getitem__(self, key) -> Any:  # TODO: For integer keys this should give the nth field.
         if self.fields is None:
             raise ValueError('Format is empty')
         for field in self.fields:
@@ -242,7 +244,7 @@ class Format:
                 raise ValueError('Unknown field type.')
         raise KeyError(key)
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key, value) -> None:  # TODO: For integer keys this should set the nth field.
         if self.fields is None:
             raise ValueError('Format is empty')
         for field in self.fields:
@@ -263,7 +265,7 @@ class Format:
         return flattened_fields
 
     def append(self, value: Any) -> None:
-        self.__add__(value)
+        self.__iadd__(value)
 
     def build(self, *values) -> Format:
         if len(values) != self.empty_fields:
