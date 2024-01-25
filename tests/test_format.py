@@ -103,20 +103,21 @@ class ArrayTests(unittest.TestCase):
         f2['new_array'] = a
         self.assertEqual(fp, f2)
 
-#
-#     def testExampleWithArray(self):
-#         f = Format('construct_example', [
-#                    'bytes <signature> =BMP',
-#                    'i8 <width>',
-#                    'i8 <height>',
-#                    'Array(bytes1, [width]*[height]) <pixels>'
-#                    ])
-#         b = f.build(dict(width=3, height=2, pixels=[7, 8, 9, 11, 12, 13]))
-#         self.assertEqual(b.tobytes(), b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
-#         p = f.parse(b'BMP\x03\x02\x07\x08\t\x0b\x0c\r')
-#         self.assertEqual(p['width'], 3)
-#         self.assertEqual(p['height'], 2)
-#         self.assertEqual(p['pixels'], Array('bytes', [7, 8, 9, 11, 12, 13]))
+
+    def testExampleWithArray(self):
+        f = Format('construct_example', [
+                   Field('bytes', 'signature', b'BMP'),
+                   'i8 <width>',
+                   'i8 <height>',
+                   Field('u8', 'pixels', items=6)
+                   ])
+        b = f.build(3, 2, [7, 8, 9, 11, 12, 13])
+        v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
+        self.assertEqual(b.tobytes(), v)
+        p = f.parse(Bits(v))
+        self.assertEqual(p['width'], 3)
+        self.assertEqual(p['height'], 2)
+        self.assertEqual(p['pixels'], Array('u8', [7, 8, 9, 11, 12, 13]))
 
 class Methods(unittest.TestCase):
 

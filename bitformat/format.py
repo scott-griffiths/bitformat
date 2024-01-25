@@ -109,7 +109,10 @@ class Field:
         return dtype_str, name, value, items
 
     def _getvalue(self) -> Any:
-        return self._value
+        if self.items == 1:
+            return self._value
+        else:
+            return None if self._value is None else self._value.tolist()
 
     def _setvalue(self, value: Any) -> None:
         if self.dtype is None:
@@ -337,8 +340,11 @@ class Format:
                 if value != field.bits:
                     raise ValueError(f"Field {':'.join(colour.blue + fn + colour.off for fn in format_name_stack)}:{field} at bit position {start + pos} does not match parsed bits {value}.")
             else:
-                field.value = field.dtype.get_fn(b[start + pos: start + pos + field.dtype.bitlength])
-                pos += field.dtype.bitlength
+                if field.items == 1:
+                    field.value = field.dtype.get_fn(b[start + pos: start + pos + field.dtype.bitlength])
+                else:
+                    field.value = b[start + pos: start + pos + field.dtype.bitlength * field.items]
+                pos += field.dtype.bitlength * field.items
         format_name_stack.pop()
         return fmt, start + pos
 
