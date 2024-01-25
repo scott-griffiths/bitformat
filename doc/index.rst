@@ -26,6 +26,7 @@ Documentation
 
 .. toctree::
 
+    quick_reference
     format
 
 Installation and download

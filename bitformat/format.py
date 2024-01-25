@@ -21,13 +21,13 @@ class Colour:
 
 colour = Colour(True)
 
+
 class Field:
     def __init__(self, dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: int = 1):
         if name == '':
             name = None
         self._bits = None
         self._value = None
-
 
         if isinstance(dtype, str):
             d, n, v, i = Field._parse_dtype_str(dtype)
@@ -67,8 +67,12 @@ class Field:
             self.dtype = dtype
         else:
             raise ValueError(f"Can't use '{dtype}' of type '{type(dtype)} to initialise Field.")
+        if name is not None and not name.isidentifier():
+            raise ValueError(f"The Field name '{name}' is not a valid Python identifier.")
         self.name = name
         self.items = items
+        if self.dtype.length == 0:
+            raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if value is not None:
             if self.items == 1:
                 self._setvalue(value)
@@ -92,6 +96,7 @@ class Field:
                 raise ValueError(
                     f"An opening '<' was supplied in the formatted dtype '{dtype_str} but without a closing '>'.")
             name = dtype_str[name_start + 1:name_end]
+            name = name.strip()
             chars_after_name = dtype_str[name_end + 1:]
             if chars_after_name != '' and not chars_after_name.isspace():
                 raise ValueError(f"There should be no trailing characters after the <name>.")
@@ -109,6 +114,10 @@ class Field:
     def _setvalue(self, value: Any) -> None:
         if self.dtype is None:
             raise ValueError(f"Can't set a value for field without a Dtype.")
+        if value is None:
+            self._value = None
+            self._bits = None
+            return
         if self.items == 1:
             b = Bits()
             try:
@@ -166,12 +175,10 @@ class Format:
             self.name = None
         if fields is None:
             fields = []
-        self.empty_fields = 0
 
         self.fields = []
         for field in fields:
             if isinstance(field, Format):
-                self.empty_fields += field.empty_fields
                 self.fields.append(field)
                 continue
             if isinstance(field, Field):
@@ -180,8 +187,6 @@ class Format:
                 field = Field(field)
             else:
                 raise ValueError(f"Invalid Field of type {type(field)}.")
-            if field.value is None:
-                self.empty_fields += 1
             self.fields.append(field)
 
 
@@ -198,8 +203,6 @@ class Format:
         return s
 
     def __eq__(self, other):
-        a = self.flatten()
-        b = other.flatten()
         return self.flatten() == other.flatten()
 
     def __str__(self) -> str:
@@ -211,20 +214,12 @@ class Format:
     def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
         if isinstance(other, Format):
             self.fields.append(copy.deepcopy(other))
-            self.empty_fields += other.empty_fields
             return self
         if isinstance(other, Field):
             self.fields.append(copy.deepcopy(other))
-            if other.bits is None:
-                self.empty_fields += 1
             return self
-        if isinstance(other, str):
-            field = Field(other)
-        else:
-            field = Field('', other)
+        field = Field(other)
         self.fields.append(field)
-        if field.bits is None:
-            self.empty_fields += 1
         return self
 
     def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
@@ -232,21 +227,29 @@ class Format:
         x += other
         return x
 
-    def __getitem__(self, key) -> Any:  # TODO: For integer keys this should give the nth field.
+    def __getitem__(self, key) -> Any:
         if self.fields is None:
             raise ValueError('Format is empty')
+        if isinstance(key, int):
+            field = self.fields[key]
+            if isinstance(field, Field):
+                return field.value
+            if isinstance(field, Format):
+                return field
         for field in self.fields:
             if field.name == key:
                 if isinstance(field, Field):
                     return field.value
                 if isinstance(field, Format):
                     return field
-                raise ValueError('Unknown field type.')
         raise KeyError(key)
 
-    def __setitem__(self, key, value) -> None:  # TODO: For integer keys this should set the nth field.
+    def __setitem__(self, key, value) -> None:
         if self.fields is None:
             raise ValueError('Format is empty')
+        if isinstance(key, int):
+            self.fields[key].value = value
+            return
         for field in self.fields:
             if field.name == key:
                 field.value = value
@@ -264,18 +267,23 @@ class Format:
                 flattened_fields.append(field)
         return flattened_fields
 
+    def clear(self) -> None:
+        for field in self.fields:
+            if isinstance(field, Format):
+                field.clear()
+            else:
+                if field.dtype.name != 'bits' and field.value is not None:
+                    field.value = None
+
     def append(self, value: Any) -> None:
         self.__iadd__(value)
 
     def build(self, *values) -> Format:
-        if len(values) != self.empty_fields:
-            raise ValueError(f"Format needs {self.empty_fields} values, but {len(values)} were given.")
         value_iter = iter(values)
         out_fields = self._build(value_iter)
         f = object.__new__(Format)  # Avoiding expensive initialisation
         f.name = self.name
         f.fields = out_fields
-        f.empty_fields = 0
         return f
 
 
@@ -287,7 +295,6 @@ class Format:
                 f = object.__new__(Format)
                 f.name = self.name
                 f.fields = format_fields
-                f.empty_fields = 0
                 out_fields.append(f)
                 continue
             if field.bits is None:

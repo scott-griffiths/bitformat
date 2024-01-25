@@ -17,7 +17,6 @@ class Creation(unittest.TestCase):
     def testCreateFromDtype(self):
         d = Dtype('u12')
         f = Format('x', [Field(d)])
-        self.assertEqual(f.empty_fields, 1)
         x = f.build(1000)
         self.assertEqual(f.name, 'x')
         self.assertEqual(x.tobits(), 'uint:12=1000')
@@ -26,13 +25,11 @@ class Creation(unittest.TestCase):
     def testCreateFromBitsString(self):
         f = Format('x', [Field('float16', 'foo', 12.5)])
         g = Format('y', ['float16 <foo> =12.5'])
-        self.assertEqual(f.empty_fields, 0)
         self.assertEqual(f.tobits(), g.tobits())
         self.assertEqual(f.name, 'x')
 
     def testCreateFromDtypeString(self):
         f = Format('x', ['float16'])
-        self.assertEqual(f.empty_fields, 1)
         self.assertTrue(f.fields[0].name is None)
         self.assertEqual(f.fields[0].dtype, Dtype('float', 16))
 
@@ -63,12 +60,8 @@ class Creation(unittest.TestCase):
         self.assertEqual(f.name, 'header')
         b = f.build(352).tobits()
         self.assertEqual(b, '0x000001b3, u12=352, u12=288, 0b1')
-        self.assertEqual(f.empty_fields, 1)
         f2 = Format('main', [f, 'bytes5'])
-        self.assertEqual(f2.empty_fields, 2)
         f3 = f2.build(100, b'12345')
-        self.assertEqual(f2.empty_fields, 2)
-        self.assertEqual(f3.empty_fields, 0)
         self.assertEqual(f3.tobits(), Bits('0x000001b3, u12=100, u12=288, 0b1') + b'12345')
 
     def testNestedFormats(self):
@@ -124,3 +117,26 @@ class ArrayTests(unittest.TestCase):
 #         self.assertEqual(p['width'], 3)
 #         self.assertEqual(p['height'], 2)
 #         self.assertEqual(p['pixels'], Array('bytes', [7, 8, 9, 11, 12, 13]))
+
+class Methods(unittest.TestCase):
+
+    def testClear(self):
+        f = Format('header', ['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'])
+        f.clear()
+        g = Format('empty_header', ['0x000001b3', 'u12', 'u12', 'bool'])
+        self.assertEqual(f, g)
+
+    def testGetItem(self):
+        f = Format('q', ['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
+        self.assertEqual(f[0], 7)
+        self.assertEqual(f[1], None)
+        self.assertEqual(f['pop'], 144)
+
+    def testSetItem(self):
+        f = Format('q', ['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
+        f[0] = 2
+        self.assertEqual(f[0], 2)
+        f[0] = None
+        self.assertEqual(f[0], None)
+        f['pop'] = 999999
+        self.assertEqual(f['pop'], 999999)
