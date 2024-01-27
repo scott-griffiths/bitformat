@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from bitstring import Bits, Dtype, Array
-from typing import Sequence, Any, Iterator, Tuple, List
+from typing import Sequence, Any, Iterator, Tuple, List, Dict
 import copy
-
+import ast
 
 class Colour:
     def __new__(cls, use_colour: bool) -> Colour:
@@ -74,10 +74,7 @@ class Field:
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if value is not None:
-            if self.items == 1:
-                self._setvalue(value)
-            else:
-                self._setvalue(value)
+            self._setvalue(value)
 
     @staticmethod
     def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int]:
@@ -104,7 +101,10 @@ class Field:
         multiply_pos = dtype_str.find('*')
         if multiply_pos != -1:
             items = dtype_str[multiply_pos + 1:]
-            items = int(items)
+            try:
+                items = int(items)
+            except ValueError:
+                pass
             dtype_str = dtype_str[:multiply_pos]
         return dtype_str, name, value, items
 
@@ -180,6 +180,7 @@ class Format:
             fields = []
 
         self.fields = []
+        self.vars = {}
         for field in fields:
             if isinstance(field, Format):
                 self.fields.append(field)
@@ -191,6 +192,7 @@ class Format:
             else:
                 raise ValueError(f"Invalid Field of type {type(field)}.")
             self.fields.append(field)
+
 
 
     def _str(self, indent: int=0) -> str:
@@ -281,30 +283,52 @@ class Format:
     def append(self, value: Any) -> None:
         self.__iadd__(value)
 
-    def build(self, *values) -> Format:
-        value_iter = iter(values)
-        out_fields = self._build(value_iter)
-        f = object.__new__(Format)  # Avoiding expensive initialisation
-        f.name = self.name
-        f.fields = out_fields
-        return f
+    @staticmethod
+    def _safe_eval(s: str, vars_: Dict) -> Any:
+        start = s.find('{')
+        end = s.find('}')
+        if start == -1 or end == -1:
+            raise ValueError(f'Invalid expression: {s}. It should start and end with braces.')
+        s = s[start + 1:end]
 
+        node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module'}
+        nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(s))])
+        bad_nodes = nodes_used - node_whitelist
+        if bad_nodes:
+            raise ValueError(f"Disallowed operations used in expression '{s}'. Disallowed nodes were: {bad_nodes}.")
+        if '__' in s:
+            raise ValueError(f'Invalid expression: {s}. Double underscores are not permitted.')
+        return eval(s, {"__builtins__": {}}, vars_)
 
-    def _build(self, value_iter: Iterator[Field]) -> Sequence[Field | Format]:
+    def _build(self, value_iter: Iterator[Field]) -> Tuple[Sequence[Field | Format], Dict]:
         out_fields = []
+        vars_ = {}
         for field in self.fields:
             if isinstance(field, Format):
-                format_fields = field._build(value_iter)
+                format_fields, vars_ = field._build(value_iter)
                 f = object.__new__(Format)
                 f.name = self.name
                 f.fields = format_fields
+                f.vars = vars_
                 out_fields.append(f)
                 continue
             if field.bits is None:
+                if isinstance(field.items, str):
+                    field.items = Format._safe_eval(field.items, vars_)
                 field = Field(field.dtype, field.name, next(value_iter), field.items)
             out_fields.append(field)
-        return out_fields
+            if field.name is not None and field.value is not None:
+                vars_[field.name] = field.value
+        return out_fields, vars_
 
+    def build(self, *values) -> Format:
+        value_iter = iter(values)
+        out_fields, vars_ = self._build(value_iter)
+        f = object.__new__(Format)  # Avoiding expensive initialisation
+        f.name = self.name
+        f.fields = out_fields
+        f.vars = vars_
+        return f
 
     def tobits(self) -> Bits:
         errors = []

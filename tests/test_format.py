@@ -109,7 +109,7 @@ class ArrayTests(unittest.TestCase):
                    Field('bytes', 'signature', b'BMP'),
                    'i8 <width>',
                    'i8 <height>',
-                   Field('u8', 'pixels', items=6)
+                   'u8 * {width * height} <pixels>',
                    ])
         b = f.build(3, 2, [7, 8, 9, 11, 12, 13])
         v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
@@ -117,7 +117,9 @@ class ArrayTests(unittest.TestCase):
         p = f.parse(Bits(v))
         self.assertEqual(p['width'], 3)
         self.assertEqual(p['height'], 2)
-        self.assertEqual(p['pixels'], Array('u8', [7, 8, 9, 11, 12, 13]))
+        self.assertEqual(p['pixels'],[7, 8, 9, 11, 12, 13])
+        self.assertTrue(type(p['pixels']) == list)
+
 
 class Methods(unittest.TestCase):
 
