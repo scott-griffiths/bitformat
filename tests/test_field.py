@@ -26,7 +26,7 @@ class Creation(unittest.TestCase):
     def testCreationFromBits(self):
         b = Bits('0xf, 0b1')
         f1 = Field(b)
-        self.assertEqual(f1.bits, b)
+        self.assertEqual(f1.bits(), b)
         with self.assertRaises(ValueError):
             _ = Field(Bits())
 
@@ -51,12 +51,12 @@ class Creation(unittest.TestCase):
         f = Field('bool < flag_12 > ')
         self.assertEqual(f.dtype.name, 'bool')
         self.assertEqual(f.name, 'flag_12')
-        self.assertTrue(f.value is None)
+        self.assertTrue(f.value() is None)
         f = Field('ue = 2')
         self.assertEqual(f.dtype.name, 'ue')
-        self.assertEqual(f.value, 2)
-        self.assertEqual(f.bits, '0b011')
+        self.assertEqual(f.value(), 2)
+        self.assertEqual(f.bits(), '0b011')
         f = Field('bytes', name='hello', value=b'hello world!')
-        self.assertEqual(f.value, b'hello world!')
+        self.assertEqual(f.value(), b'hello world!')
         self.assertEqual(f.name, 'hello')
         self.assertEqual(f.dtype, Dtype('bytes'))

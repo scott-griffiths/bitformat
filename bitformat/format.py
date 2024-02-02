@@ -5,6 +5,8 @@ from typing import Sequence, Any, Iterator, Tuple, List, Dict
 from types import CodeType
 import copy
 import ast
+import abc
+
 
 class Colour:
     def __new__(cls, use_colour: bool) -> Colour:
@@ -43,7 +45,32 @@ def _compile_safe_eval(s: str) -> CodeType:
     return code
 
 
-class Field:
+class FieldType(abc.ABC):
+    @abc.abstractmethod
+    def parse(self, b: Bits) -> int:
+        ...
+    @abc.abstractmethod
+    def build(self, *value) -> None:
+        ...
+
+    @abc.abstractmethod
+    def value(self) -> Any:
+        ...
+
+    @abc.abstractmethod
+    def bits(self) -> Bits | None:
+        ...
+
+    def bytes(self) -> bytes | None:
+        b = self.bits()
+        return b.tobytes() if b is not None else None
+
+    @abc.abstractmethod
+    def clear(self) -> None:
+        ...
+
+
+class Field(FieldType):
     def __init__(self, dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: str | int = 1):
         if name == '':
             name = None
@@ -91,15 +118,46 @@ class Field:
         if name is not None and not name.isidentifier():
             raise ValueError(f"The Field name '{name}' is not a valid Python identifier.")
         self.name = name
-        try:
-            items = int(items)
-        except ValueError:
-            items = _compile_safe_eval(items)
+        items = int(items)
         self.items = items
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if value is not None:
             self._setvalue(value)
+
+
+    def parse(self, b: Bits) -> int:
+        if self._bits is not None:
+            value = b[:len(self._bits)]
+            if value != self._bits:
+                raise ValueError
+            return len(self._bits)
+        if self.items == 1:
+            self._value = self.dtype.get_fn(b[:self.dtype.bitlength])
+            return self.dtype.bitlength
+        else:
+            self._setvalue(b[:self.dtype.bitlength * self.items])
+            return self.dtype.bitlength * self.items
+
+    def build(self, values: List | None = None) -> Bits:
+        if self._bits is None:
+            if self.items == 1:
+                self._setvalue(values[0])
+                values.pop(0)
+            else:
+                self._setvalue(values[0:self.items])
+                del values[0:self.items]
+        return self._bits
+
+    def value(self):
+        return self._getvalue()
+
+    def bits(self) -> Bits | None:
+        return self._bits
+
+    def clear(self) -> None:
+        if self.dtype.name != 'bits':
+            self._setvalue(None)
 
     @staticmethod
     def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int]:
@@ -165,7 +223,7 @@ class Field:
         if self.items == 1:
             return self._value
         else:
-            return None if self._value is None else self._value.tolist()
+            return None if self._value is None else self._value
 
     def _setvalue(self, value: Any) -> None:
         if self.dtype is None:
@@ -189,21 +247,14 @@ class Field:
             self._value = a
             self._bits = a.data
 
-    def _getbits(self) -> Bits | None:
-        return self._bits
-
-    value = property(_getvalue, _setvalue)
-    bits = property(_getbits)
-
-
     def __str__(self) -> str:
         d = f"{colour.purple}{self.dtype}{colour.off}"
         i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
         n = '' if self.name is None else f" <{colour.green}{self.name}{colour.off}>"
-        if isinstance(self.value, Array):
-            v = f" = {colour.cyan}{self.value.tolist()}{colour.off}"
+        if isinstance(self.value(), Array):
+            v = f" = {colour.cyan}{self.value().tolist()}{colour.off}"
         else:
-            v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
+            v = '' if self.value() is None else f" = {colour.cyan}{self.value()}{colour.off}"
         return f"'{d}{i}{n}{v}'"
 
     def __repr__(self) -> str:
@@ -212,51 +263,68 @@ class Field:
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
             return False
-        if isinstance(self.value, Array):
-            if not isinstance(other.value, Array):
+        if isinstance(self.value(), Array):
+            if not isinstance(other.value(), Array):
                 return False
-            if not self.value.equals(other.value):
+            if not self.value().equals(other.value()):
                 return False
-        elif self.value != other.value:
+        elif self.value() != other.value():
             return False
         return True
 
 
-class Format:
+class Format(FieldType):
 
     def __init__(self, name: str | None = None,
-                 fields: Sequence[Field | Format | str | Dtype | Bits] | None = None) -> None:
+                 fieldtypes: Sequence[FieldType | str | Dtype | Bits] | None = None) -> None:
         self.name = name
         if self.name == '':
             self.name = None
-        if fields is None:
-            fields = []
+        if fieldtypes is None:
+            fieldtypes = []
 
-        self.fields = []
+        self.fieldtypes = []
         self.vars = {}
-        for field in fields:
-            if isinstance(field, Format):
-                self.fields.append(field)
-                continue
-            if isinstance(field, Field):
-                pass
-            elif isinstance(field, (str, Dtype, Bits)):
-                field = Field(field)
-            else:
-                raise ValueError(f"Invalid Field of type {type(field)}.")
-            self.fields.append(field)
+        for fieldtype in fieldtypes:
+            if isinstance(fieldtype, (str, Dtype, Bits)):
+                fieldtype = Field(fieldtype)
+            if not isinstance(fieldtype, FieldType):
+                raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+            self.fieldtypes.append(fieldtype)
 
+    def build(self, values: List | None = None) -> Bits:
+        for fieldtype in self.fieldtypes:
+            fieldtype.build(values)
+        return self.bits()
 
+    def bits(self) -> Bits:
+        return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
+
+    def tobytes(self) -> bytes:
+        return self.bits().bytes()
+
+    def parse(self, b: Bits) -> int:
+        pos = 0
+        for fieldtype in self.fieldtypes:
+            pos += fieldtype.parse(b[pos:])
+        return pos
+
+    def value(self) -> List[Any]:
+        return [f.value() for f in self.fieldtypes]
+
+    def clear(self) -> None:
+        for fieldtype in self.fieldtypes:
+            fieldtype.clear()
 
     def _str(self, indent: int=0) -> str:
         indent_size = 7  # To line things up under the 'Format('
         indent_str = ' ' * indent_size * indent
         s = f"{indent_str}Format('{colour.blue}{self.name}{colour.off}',\n"
-        for field in self.fields:
-            if isinstance(field, Format):
-                s += field._str(indent + 1)
+        for fieldtype in self.fieldtypes:
+            if isinstance(fieldtype, Format):
+                s += fieldtype._str(indent + 1)
             else:
-                s += ' ' * indent_size + f"{indent_str}{field},\n"
+                s += ' ' * indent_size + f"{indent_str}{fieldtype},\n"
         s += f"{indent_str})\n"
         return s
 
@@ -271,13 +339,13 @@ class Format:
 
     def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
         if isinstance(other, Format):
-            self.fields.append(copy.deepcopy(other))
+            self.fieldtypes.append(copy.deepcopy(other))
             return self
         if isinstance(other, Field):
-            self.fields.append(copy.deepcopy(other))
+            self.fieldtypes.append(copy.deepcopy(other))
             return self
         field = Field(other)
-        self.fields.append(field)
+        self.fieldtypes.append(field)
         return self
 
     def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
@@ -286,52 +354,43 @@ class Format:
         return x
 
     def __getitem__(self, key) -> Any:
-        if self.fields is None:
+        if self.fieldtypes is None:
             raise ValueError('Format is empty')
         if isinstance(key, int):
-            field = self.fields[key]
-            if isinstance(field, Field):
-                return field.value
-            if isinstance(field, Format):
-                return field
-        for field in self.fields:
-            if field.name == key:
-                if isinstance(field, Field):
-                    return field.value
-                if isinstance(field, Format):
-                    return field
+            fieldtype = self.fieldtypes[key]
+            if isinstance(fieldtype, Field):
+                return fieldtype.value()
+            else:
+                return fieldtype
+        for fieldtype in self.fieldtypes:
+            if fieldtype.name == key:
+                if isinstance(fieldtype, Field):
+                    return fieldtype.value()
+                if isinstance(fieldtype, Format):
+                    return fieldtype
         raise KeyError(key)
 
     def __setitem__(self, key, value) -> None:
-        if self.fields is None:
+        if self.fieldtypes is None:
             raise ValueError('Format is empty')
         if isinstance(key, int):
-            self.fields[key].value = value
+            self.fieldtypes[key]._value = value
             return
-        for field in self.fields:
-            if field.name == key:
-                field.value = value
+        for fieldtype in self.fieldtypes:
+            if fieldtype.name == key:
+                fieldtype._setvalue(value)
                 return
         raise KeyError(key)
-
 
     def flatten(self) -> List[Field]:
         # Just return a flat list of fields (no Format objects, no name)
         flattened_fields = []
-        for field in self.fields:
-            if isinstance(field, Format):
-                flattened_fields.extend(field.flatten())
+        for fieldtype in self.fieldtypes:
+            if isinstance(fieldtype, Format):
+                flattened_fields.extend(fieldtype.flatten())
             else:
-                flattened_fields.append(field)
+                flattened_fields.append(fieldtype)
         return flattened_fields
-
-    def clear(self) -> None:
-        for field in self.fields:
-            if isinstance(field, Format):
-                field.clear()
-            else:
-                if field.dtype.name != 'bits' and field.value is not None:
-                    field.value = None
 
     def append(self, value: Any) -> None:
         self.__iadd__(value)
@@ -340,79 +399,42 @@ class Format:
     def _safe_eval(code: CodeType, vars_: Dict) -> Any:
         return eval(code, {"__builtins__": {}}, vars_)
 
-    def _build(self, value_iter: Iterator[Field]) -> Tuple[Sequence[Field | Format], Dict]:
-        out_fields = []
-        vars_ = {}
-        for field in self.fields:
-            if isinstance(field, Format):
-                format_fields, vars_ = field._build(value_iter)
-                f = object.__new__(Format)
-                f.name = self.name
-                f.fields = format_fields
-                f.vars = vars_
-                out_fields.append(f)
-                continue
-            if field.bits is None:
-                if isinstance(field.items, CodeType):
-                    field.items = Format._safe_eval(field.items, vars_)
-                field = Field(field.dtype, field.name, next(value_iter), field.items)
-            out_fields.append(field)
-            if field.name is not None and field.value is not None:
-                vars_[field.name] = field.value
-        return out_fields, vars_
+class Repeat(FieldType):
 
-    def build(self, *values) -> Format:
-        value_iter = iter(values)
-        out_fields, vars_ = self._build(value_iter)
-        f = object.__new__(Format)  # Avoiding expensive initialisation
-        f.name = self.name
-        f.fields = out_fields
-        f.vars = vars_
-        return f
+    def __init__(self, count: int | str, fieldtypes: Sequence[FieldType]):
+        self.count = count
+        self.fieldtypes = []
 
-    def tobits(self) -> Bits:
-        errors = []
-        if self.fields is None:
-            return Bits()
-        out_bits = []
-        for field in self.fields:
-            if isinstance(field, Format):
-                out_bits.append(field.tobits())
-                continue
-            if field.bits is None:
-                errors.append(f"Field {field} needs a value specified.")
-            else:
-                out_bits.append(field.bits)
-        if errors:
-            raise ValueError('\n'.join(errors))
-        return Bits().join(out_bits)
-
-    def tobytes(self) -> bytes:
-        return self.tobits().tobytes()
-
-    @staticmethod
-    def _parse(fmt: Format, b: Bits, start: int, format_name_stack: List[str]) -> Tuple[Format, int]:
-        pos = 0
-        format_name_stack.append(fmt.name)
-        for field in fmt.fields:
-            if isinstance(field, Format):
-                nested_format, pos = Format._parse(field, b, pos, format_name_stack)
-                continue
-            if field.bits is not None:
-                value = b[start + pos: start + pos + len(field.bits)]
-                pos += len(field.bits)
-                if value != field.bits:
-                    raise ValueError(f"Field {':'.join(colour.blue + fn + colour.off for fn in format_name_stack)}:{field} at bit position {start + pos} does not match parsed bits {value}.")
-            else:
-                if field.items == 1:
-                    field.value = field.dtype.get_fn(b[start + pos: start + pos + field.dtype.bitlength])
+        self.vars = {}
+        for i in range(self.count):
+            # TODO: Need to factor out this method to create fields to use here and in Format
+            for fieldtype in fieldtypes:
+                if isinstance(fieldtype, Format):
+                    self.fieldtypes.append(fieldtype)
+                    continue
+                if isinstance(fieldtype, Field):
+                    pass
+                elif isinstance(fieldtype, (str, Dtype, Bits)):
+                    fieldtype = Field(fieldtype)
                 else:
-                    field.value = b[start + pos: start + pos + field.dtype.bitlength * field.items]
-                pos += field.dtype.bitlength * field.items
-        format_name_stack.pop()
-        return fmt, start + pos
+                    raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+                self.fieldtypes.append(fieldtype)
 
-    def parse(self, b: Bits) -> Format:
-        out_format = copy.deepcopy(self)
-        f, pos = Format._parse(out_format, b, 0, [])
-        return f
+    def value(self):
+        return [f.value() for f in self.fieldtypes]
+
+    def build(self):
+        pass
+
+    def bits(self) -> Bits | None:
+        pass
+
+    def clear(self) -> None:
+        for fieldtype in self.fieldtypes:
+            fieldtype.clear()
+
+    def parse(self, b: Bits):
+        pos = 0
+        for fieldtype in self.fieldtypes:
+            pos += fieldtype.parse(b[pos:])
+        return pos

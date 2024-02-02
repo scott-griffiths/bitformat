@@ -11,7 +11,7 @@ This section gives a summary of the `bitformat` module's classes, functions and 
 Field
 -----
 
-:class:`Field` describes which define a binary sequence.
+:class:`Field` is the fundamental building block in `bitformat`.
 
 
 ``Field(dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: int = 1)``
@@ -21,8 +21,8 @@ Methods
 
 * :meth:`~Field.build` --
 * :meth:`~Field.parse` -- Fill in values for empty Fields by parsing a binary object.
-* :meth:`~Field.tobits` -- Return data as a Bits object.
-* :meth:`~Field.tobytes` -- Return data as bytes object, padding with zero bits at the end if needed.
+* :meth:`~Field.bits` -- Return data as a Bits object.
+* :meth:`~Field.bytes` -- Return data as bytes object, padding with up to 7 zero bits at the end if needed.
 
 Special methods
 ^^^^^^^^^^^^^^^

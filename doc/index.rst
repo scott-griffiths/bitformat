@@ -28,6 +28,7 @@ Documentation
 
     quick_reference
     format
+    fields
 
 Installation and download
 ^^^^^^^^^^^^^^^^^^^^^^^^^

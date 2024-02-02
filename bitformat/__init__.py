@@ -33,7 +33,7 @@ __author__ = "Scott Griffiths"
 
 
 from bitstring import Bits, Dtype, Array
-from .format import Format, Field
+from .format import Format, Field, Repeat
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'Repeat']

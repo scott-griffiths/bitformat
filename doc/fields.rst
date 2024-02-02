@@ -1,0 +1,157 @@
+.. currentmodule:: bitformat
+
+Fields, Structs, Formats and more
+=================================
+
+FieldType
+---------
+
+A ``FieldType`` is an abstract base class for all of the other classes in this section.
+It defines the methods that they all must implement ::
+
+.. class:: FieldType()
+
+  .. method:: FieldType.build(values: List[Any], kwargs: Dict) -> Bits | None
+
+    Given positional and keyword values, fill in the empty fields a build a `Bits` object.
+    Note that this modifies the field in-place.
+
+  .. method:: FieldType.parse(b: Bits) -> int
+
+    Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
+    Note that this modifies the field in-place.
+
+  .. method:: FieldType.value() -> Any
+
+    Returns the 'value' of the field.
+    For example with a simple ``Field`` representing an integer this would return an integer; for a ``Struct`` this would return a list of the values of each field in the ``Struct``.
+
+  .. method:: FieldType.bits() -> Bits
+
+    Converts the contents to a `Bits` bit literal. 
+
+  .. method:: FieldType.bytes() -> bytes
+
+    Converts the contents to a `bytes` object.
+    Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.
+
+  .. method:: FieldType.vars() -> Tuple[List[Any], Dict]
+
+    Returns the positional and keyword values that are contained in the field.
+
+  .. method:: FieldType.clear() -> None
+
+    Clears the field of everything that is not a bit literal.
+
+
+Field
+-----
+
+A `Field` is the fundamental building block in `bitformat`.
+
+.. class:: Field(dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: int = 1)
+
+    A `Field` has a data type (`dtype`) that describes how to interpret binary data and optionally a `name` and a concrete `value` for the `dtype`.
+
+    ``dtype``: The data type can be:
+        * A `Dtype` object (e.g. ``Dtype('float', 16)``).
+        * A string that can be used to construct a `Dtype` (e.g. ``'float16'``).
+        * A string that can be used to construct a `Dtype` with a value (e.g. ``'uint12=105'``)
+
+        For convenience you can also give either a `Bits` object (e.g. ``Bits('0x47')``), or a string that can be used to construct a `Bits` object (e.g. ``'0x47'``).
+        This will will cause the `dtype` to be set to ``Dtype('bits')`` and the `value` to be set to the `Bits` object.
+
+    ``name``: An optional string used to identify the `Field` when it is contained inside a `Format`.
+    Using an empty string (``''``) is the same as using ``None``.
+    It is an error to use two `Field`s with the same `name` in a `Format` object, though you may have multiple unnamed `Field`s.
+
+    ``value``: A value can be supplied for the ``Dtype`` - this should be something suitable for the type, for example you can't give the value of ``2`` to a ``bool``, or ``123xyz`` to a ``hex`` dtype.
+    Note that if a value has already been given as part of the `dtype` parameter it shouldn't be specified here as well.
+
+    ``items``: An array of items of the same type can be specified by setting `items` to be greater than one.
+
+    As a shortcut the `dtype` parameter can be used to specify the whole field.
+    To do this the name should be of the format::
+
+        "dtype <name> = value"
+
+    For example instead of ``Field(Dtype('uint', 12), 'width' 100)`` you could say just ``Field('uint12 <width> = 100')``.
+    The whitespace between the elements is optional.
+
+    An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field('<sequence_header> = 0x000001b3')``.
+
+
+Struct
+------
+
+A `Struct` can be considered as a list of `FieldType` objects.
+In its simplest form is could just be a flat list of ``Field`` objects, but it can also contain other ``Struct`` objects and the other types described in this section.
+
+.. class:: Struct(fieldtypes: Sequence[FieldType | Bits | Dtype | str] | None = None)
+
+
+If you need to refer to elements of the ``Struct`` elsewhere then the ``Format`` type may be more appropriate.
+
+Format
+------
+
+A `Format` is a named `Struct`, so consists of both a name and a list of `FieldType` objects.
+This makes it easier to refer to values contained in the ``Format`` from elsewhere.
+
+.. class:: Format(name: str | None = None, fieldtypes: Sequence[FieldType | Bits | Dtype | str] | None = None)
+
+
+Repeat
+------
+
+A `Repeat` field simply repeats another field a given number of times.
+
+.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | Bits | Dtype | str] | None = None, var_name: str | None = None)
+
+The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
+The optional `var_name` parameter is used to give the index a name that can be referenced elsewhere.
+
+:meth:`Repeat.parse` will return a list of
+
+Find
+----
+
+.. class:: Find(b: Bits | str, var_name: str | None = None, bytealigned=True)
+
+:meth:`Find.parse` will seek to the next occurrence of `b`.
+
+If `bytealigned` is `True` it will only search on byte boundaries.
+
+The optional `var_name` parameter is used to give the number of bits skipped a name that can be referenced elsewhere.
+
+:meth:`Find.build` does nothing and returns `None`.
+
+:meth:`Find.value`  returns `None`, :meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
+
+
+f = Format('h', [
+        '0x47 <start_code>',
+        Repeat(5, [
+            'u16',
+            'u8'
+            ])
+        ])
+
+f = Named('h', Struct([
+        '0x47 <start_code>',
+        Repeat(5, Struct([
+            'u16',
+            'u8'
+            ]))
+        ])
+
+
+
+
+
+
+
+
+
+
+
