@@ -82,6 +82,9 @@ class FieldType(abc.ABC):
     def __str__(self) -> str:
         return self._str(0)
 
+    def __repr__(self) -> str:
+        return self.__str__()
+
     def _get_name(self) -> str:
         return self._name
 
@@ -299,144 +302,28 @@ class Field(FieldType):
         return True
 
 
-class Format(FieldType):
+class FieldListType(FieldType):
 
-    def __init__(self, fieldtypes: Sequence[FieldType | str | Dtype | Bits] | None = None, name: str = '') -> None:
-        if fieldtypes is None:
-            fieldtypes = []
-        self.name = name
+    def __init__(self):
         self.fieldtypes = []
-        self.vars = {}
-        for fieldtype in fieldtypes:
-            if isinstance(fieldtype, (str, Dtype, Bits)):
-                fieldtype = Field(fieldtype)
-            if not isinstance(fieldtype, FieldType):
-                raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-            self.fieldtypes.append(fieldtype)
 
     def build(self, values: List[Any]) -> Bits:
         for fieldtype in self.fieldtypes:
             fieldtype.build(values)
         return self.bits()
 
-    def bits(self) -> Bits:
-        return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
-
-    def tobytes(self) -> bytes:
-        return self.bits().bytes()
-
-    def parse(self, b: Bits) -> int:
-        pos = 0
-        for fieldtype in self.fieldtypes:
-            pos += fieldtype.parse(b[pos:])
-        return pos
-
-    def value(self) -> List[Any]:
-        return [f.value() for f in self.fieldtypes]
-
     def clear(self) -> None:
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
-
-    def _str(self, indent: int) -> str:
-        indent_str = ' ' * indent_size * indent
-        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-        s = f"{indent_str}{self.__class__.__name__}({name_str}\n"
-        for fieldtype in self.fieldtypes:
-            s += fieldtype._str(indent + 1) + ',\n'
-        s += f"{indent_str})"
-        return s
 
     def __eq__(self, other):
         return self.flatten() == other.flatten()
 
-    def __str__(self) -> str:
-        return self._str(0)
-
-    def __repr__(self) -> str:
-        return self.__str__()
-
-    def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Struct:
-        if isinstance(other, FieldType):
-            self.fieldtypes.append(copy.deepcopy(other))
-            return self
-        field = Field(other)
-        self.fieldtypes.append(field)
-        return self
-
-    def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
-        x = copy.deepcopy(self)
-        x += other
-        return x
-
-    def __getitem__(self, key) -> Any:
-        if self.fieldtypes is None:
-            raise ValueError(f'{self.__class__.__name__} is empty')
-        if isinstance(key, int):
-            fieldtype = self.fieldtypes[key]
-            return fieldtype
-
-        for fieldtype in self.fieldtypes:
-            if fieldtype.name == key:
-                return fieldtype
-        raise KeyError(key)
-
-    def __setitem__(self, key, value) -> None:
-        if self.fieldtypes is None:
-            raise ValueError('Format is empty')
-        if isinstance(key, int):
-            self.fieldtypes[key]._value = value
-            return
-        for fieldtype in self.fieldtypes:
-            if fieldtype.name == key:
-                fieldtype._setvalue(value)
-                return
-        raise KeyError(key)
-
-    def flatten(self) -> List[FieldType]:
-        # Just return a flat list of fields
-        flattened_fields = []
-        for fieldtype in self.fieldtypes:
-            flattened_fields.extend(fieldtype.flatten())
-        return flattened_fields
-
-    def append(self, value: Any) -> None:
-        self.__iadd__(value)
-
-    @staticmethod
-    def _safe_eval(code: CodeType, vars_: Dict) -> Any:
-        return eval(code, {"__builtins__": {}}, vars_)
-
-
-class Repeat(FieldType):
-
-    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits, name: str = ''):
-        if isinstance(count, int):
-            count = range(count)
-        self.count = count
-        self.name = name
-        if isinstance(fieldtype, (str, Dtype, Bits)):
-            fieldtype = Field(fieldtype)
-        if not isinstance(fieldtype, FieldType):
-            raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-        self.fieldtypes = []
-        for _ in count:
-            self.fieldtypes.append(copy.copy(fieldtype))
-
     def value(self):
         return [f.value() for f in self.fieldtypes]
 
-    def build(self, values: List[Any]) -> Bits:
-        for fieldtype in self.fieldtypes:
-            fieldtype.build(values)
-        return self.bits()
-
     def bits(self) -> Bits:
         return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
-
-    def clear(self) -> None:
-        for fieldtype in self.fieldtypes:
-            fieldtype.clear()
 
     def parse(self, b: Bits):
         pos = 0
@@ -451,6 +338,86 @@ class Repeat(FieldType):
             flattened_fields.extend(fieldtype.flatten())
         return flattened_fields
 
+    def __getitem__(self, key) -> Any:
+        if isinstance(key, int):
+            fieldtype = self.fieldtypes[key]
+            return fieldtype
+
+        for fieldtype in self.fieldtypes:
+            if fieldtype.name == key:
+                return fieldtype
+        raise KeyError(key)
+
+    def __setitem__(self, key, value) -> None:
+        if isinstance(key, int):
+            self.fieldtypes[key]._value = value  # TODO: Value access
+            return
+        for fieldtype in self.fieldtypes:
+            if fieldtype.name == key:
+                fieldtype._setvalue(value)  # TODO: not all fields have a _setitem
+                return
+        raise KeyError(key)
+
+class Format(FieldListType):
+
+    def __init__(self, fieldtypes: Sequence[FieldType | str | Dtype | Bits] | None = None, name: str = '') -> None:
+        super().__init__()
+        if fieldtypes is None:
+            fieldtypes = []
+        self.name = name
+        self.vars = {}
+        for fieldtype in fieldtypes:
+            if isinstance(fieldtype, (str, Dtype, Bits)):
+                fieldtype = Field(fieldtype)
+            if not isinstance(fieldtype, FieldType):
+                raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+            self.fieldtypes.append(fieldtype)
+
+    def _str(self, indent: int) -> str:
+        indent_str = ' ' * indent_size * indent
+        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
+        s = f"{indent_str}{self.__class__.__name__}({name_str}\n"
+        for fieldtype in self.fieldtypes:
+            s += fieldtype._str(indent + 1) + ',\n'
+        s += f"{indent_str})"
+        return s
+
+    def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
+        if isinstance(other, FieldType):
+            self.fieldtypes.append(copy.deepcopy(other))
+            return self
+        field = Field(other)
+        self.fieldtypes.append(field)
+        return self
+
+    def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
+        x = copy.deepcopy(self)
+        x += other
+        return x
+
+    def append(self, value: Any) -> None:
+        self.__iadd__(value)
+
+    @staticmethod
+    def _safe_eval(code: CodeType, vars_: Dict) -> Any:
+        return eval(code, {"__builtins__": {}}, vars_)
+
+
+class Repeat(FieldListType):
+
+    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits, name: str = ''):
+        super().__init__()
+        if isinstance(count, int):
+            count = range(count)
+        self.count = count
+        self.name = name
+        if isinstance(fieldtype, (str, Dtype, Bits)):
+            fieldtype = Field(fieldtype)
+        if not isinstance(fieldtype, FieldType):
+            raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+        for _ in count:
+            self.fieldtypes.append(copy.copy(fieldtype))
+
     def _str(self, indent: int) -> str:
         indent_str = ' ' * indent_size * indent
         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
@@ -460,6 +427,7 @@ class Repeat(FieldType):
             s += fieldtype._str(indent + 1) + ',\n'
         s += f"{indent_str})"
         return s
+
 
 
 class Find(FieldType):
