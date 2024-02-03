@@ -10,7 +10,7 @@ class Creation(unittest.TestCase):
 
     def testCreateEmpty(self):
         f = Format()
-        b = f.build()
+        b = f.build([])
         self.assertEqual(len(b), 0)
         self.assertEqual(f.name, '')
 
@@ -41,14 +41,14 @@ class Creation(unittest.TestCase):
     def testCreateFromBits(self):
         b = Bits('0xabc')
         f = Format([Field(b)])
-        x = f.build()
+        x = f.build([])
         self.assertEqual(f.name, '')
         self.assertEqual(x, '0xabc')
         self.assertTrue(isinstance(x, Bits))
 
     def testCreateFromBitsWithName(self):
         f = Format([Field('0xabc', 'some_bits')])
-        x = f.build()
+        x = f.build([])
         self.assertTrue(x, '0xabc')
 
     def testCreateFromList(self):

@@ -23,6 +23,8 @@ class Colour:
         return x
 
 colour = Colour(True)
+indent_size = 4
+
 
 def _compile_safe_eval(s: str) -> CodeType:
     start = s.find('{')
@@ -50,7 +52,7 @@ class FieldType(abc.ABC):
     def parse(self, b: Bits) -> int:
         ...
     @abc.abstractmethod
-    def build(self, *value) -> None:
+    def build(self, values: List[Any]) -> None:
         ...
 
     @abc.abstractmethod
@@ -58,16 +60,23 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def bits(self) -> Bits | None:
+    def bits(self) -> Bits:
         ...
 
-    def bytes(self) -> bytes | None:
+    def bytes(self) -> bytes:
         b = self.bits()
-        return b.tobytes() if b is not None else None
+        return b.tobytes()
 
     @abc.abstractmethod
     def clear(self) -> None:
         ...
+
+    @abc.abstractmethod
+    def _str(self, indent: int) -> str:
+        ...
+
+    def __str__(self) -> str:
+        return self._str(0)
 
     def _get_name(self) -> str:
         return self._name
@@ -146,9 +155,9 @@ class Field(FieldType):
             self._setvalue(b[:self.dtype.bitlength * self.items])
             return self.dtype.bitlength * self.items
 
-    def build(self, values: List | None = None) -> Bits:
+    def build(self, values: List[Any]) -> Bits:
         if self._bits is None:
-            if values is None or len(values) < self.items:
+            if len(values) < self.items:
                 raise ValueError(f"Need {self.items} items to build the Field, but was supplied with '{values}'.")
             if self.items == 1:
                 self._setvalue(values[0])
@@ -162,7 +171,7 @@ class Field(FieldType):
         return self._getvalue()
 
     def bits(self) -> Bits | None:
-        return self._bits
+        return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
         if self.dtype.name != 'bits':
@@ -256,15 +265,16 @@ class Field(FieldType):
             self._value = a
             self._bits = a.data
 
-    def __str__(self) -> str:
+    def _str(self, indent: int) -> str:
         d = f"{colour.purple}{self.dtype}{colour.off}"
         i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
-        n = '' if self.name is None else f" <{colour.green}{self.name}{colour.off}>"
+        n = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
         if isinstance(self.value(), Array):
             v = f" = {colour.cyan}{self.value().tolist()}{colour.off}"
         else:
             v = '' if self.value() is None else f" = {colour.cyan}{self.value()}{colour.off}"
-        return f"'{d}{i}{n}{v}'"
+        indent_str = ' ' * indent_size * indent
+        return f"{indent_str}'{d}{i}{n}{v}'"
 
     def __repr__(self) -> str:
         return f"Field({self.__str__()})"
@@ -297,7 +307,7 @@ class Format(FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
 
-    def build(self, values: List | None = None) -> Bits:
+    def build(self, values: List[Any]) -> Bits:
         for fieldtype in self.fieldtypes:
             fieldtype.build(values)
         return self.bits()
@@ -321,24 +331,20 @@ class Format(FieldType):
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
 
-    def _str(self, indent: int=0) -> str:
-        indent_size = 7  # To line things up under the 'Format('
+    def _str(self, indent: int) -> str:
         indent_str = ' ' * indent_size * indent
-        name_str = '' if self.name is None else "'{colour.blue}{self.name}{colour.off}',"
+        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
         s = f"{indent_str}{self.__class__.__name__}({name_str}\n"
         for fieldtype in self.fieldtypes:
-            if isinstance(fieldtype, Format):
-                s += fieldtype._str(indent + 1)
-            else:
-                s += ' ' * indent_size + f"{indent_str}{fieldtype},\n"
-        s += f"{indent_str})\n"
+            s += fieldtype._str(indent + 1) + ',\n'
+        s += f"{indent_str})"
         return s
 
     def __eq__(self, other):
         return self.flatten() == other.flatten()
 
     def __str__(self) -> str:
-        return self._str()
+        return self._str(0)
 
     def __repr__(self) -> str:
         return self.__str__()
@@ -400,31 +406,46 @@ class Format(FieldType):
 
 class Repeat(FieldType):
 
-    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits):
+    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits, name: str = ''):
+        if isinstance(count, int):
+            count = range(count)
         self.count = count
+        self.name = name
         if isinstance(fieldtype, (str, Dtype, Bits)):
             fieldtype = Field(fieldtype)
         if not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-        self.fieldtype_array = []
-        for _ in range(count):
-            self.fieldtype_array.append(copy.copy(fieldtype))
+        self.fieldtypes = []
+        for _ in count:
+            self.fieldtypes.append(copy.copy(fieldtype))
 
     def value(self):
-        return [f.value() for f in self.fieldtype_array]
+        return [f.value() for f in self.fieldtypes]
 
-    def build(self):
-        pass
+    def build(self, values: List[Any]):
+        for fieldtype in self.fieldtypes:
+            fieldtype.build(values)
+        return self.bits()
 
     def bits(self) -> Bits | None:
-        pass
+        return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
 
     def clear(self) -> None:
-        for fieldtype in self.fieldtype_array:
+        for fieldtype in self.fieldtypes:
             fieldtype.clear()
 
     def parse(self, b: Bits):
         pos = 0
-        for fieldtype in self.fieldtype_array:
+        for fieldtype in self.fieldtypes:
             pos += fieldtype.parse(b[pos:])
         return pos
+
+    def _str(self, indent: int) -> str:
+        indent_str = ' ' * indent_size * indent
+        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
+        count_str = f'{colour.green}{self.count!r}{colour.off},'
+        s = f"{indent_str}{self.__class__.__name__}({name_str}{count_str}\n"
+        for fieldtype in self.fieldtypes:
+            s += fieldtype._str(indent + 1) + ',\n'
+        s += f"{indent_str})"
+        return s
