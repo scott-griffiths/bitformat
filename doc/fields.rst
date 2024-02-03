@@ -7,47 +7,51 @@ FieldType
 ---------
 
 A ``FieldType`` is an abstract base class for all of the other classes in this section.
-It defines the methods that they all must implement ::
+Although you shouldn't need to deal with this type directly it is helpful to take a look at the methods that are common between all of the other types. ::
 
-.. class:: FieldType()
+  .. class:: FieldType()
 
-  .. method:: FieldType.build(values: List[Any], kwargs: Dict) -> Bits | None
+      .. method:: FieldType.build(values: List[Any], kwargs: Dict) -> Bits
 
-    Given positional and keyword values, fill in the empty fields a build a `Bits` object.
-    Note that this modifies the fieldtype in-place.
+        Given positional and keyword values, fill in the empty fields a build a `Bits` object.
+        Note that this modifies the fieldtype in-place.
 
-  .. method:: FieldType.parse(b: Bits) -> int
+      .. method:: FieldType.parse(b: Bits) -> int
 
-    Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
-    Note that this modifies the fieldtype in-place.
+        Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
+        Note that this modifies the fieldtype in-place.
 
-  .. method:: FieldType.value() -> Any
+      .. method:: FieldType.value() -> Any
 
-    Returns the 'value' of the field.
-    For example with a simple ``Field`` representing an integer this would return an integer; for a ``Format`` this would return a list of the values of each field in the ``Format``.
+        Returns the 'value' of the field.
+        For example with a simple ``Field`` representing an integer this would return an integer; for a ``Format`` this would return a list of the values of each field in the ``Format``.
 
-  .. method:: FieldType.bits() -> Bits
+      .. method:: FieldType.flatten() -> List[FieldType]
 
-    Converts the contents to a `Bits` bit literal. 
+        Returns a flat list of FieldsTypes.
 
-  .. method:: FieldType.bytes() -> bytes
+      .. method:: FieldType.bits() -> Bits
 
-    Converts the contents to a `bytes` object.
-    Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.
+        Converts the contents to a `Bits` bit literal.
 
-  .. method:: FieldType.vars() -> Tuple[List[Any], Dict]
+      .. method:: FieldType.bytes() -> bytes
 
-    Returns the positional and keyword values that are contained in the field.
+        Converts the contents to a `bytes` object.
+        Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.
 
-  .. method:: FieldType.clear() -> None
+      .. method:: FieldType.vars() -> Tuple[List[Any], Dict]
 
-    Clears the field of everything that is not a bit literal.
+        Returns the positional and keyword values that are contained in the field.
 
-  Every `FieldType` also has a name string, which should either be an empty string or a valid Python variable name.
+      .. method:: FieldType.clear() -> None
 
-  .. property:: name: str
+        Clears the field of everything that is not a bit literal.
 
-    The name of the fieldtype - used to identify it in other fields.
+      Every `FieldType` also has a name string, which should either be an empty string or a valid Python variable name.
+
+      .. property:: name: str
+
+        The name of the fieldtype - used to identify it in other fields.
 
 
 Field
@@ -117,9 +121,12 @@ If `bytealigned` is `True` it will only search on byte boundaries.
 
 The optional `name` parameter is used to give the number of bits skipped a name that can be referenced elsewhere.
 
-:meth:`Find.build` does nothing and returns `None`.
+:meth:`Find.build` does nothing and returns an empty `Bits` object.
 
-:meth:`Find.value`  returns `None`, :meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
+:meth:`Find.value`  returns the number of bits skipped to get to the start of the found bits.
+Note that the value will always be in bits, not bytes and that `None` will be returned if the bits could not be found.
+
+:meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
 
 
 

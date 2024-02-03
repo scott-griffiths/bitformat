@@ -19,7 +19,7 @@ class Colour:
             cls.cyan = '\033[36m'
             cls.off = '\033[0m'
         else:
-            cls.blue = cls.purple = cls.green = cls.off = ''
+            cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ''
         return x
 
 colour = Colour(True)
@@ -52,7 +52,7 @@ class FieldType(abc.ABC):
     def parse(self, b: Bits) -> int:
         ...
     @abc.abstractmethod
-    def build(self, values: List[Any]) -> None:
+    def build(self, values: List[Any]) -> Bits:
         ...
 
     @abc.abstractmethod
@@ -73,6 +73,10 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def _str(self, indent: int) -> str:
+        ...
+
+    @abc.abstractmethod
+    def flatten(self) -> List[FieldType]:
         ...
 
     def __str__(self) -> str:
@@ -146,7 +150,7 @@ class Field(FieldType):
         if self._bits is not None:
             value = b[:len(self._bits)]
             if value != self._bits:
-                raise ValueError
+                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
         if self.items == 1:
             self._value = self.dtype.get_fn(b[:self.dtype.bitlength])
@@ -170,12 +174,15 @@ class Field(FieldType):
     def value(self):
         return self._getvalue()
 
-    def bits(self) -> Bits | None:
+    def bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
         if self.dtype.name != 'bits':
             self._setvalue(None)
+
+    def flatten(self) -> List[FieldType]:
+        return [self]
 
     @staticmethod
     def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int]:
@@ -387,13 +394,10 @@ class Format(FieldType):
         raise KeyError(key)
 
     def flatten(self) -> List[FieldType]:
-        # Just return a flat list of fields (no Format objects, no name)
+        # Just return a flat list of fields
         flattened_fields = []
         for fieldtype in self.fieldtypes:
-            if hasattr(fieldtype, 'flatten'):
-                flattened_fields.extend(fieldtype.flatten())
-            else:
-                flattened_fields.append(fieldtype)
+            flattened_fields.extend(fieldtype.flatten())
         return flattened_fields
 
     def append(self, value: Any) -> None:
@@ -422,12 +426,12 @@ class Repeat(FieldType):
     def value(self):
         return [f.value() for f in self.fieldtypes]
 
-    def build(self, values: List[Any]):
+    def build(self, values: List[Any]) -> Bits:
         for fieldtype in self.fieldtypes:
             fieldtype.build(values)
         return self.bits()
 
-    def bits(self) -> Bits | None:
+    def bits(self) -> Bits:
         return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
 
     def clear(self) -> None:
@@ -440,6 +444,13 @@ class Repeat(FieldType):
             pos += fieldtype.parse(b[pos:])
         return pos
 
+    def flatten(self) -> List[FieldType]:
+        # Just return a flat list of fields
+        flattened_fields = []
+        for fieldtype in self.fieldtypes:
+            flattened_fields.extend(fieldtype.flatten())
+        return flattened_fields
+
     def _str(self, indent: int) -> str:
         indent_str = ' ' * indent_size * indent
         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
@@ -449,3 +460,43 @@ class Repeat(FieldType):
             s += fieldtype._str(indent + 1) + ',\n'
         s += f"{indent_str})"
         return s
+
+
+class Find(FieldType):
+
+    def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
+        self.bits = Bits(bits)
+        self.bytealigned = bytealigned
+        self.name = name
+
+    def value(self) -> int | None:
+        return self.value()
+
+    def build(self, values: List[Any]) -> Bits:
+        return Bits()
+
+    def bits(self) -> Bits:
+        return Bits()
+
+    def clear(self) -> None:
+        pass  # TODO: set value to None?
+
+    def parse(self, b: Bits):
+        p = b.find(self.bits, bytealigned=self.bytealigned)
+        if p:
+            self.value = p[0]
+            return p[0]
+        self.value = None  # TODO: set value code. Raise Exception?
+        return 0
+
+    def flatten(self) -> List[FieldType]:
+        return []
+
+    def _str(self, indent: int) -> str:
+        indent_str = ' ' * indent_size * indent
+        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
+        find_str = f"'{colour.green}{str(self.bits)}{colour.off}'"
+        s = f"{indent_str}{self.__class__.__name__}({name_str}{find_str})"
+        return s
+
+

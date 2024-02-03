@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import unittest
-from bitformat import Format, Dtype, Bits, Field, Array, Repeat
+from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find
 import bitformat
 
 def setUpModule():
@@ -155,3 +155,17 @@ class Repeater(unittest.TestCase):
         ])
         f.parse(Array('u8', [1, 5, 9, 7, 6]).data)
         self.assertEqual(f.value(), [[1, 5, 9, 7, 6]])
+
+
+class Finder(unittest.TestCase):
+
+    def testFindField(self):
+        b = Bits('0x1234000001b3160120')
+        f = Format([
+                Find('0x000001'),
+                'hex32 <start_code> = 000001b3',
+                'u12 <width>',
+                'u12 <height>'
+            ])
+        f.parse(b)
+        print(f)
