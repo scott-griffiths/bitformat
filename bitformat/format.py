@@ -56,10 +56,6 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def value(self) -> Any:
-        ...
-
-    @abc.abstractmethod
     def bits(self) -> Bits:
         ...
 
@@ -78,6 +74,16 @@ class FieldType(abc.ABC):
     @abc.abstractmethod
     def flatten(self) -> List[FieldType]:
         ...
+
+    @abc.abstractmethod
+    def _getvalue(self) -> Any:
+        ...
+
+    @abc.abstractmethod
+    def _setvalue(self, value: Any) -> None:
+        ...
+
+
 
     def __str__(self) -> str:
         return self._str(0)
@@ -100,7 +106,6 @@ class FieldType(abc.ABC):
 class Field(FieldType):
     def __init__(self, dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: str | int = 1):
         self._bits = None
-        self._value = None
 
         if isinstance(dtype, str):
             d, n, v, i = Field._parse_dtype_str(dtype)
@@ -145,8 +150,7 @@ class Field(FieldType):
         self.items = items
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
-        if value is not None:
-            self._setvalue(value)
+        self.value = value
 
 
     def parse(self, b: Bits) -> int:
@@ -173,9 +177,6 @@ class Field(FieldType):
                 self._setvalue(values[0:self.items])
                 del values[0:self.items]
         return self._bits
-
-    def value(self):
-        return self._getvalue()
 
     def bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -275,14 +276,16 @@ class Field(FieldType):
             self._value = a
             self._bits = a.data
 
+    value = property(_getvalue, _setvalue)
+
     def _str(self, indent: int) -> str:
         d = f"{colour.purple}{self.dtype}{colour.off}"
         i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
         n = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
-        if isinstance(self.value(), Array):
-            v = f" = {colour.cyan}{self.value().tolist()}{colour.off}"
+        if isinstance(self.value, Array):
+            v = f" = {colour.cyan}{self.value.tolist()}{colour.off}"
         else:
-            v = '' if self.value() is None else f" = {colour.cyan}{self.value()}{colour.off}"
+            v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
         indent_str = ' ' * indent_size * indent
         return f"{indent_str}'{d}{i}{n}{v}'"
 
@@ -292,12 +295,12 @@ class Field(FieldType):
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
             return False
-        if isinstance(self.value(), Array):
-            if not isinstance(other.value(), Array):
+        if isinstance(self.value, Array):
+            if not isinstance(other.value, Array):
                 return False
-            if not self.value().equals(other.value()):
+            if not self.value.equals(other.value):
                 return False
-        elif self.value() != other.value():
+        elif self.value != other.value:
             return False
         return True
 
@@ -312,6 +315,12 @@ class FieldListType(FieldType):
             fieldtype.build(values)
         return self.bits()
 
+    def parse(self, b: Bits):
+        pos = 0
+        for fieldtype in self.fieldtypes:
+            pos += fieldtype.parse(b[pos:])
+        return pos
+
     def clear(self) -> None:
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
@@ -319,17 +328,17 @@ class FieldListType(FieldType):
     def __eq__(self, other):
         return self.flatten() == other.flatten()
 
-    def value(self):
-        return [f.value() for f in self.fieldtypes]
+    def _getvalue(self) -> List[Any]:
+        return [f.value for f in self.fieldtypes]
+
+    def _setvalue(self, val: List[Any]) -> None:
+        if len(val) != len(self.fieldtypes):
+            raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
+        for i in range(len(val)):
+            self.fieldtypes[i]._setvalue(val[i])
 
     def bits(self) -> Bits:
         return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
-
-    def parse(self, b: Bits):
-        pos = 0
-        for fieldtype in self.fieldtypes:
-            pos += fieldtype.parse(b[pos:])
-        return pos
 
     def flatten(self) -> List[FieldType]:
         # Just return a flat list of fields
@@ -357,6 +366,8 @@ class FieldListType(FieldType):
                 fieldtype._setvalue(value)  # TODO: not all fields have a _setitem
                 return
         raise KeyError(key)
+
+    value = property(_getvalue, _setvalue)
 
 class Format(FieldListType):
 
@@ -437,9 +448,6 @@ class Find(FieldType):
         self.bytealigned = bytealigned
         self.name = name
 
-    def value(self) -> int | None:
-        return self.value()
-
     def build(self, values: List[Any]) -> Bits:
         return Bits()
 
@@ -452,9 +460,9 @@ class Find(FieldType):
     def parse(self, b: Bits):
         p = b.find(self.bits, bytealigned=self.bytealigned)
         if p:
-            self.value = p[0]
+            self._setvalue(p[0])
             return p[0]
-        self.value = None  # TODO: set value code. Raise Exception?
+        self._setvalue(None)
         return 0
 
     def flatten(self) -> List[FieldType]:
@@ -467,4 +475,10 @@ class Find(FieldType):
         s = f"{indent_str}{self.__class__.__name__}({name_str}{find_str})"
         return s
 
+    def _setvalue(self, val: int | None) -> None:
+        self._value = val
 
+    def _getvalue(self) -> int | None:
+        return self._value
+
+    value = property(_getvalue, None)  # Don't allow the value to be set elsewhere

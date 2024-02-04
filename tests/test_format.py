@@ -74,9 +74,9 @@ class Creation(unittest.TestCase):
         b = Bits('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
         f.parse(b)
         t = f['header']
-        self.assertEqual(t['width'].value(), 100)
-        self.assertEqual(f['header']['width'].value(), 100)
-        self.assertEqual(f['main']['v2'].value(), -99)
+        self.assertEqual(t['width'].value, 100)
+        self.assertEqual(f['header']['width'].value, 100)
+        self.assertEqual(f['main']['v2'].value, -99)
 
 class Addition(unittest.TestCase):
 
@@ -86,9 +86,9 @@ class Addition(unittest.TestCase):
         self.assertEqual(f.bytes(), b'\xff')
         f += 'i9<penguin> =-8'
         x = f['penguin']
-        self.assertEqual(x.value(), -8)
-        # f['penguin'].value += 6  # TODO: Allow this again?
-        # self.assertEqual(f['penguin'].value(), -2)
+        self.assertEqual(x.value, -8)
+        f['penguin'].value += 6
+        self.assertEqual(f['penguin'].value, -2)
 
 
 class ArrayTests(unittest.TestCase):
@@ -101,7 +101,7 @@ class ArrayTests(unittest.TestCase):
 
         f2 = Format(['u8*20 <new_array>'], 'b')
         self.assertEqual(f2.fieldtypes[0].items, 20)
-        self.assertEqual(f2.fieldtypes[0].value(), None)
+        self.assertEqual(f2.fieldtypes[0].value, None)
         f2['new_array'] = a
         self.assertEqual(a, f2.bits())
 
@@ -133,18 +133,18 @@ class Methods(unittest.TestCase):
 
     def testGetItem(self):
         f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
-        self.assertEqual(f[0].value(), 7)
-        self.assertEqual(f[1].value(), None)
-        self.assertEqual(f['pop'].value(), 144)
+        self.assertEqual(f[0].value, 7)
+        self.assertEqual(f[1].value, None)
+        self.assertEqual(f['pop'].value, 144)
 
     def testSetItem(self):
         f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
         f[0] = 2
-        self.assertEqual(f[0].value(), 2)
+        self.assertEqual(f[0].value, 2)
         f[0] = None
-        self.assertEqual(f[0].value(), None)
+        self.assertEqual(f[0].value, None)
         f['pop'] = 999999
-        self.assertEqual(f['pop'].value(), 999999)
+        self.assertEqual(f['pop'].value, 999999)
 
 
 class Repeater(unittest.TestCase):
@@ -154,7 +154,7 @@ class Repeater(unittest.TestCase):
                 Repeat(5, 'u8')
         ])
         f.parse(Array('u8', [1, 5, 9, 7, 6]).data)
-        self.assertEqual(f.value(), [[1, 5, 9, 7, 6]])
+        self.assertEqual(f.value, [[1, 5, 9, 7, 6]])
 
 
 class Finder(unittest.TestCase):
