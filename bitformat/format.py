@@ -52,7 +52,7 @@ class FieldType(abc.ABC):
     def parse(self, b: Bits) -> int:
         ...
     @abc.abstractmethod
-    def build(self, values: List[Any]) -> Bits:
+    def build(self, values: List[Any] = []) -> Bits:
         ...
 
     @abc.abstractmethod
@@ -83,8 +83,6 @@ class FieldType(abc.ABC):
     def _setvalue(self, value: Any) -> None:
         ...
 
-
-
     def __str__(self) -> str:
         return self._str(0)
 
@@ -103,12 +101,13 @@ class FieldType(abc.ABC):
 
 
 
+
 class Field(FieldType):
-    def __init__(self, dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: str | int = 1):
+    def __init__(self, dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: str | int = 1, const: bool | None = None) -> None:
         self._bits = None
 
         if isinstance(dtype, str):
-            d, n, v, i = Field._parse_dtype_str(dtype)
+            d, n, v, i, c = Field._parse_dtype_str(dtype)
             if n is not None:
                 if name != '':
                     raise ValueError(
@@ -126,6 +125,11 @@ class Field(FieldType):
                     raise ValueError(f"An multiplier was supplied in the formatted dtype '{dtype}' as well as in the items parameter.")
                 else:
                     items = i
+            if c is not None:
+                if const is not None and c is not const:
+                    raise ValueError(f"A const value was supplied that conflicts with the formatted dtype '{dtype}'.")
+                else:
+                    const = c
             dtype = d
             # Try to convert to Bits type first
             try:
@@ -150,11 +154,15 @@ class Field(FieldType):
         self.items = items
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
+        if const is None:
+            self.const = value is not None
+        else:
+            self.const = const
         self.value = value
 
 
     def parse(self, b: Bits) -> int:
-        if self._bits is not None:
+        if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
@@ -166,7 +174,7 @@ class Field(FieldType):
             self._setvalue(b[:self.dtype.bitlength * self.items])
             return self.dtype.bitlength * self.items
 
-    def build(self, values: List[Any]) -> Bits:
+    def build(self, values: List[Any] = []) -> Bits:
         if self._bits is None:
             if len(values) < self.items:
                 raise ValueError(f"Need {self.items} items to build the Field, but was supplied with '{values}'.")
@@ -182,14 +190,14 @@ class Field(FieldType):
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
-        if self.dtype.name != 'bits':
+        if not self.const:
             self._setvalue(None)
 
     def flatten(self) -> List[FieldType]:
         return [self]
 
     @staticmethod
-    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int]:
+    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int, bool | None]:
         # The string has the form 'dtype [* items] [<name>] [= value]'
         # But there may be chars inside {} sections that should be ignored.
         # So we scan to find first real *, <, > and =
@@ -197,6 +205,7 @@ class Field(FieldType):
         lessthan_pos = -1
         greaterthan_pos = -1
         equals_pos = -1
+        colon_pos = -1
         inside_braces = False
         for pos, char in enumerate(dtype_str):
             if char == '{':
@@ -224,14 +233,27 @@ class Field(FieldType):
             if char == '=':
                 if equals_pos != -1:
                     raise ValueError(f"More than one '=' found in '{dtype_str}'.")
+                if colon_pos != -1:
+                    raise ValueError(f"An '=' found in '{dtype_str}' as well as a ':'.")
                 equals_pos = pos
+            if char == ':':
+                if colon_pos != -1:
+                    raise ValueError(f"More than one ':' found in '{dtype_str}'.")
+                if equals_pos != -1:
+                    raise ValueError(f"A ':' found in '{dtype_str}' as well as an '='.")
+                colon_pos = pos
 
-        name = value = None
+        name = value = const = None
         items = 1
         # Check to see if it includes a value:
         if equals_pos != -1:
             value = dtype_str[equals_pos + 1:]
             dtype_str = dtype_str[:equals_pos]
+            const = True
+        if colon_pos != -1:
+            value = dtype_str[colon_pos + 1:]
+            dtype_str = dtype_str[:colon_pos]
+            const = False
         # Check if it has a name:
         if lessthan_pos != -1:
             if greaterthan_pos == -1:
@@ -246,7 +268,7 @@ class Field(FieldType):
         if asterix_pos != -1:
             items = dtype_str[asterix_pos + 1:]
             dtype_str = dtype_str[:asterix_pos]
-        return dtype_str, name, value, items
+        return dtype_str, name, value, items, const
 
     def _getvalue(self) -> Any:
         if self.items == 1:
@@ -282,10 +304,11 @@ class Field(FieldType):
         d = f"{colour.purple}{self.dtype}{colour.off}"
         i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
         n = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
+        divider = '=' if self.const else ':'
         if isinstance(self.value, Array):
-            v = f" = {colour.cyan}{self.value.tolist()}{colour.off}"
+            v = f" {divider} {colour.cyan}{self.value.tolist()}{colour.off}"
         else:
-            v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
+            v = '' if self.value is None else f" {divider} {colour.cyan}{self.value}{colour.off}"
         indent_str = ' ' * indent_size * indent
         return f"{indent_str}'{d}{i}{n}{v}'"
 
@@ -310,7 +333,7 @@ class FieldListType(FieldType):
     def __init__(self):
         self.fieldtypes = []
 
-    def build(self, values: List[Any]) -> Bits:
+    def build(self, values: List[Any] = []) -> Bits:
         for fieldtype in self.fieldtypes:
             fieldtype.build(values)
         return self.bits()
@@ -359,11 +382,11 @@ class FieldListType(FieldType):
 
     def __setitem__(self, key, value) -> None:
         if isinstance(key, int):
-            self.fieldtypes[key]._value = value  # TODO: Value access
+            self.fieldtypes[key].value = value
             return
         for fieldtype in self.fieldtypes:
             if fieldtype.name == key:
-                fieldtype._setvalue(value)  # TODO: not all fields have a _setitem
+                fieldtype.value = value
                 return
         raise KeyError(key)
 
@@ -444,21 +467,22 @@ class Repeat(FieldListType):
 class Find(FieldType):
 
     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
-        self.bits = Bits(bits)
+        super().__init__()
+        self.bits_to_find = Bits(bits)
         self.bytealigned = bytealigned
         self.name = name
 
-    def build(self, values: List[Any]) -> Bits:
+    def build(self, values: List[Any] = []) -> Bits:
         return Bits()
 
     def bits(self) -> Bits:
         return Bits()
 
     def clear(self) -> None:
-        pass  # TODO: set value to None?
+        self._setvalue(None)
 
     def parse(self, b: Bits):
-        p = b.find(self.bits, bytealigned=self.bytealigned)
+        p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
         if p:
             self._setvalue(p[0])
             return p[0]
@@ -471,7 +495,7 @@ class Find(FieldType):
     def _str(self, indent: int) -> str:
         indent_str = ' ' * indent_size * indent
         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-        find_str = f"'{colour.green}{str(self.bits)}{colour.off}'"
+        find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
         s = f"{indent_str}{self.__class__.__name__}({name_str}{find_str})"
         return s
 

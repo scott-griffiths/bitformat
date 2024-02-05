@@ -126,7 +126,8 @@ class ArrayTests(unittest.TestCase):
 class Methods(unittest.TestCase):
 
     def testClear(self):
-        f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
+        f = Format(['0x000001b3', 'u12', 'u12 <height>', 'bool <flag>'], 'header')
+        f['height'].value = 288
         f.clear()
         g = Format(['0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
         self.assertEqual(f, g)
@@ -168,4 +169,7 @@ class Finder(unittest.TestCase):
                 'u12 <height>'
             ])
         f.parse(b)
-        print(f)
+        self.assertEqual(f['width'].value, 352)
+        f.clear()
+        self.assertEqual(f['width'].value, None)
+        f.build([352, 288])

@@ -60,3 +60,14 @@ class Creation(unittest.TestCase):
         self.assertEqual(f.value, b'hello world!')
         self.assertEqual(f.name, 'hello')
         self.assertEqual(f.dtype, Dtype('bytes'))
+
+    def testStringCreationWithConst(self):
+        f1 = Field('u1 <f1> : 1')
+        f2 = Field('u1 <f2> = 1')
+        self.assertEqual(f1, f2)
+        self.assertTrue(f2.const)
+        self.assertFalse(f1.const)
+        f1.clear()
+        f2.clear()
+        self.assertEqual(f1.build([0]), '0b0')
+        self.assertEqual(f2.build(), '0b1')
