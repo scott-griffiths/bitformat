@@ -93,8 +93,12 @@ class FieldType(abc.ABC):
         return self._name
 
     def _set_name(self, val: str) -> None:
-        if val != '' and not val.isidentifier():
-            raise ValueError(f"The FieldType name '{val}' is not a valid Python identifier.")
+        if val != '':
+            if not val.isidentifier():
+                raise ValueError(f"The FieldType name '{val}' is not a valid Python identifier.")
+            if '__' in val:
+                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
+
         self._name = val
 
     name = property(_get_name, _set_name)
