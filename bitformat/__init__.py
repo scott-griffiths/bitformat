@@ -27,13 +27,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.0.2"
 
 __author__ = "Scott Griffiths"
 
 
 from bitstring import Bits, Dtype, Array
-from .format import Format, Field, Repeat, Find
+from .field import Field, Find
+from .format import Format, Repeat
 
 
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'Repeat', 'Find']

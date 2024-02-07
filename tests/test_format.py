@@ -4,7 +4,7 @@ from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find
 import bitformat
 
 def setUpModule():
-    bitformat.format.colour = bitformat.format.Colour(False)
+    bitformat.common.colour = bitformat.common.Colour(False)
 
 class Creation(unittest.TestCase):
 
@@ -111,7 +111,7 @@ class ArrayTests(unittest.TestCase):
                    Field('bytes', 'signature', b'BMP'),
                    'i8 <width>',
                    'i8 <height>',
-                   'u8 * 6 <pixels>',
+                   'u8 * {width * height} <pixels>',
                    ], 'construct_example')
         b = f.build([3, 2, [7, 8, 9, 11, 12, 13]])
         v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'

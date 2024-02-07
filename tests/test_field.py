@@ -4,7 +4,7 @@ import bitformat
 
 
 def setUpModule():
-    bitformat.format.colour = bitformat.format.Colour(False)
+    bitformat.common.colour = bitformat.common.Colour(False)
 
 class Creation(unittest.TestCase):
     def testCreationFromDtype(self):
