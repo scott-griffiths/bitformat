@@ -233,10 +233,10 @@ These are often most convenient when used in field-strings, for example::
     f = Format(['hex8 <sync_byte> = 0xff',
                 'u16 <items>',
                 'bool * {items + 1} <flags>',
-                Repeat('{items + 1}', [
+                Repeat('{items + 1}', Format([
                        'u4 <byte_cluster_size>',
                        'bytes{byte_cluster_size}'
-                       ], 'clusters'),
+                       ]), 'clusters'),
                 'u8 = {clusters[0][0] << 4}'
                 ])
 

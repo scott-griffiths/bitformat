@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from bitstring import Bits, Dtype, Array
 from typing import Sequence, Any, Iterable, Tuple, List, Dict
-from types import CodeType
 import copy
 import ast
 import abc
+import sys
 
 
 class Colour:
@@ -22,38 +22,60 @@ class Colour:
             cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ''
         return x
 
-colour = Colour(True)
+is_interactive_shell = hasattr(sys, 'ps1')
+colour = Colour(is_interactive_shell)
 indent_size = 4
 
 
-def _compile_safe_eval(s: str) -> CodeType:
-    start = s.find('{')
-    end = s.find('}')
-    if start == -1 or end == -1:
-        raise ValueError(f'Invalid expression: {s}. It should start and end with braces.')
-    s = s[start + 1:end].strip()
-    # Only allowing operations for integer maths or boolean comparisons.
-    node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
-                      'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
-                      'RShift',
-                      'Eq', 'NotEq', 'Compare', 'LtE', 'GtE'}
-    nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(s))])
-    bad_nodes = nodes_used - node_whitelist
-    if bad_nodes:
-        raise ValueError(f"Disallowed operations used in expression '{s}'. Disallowed nodes were: {bad_nodes}.")
-    if '__' in s:
-        raise ValueError(f"Invalid expression: '{s}'. Double underscores are not permitted.")
-    code = compile(s, "<string>", "eval")
-    return code
+class Expression:
+    def __init__(self, code_str: str):
+        code_str = code_str.strip()
+        if code_str[0] != '{' or code_str[-1] != '}':
+            raise ValueError(f"Invalid expression: '{code_str}'. It should start with '{{' and end with '}}'.")
+        self.code_str = code_str[1:-1].strip()
+        self.code = self.compile_safe_eval()
+        self.value = None
+
+    def compile_safe_eval(self):
+        # Only allowing operations for integer maths or boolean comparisons.
+        node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
+                          'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
+                          'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE'}
+        nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
+        bad_nodes = nodes_used - node_whitelist
+        if bad_nodes:
+            raise ValueError(f"Disallowed operations used in expression '{self.code_str}'. Disallowed nodes were: {bad_nodes}.")
+        if '__' in self.code_str:
+            raise ValueError(f"Invalid expression: '{self.code_str}'. Double underscores are not permitted.")
+        code = compile(self.code_str, "<string>", "eval")
+        return code
+
+    def safe_eval(self, vars_: Dict[str, Any]) -> Any:
+        self.value = eval(self.code, {"__builtins__": {}}, vars_)
+        return self.value
+
+    def clear(self):
+        self.value = None
+
+    def __str__(self):
+        value_str = '' if self.value is None else f' = {self.value}'
+        return f'{{{self.code_str}{value_str}}}'
 
 
 class FieldType(abc.ABC):
     @abc.abstractmethod
+    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+        ...
+
     def parse(self, b: Bits) -> int:
-        ...
+        return self._parse(b, {})
+
     @abc.abstractmethod
-    def build(self, values: List[Any] = []) -> Bits:
+    def _build(self, values: List[Any], vars_: Dict[str, Any]) -> Bits:
         ...
+
+    def build(self, values: List[Any] = []) -> Bits:
+        return self._build(values, {})
 
     @abc.abstractmethod
     def bits(self) -> Bits:
@@ -89,6 +111,9 @@ class FieldType(abc.ABC):
     def __repr__(self) -> str:
         return self.__str__()
 
+    def __eq__(self, other):
+        return self.flatten() == other.flatten()
+
     def _get_name(self) -> str:
         return self._name
 
@@ -104,12 +129,9 @@ class FieldType(abc.ABC):
     name = property(_get_name, _set_name)
 
 
-
-
 class Field(FieldType):
     def __init__(self, dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: str | int = 1, const: bool | None = None) -> None:
         self._bits = None
-
         if isinstance(dtype, str):
             d, n, v, i, c = Field._parse_dtype_str(dtype)
             if n is not None:
@@ -154,8 +176,12 @@ class Field(FieldType):
         else:
             raise ValueError(f"Can't use '{dtype}' of type '{type(dtype)} to initialise Field.")
         self.name = name
-        items = int(items)
-        self.items = items
+        try:
+            self.items = int(items)
+            self.items_expression = None
+        except ValueError:
+            self.items_expression = Expression(items)
+            self.items = None
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if const is None:
@@ -164,30 +190,32 @@ class Field(FieldType):
             self.const = const
         self.value = value
 
-
-    def parse(self, b: Bits) -> int:
+    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
+        if self.items_expression is not None:
+            self.items = self.items_expression.safe_eval(vars_)
         if self.items == 1:
-            self._value = self.dtype.get_fn(b[:self.dtype.bitlength])
+            self._setvalue(self.dtype.get_fn(b[:self.dtype.bitlength]))
+            if self.name != '':
+                vars_[self.name] = self.value
             return self.dtype.bitlength
         else:
             self._setvalue(b[:self.dtype.bitlength * self.items])
             return self.dtype.bitlength * self.items
 
-    def build(self, values: List[Any] = []) -> Bits:
-        if self._bits is None:
-            if len(values) < self.items:
-                raise ValueError(f"Need {self.items} items to build the Field, but was supplied with '{values}'.")
-            if self.items == 1:
-                self._setvalue(values[0])
-                values.pop(0)
-            else:
-                self._setvalue(values[0:self.items])
-                del values[0:self.items]
+    def _build(self, values: List[Any], vars_: Dict[str, Any]) -> Bits:
+        if self.const or self._bits:
+            return self._bits
+        if self.items_expression is not None:
+            self.items = self.items_expression.safe_eval(vars_)
+        self._setvalue(values[0])
+        if self.name != '':
+            vars_[self.name] = self.value
+        values.pop(0)
         return self._bits
 
     def bits(self) -> Bits:
@@ -196,6 +224,9 @@ class Field(FieldType):
     def clear(self) -> None:
         if not self.const:
             self._setvalue(None)
+        if self.items_expression is not None:
+            self.items_expression.clear()
+            self.items = None
 
     def flatten(self) -> List[FieldType]:
         return [self]
@@ -306,7 +337,11 @@ class Field(FieldType):
 
     def _str(self, indent: int) -> str:
         d = f"{colour.purple}{self.dtype}{colour.off}"
-        i = '' if self.items == 1 else f" * {colour.purple}{self.items}{colour.off}"
+        if self.items_expression is not None:
+            item_str = self.items_expression
+        else:
+            item_str = '' if self.items == 1 else str(self.items)
+        i = '' if item_str == '' else f" * {colour.purple}{item_str}{colour.off}"
         n = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
         divider = '=' if self.const else ':'
         if isinstance(self.value, Array):
@@ -334,26 +369,23 @@ class Field(FieldType):
 
 class FieldListType(FieldType):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.fieldtypes = []
 
-    def build(self, values: List[Any] = []) -> Bits:
+    def _build(self, values: List[Any] = [], _vars={}) -> Bits:
         for fieldtype in self.fieldtypes:
-            fieldtype.build(values)
+            fieldtype._build(values, _vars)
         return self.bits()
 
-    def parse(self, b: Bits):
+    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         pos = 0
         for fieldtype in self.fieldtypes:
-            pos += fieldtype.parse(b[pos:])
+            pos += fieldtype._parse(b[pos:], vars_)
         return pos
 
     def clear(self) -> None:
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
-
-    def __eq__(self, other):
-        return self.flatten() == other.flatten()
 
     def _getvalue(self) -> List[Any]:
         return [f.value for f in self.fieldtypes]
@@ -436,10 +468,6 @@ class Format(FieldListType):
     def append(self, value: Any) -> None:
         self.__iadd__(value)
 
-    @staticmethod
-    def _safe_eval(code: CodeType, vars_: Dict) -> Any:
-        return eval(code, {"__builtins__": {}}, vars_)
-
 
 class Repeat(FieldListType):
 
@@ -476,7 +504,7 @@ class Find(FieldType):
         self.bytealigned = bytealigned
         self.name = name
 
-    def build(self, values: List[Any] = []) -> Bits:
+    def _build(self, values: List[Any] = [], _vars={}) -> Bits:
         return Bits()
 
     def bits(self) -> Bits:
@@ -485,7 +513,7 @@ class Find(FieldType):
     def clear(self) -> None:
         self._setvalue(None)
 
-    def parse(self, b: Bits):
+    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
         if p:
             self._setvalue(p[0])

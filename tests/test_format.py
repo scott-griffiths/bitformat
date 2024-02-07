@@ -97,7 +97,7 @@ class ArrayTests(unittest.TestCase):
         array_field = Field('u8', 'my_array', items=20)
         f = Format([array_field], 'a')
         self.assertEqual(f.fieldtypes[0].items, 20)
-        a = f.build([*range(20)])
+        a = f.build([[*range(20)]])
 
         f2 = Format(['u8*20 <new_array>'], 'b')
         self.assertEqual(f2.fieldtypes[0].items, 20)
@@ -106,21 +106,49 @@ class ArrayTests(unittest.TestCase):
         self.assertEqual(a, f2.bits())
 
 
-    # def testExampleWithArray(self):
-    #     f = Format('construct_example', [
-    #                Field('bytes', 'signature', b'BMP'),
-    #                'i8 <width>',
-    #                'i8 <height>',
-    #                'u8 * {width * height} <pixels>',
-    #                ])
-    #     b = f.build(3, 2, [7, 8, 9, 11, 12, 13])
-    #     v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
-    #     self.assertEqual(b.tobytes(), v)
-    #     f.parse(Bits(v))
-    #     self.assertEqual(f['width'], 3)
-    #     self.assertEqual(f['height'], 2)
-    #     self.assertEqual(f['pixels'],[7, 8, 9, 11, 12, 13])
-    #     # self.assertEqual(type(f['pixels']), list)
+    def testExampleWithArray(self):
+        f = Format([
+                   Field('bytes', 'signature', b'BMP'),
+                   'i8 <width>',
+                   'i8 <height>',
+                   'u8 * 6 <pixels>',
+                   ], 'construct_example')
+        b = f.build([3, 2, [7, 8, 9, 11, 12, 13]])
+        v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
+        self.assertEqual(b.tobytes(), v)
+        f.parse(Bits(v))
+        self.assertEqual(f['width'].value, 3)
+        self.assertEqual(f['height'].value, 2)
+        self.assertEqual(f['pixels'].value,[7, 8, 9, 11, 12, 13])
+        # self.assertEqual(type(f['pixels'].value), list)
+
+
+class Expressions(unittest.TestCase):
+
+    # def testExampleFromDocs(self):
+    #     f = Format(['hex8 <sync_byte> = 0xff',
+    #                 'u16 <items>',
+    #                 'bool * {items + 1} <flags>',
+    #                 Repeat('{items + 1}', Format([
+    #                     'u4 <byte_cluster_size>',
+    #                     'bytes{byte_cluster_size}'
+    #                 ]), 'clusters'),
+    #                 'u8 = {clusters[0][0] << 4}'
+    #                 ])
+
+    def testItems(self):
+        f = Format(['i5 <q>', 'u3 * {q + 1}'])
+        b = Bits('i5=1, u3=2, u3=0')
+        print(f)
+        f.parse(b)
+        self.assertEqual(f[0].value, 1)
+        self.assertEqual(f[1].value, [2, 0])
+        f.clear()
+        b2 = f.build([1, [2, 0]])
+        self.assertEqual(b2, b)
+        f.clear()
+        b3 = f.build([3, [1, 2, 3, 4]])
+        self.assertEqual(b3, Bits('i5=3, u3=1, u3=2, u3=3, u3=4'))
 
 
 class Methods(unittest.TestCase):
