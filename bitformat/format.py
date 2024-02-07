@@ -71,11 +71,11 @@ class FieldType(abc.ABC):
         return self._parse(b, {})
 
     @abc.abstractmethod
-    def _build(self, values: List[Any], vars_: Dict[str, Any]) -> Bits:
+    def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
         ...
 
-    def build(self, values: List[Any] = []) -> Bits:
-        return self._build(values, {})
+    def build(self, values: List[Any]) -> Bits:
+        return self._build(values, 0, {})[0]
 
     @abc.abstractmethod
     def bits(self) -> Bits:
@@ -207,16 +207,15 @@ class Field(FieldType):
             self._setvalue(b[:self.dtype.bitlength * self.items])
             return self.dtype.bitlength * self.items
 
-    def _build(self, values: List[Any], vars_: Dict[str, Any]) -> Bits:
+    def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
         if self.const or self._bits:
-            return self._bits
+            return self._bits, 0
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        self._setvalue(values[0])
+        self._setvalue(values[index])
         if self.name != '':
             vars_[self.name] = self.value
-        values.pop(0)
-        return self._bits
+        return self._bits, 1
 
     def bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -372,10 +371,12 @@ class FieldListType(FieldType):
     def __init__(self) -> None:
         self.fieldtypes = []
 
-    def _build(self, values: List[Any] = [], _vars={}) -> Bits:
+    def _build(self, values: List[Any], index: int, _vars={}) -> Tuple[Bits, int]:
+        values_used = 0
         for fieldtype in self.fieldtypes:
-            fieldtype._build(values, _vars)
-        return self.bits()
+            _, v = fieldtype._build(values, index + values_used, _vars)
+            values_used += v
+        return self.bits(), values_used
 
     def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         pos = 0
@@ -504,8 +505,8 @@ class Find(FieldType):
         self.bytealigned = bytealigned
         self.name = name
 
-    def _build(self, values: List[Any] = [], _vars={}) -> Bits:
-        return Bits()
+    def _build(self, values: List[Any], index: int, _vars: Dict[str, Any]) -> Tuple[Bits, int]:
+        return Bits(), 0
 
     def bits(self) -> Bits:
         return Bits()

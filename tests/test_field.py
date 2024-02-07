@@ -70,4 +70,4 @@ class Creation(unittest.TestCase):
         f1.clear()
         f2.clear()
         self.assertEqual(f1.build([0]), '0b0')
-        self.assertEqual(f2.build(), '0b1')
+        self.assertEqual(f2.build([]), '0b1')
