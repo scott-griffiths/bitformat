@@ -73,51 +73,14 @@ class FieldType(abc.ABC):
 
 
 class Field(FieldType):
-    def __init__(self, dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: str | int = 1, const: bool | None = None) -> None:
+    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, items: str | int = 1, const: bool | None = None) -> None:
         self._bits = None
-        if isinstance(dtype, str):
-            d, n, v, i, c = Field._parse_dtype_str(dtype)
-            if n != '':
-                if name != '':
-                    raise ValueError(
-                        f"A name was supplied in the formatted dtype '{dtype}' as well as in the name parameter.")
-                else:
-                    name = n
-            if v is not None:
-                if value is not None:
-                    raise ValueError(
-                        f"A value was supplied in the formatted dtype '{dtype}' as well as in the value parameter.")
-                else:
-                    value = v
-            if i != 1:
-                if items != 1:
-                    raise ValueError(f"An multiplier was supplied in the formatted dtype '{dtype}' as well as in the items parameter.")
-                else:
-                    items = i
-            if c is not None:
-                if const is not None and c is not const:
-                    raise ValueError(f"A const value was supplied that conflicts with the formatted dtype '{dtype}'.")
-                else:
-                    const = c
-            dtype = d
-            # Try to convert to Bits type first
+        self.dtype = dtype
+        if isinstance(self.dtype, str):
             try:
-                self._bits = Bits(dtype)
+                self.dtype = Dtype(dtype)
             except ValueError:
-                try:
-                    self.dtype = Dtype(dtype)
-                except ValueError:
-                    raise ValueError(f"Can't convert '{dtype}' to either a Bits or a Dtype.")
-            else:
-                self.dtype = Dtype('bits', len(self._bits))
-                value = self._bits
-        elif isinstance(dtype, Bits):
-            self.dtype = Dtype('bits', len(dtype))
-            value = dtype
-        elif isinstance(dtype, Dtype):
-            self.dtype = dtype
-        else:
-            raise ValueError(f"Can't use '{dtype}' of type '{type(dtype)} to initialise Field.")
+                raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
         try:
             self.items = int(items)
@@ -134,8 +97,8 @@ class Field(FieldType):
         self.value = value
 
     @classmethod
-    def fromstring(cls, s: str):
-        dtype, name, value, items, const = Field._parse_dtype_str(s)
+    def fromstring(cls, s: str, /):
+        dtype, name, value, items, const = Field._parse_field_str(s)
         try:
             dtype = Dtype(dtype)
         except ValueError:
@@ -144,8 +107,8 @@ class Field(FieldType):
         return cls(dtype, name, value, items, const)
 
     @classmethod
-    def frombits(cls, b: Bits, name: str = ''):
-        b = Bits(b)
+    def frombits(cls, bits: Bits | str | bytes | bytearray, name: str = ''):
+        b = Bits(bits)
         return cls(Dtype('bits'), name, b)
 
     def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
@@ -189,7 +152,7 @@ class Field(FieldType):
         return [self]
 
     @staticmethod
-    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str, int, bool | None]:
+    def _parse_field_str(dtype_str: str) -> Tuple[str, str | None, str, int, bool | None]:
         # The string has the form 'dtype [* items] [<name>] [= value]'
         # But there may be chars inside {} sections that should be ignored.
         # So we scan to find first real *, <, > and =

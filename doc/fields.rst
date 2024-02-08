@@ -62,20 +62,13 @@ Field
 
 A `Field` is the fundamental building block in `bitformat`.
 
-.. class:: Field(dtype: Dtype | Bits | str, name: str = '', value: Any = None, items: int | str = 1, const: bool | None = None)
+.. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, items: int | str = 1, const: bool | None = None)
 
     A `Field` has a data type (`dtype`) that describes how to interpret binary data and optionally a `name` and a concrete `value` for the `dtype`.
 
     ``dtype``: The data type can be:
         * A `Dtype` object (e.g. ``Dtype('float', 16)``).
         * A string that can be used to construct a `Dtype` (e.g. ``'float16'``).
-        * A string that can be used to construct a `Dtype` with a value (e.g. ``'uint12=105'``)
-
-        For convenience you can also give either a `Bits` object (e.g. ``Bits('0x47')``), or a string that can be used to construct a `Bits` object (e.g. ``'0x47'``).
-        This will will cause the `dtype` to be set to ``Dtype('bits')`` and the `value` to be set to the `Bits` object.
-        Setting a bit literal in this way will cause the `const` parameter to default to `True`.
-
-        The `dtype` can also be conveniently used as a string to set the `name`, `value`, `items` and `const` parameters - see :ref:`Field strings` below.
 
     ``name``: An optional string used to identify the `Field`.
     It must either be a valid Python identifier (a string that could be used as a variable name) or the empty string ``''``.
@@ -90,13 +83,23 @@ A `Field` is the fundamental building block in `bitformat`.
     You can declare that a field is a constant bit literal by setting `const` to `True` - this means that it won't need its value set when building, and will require its value present when parsing.
     You cannot set `const` to `True` when creating a field unless you also provide a value.
 
+    .. classmethod:: frombits(bits: Bits | str | bytes | bytearray) -> Field
+
+        For convenience you can also construct either a `Bits` object, a ``bytes`` or ``bytearray``, or a string that can be used to construct a `Bits` object (e.g. ``'0x47'``).
+        This will will cause the `dtype` to be set to ``Dtype('bits')`` and the `value` to be set to the `Bits` object.
+        Setting a bit literal in this way will cause the `const` parameter to default to `True`.
+
+    .. classmethod:: fromstring(s: str, /)
+
+        Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value`, `items` and `const` parameters - see :ref:`Field strings` below.
+
 
 .. _Field strings:
 
 Field strings
 ^^^^^^^^^^^^^
 
-As a shortcut the `dtype` parameter can usually be used to specify the whole field.
+As a shortcut the a single string can usually be used to specify the whole field.
 To do this it should be a string of the format::
 
     "dtype [* items] [<name>] [= value]"
@@ -104,10 +107,10 @@ To do this it should be a string of the format::
 You can also use ``:`` instead of ``=`` before the value, which will mean that the `Field` has a value but is not set as `const`.
 This isn't usually what you want when setting a `Field` - non-const values are usually present after a bitstring has been parsed.
 
-For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say just ``Field('uint12 <width> = 100')``.
+For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.fromstring('uint12 <width> = 100')``.
 The whitespace between the elements is optional.
 
-An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field('bits32 <sequence_header> = 0x000001b3')``.
+An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.fromstring('bits32 <sequence_header> = 0x000001b3')``.
 
 This becomes more useful when the field is part of a larger structure, and the string can be used on its own to specify the field, for example::
 
@@ -128,7 +131,7 @@ Format
 A `Format` can be considered as a list of `FieldType` objects.
 In its simplest form is could just be a flat list of ``Field`` objects, but it can also contain other ``Format`` objects and the other types described in this section.
 
-.. class:: Format(fieldtypes: Sequence[FieldType | Bits | Dtype | str] | None = None, name: str = '')
+.. class:: Format(fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
 
 
 Repeat
@@ -136,7 +139,7 @@ Repeat
 
 A `Repeat` field simply repeats another field a given number of times.
 
-.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | Bits | Dtype | str] | None = None, name: str = '')
+.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | str] | None = None, name: str = '')
 
 The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
 The `name` parameter is used to give the index a name that can be referenced elsewhere.
@@ -175,7 +178,7 @@ Note that the value will always be in bits, not bytes and that `None` will be re
 Condition
 ---------
 
-.. class:: Condition(cond: lambda, fieldtype: [FieldType | Bits | Dtype | str] | None = None, name: str = '')
+.. class:: Condition(cond: lambda, fieldtype: [FieldType | str] | None = None, name: str = '')
 
 
 

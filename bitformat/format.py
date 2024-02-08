@@ -73,7 +73,7 @@ class FieldListType(FieldType):
 
 class Format(FieldListType):
 
-    def __init__(self, fieldtypes: Sequence[FieldType | str | Dtype | Bits] | None = None, name: str = '') -> None:
+    def __init__(self, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> None:
         super().__init__()
         if fieldtypes is None:
             fieldtypes = []
@@ -82,10 +82,6 @@ class Format(FieldListType):
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
                 fieldtype = Field.fromstring(fieldtype)
-            elif isinstance(fieldtype, Bits):
-                fieldtype = Field.frombits(fieldtype)
-            elif isinstance(fieldtype, Dtype):
-                fieldtype = Field(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
@@ -126,10 +122,6 @@ class Repeat(FieldListType):
         self.name = name
         if isinstance(fieldtype, str):
             fieldtype = Field.fromstring(fieldtype)
-        elif isinstance(fieldtype, Bits):
-            fieldtype = Field.frombits(fieldtype)
-        elif isinstance(fieldtype, Dtype):
-            fieldtype = Field(fieldtype)
         if not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
         for _ in count:

@@ -40,19 +40,19 @@ class Creation(unittest.TestCase):
 
     def testCreateFromBits(self):
         b = Bits('0xabc')
-        f = Format([Field(b)])
+        f = Format([Field.frombits(b)])
         x = f.build([])
         self.assertEqual(f.name, '')
         self.assertEqual(x, '0xabc')
         self.assertTrue(isinstance(x, Bits))
 
     def testCreateFromBitsWithName(self):
-        f = Format([Field('0xabc', 'some_bits')])
+        f = Format([Field.frombits('0xabc', 'some_bits')])
         x = f.build([])
         self.assertTrue(x, '0xabc')
 
     def testCreateFromList(self):
-        f = Format([Bits('0xabc'), Dtype('u5'), Dtype('u5')])
+        f = Format(['0xabc', 'u5', 'u5'])
         x = f.build([3, 10])
         self.assertEqual(x, '0xabc, u5=3, u5=10')
         f.parse(x)
@@ -82,9 +82,9 @@ class Addition(unittest.TestCase):
 
     def testAddingBits(self):
         f = Format()
-        f += '0xff'
+        f += Field.frombits('0xff')
         self.assertEqual(f.bytes(), b'\xff')
-        f += 'i9<penguin> =-8'
+        f += Field.fromstring('i9<penguin> =-8')
         x = f['penguin']
         self.assertEqual(x.value, -8)
         f['penguin'].value += 6

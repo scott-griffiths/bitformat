@@ -37,7 +37,7 @@ class Creation(unittest.TestCase):
         for name in good:
             f = Field('u8', name)
             self.assertEqual(f.name, name)
-            f2 = Field(f'u8<{name}>')
+            f2 = Field.fromstring(f'u8<{name}>')
             self.assertEqual(f2.name, name)
 
         for name in bad:
@@ -49,11 +49,11 @@ class Creation(unittest.TestCase):
                 _ = Field(f'u8 <{n}>', n)
 
     def testCreationFromStrings(self):
-        f = Field('bool < flag_12 > ')
+        f = Field.fromstring('bool < flag_12 > ')
         self.assertEqual(f.dtype.name, 'bool')
         self.assertEqual(f.name, 'flag_12')
         self.assertTrue(f.value is None)
-        f = Field('ue = 2')
+        f = Field.fromstring('ue = 2')
         self.assertEqual(f.dtype.name, 'ue')
         self.assertEqual(f.value, 2)
         self.assertEqual(f.bits(), '0b011')
@@ -63,8 +63,8 @@ class Creation(unittest.TestCase):
         self.assertEqual(f.dtype, Dtype('bytes'))
 
     def testStringCreationWithConst(self):
-        f1 = Field('u1 <f1> : 1')
-        f2 = Field('u1 <f2> = 1')
+        f1 = Field.fromstring('u1 <f1> : 1')
+        f2 = Field.fromstring('u1 <f2> = 1')
         self.assertEqual(f1, f2)
         self.assertTrue(f2.const)
         self.assertFalse(f1.const)
