@@ -80,7 +80,11 @@ class Format(FieldListType):
         self.name = name
         self.vars = {}
         for fieldtype in fieldtypes:
-            if isinstance(fieldtype, (str, Dtype, Bits)):
+            if isinstance(fieldtype, str):
+                fieldtype = Field.fromstring(fieldtype)
+            elif isinstance(fieldtype, Bits):
+                fieldtype = Field.frombits(fieldtype)
+            elif isinstance(fieldtype, Dtype):
                 fieldtype = Field(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
@@ -120,7 +124,11 @@ class Repeat(FieldListType):
             count = range(count)
         self.count = count
         self.name = name
-        if isinstance(fieldtype, (str, Dtype, Bits)):
+        if isinstance(fieldtype, str):
+            fieldtype = Field.fromstring(fieldtype)
+        elif isinstance(fieldtype, Bits):
+            fieldtype = Field.frombits(fieldtype)
+        elif isinstance(fieldtype, Dtype):
             fieldtype = Field(fieldtype)
         if not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")

@@ -25,8 +25,9 @@ class Creation(unittest.TestCase):
 
     def testCreationFromBits(self):
         b = Bits('0xf, 0b1')
-        f1 = Field(b)
+        f1 = Field.frombits(b)
         self.assertEqual(f1.bits(), b)
+        self.assertEqual(f1.const, True)
         with self.assertRaises(ValueError):
             _ = Field(Bits())
 

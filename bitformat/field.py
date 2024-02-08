@@ -77,7 +77,7 @@ class Field(FieldType):
         self._bits = None
         if isinstance(dtype, str):
             d, n, v, i, c = Field._parse_dtype_str(dtype)
-            if n is not None:
+            if n != '':
                 if name != '':
                     raise ValueError(
                         f"A name was supplied in the formatted dtype '{dtype}' as well as in the name parameter.")
@@ -133,6 +133,21 @@ class Field(FieldType):
             self.const = const
         self.value = value
 
+    @classmethod
+    def fromstring(cls, s: str):
+        dtype, name, value, items, const = Field._parse_dtype_str(s)
+        try:
+            dtype = Dtype(dtype)
+        except ValueError:
+            bits = Bits(dtype)
+            return cls(Dtype('bits'), name, bits, items, const)
+        return cls(dtype, name, value, items, const)
+
+    @classmethod
+    def frombits(cls, b: Bits, name: str = ''):
+        b = Bits(b)
+        return cls(Dtype('bits'), name, b)
+
     def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
@@ -174,7 +189,7 @@ class Field(FieldType):
         return [self]
 
     @staticmethod
-    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str | None, int, bool | None]:
+    def _parse_dtype_str(dtype_str: str) -> Tuple[str, str | None, str, int, bool | None]:
         # The string has the form 'dtype [* items] [<name>] [= value]'
         # But there may be chars inside {} sections that should be ignored.
         # So we scan to find first real *, <, > and =
@@ -220,7 +235,8 @@ class Field(FieldType):
                     raise ValueError(f"A ':' found in '{dtype_str}' as well as an '='.")
                 colon_pos = pos
 
-        name = value = const = None
+        value = const = None
+        name = ''
         items = 1
         # Check to see if it includes a value:
         if equals_pos != -1:
