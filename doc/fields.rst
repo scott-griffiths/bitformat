@@ -10,6 +10,7 @@ FieldType
 ---------
 
 A ``FieldType`` is an abstract base class for all of the other classes in this section.
+It could represent a single piece of data, it could be a container for other `FieldType` objects or it could represent an action or decision.
 Although you shouldn't need to deal with this type directly it is helpful to take a look at the methods that are common between all of the other types.
 
 
@@ -53,20 +54,22 @@ Although you shouldn't need to deal with this type directly it is helpful to tak
 
       .. property:: name: str
 
-        Every `FieldType` also has a name string, which must be either an empty string or a valid Python identifier.
+        Every `FieldType` has a name string, which must be either an empty string or a valid Python identifier.
         It also must not contain a double underscore (``__``).
+        The name can be used to refer to the contents of the `FieldType` from within another `FieldType`.
 
 
 Field
 -----
 
 A `Field` is the fundamental building block in `bitformat`.
+It represents a well defined amount of binary data with a single data type.
 
 .. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, items: int | str = 1, const: bool | None = None)
 
     A `Field` has a data type (`dtype`) that describes how to interpret binary data and optionally a `name` and a concrete `value` for the `dtype`.
 
-    ``dtype``: The data type can be:
+    ``dtype``: The data type can be either:
         * A `Dtype` object (e.g. ``Dtype('float', 16)``).
         * A string that can be used to construct a `Dtype` (e.g. ``'float16'``).
 
@@ -74,14 +77,13 @@ A `Field` is the fundamental building block in `bitformat`.
     It must either be a valid Python identifier (a string that could be used as a variable name) or the empty string ``''``.
 
     ``value``: A value can be supplied for the ``Dtype`` - this should be something suitable for the type, for example you can't give the value of ``2`` to a ``bool``, or ``123xyz`` to a ``hex`` dtype.
-    Note that if a value has already been given as part of the `dtype` parameter it shouldn't be specified here as well.
     If a `value` is given then the `const` parameter will default to `True`.
 
-    ``items``: An array of items of the same type can be specified by setting `items` to be greater than one.
+    ``items``: An array of items of the same dtype can be specified by setting `items` to be greater than one.
 
-    ``const``: By default fields do not have a single set value - they are deduced by parsing a binary input.
+    ``const``: By default fields do not have a single set value - the value is deduced by parsing a binary input.
     You can declare that a field is a constant bit literal by setting `const` to `True` - this means that it won't need its value set when building, and will require its value present when parsing.
-    You cannot set `const` to `True` when creating a field unless you also provide a value.
+    You can only set `const` to `True` when creating a field if you also provide a value.
 
     .. classmethod:: frombits(bits: Bits | str | bytes | bytearray) -> Field
 
