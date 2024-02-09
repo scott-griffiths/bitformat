@@ -16,7 +16,8 @@
 
 It is intended to complement the [**bitstring**](https://github.com/scott-griffiths/bitstring) module from the same author, and uses its `Dtype`, `Bits` and `Array` classes as the basis for building complex bit formats.
 
-I am planning on a first release later in 2024. If you wish to try it out now then I recommend installing from the main branch on GitHub for now as that will be far ahead of the release on PyPI.
+I am planning on a minimal viable product release by April 2024, with a fuller release later in the year.
+If you wish to try it out now then I recommend installing from the main branch on GitHub as that will be far ahead of the release on PyPI.
 
     pip install git+https://github.com/scott-griffiths/bitformat
 
@@ -30,7 +31,7 @@ Features
   * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from a string. 
   * A `Format` contains a list of other fields. These can be nested to any depth.
   * Fields like `Repeat`, `Find` and `Condition` can be used to add more logical structure.
-* The values of other fields can be used in later calculations via an f-string like expression syntax.
+* The values of other fields can be used in later calculations via an f-string-like expression syntax.
 * Data is always stored efficiently as a contiguous array of bits.
 
 An Example
