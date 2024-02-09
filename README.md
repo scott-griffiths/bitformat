@@ -27,8 +27,8 @@ Features
 --------
 * A bitformat is a specification of a binary format using fields that can say how to build it from supplied values, or how to parse binary data to retrieve those values.
 * A wide array of data types is supported.  Want to use a 13 bit integer or an 8-bit float? Fine - there are no special hoops to jump through.
-* Serveral field types are available:
-  * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from a string. 
+* Several field types are available:
+  * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from just a string. 
   * A `Format` contains a list of other fields. These can be nested to any depth.
   * Fields like `Repeat`, `Find` and `Condition` can be used to add more logical structure.
 * The values of other fields can be used in later calculations via an f-string-like expression syntax.
