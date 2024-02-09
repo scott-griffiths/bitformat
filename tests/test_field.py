@@ -30,6 +30,10 @@ class Creation(unittest.TestCase):
         self.assertEqual(f1.const, True)
         with self.assertRaises(ValueError):
             _ = Field(Bits())
+        f2 = Field.frombits(b'123')
+        self.assertEqual(f2.value, b'123')
+        b = f2.build()
+        self.assertEqual(b.tobytes(), b'123')
 
     def testCreationWithNames(self):
         good = ['self', 'three3', '_why_']
@@ -72,3 +76,11 @@ class Creation(unittest.TestCase):
         f2.clear()
         self.assertEqual(f1.build([0]), '0b0')
         self.assertEqual(f2.build([]), '0b1')
+
+class Building(unittest.TestCase):
+
+    def testBuildingWithKeywords(self):
+        f = Field.fromstring('u10 <piggy>')
+        b = f.build([], {'piggy': 17})
+        self.assertEqual(b, Bits('u10=17'))
+

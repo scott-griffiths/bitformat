@@ -35,7 +35,7 @@ class Expression:
         # Only allowing operations for integer maths or boolean comparisons.
         node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
                           'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
-                          'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE'}
+                          'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript'}
         nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
         bad_nodes = nodes_used - node_whitelist
         if bad_nodes:

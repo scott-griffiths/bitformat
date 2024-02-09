@@ -17,8 +17,8 @@ class FieldType(abc.ABC):
     def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
         ...
 
-    def build(self, values: List[Any]) -> Bits:
-        return self._build(values, 0, {})[0]
+    def build(self, values: List[Any] | None = None, kwargs: Dict[str, Any] | None = None) -> Bits:
+        return self._build([] if values is None else values,0, {} if kwargs is None else kwargs)[0]
 
     @abc.abstractmethod
     def bits(self) -> Bits:
@@ -30,6 +30,7 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def clear(self) -> None:
+        """Clear the value of the field, unless it is a constant."""
         ...
 
     @abc.abstractmethod
@@ -82,19 +83,30 @@ class Field(FieldType):
             except ValueError:
                 raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
+
         try:
-            self.items = int(items)
-            self.items_expression = None
+            self.items, self.items_expression = int(items), None
         except ValueError:
-            self.items_expression = Expression(items)
-            self.items = None
+            self.items, self.items_expression = Field.perhaps_convert_to_expression(items)
+
+        self.value, self.value_expression = Field.perhaps_convert_to_expression(value)
+
         if self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if const is None:
             self.const = value is not None
         else:
             self.const = const
-        self.value = value
+
+    @staticmethod
+    def perhaps_convert_to_expression(s: Any) -> Tuple[Any | None, None | Expression]:
+        if not isinstance(s, str):
+            return s, None
+        try:
+            e = Expression(s)
+        except ValueError:
+            return s, None
+        return None, e
 
     @classmethod
     def fromstring(cls, s: str, /):
@@ -129,11 +141,16 @@ class Field(FieldType):
             return self.dtype.bitlength * self.items
 
     def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
-        if self.const or self._bits:
+        if self.const and self.value is not None:
             return self._bits, 0
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        self._setvalue(values[index])
+        if self.value_expression is not None:
+            self._setvalue(self.value_expression.safe_eval(vars_))
+        elif self.name in vars_.keys():
+            self._setvalue(vars_[self.name])
+        else:
+            self._setvalue(values[index])
         if self.name != '':
             vars_[self.name] = self.value
         return self._bits, 1

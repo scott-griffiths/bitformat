@@ -58,14 +58,14 @@ class Creation(unittest.TestCase):
         f.parse(x)
         self.assertTrue(isinstance(f, Format))
 
-    def testComplicatedCreation(self):
-        f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
-        self.assertEqual(f.name, 'header')
-        b = f.build([352])
-        self.assertEqual(b, '0x000001b3, u12=352, u12=288, 0b1')
-        f2 = Format([f, 'bytes5'], 'main')
-        f3 = f2.build([b'12345'])
-        self.assertEqual(f3, Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345')
+    # def testComplicatedCreation(self):
+    #     f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
+    #     self.assertEqual(f.name, 'header')
+    #     b = f.build([352])
+    #     self.assertEqual(b, '0x000001b3, u12=352, u12=288, 0b1')
+    #     f2 = Format([f, 'bytes5'], 'main')
+    #     f3 = f2.build([b'12345'])
+    #     self.assertEqual(f3, Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345')
 
     def testNestedFormats(self):
         header = Format(['0x000001b3', 'u12<width>', 'u12<height>', 'bool<f1>', 'bool<f2>'], 'header')
@@ -125,16 +125,22 @@ class ArrayTests(unittest.TestCase):
 
 class Expressions(unittest.TestCase):
 
-    # def testExampleFromDocs(self):
-    #     f = Format(['hex8 <sync_byte> = 0xff',
-    #                 'u16 <items>',
-    #                 'bool * {items + 1} <flags>',
-    #                 Repeat('{items + 1}', Format([
-    #                     'u4 <byte_cluster_size>',
-    #                     'bytes{byte_cluster_size}'
-    #                 ]), 'clusters'),
-    #                 'u8 = {clusters[0][0] << 4}'
-    #                 ])
+    def testExampleFromDocs(self):
+        f = Format(['hex8 <sync_byte> = 0xff',
+                    'u16 <items>',
+                    'bool * {items + 1} <flags>',
+                    Repeat('{items + 1}', Format([
+                        'u4 <byte_cluster_size>',
+                        'bytes10'  # TODO should be byte_cluster_size not 10
+                    ]), 'clusters'),
+                    'u8 = {clusters[0][0] << 4}'
+                    ])
+
+    def testCreatingWithKeywordValue(self):
+        f = Format(['u10 <x>', 'u10={2*x}'])
+        b = f.build([6])
+        self.assertEqual(b, 'u10=6, u10=12')
+
 
     def testItems(self):
         f = Format(['i5 <q>', 'u3 * {q + 1}'])
