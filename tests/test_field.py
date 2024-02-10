@@ -1,10 +1,6 @@
 import unittest
 from bitformat import Dtype, Bits, Field
-import bitformat
 
-
-def setUpModule():
-    bitformat.common.colour = bitformat.common.Colour(False)
 
 class Creation(unittest.TestCase):
     def testCreationFromDtype(self):
@@ -36,8 +32,8 @@ class Creation(unittest.TestCase):
         self.assertEqual(b.tobytes(), b'123')
 
     def testCreationWithNames(self):
-        good = ['self', 'three3', '_why_']
-        bad = ['thi<s', '[hello]']
+        good = ['self', 'three3', '_why_', 'a_b_c', 'a1', 'a_1', 'a_1_2', 'a_1_2_3']
+        bad = ['thi<s', '[hello]', 'a b', 'a-b', 'a.b', 'a b c']
         for name in good:
             f = Field('u8', name)
             self.assertEqual(f.name, name)

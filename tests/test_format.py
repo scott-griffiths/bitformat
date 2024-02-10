@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 import unittest
 from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find
-import bitformat
+import unittest
 
-def setUpModule():
-    bitformat.common.colour = bitformat.common.Colour(False)
 
 class Creation(unittest.TestCase):
 
