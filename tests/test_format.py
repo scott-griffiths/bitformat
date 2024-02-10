@@ -124,15 +124,27 @@ class ArrayTests(unittest.TestCase):
 class Expressions(unittest.TestCase):
 
     def testExampleFromDocs(self):
+
+        f = Format(['u8 <x>', 'u{x} <y>'])
+        b = Bits('u8=10, u10=987')
+        f.parse(b)
+        self.assertEqual(f['y'].value, 987)
+
         f = Format(['hex8 <sync_byte> = 0xff',
                     'u16 <items>',
                     'bool * {items + 1} <flags>',
                     Repeat('{items + 1}', Format([
                         'u4 <byte_cluster_size>',
-                        'bytes10'  # TODO should be byte_cluster_size not 10
+                        'bytes{byte_cluster_size}'
                     ]), 'clusters'),
                     'u8 = {clusters[0][0] << 4}'
                     ])
+
+        # b = Bits('0xff, u16=2, 0b111, u4=1, 0x01, u4=2, 0x0203, u4=5, 0x0405060708, u8=16')
+        # f.parse(b)
+        # self.assertEqual(f['items'].value, 2)
+        # self.assertEqual(f['flags'].value, [1, 1, 1])
+
 
     def testCreatingWithKeywordValue(self):
         f = Format(['u10 <x>', 'u10={2*x}'])

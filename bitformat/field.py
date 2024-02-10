@@ -9,13 +9,18 @@ from typing import Tuple, Any
 class FieldType(abc.ABC):
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions. Return the number of bits used."""
         ...
 
     def parse(self, b: Bits) -> int:
-        return self._parse(b, {})
+        try:
+            return self._parse(b, {})
+        except ValueError as e:
+            raise ValueError(f"Error parsing field {self}: {e}")
 
     @abc.abstractmethod
     def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
+        """Build the field from the values list, starting at index. Return the bits and the number of values used."""
         ...
 
     def build(self, values: List[Any] | None = None, kwargs: Dict[str, Any] | None = None) -> Bits:
@@ -23,9 +28,11 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def bits(self) -> Bits:
+        """Return the bits that represent the field."""
         ...
 
     def bytes(self) -> bytes:
+        """Return the bytes that represent the field. Pads with up to 7 zero bits if necessary."""
         b = self.bits()
         return b.tobytes()
 
@@ -40,6 +47,7 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def flatten(self) -> List[FieldType]:
+        """Return a flat list of all the fields in the object."""
         ...
 
     @abc.abstractmethod
@@ -74,11 +82,17 @@ class Field(FieldType):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, items: str | int = 1, const: bool | None = None) -> None:
         self._bits = None
         self.dtype = dtype
+        self.dtype_expression = None
         if isinstance(self.dtype, str):
-            try:
-                self.dtype = Dtype(dtype)
-            except ValueError:
-                raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
+            p = self.dtype.find('{')
+            if p != -1:
+                self.dtype_expression = Expression(self.dtype[p:])
+                self.dtype = self.dtype[:p]
+            else:
+                try:
+                    self.dtype = Dtype(dtype)
+                except ValueError:
+                    raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
 
         try:
@@ -88,11 +102,13 @@ class Field(FieldType):
 
         self.value, self.value_expression = Field.perhaps_convert_to_expression(value)
 
-        if self.dtype.length == 0:
+        if self.dtype_expression is None and self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if const is None:
             self.const = value is not None
         else:
+            if value is None:
+                raise ValueError(f"Can't set a field to be constant if it has no value.")
             self.const = const
 
     @staticmethod
@@ -108,11 +124,13 @@ class Field(FieldType):
     @classmethod
     def fromstring(cls, s: str, /):
         dtype, name, value, items, const = Field._parse_field_str(s)
-        try:
-            dtype = Dtype(dtype)
-        except ValueError:
-            bits = Bits(dtype)
-            return cls(Dtype('bits'), name, bits, items, const)
+        p = dtype.find('{')
+        if p == -1:
+            try:
+                dtype = Dtype(dtype)
+            except ValueError:
+                bits = Bits(dtype)
+                return cls(Dtype('bits'), name, bits, items, const)
         return cls(dtype, name, value, items, const)
 
     @classmethod
@@ -128,6 +146,8 @@ class Field(FieldType):
             return len(self._bits)
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
+        if self.dtype_expression is not None:
+            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
         if self.items == 1:
             self._setvalue(self.dtype.get_fn(b[:self.dtype.bitlength]))
             if self.name != '':
@@ -284,17 +304,19 @@ class Field(FieldType):
         return f"{indent_str}'{d}{i}{n}{v}'"
 
     def __repr__(self) -> str:
-        return f"Field({self.__str__()})"
+        return f"Field.fromstring({self.__str__()})"
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
             return False
-        if isinstance(self.value, Array):
-            if not isinstance(other.value, Array):
+        x = self.value
+        y = other.value
+        if isinstance(x, Array):
+            if not isinstance(y, Array):
                 return False
-            if not self.value.equals(other.value):
+            if not x.equals(y):
                 return False
-        elif self.value != other.value:
+        elif x != y:
             return False
         return True
 
