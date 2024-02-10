@@ -4,6 +4,7 @@ from bitstring import Bits, Dtype, Array
 from typing import Any, Tuple, List, Dict
 
 from .common import colour, Expression, indent_size
+from typing import Tuple, Any
 
 class FieldType(abc.ABC):
     @abc.abstractmethod
@@ -43,10 +44,6 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def _getvalue(self) -> Any:
-        ...
-
-    @abc.abstractmethod
-    def _setvalue(self, value: Any) -> None:
         ...
 
     def __str__(self) -> str:
@@ -245,15 +242,14 @@ class Field(FieldType):
 
     def _getvalue(self) -> Any:
         if self.items == 1:
-            return self._value
+            return self.dtype.get_fn(self._bits) if self._bits is not None else None
         else:
-            return None if self._value is None else self._value
+            return Array(self.dtype, self._bits) if self._bits is not None else None    
 
     def _setvalue(self, value: Any) -> None:
         if self.dtype is None:
             raise ValueError(f"Can't set a value for field without a Dtype.")
         if value is None:
-            self._value = None
             self._bits = None
             return
         if self.items == 1:
@@ -263,12 +259,10 @@ class Field(FieldType):
                 self._bits = b
             except ValueError:
                 raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
-            self._value = self.dtype.get_fn(self._bits)
         else:
             a = Array(self.dtype, value)
             if len(a) != self.items:
                 raise ValueError(f"For Field {self}, {len(a)} values were provided, but expected {self.items}.")
-            self._value = a
             self._bits = a.data
 
     value = property(_getvalue, _setvalue)
@@ -312,6 +306,7 @@ class Find(FieldType):
         self.bits_to_find = Bits(bits)
         self.bytealigned = bytealigned
         self.name = name
+        self._value = None
 
     def _build(self, values: List[Any], index: int, _vars: Dict[str, Any]) -> Tuple[Bits, int]:
         return Bits(), 0
@@ -320,14 +315,14 @@ class Find(FieldType):
         return Bits()
 
     def clear(self) -> None:
-        self._setvalue(None)
+        self._value = None
 
     def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
         p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
         if p:
-            self._setvalue(p[0])
+            self._value = p[0]
             return p[0]
-        self._setvalue(None)
+        self._value = None
         return 0
 
     def flatten(self) -> List[FieldType]:
@@ -339,9 +334,6 @@ class Find(FieldType):
         find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
         s = f"{indent_str}{self.__class__.__name__}({name_str}{find_str})"
         return s
-
-    def _setvalue(self, val: int | None) -> None:
-        self._value = val
 
     def _getvalue(self) -> int | None:
         return self._value
