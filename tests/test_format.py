@@ -155,7 +155,6 @@ class Expressions(unittest.TestCase):
     def testItems(self):
         f = Format(['i5 <q>', 'u3 * {q + 1}'])
         b = Bits('i5=1, u3=2, u3=0')
-        print(f)
         f.parse(b)
         self.assertEqual(f[0].value, 1)
         self.assertEqual(f[1].value, [2, 0])
