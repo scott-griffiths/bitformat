@@ -1,7 +1,7 @@
 from __future__ import annotations
 import sys
 import ast
-from typing import Any, Dict
+from typing import Any
 
 indent_size = 4
 
@@ -43,13 +43,15 @@ class Expression:
         nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
         bad_nodes = nodes_used - node_whitelist
         if bad_nodes:
-            raise ValueError(f"Disallowed operations used in expression '{self.code_str}'. Disallowed nodes were: {bad_nodes}.")
+            raise SyntaxError(f"bitformat.Expression: Disallowed operations used in expression '{self.code_str}'. "
+                              f"Disallowed nodes were: {bad_nodes}. "
+                              f"If you think this operation should be allowed, please raise bug report.")
         if '__' in self.code_str:
-            raise ValueError(f"Invalid expression: '{self.code_str}'. Double underscores are not permitted.")
+            raise SyntaxError(f"bitformat.Expression: Invalid expression '{self.code_str}'. Double underscores are not permitted.")
         code = compile(self.code_str, "<string>", "eval")
         return code
 
-    def safe_eval(self, vars_: Dict[str, Any]) -> Any:
+    def safe_eval(self, vars_: dict[str, Any]) -> Any:
         """Evaluate the expression, disallowing all builtins."""
         self.value = eval(self.code, {"__builtins__": {}}, vars_)
         return self.value

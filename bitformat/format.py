@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from bitstring import Bits, Dtype
-from typing import Sequence, Any, Iterable, Tuple, List, Dict
+from typing import Sequence, Any, Iterable
 import copy
 
 from .common import colour, indent_size
@@ -13,14 +13,14 @@ class FieldListType(FieldType):
     def __init__(self) -> None:
         self.fieldtypes = []
 
-    def _build(self, values: List[Any], index: int, _vars={}) -> Tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, _vars={}) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values, index + values_used, _vars)
             values_used += v
         return self.bits(), values_used
 
-    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         pos = 0
         for fieldtype in self.fieldtypes:
             pos += fieldtype._parse(b[pos:], vars_)
@@ -30,10 +30,10 @@ class FieldListType(FieldType):
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
 
-    def _getvalue(self) -> List[Any]:
+    def _getvalue(self) -> list[Any]:
         return [f.value for f in self.fieldtypes]
 
-    def _setvalue(self, val: List[Any]) -> None:
+    def _setvalue(self, val: list[Any]) -> None:
         if len(val) != len(self.fieldtypes):
             raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
         for i in range(len(val)):
@@ -42,7 +42,7 @@ class FieldListType(FieldType):
     def bits(self) -> Bits:
         return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
 
-    def flatten(self) -> List[FieldType]:
+    def flatten(self) -> list[FieldType]:
         # Just return a flat list of fields
         flattened_fields = []
         for fieldtype in self.fieldtypes:

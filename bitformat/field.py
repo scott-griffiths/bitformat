@@ -1,14 +1,13 @@
 from __future__ import annotations
 import abc
 from bitstring import Bits, Dtype, Array
-from typing import Any, Tuple, List, Dict
 
 from .common import colour, Expression, indent_size
-from typing import Tuple, Any
+from typing import Any
 
 class FieldType(abc.ABC):
     @abc.abstractmethod
-    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         """Parse the field from the bits, using the vars_ dictionary to resolve any expressions. Return the number of bits used."""
         ...
 
@@ -19,11 +18,11 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {e}")
 
     @abc.abstractmethod
-    def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
         """Build the field from the values list, starting at index. Return the bits and the number of values used."""
         ...
 
-    def build(self, values: List[Any] | None = None, kwargs: Dict[str, Any] | None = None) -> Bits:
+    def build(self, values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits:
         return self._build([] if values is None else values,0, {} if kwargs is None else kwargs)[0]
 
     @abc.abstractmethod
@@ -46,7 +45,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def flatten(self) -> List[FieldType]:
+    def flatten(self) -> list[FieldType]:
         """Return a flat list of all the fields in the object."""
         ...
 
@@ -112,7 +111,7 @@ class Field(FieldType):
             self.const = const
 
     @staticmethod
-    def perhaps_convert_to_expression(s: Any) -> Tuple[Any | None, None | Expression]:
+    def perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
         if not isinstance(s, str):
             return s, None
         try:
@@ -138,7 +137,7 @@ class Field(FieldType):
         b = Bits(bits)
         return cls(Dtype('bits'), name, b)
 
-    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
@@ -157,7 +156,7 @@ class Field(FieldType):
             self._setvalue(b[:self.dtype.bitlength * self.items])
             return self.dtype.bitlength * self.items
 
-    def _build(self, values: List[Any], index: int, vars_: Dict[str, Any]) -> Tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
             return self._bits, 0
         if self.items_expression is not None:
@@ -186,7 +185,7 @@ class Field(FieldType):
         return [self]
 
     @staticmethod
-    def _parse_field_str(dtype_str: str) -> Tuple[str, str | None, str, int, bool | None]:
+    def _parse_field_str(dtype_str: str) -> tuple[str, str | None, str, int, bool | None]:
         # The string has the form 'dtype [* items] [<name>] [= value]'
         # But there may be chars inside {} sections that should be ignored.
         # So we scan to find first real *, <, > and =
@@ -330,7 +329,7 @@ class Find(FieldType):
         self.name = name
         self._value = None
 
-    def _build(self, values: List[Any], index: int, _vars: Dict[str, Any]) -> Tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, _vars: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
     def bits(self) -> Bits:
@@ -339,7 +338,7 @@ class Find(FieldType):
     def clear(self) -> None:
         self._value = None
 
-    def _parse(self, b: Bits, vars_: Dict[str, Any]) -> int:
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
         if p:
             self._value = p[0]
