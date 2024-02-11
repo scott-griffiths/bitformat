@@ -16,10 +16,7 @@
 
 It is intended to complement the [**bitstring**](https://github.com/scott-griffiths/bitstring) module from the same author, and uses its `Dtype`, `Bits` and `Array` classes as the basis for building complex bit formats.
 
-I am planning on a minimal viable product release by April 2024, with a fuller release later in the year.
-If you wish to try it out now then I recommend installing from the main branch on GitHub as that will be far ahead of the release on PyPI.
 
-    pip install git+https://github.com/scott-griffiths/bitformat
 
 ----
 
