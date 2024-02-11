@@ -94,9 +94,6 @@ jobs:
           - name: CPython 3.12
             major_dot_minor: '3.12'
             action: '3.12'
-          - name: PyPy 3.8
-            major_dot_minor: '3.8'
-            action: 'pypy-3.8'
 
 
     steps:
