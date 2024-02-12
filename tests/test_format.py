@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-import unittest
-from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find
+
+from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find, FieldArray
 import unittest
 
 
@@ -92,7 +92,7 @@ class Addition(unittest.TestCase):
 class ArrayTests(unittest.TestCase):
 
     def testSimpleArray(self):
-        array_field = Field('u8', 'my_array', items=20)
+        array_field = FieldArray('u8', 20, 'my_array')
         f = Format([array_field], 'a')
         self.assertEqual(f.fieldtypes[0].items, 20)
         a = f.build([[*range(20)]])
@@ -139,7 +139,6 @@ class Expressions(unittest.TestCase):
                     ]), 'clusters'),
                     'u8 = {clusters[0][0] << 4}'
                     ])
-
         # b = Bits('0xff, u16=2, 0b111, u4=1, 0x01, u4=2, 0x0203, u4=5, 0x0405060708, u8=16')
         # f.parse(b)
         # self.assertEqual(f['items'].value, 2)

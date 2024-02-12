@@ -5,7 +5,7 @@ from typing import Sequence, Any, Iterable
 import copy
 
 from .common import colour, indent_size
-from .field import FieldType, Field
+from .field import FieldType, Field, FieldArray
 
 
 class FieldListType(FieldType):
@@ -81,7 +81,10 @@ class Format(FieldListType):
         self.vars = {}
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
-                fieldtype = Field.fromstring(fieldtype)
+                try:
+                    fieldtype = Field.fromstring(fieldtype)
+                except ValueError:
+                    fieldtype = FieldArray.fromstring(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)

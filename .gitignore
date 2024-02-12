@@ -7,3 +7,5 @@ dist
 manifest
 *egg-info
 doc/_build
+/.vscode/
+/.venv/

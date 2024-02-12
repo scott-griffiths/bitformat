@@ -16,7 +16,7 @@ Although you shouldn't need to deal with this type directly it is helpful to tak
 
 .. class:: FieldType()
 
-      .. method:: FieldType.build(values: List[Any], kwargs: Dict) -> Bits
+      .. method:: FieldType.build(values: list[Any], kwargs: dict) -> Bits
 
         Given positional and keyword values, fill in the any empty field(s) and build a `Bits` object.
         Note that this modifies the fieldtype in-place.
@@ -26,7 +26,7 @@ Although you shouldn't need to deal with this type directly it is helpful to tak
         Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
         Note that this modifies the fieldtype in-place.
 
-      .. method:: FieldType.flatten() -> List[FieldType]
+      .. method:: FieldType.flatten() -> list[FieldType]
 
         Removes any nesting of fields and returns a flat list of FieldsTypes.
 
@@ -39,7 +39,7 @@ Although you shouldn't need to deal with this type directly it is helpful to tak
         Converts the contents to a `bytes` object.
         Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.
 
-      .. method:: FieldType.vars() -> Tuple[List[Any], Dict]
+      .. method:: FieldType.vars() -> tuple[list[Any], dict]
 
         Returns the positional and keyword values that are contained in the field.
 
@@ -63,7 +63,7 @@ Field
 -----
 
 A `Field` is the fundamental building block in `bitformat`.
-It represents a well defined amount of binary data with a single data type.
+It represents a well-defined amount of binary data with a single data type.
 
 .. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, items: int | str = 1, const: bool | None = None)
 
@@ -136,6 +136,37 @@ In its simplest form is could just be a flat list of ``Field`` objects, but it c
 .. class:: Format(fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
 
 
+FieldArray
+----------
+
+An `FieldArray` field contains multiple copies of other fields that have well-defined lengths.
+
+.. class:: FieldArray(count: int | Iterable[int] | str, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
+
+The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
+The `name` parameter is used to give the FieldArray a name that can be referenced elsewhere.
+
+The main restriction is that every field in `fieldtypes` must have a well-defined length, so that each element in the `FieldArray` has the same length.
+This means that conditional fields, fields with variable lengths or fields whose length depends on the value of another field are not allowed.
+
+For example::
+
+    f = FieldArray(20, ['u6', 'bool', 'bool'])
+
+This creates an array of 20 fields, each containing a 6-bit unsigned integer followed by two bools.
+
+If you want to repeat a single field then it is usually simpler to have one field and use the `items` parameter rather than use the `FieldArray` class.
+So instead of ::
+
+    a = FieldArray(80, ['bool'])
+
+use ::
+
+    a = Field.fromstring('bool * 80')
+
+If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
+If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
+
 Repeat
 ------
 
@@ -153,7 +184,9 @@ So instead of ::
 
 use ::
 
-    r = Field('float64 * 10')  # Creates a single field with an array of ten float64
+    r = Field.fromstring('float64 * 10')  # Creates a single field with an array of ten float64
+
+For simple repetition of a field of a known length the `FieldArray` class will be more efficient and easier to use.
 
 
 Find
