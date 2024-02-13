@@ -254,17 +254,7 @@ class Field(SingleDtypeField):
         return cls(Dtype('bits'), name, b)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        if self.const:
-            value = b[:len(self._bits)]
-            if value != self._bits:
-                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
-            return len(self._bits)
-        if self.dtype_expression is not None:
-            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
-        self._setvalue(self.dtype.get_fn(b[:self.dtype.bitlength]))
-        if self.name != '':
-            vars_[self.name] = self.value
-        return self.dtype.bitlength
+        return self._parse_common(b, vars_)
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
