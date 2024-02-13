@@ -181,6 +181,29 @@ class SingleDtypeField(FieldType):
         indent_str = ' ' * indent_size * indent
         return f"{indent_str}'{d}{i}{n}{v}'"
 
+    @staticmethod
+    def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
+        if not isinstance(s, str):
+            return s, None
+        try:
+            e = Expression(s)
+        except ValueError:
+            return s, None
+        return None, e
+
+    def _parse_common(self, b: Bits, vars_: dict[str, Any]) -> int:
+        if self.const:
+            value = b[:len(self._bits)]
+            if value != self._bits:
+                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
+            return len(self._bits)
+        if self.dtype_expression is not None:
+            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
+        self._bits = b[:self.dtype.bitlength]
+        if self.name != '':
+            vars_[self.name] = self.value
+        return self.dtype.bitlength
+
 class Field(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         self._bits = None
@@ -208,16 +231,6 @@ class Field(SingleDtypeField):
             if value is None:
                 raise ValueError(f"Can't set a field to be constant if it has no value.")
             self.const = const
-
-    @staticmethod
-    def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
-        if not isinstance(s, str):
-            return s, None
-        try:
-            e = Expression(s)
-        except ValueError:
-            return s, None
-        return None, e
 
     @classmethod
     def fromstring(cls, s: str, /):
@@ -288,9 +301,7 @@ class Field(SingleDtypeField):
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
             return False
-        x = self.value
-        y = other.value
-        if x != y:
+        if self._bits != other._bits:
             return False
         return True
 
@@ -315,9 +326,9 @@ class FieldArray(SingleDtypeField):
         try:
             self.items, self.items_expression = int(items), None
         except ValueError:
-            self.items, self.items_expression = Field._perhaps_convert_to_expression(items)
+            self.items, self.items_expression = FieldArray._perhaps_convert_to_expression(items)
 
-        self.value, self.value_expression = Field._perhaps_convert_to_expression(value)
+        self.value, self.value_expression = FieldArray._perhaps_convert_to_expression(value)
 
         if self.dtype_expression is None and self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
@@ -341,17 +352,9 @@ class FieldArray(SingleDtypeField):
         return cls(dtype, items, name, value, const)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        if self.const:
-            value = b[:len(self._bits)]
-            if value != self._bits:
-                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
-            return len(self._bits)
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        if self.dtype_expression is not None:
-            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
-        self._setvalue(b[:self.dtype.bitlength * self.items])
-        return self.dtype.bitlength * self.items
+        return self._parse_common(b, vars_)
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -389,7 +392,6 @@ class FieldArray(SingleDtypeField):
             item_str = str(self.items)
         item_str = f" * {item_str}"
         return self._str_common(indent, self.dtype, self.name, self.value, self.const, item_str)
-
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
