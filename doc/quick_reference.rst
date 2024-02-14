@@ -7,84 +7,230 @@ Quick Reference
 
 This section gives a summary of the `bitformat` module's classes, functions and attributes.
 
+Class Overview
+--------------
+
+Objects in `bitformat` that can be parsed and built are constructed from the `FieldType` objects that are listed in the table below.
+Some of these types will usually be used as part of a larger structure, where they can be optionally constructed from strings - for these types a string example is given in the description.
+
+.. |nbsp| unicode:: 0xa0
+   :trim:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Class
+     - String format?
+     - Description
+
+   * - :ref:`fieldtype_quick_reference`
+     - n/a
+     - The abstract base class for the other classes listed here.
+   * - :ref:`field_quick_reference`
+     - ✓
+     - A single data type, with optional name and value.
+   * -
+     -
+     - ``'dtype <name> = value'``
+   * - :ref:`fieldarray_quick_reference`
+     - ✓
+     - An array of a single fixed-length data type, with optional name and value.
+   * -
+     -
+     - ``'dtype * items <name> = value'``
+   * - :ref:`struct_quick_reference`
+     - ✓
+     - A field with multiple data types, with optional name and values.
+   * -
+     -
+     - ``'[dtype1, dtype2, ...] <name> = values'``
+   * - :ref:`structarray_quick_reference`
+     - ✓
+     - An array of multiple fixed-length data types, with optional name and value.
+   * -
+     -
+     - ``'[dtype1, dtype2, ...] * items <name> = values'``
+   * - :ref:`format_quick_reference`
+     - ×
+     - A sequence of other FieldTypes, with optional name.
+   * -
+     -
+     - ``Format([field1, field2, ...], 'name'])``
+   * - :ref:`find_quick_reference`
+     - ✓
+     - Seeks to the next occurrence of a bitstring value.
+   * -
+     -
+     - ``'value? <name>'``
+   * - :ref:`repeat_quick_reference`
+     - ×
+     - Repeat another field type a number of times, with optional name.
+   * -
+     -
+     - ``Repeat(10, 'float64', 'a_name')``
+
+
+.. _fieldtype_quick_reference:
+
+FieldType
+---------
+
+The `FieldType` class shouldn't be used directly, but is a base class containing the most fundamental methods that all of the other classes here support.
+
+.. class:: FieldType
+
+    .. method:: bits() -> Bits
+        :abstractmethod:
+
+        Return data as a Bits object.
+
+    .. method:: build(values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits
+        :abstractmethod:
+
+    .. method:: bytes() -> bytes
+        :abstractmethod:
+
+        Return data as bytes object, padding with up to 7 zero bits at the end if needed.
+
+    .. method:: clear() -> None
+        :abstractmethod:
+
+    .. method:: flatten() -> list[FieldType]
+        :abstractmethod:
+
+    .. method:: parse(b: Bits | bytes | bytearray, /) -> int
+        :abstractmethod:
+
+        Fill in values for empty Fields by parsing a binary object.
+
+
+    .. method:: __eq__
+        :abstractmethod:
+
+        Equality test.
+
+
+    .. property:: name: str
+
+
+.. _field_quick_reference:
 
 Field
 -----
 
-:class:`Field` is the fundamental building block in `bitformat`.
+The `Field` is the fundamental building block in `bitformat`.
 
 
-``Field(dtype: Dtype | Bits | str, name: str | None = None, value: Any = None, items: int = 1)``
+.. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None)
 
-Methods
-^^^^^^^
+    .. classmethod:: frombits(bits: Bits | str | bytes | bytearray, name: str = '') -> Self
 
-* :meth:`~Field.build` --
-* :meth:`~Field.parse` -- Fill in values for empty Fields by parsing a binary object.
-* :meth:`~Field.bits` -- Return data as a Bits object.
-* :meth:`~Field.bytes` -- Return data as bytes object, padding with up to 7 zero bits at the end if needed.
+    .. classmethod:: fromstring(s: str, /) -> Self
 
-Special methods
-^^^^^^^^^^^^^^^
+    .. property:: const:: bool
 
-Also available are these operators:
+    .. property:: dtype:: Dtype
 
-* :meth:`== <Field.__eq__>` / :meth:`\!= <Field.__ne__>` -- Equality tests.
+    .. property:: value:: Any
+
+        The value of the data type. Will be `None` for an empty Field.
 
 
-Properties
-^^^^^^^^^^
+.. _fieldarray_quick_reference:
 
-* :attr:`~Field.dtype` -- The data type of the field.
-* :attr:`~Field.name` -- A name for the Field that should be a valid Python identifier. Can be left empty.
-* :attr:`~Field.value` -- The value of the data type. Can be None for an empty Field.
-* :attr:`~Field.bits` -- For non-empty Fields this contains the binary digits of the Field.
-* :attr:`~Field.items` -- The number of items of the dtype (to create an Array). Defaults to 1.
+FieldArray
+----------
+
+A `FieldArray` has a single data type like `Field`, but instead holds an array of that type.
+The dtype must have a fixed length to be used in a `FieldArray` (most do).
+
+.. class:: FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None)
+
+    .. classmethod:: fromstring(s: str, /) -> Self
+
+    .. property:: const:: bool
+
+    .. property:: dtype:: Dtype
+
+    .. property:: items:: int
+
+    .. property:: value:: list[Any]
 
 
+.. _struct_quick_reference:
 
-----
+Struct
+------
+
+A `Struct` contains a group of data types. Note that the dtypes within a `Struct` can't be named individually, but can be referred to by index within the `Struct`.
+
+.. class:: Struct(dtypes: Iterable[Dtype | str], name: str = '', value: Any = None, const: bool | None = None)
+
+    .. classmethod:: fromstring(s: str, /) -> Self
+
+    .. property:: const:: bool
+
+    .. property:: dtypes:: list[Dtype]
+
+    .. property:: value:: list[Any]
+
+
+.. _structarray_quick_reference:
+
+StructArray
+-----------
+
+A `StructArray` has a group of data types like `Struct`, but holds an array of those types.
+The dtypes must all have a fixed length to be used in a `StructArray`.
+
+.. class:: Struct(dtypes: Iterable[Dtype | str], items: str | int, name: str = '', value: Any = None, const: bool | None = None)
+
+    .. classmethod:: fromstring(s: str, /) -> Self
+
+    .. property:: const:: bool
+
+    .. property:: dtypes:: list[Dtype]
+
+    .. property:: items:: int
+
+    .. property:: value:: list[list[Any]]
+
+
+.. _format_quick_reference:
 
 Format
 ------
 
-:class:`Format` describes a sequence of :class:`Field`s and other nested ``Format``s which define a binary sequence.
+The `Format` type is central to creating useful objects in `bitformat`.
+It contains a sequence of other `FieldType` objects, which can include nested `Format`s.
+
+.. class:: Format(fieldtypes: Sequence[FieldType | str], name: str = '')
 
 
-``Format(name: str | None = None, fields: Sequence[Format | Bits | Dtype | str] | None = None)``
+.. _find_quick_reference:
 
-Methods
-^^^^^^^
+Find
+----
 
-* :meth:`~Format.append` -- Add a new field to the end of the current fields.
-* :meth:`~Format.build` --
-* :meth:`~Format.flatten` -- Returns a flat list of the Fields in the Format
-* :meth:`~Format.parse` -- Fill in values for empty Fields by parsing a binary object.
-* :meth:`~Format.tobits` -- Return data as a Bits object.
-* :meth:`~Format.tobytes` -- Return data as bytes object, padding with zero bits at the end if needed.
-* :meth:`~Format.copy` -- Return a copy of the `Format`.
-* :meth:`~Format.pp` -- Pretty print the Format.
-* :meth:`~Format.clear` -- Remove values for all Fields that aren't bit literals.
+The `Find` field is used to seek to the next occurrence of a bitstring.
 
-Special methods
-^^^^^^^^^^^^^^^
-
-Also available are these operators:
-
-* :meth:`== <Format.__eq__>` / :meth:`\!= <Format.__ne__>` -- Equality tests.
-* :meth:`[] <Format.__getitem__>` -- Get a field either by index or by name.
-* :meth:`+ <Format.__add__>` -- Add a new field to the end of the current fields.
-* :meth:`[] <Format.__setitem__>` -- Set a field either by index or by name.
-* :meth:`del <Format.__delitem__>` -- Delete a field either by index or by name.
-* :meth:`+= <Format.__iadd__>` -- Append a new field to the current Format.
+.. class:: Find(bits: Bits | bytes | bytearray | str, bytealigned: bool = True, name: str = '')
 
 
-Properties
-^^^^^^^^^^
+.. _repeat_quick_reference:
 
-* :attr:`~Format.name` -- A name for the Format. Can be left empty.
-* :attr:`~Format.fields` -- The list of Fields or nested Formats.
-* :attr:`~Format.empty_fields` -- The number of Fields in the Format which do not have a value.
+Repeat
+------
+
+A `Repeat` field simply repeats another field a given number of times.
+
+.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | str] | None = None, name: str = '')
+
+The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
+The `name` parameter is used to give the index a name that can be referenced elsewhere.
+
+
+----
 
 
 

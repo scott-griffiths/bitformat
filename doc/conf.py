@@ -3,7 +3,9 @@
 import os
 import time
 import datetime
+import sys
 
+sys.path.insert(0, os.path.abspath('..'))
 
 year = datetime.datetime.utcfromtimestamp(
     int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))
@@ -14,7 +16,8 @@ copyright = f'2024 - {year}, Scott Griffiths'
 author = 'Scott Griffiths'
 release = '0.0.1'
 
-extensions = []
+extensions = ['sphinx.ext.autodoc']
+add_module_names = False
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
@@ -22,7 +25,6 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 root_doc = 'index'
 
 add_function_parentheses = False
-add_module_names = False
 
 html_show_sphinx = False
 html_static_path = ['_static']
