@@ -17,7 +17,11 @@ class Creation(unittest.TestCase):
             self.assertTrue(f.dtype.length is None)
 
     def testCreationFromDtypeWithValue(self):
-        pass
+        f = Field(Dtype('u8'), value=3)
+        self.assertEqual(f.value, 3)
+        f2 = Field.fromstring('u8 = 3')
+        self.assertEqual(f2.value, 3)
+
 
     def testCreationFromBits(self):
         b = Bits('0xf, 0b1')
@@ -80,3 +84,35 @@ class Building(unittest.TestCase):
         b = f.build([], {'piggy': 17})
         self.assertEqual(b, Bits('u10=17'))
 
+    def testBuildingLotsOfTypes(self):
+        f = Field('u4')
+        b = f.build([15])
+        self.assertEqual(b, '0xf')
+        f = Field('i4')
+        b = f.build([-8])
+        self.assertEqual(b, '0x8')
+        f = Field('e4m3float')
+        b = f.build([0.5])
+        self.assertEqual(b, '0x38')
+        f = Field('bytes:3')
+        b = f.build([b'abc'])
+        self.assertEqual(b, '0x616263')
+        f = Field('se')
+        b = f.build([-5])
+        self.assertEqual(b, '0b0001011')
+        # f = Field('bits11')
+        # with self.assertRaises(ValueError):
+        #     _ = f.build([Bits('0x7ff')])
+        # b = f.build([Bits('0b111, 0xff')])
+
+    def testBuildingWithConst(self):
+        f = Field.fromstring('u4 = 8')
+        b = f.build([])
+        self.assertEqual(b, '0x8')
+        f.clear()
+        b = f.build([])
+        self.assertEqual(b, '0x8')
+        f.const = False
+        self.assertEqual(f.value, 8)
+        f.clear()
+        self.assertEqual(f.value, None)

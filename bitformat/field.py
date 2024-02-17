@@ -11,7 +11,9 @@ class FieldType(abc.ABC):
         """Parse the field from the bits, using the vars_ dictionary to resolve any expressions. Return the number of bits used."""
         ...
 
-    def parse(self, b: Bits) -> int:
+    def parse(self, b: Bits | bytes | bytearray) -> int:
+        if isinstance(b, (bytes, bytearray)):
+            b = Bits(b)
         try:
             return self._parse(b, {})
         except ValueError as e:
@@ -87,7 +89,7 @@ class SingleDtypeField(FieldType):
         if not self.const:
             self._setvalue(None)
 
-    def flatten(self) -> List[FieldType]:
+    def flatten(self) -> list[FieldType]:
         return [self]
 
     def __repr__(self) -> str:
@@ -204,6 +206,19 @@ class SingleDtypeField(FieldType):
             vars_[self.name] = self.value
         return self.dtype.bitlength
 
+    def _build_common(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
+        if self.const and self.value is not None:
+            return self._bits, 0
+        if self.value_expression is not None:
+            self._setvalue(self.value_expression.safe_eval(vars_))
+        elif self.name in vars_.keys():
+            self._setvalue(vars_[self.name])
+        else:
+            self._setvalue(values[index])
+        if self.name != '':
+            vars_[self.name] = self.value
+        return self._bits, 1
+
 class Field(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         self._bits = None
@@ -242,7 +257,7 @@ class Field(SingleDtypeField):
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits(dtype)
+                bits = Bits.fromstring(dtype)
                 return cls(Dtype('bits'), name, bits, const)
         else:
             _ = Dtype(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
@@ -257,29 +272,17 @@ class Field(SingleDtypeField):
         return self._parse_common(b, vars_)
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
-        if self.const and self.value is not None:
-            return self._bits, 0
-        if self.value_expression is not None:
-            self._setvalue(self.value_expression.safe_eval(vars_))
-        elif self.name in vars_.keys():
-            self._setvalue(vars_[self.name])
-        else:
-            self._setvalue(values[index])
-        if self.name != '':
-            vars_[self.name] = self.value
-        return self._bits, 1
+        return self._build_common(values, index, vars_)
 
     def _getvalue(self) -> Any:
-        return self.dtype.get_fn(self._bits) if self._bits is not None else None
+        return self.dtype.parse(self._bits) if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
-        b = Bits()
         try:
-            self.dtype.set_fn(b, value)
-            self._bits = b
+            self._bits = self.dtype.build(value)
         except ValueError:
             raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
 
@@ -337,7 +340,7 @@ class FieldArray(SingleDtypeField):
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits(dtype)
+                bits = Bits.fromstring(dtype)
                 return cls(Dtype('bits'), items, name, bits, const)
         return cls(dtype, items, name, value, const)
 
@@ -347,19 +350,9 @@ class FieldArray(SingleDtypeField):
         return self._parse_common(b, vars_)
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
-        if self.const and self.value is not None:
-            return self._bits, 0
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        if self.value_expression is not None:
-            self._setvalue(self.value_expression.safe_eval(vars_))
-        elif self.name in vars_.keys():
-            self._setvalue(vars_[self.name])
-        else:
-            self._setvalue(values[index])
-        if self.name != '':
-            vars_[self.name] = self.value
-        return self._bits, 1
+        return self._build_common(values, index, vars_)
 
     def _getvalue(self) -> Any:
             return Array(self.dtype, self._bits) if self._bits is not None else None
@@ -425,7 +418,7 @@ class Find(FieldType):
         self._value = None
         return 0
 
-    def flatten(self) -> List[FieldType]:
+    def flatten(self) -> list[FieldType]:
         return []
 
     def _str(self, indent: int) -> str:
