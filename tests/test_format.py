@@ -1,60 +1,59 @@
 #!/usr/bin/env python
 
 from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find, FieldArray
-import unittest
 
 
-class Creation(unittest.TestCase):
+class TestCreation:
 
-    def testCreateEmpty(self):
+    def test_create_empty(self):
         f = Format()
         b = f.build([])
-        self.assertEqual(len(b), 0)
-        self.assertEqual(f.name, '')
+        assert len(b) == 0
+        assert f.name == ''
 
-    def testCreateFromDtype(self):
+    def test_create_from_dtype(self):
         d = Dtype('u12')
         f = Format([Field(d)], 'x')
         x = f.build([1000])
-        self.assertEqual(f.name, 'x')
-        self.assertEqual(x, 'uint:12=1000')
-        self.assertEqual(len(x), 12)
+        assert f.name == 'x'
+        assert x == 'uint:12=1000'
+        assert len(x) == 12
 
-    def testCreateFromBitsString(self):
+    def test_create_from_bits_string(self):
         f = Format([Field('float16', 'foo', 12.5)], 'x')
         g = Format(['float16 <foo> =12.5'], 'y')
-        self.assertEqual(f.bits(), g.bits())
-        self.assertEqual(f.name, 'x')
+        assert f.bits() == g.bits()
+        assert f.name == 'x'
 
-    def testCreateFromDtypeString(self):
+    def test_create_from_dtype_string(self):
         f = Format(['float16'], 'x')
-        self.assertEqual(f.fieldtypes[0].name, '')
-        self.assertEqual(f.fieldtypes[0].dtype, Dtype('float', 16))
+        assert f.fieldtypes[0].name == ''
+        assert f.fieldtypes[0].dtype == Dtype('float', 16)
 
-    def testBuildingField(self):
+    def test_building_field(self):
         f = Field('float16')
         b = f.build([0.0])
-        self.assertEqual(b, '0x0000')
+        assert b == '0x0000'
 
-    def testCreateFromBits(self):
+    def test_create_from_bits(self):
         b = Bits('0xabc')
         f = Format([Field.frombits(b)])
         x = f.build([])
-        self.assertEqual(f.name, '')
-        self.assertEqual(x, '0xabc')
-        self.assertTrue(isinstance(x, Bits))
+        assert f.name == ''
+        assert x == '0xabc'
+        assert isinstance(x, Bits)
 
-    def testCreateFromBitsWithName(self):
+    def test_create_from_bits_with_name(self):
         f = Format([Field.frombits('0xabc', 'some_bits')])
         x = f.build([])
-        self.assertTrue(x, '0xabc')
+        assert x, '0xabc'
 
-    def testCreateFromList(self):
+    def test_create_from_list(self):
         f = Format(['0xabc', 'u5', 'u5'])
         x = f.build([3, 10])
-        self.assertEqual(x, '0xabc, u5=3, u5=10')
+        assert x == '0xabc, u5=3, u5=10'
         f.parse(x)
-        self.assertTrue(isinstance(f, Format))
+        assert isinstance(f, Format)
 
     # def testComplicatedCreation(self):
     #     f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
@@ -65,46 +64,46 @@ class Creation(unittest.TestCase):
     #     f3 = f2.build([b'12345'])
     #     self.assertEqual(f3, Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345')
 
-    def testNestedFormats(self):
+    def test_nested_formats(self):
         header = Format(['0x000001b3', 'u12<width>', 'u12<height>', 'bool<f1>', 'bool<f2>'], 'header')
         main = Format(['0b1', 'i7<v1>', 'i9<v2>'], 'main')
         f = Format([header, main, '0x47'], 'all')
         b = Bits('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
         f.parse(b)
         t = f['header']
-        self.assertEqual(t['width'].value, 100)
-        self.assertEqual(f['header']['width'].value, 100)
-        self.assertEqual(f['main']['v2'].value, -99)
+        assert t['width'].value == 100
+        assert f['header']['width'].value == 100
+        assert f['main']['v2'].value == -99
 
-class Addition(unittest.TestCase):
+class TestAddition:
 
-    def testAddingBits(self):
+    def test_adding_bits(self):
         f = Format()
         f += Field.frombits('0xff')
-        self.assertEqual(f.bytes(), b'\xff')
+        assert f.bytes() == b'\xff'
         f += Field.fromstring('i9<penguin> =-8')
         x = f['penguin']
-        self.assertEqual(x.value, -8)
+        assert x.value == -8
         f['penguin'].value += 6
-        self.assertEqual(f['penguin'].value, -2)
+        assert f['penguin'].value == -2
 
 
-class ArrayTests(unittest.TestCase):
+class TestArray:
 
-    def testSimpleArray(self):
+    def test_simple_array(self):
         array_field = FieldArray('u8', 20, 'my_array')
         f = Format([array_field], 'a')
-        self.assertEqual(f.fieldtypes[0].items, 20)
+        assert f.fieldtypes[0].items == 20
         a = f.build([[*range(20)]])
 
         f2 = Format(['u8*20 <new_array>'], 'b')
-        self.assertEqual(f2.fieldtypes[0].items, 20)
-        self.assertEqual(f2.fieldtypes[0].value, None)
+        assert f2.fieldtypes[0].items == 20
+        assert f2.fieldtypes[0].value == None
         f2['new_array'] = a
-        self.assertEqual(a, f2.bits())
+        assert a == f2.bits()
 
 
-    def testExampleWithArray(self):
+    def test_example_with_array(self):
         f = Format([
                    Field('bytes', 'signature', b'BMP'),
                    'i8 <width>',
@@ -113,22 +112,22 @@ class ArrayTests(unittest.TestCase):
                    ], 'construct_example')
         b = f.build([3, 2, [7, 8, 9, 11, 12, 13]])
         v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
-        self.assertEqual(b.tobytes(), v)
+        assert b.tobytes() == v
         f.parse(Bits(v))
-        self.assertEqual(f['width'].value, 3)
-        self.assertEqual(f['height'].value, 2)
-        self.assertEqual(f['pixels'].value,[7, 8, 9, 11, 12, 13])
+        assert f['width'].value == 3
+        assert f['height'].value == 2
+        assert f['pixels'].value ==[7, 8, 9, 11, 12, 13]
         # self.assertEqual(type(f['pixels'].value), list)
 
 
-class Expressions(unittest.TestCase):
+class TestExpressions:
 
-    def testExampleFromDocs(self):
+    def test_example_from_docs(self):
 
         f = Format(['u8 <x>', 'u{x} <y>'])
         b = Bits('u8=10, u10=987')
         f.parse(b)
-        self.assertEqual(f['y'].value, 987)
+        assert f['y'].value == 987
 
         f = Format(['hex8 <sync_byte> = 0xff',
                     'u16 <items>',
@@ -145,64 +144,64 @@ class Expressions(unittest.TestCase):
         # self.assertEqual(f['flags'].value, [1, 1, 1])
 
 
-    def testCreatingWithKeywordValue(self):
+    def test_creating_with_keyword_value(self):
         f = Format(['u10 <x>', 'u10={2*x}'])
         b = f.build([6])
-        self.assertEqual(b, 'u10=6, u10=12')
+        assert b == 'u10=6, u10=12'
 
 
-    def testItems(self):
+    def test_items(self):
         f = Format(['i5 <q>', 'u3 * {q + 1}'])
         b = Bits('i5=1, u3=2, u3=0')
         f.parse(b)
-        self.assertEqual(f[0].value, 1)
-        self.assertEqual(f[1].value, [2, 0])
+        assert f[0].value == 1
+        assert f[1].value == [2, 0]
         f.clear()
         b2 = f.build([1, [2, 0]])
-        self.assertEqual(b2, b)
+        assert b2 == b
         f.clear()
         b3 = f.build([3, [1, 2, 3, 4]])
-        self.assertEqual(b3, Bits('i5=3, u3=1, u3=2, u3=3, u3=4'))
+        assert b3 == Bits('i5=3, u3=1, u3=2, u3=3, u3=4')
 
 
-class Methods(unittest.TestCase):
+class TestMethods:
 
-    def testClear(self):
+    def test_clear(self):
         f = Format(['0x000001b3', 'u12', 'u12 <height>', 'bool <flag>'], 'header')
         f['height'].value = 288
         f.clear()
         g = Format(['0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
-        self.assertEqual(f, g)
+        assert f == g
 
-    def testGetItem(self):
+    def test_get_item(self):
         f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
-        self.assertEqual(f[0].value, 7)
-        self.assertEqual(f[1].value, None)
-        self.assertEqual(f['pop'].value, 144)
+        assert f[0].value == 7
+        assert f[1].value == None
+        assert f['pop'].value == 144
 
-    def testSetItem(self):
+    def test_set_item(self):
         f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
         f[0] = 2
-        self.assertEqual(f[0].value, 2)
+        assert f[0].value == 2
         f[0] = None
-        self.assertEqual(f[0].value, None)
+        assert f[0].value == None
         f['pop'] = 999999
-        self.assertEqual(f['pop'].value, 999999)
+        assert f['pop'].value == 999999
 
 
-class Repeater(unittest.TestCase):
+class TestRepeater:
 
-    def testRepeatingField(self):
+    def test_repeating_field(self):
         f = Format([
                 Repeat(5, 'u8')
         ])
         f.parse(Array('u8', [1, 5, 9, 7, 6]).data)
-        self.assertEqual(f.value, [[1, 5, 9, 7, 6]])
+        assert f.value == [[1, 5, 9, 7, 6]]
 
 
-class Finder(unittest.TestCase):
+class TestFinder:
 
-    def testFindField(self):
+    def test_find_field(self):
         b = Bits('0x1234000001b3160120')
         f = Format([
                 Find('0x000001'),
@@ -211,7 +210,7 @@ class Finder(unittest.TestCase):
                 'u12 <height>'
             ])
         f.parse(b)
-        self.assertEqual(f['width'].value, 352)
+        assert f['width'].value == 352
         f.clear()
-        self.assertEqual(f['width'].value, None)
+        assert f['width'].value == None
         f.build([352, 288])
