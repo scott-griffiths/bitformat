@@ -257,7 +257,7 @@ class Field(SingleDtypeField):
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits.fromstring(dtype)
+                bits = Bits(dtype)  # TODO: change to  bits = Bits.fromstring(dtype)
                 return cls(Dtype('bits'), name, bits, const)
         else:
             _ = Dtype(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
@@ -275,14 +275,18 @@ class Field(SingleDtypeField):
         return self._build_common(values, index, vars_)
 
     def _getvalue(self) -> Any:
-        return self.dtype.parse(self._bits) if self._bits is not None else None
+        return self.dtype.get_fn(self._bits) if self._bits is not None else None
+        # TODO: change to return self.dtype.parse(self._bits) if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
         try:
-            self._bits = self.dtype.build(value)
+            b = Bits()
+            self.dtype.set_fn(b, value)
+            self._bits = b
+            # TODO: Change to    self._bits = self.dtype.build(value)
         except ValueError:
             raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
 
