@@ -13,10 +13,10 @@ class FieldListType(FieldType):
     def __init__(self) -> None:
         self.fieldtypes = []
 
-    def _build(self, values: list[Any], index: int, _vars={}) -> tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, _vars: dict[str, Any] = {}, kwargs: dict[str, Any] = {}) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
-            _, v = fieldtype._build(values, index + values_used, _vars)
+            _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
             values_used += v
         return self.bits(), values_used
 

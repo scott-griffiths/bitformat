@@ -20,12 +20,12 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {e}")
 
     @abc.abstractmethod
-    def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         """Build the field from the values list, starting at index. Return the bits and the number of values used."""
         ...
 
     def build(self, values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits:
-        return self._build([] if values is None else values,0, {} if kwargs is None else kwargs)[0]
+        return self._build([] if values is None else values, 0, {},  {} if kwargs is None else kwargs)[0]
 
     @abc.abstractmethod
     def bits(self) -> Bits:
@@ -206,13 +206,14 @@ class SingleDtypeField(FieldType):
             vars_[self.name] = self.value
         return self.dtype.bitlength
 
-    def _build_common(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
+    def _build_common(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
             return self._bits, 0
         if self.value_expression is not None:
             self._setvalue(self.value_expression.safe_eval(vars_))
-        elif self.name in vars_.keys():
-            self._setvalue(vars_[self.name])
+        elif self.name in kwargs.keys():
+            self._setvalue(kwargs[self.name])
+            return self._bits, 0
         else:
             self._setvalue(values[index])
         if self.name != '':
@@ -271,8 +272,8 @@ class Field(SingleDtypeField):
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         return self._parse_common(b, vars_)
 
-    def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
-        return self._build_common(values, index, vars_)
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+        return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
         return self.dtype.get_fn(self._bits) if self._bits is not None else None
@@ -353,10 +354,10 @@ class FieldArray(SingleDtypeField):
             self.items = self.items_expression.safe_eval(vars_)
         return self._parse_common(b, vars_)
 
-    def _build(self, values: list[Any], index: int, vars_: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        return self._build_common(values, index, vars_)
+        return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
             return Array(self.dtype, self._bits) if self._bits is not None else None
@@ -405,7 +406,7 @@ class Find(FieldType):
         self.name = name
         self._value = None
 
-    def _build(self, values: list[Any], index: int, _vars: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, _vars: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
     def bits(self) -> Bits:

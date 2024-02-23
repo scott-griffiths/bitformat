@@ -1,5 +1,7 @@
 import pytest
 from bitformat import Dtype, Bits, Field
+from hypothesis import given, assume
+import hypothesis.strategies as st
 
 
 class TestCreation:
@@ -16,11 +18,12 @@ class TestCreation:
             f = Field(b)
             assert f.dtype.length is None
 
-    def test_creation_from_dtype_with_value(self):
-        f = Field(Dtype('u8'), value=3)
-        assert f.value == 3
-        f2 = Field.fromstring('u8 = 3')
-        assert f2.value == 3
+    @given(st.integers(0, 255))
+    def test_creation_from_dtype_with_value(self, x):
+        f = Field(Dtype('u8'), value=x)
+        assert f.value == x
+        f2 = Field.fromstring(f'u8 = {x}')
+        assert f2.value == x
 
 
     def test_creation_from_bits(self):
@@ -79,10 +82,12 @@ class TestCreation:
 
 class TestBuilding:
 
-    def test_building_with_keywords(self):
-        f = Field.fromstring('u10 <piggy>')
-        b = f.build([], {'piggy': 17})
-        assert b == Bits('u10=17')
+    @given(x=st.integers(0, 1023), name=st.text().filter(str.isidentifier))
+    def test_building_with_keywords(self, x, name):
+        assume('__' not in name)
+        f = Field.fromstring(f'u10 <{name}>')
+        b = f.build([], {name: x})
+        assert b == Bits(f'u10={x}')
 
     def test_building_lots_of_types(self):
         f = Field('u4')
@@ -106,7 +111,7 @@ class TestBuilding:
         # b = f.build([Bits('0b111, 0xff')])
 
     def test_building_with_const(self):
-        f = Field.fromstring('u4 = 8')
+        f = Field.fromstring('u4 =8')
         b = f.build([])
         assert b == '0x8'
         f.clear()
@@ -115,4 +120,4 @@ class TestBuilding:
         f.const = False
         assert f.value == 8
         f.clear()
-        assert f.value == None
+        assert f.value is None

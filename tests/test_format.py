@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 from bitformat import Format, Dtype, Bits, Field, Array, Repeat, Find, FieldArray
+from hypothesis import given, assume
+import hypothesis.strategies as st
+import random
 
 
 class TestCreation:
@@ -30,10 +33,11 @@ class TestCreation:
         assert f.fieldtypes[0].name == ''
         assert f.fieldtypes[0].dtype == Dtype('float', 16)
 
-    def test_building_field(self):
-        f = Field('float16')
-        b = f.build([0.0])
-        assert b == '0x0000'
+    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'e4m3float', 'float64']))
+    def test_building_field(self, name):
+        f = Field(name)
+        b = f.build([0])
+        assert b == Bits(f'{name}=0')
 
     def test_create_from_bits(self):
         b = Bits('0xabc')
@@ -55,14 +59,14 @@ class TestCreation:
         f.parse(x)
         assert isinstance(f, Format)
 
-    # def testComplicatedCreation(self):
-    #     f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
-    #     self.assertEqual(f.name, 'header')
-    #     b = f.build([352])
-    #     self.assertEqual(b, '0x000001b3, u12=352, u12=288, 0b1')
-    #     f2 = Format([f, 'bytes5'], 'main')
-    #     f3 = f2.build([b'12345'])
-    #     self.assertEqual(f3, Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345')
+    def testComplicatedCreation(self):
+        f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
+        assert f.name == 'header'
+        b = f.build([352])
+        assert b == '0x000001b3, u12=352, u12=288, 0b1'
+        f2 = Format([f, 'bytes5'], 'main')
+        f3 = f2.build([352, b'12345'])
+        assert f3 == Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
         header = Format(['0x000001b3', 'u12<width>', 'u12<height>', 'bool<f1>', 'bool<f2>'], 'header')
@@ -74,6 +78,15 @@ class TestCreation:
         assert t['width'].value == 100
         assert f['header']['width'].value == 100
         assert f['main']['v2'].value == -99
+
+    def test_format_in_itself(self):
+        f = Format(['u8 <x>'])
+        f += f
+        b = f.build([10, 20])
+        f.clear()
+        f.parse(b)
+        assert f.value == [10, [20]]
+
 
 class TestAddition:
 
@@ -98,25 +111,25 @@ class TestArray:
 
         f2 = Format(['u8*20 <new_array>'], 'b')
         assert f2.fieldtypes[0].items == 20
-        assert f2.fieldtypes[0].value == None
+        assert f2.fieldtypes[0].value is None
         f2['new_array'] = a
         assert a == f2.bits()
 
-
-    def test_example_with_array(self):
+    @given(w=st.integers(1, 5), h=st.integers(1, 5))
+    def test_example_with_array(self, w, h):
         f = Format([
                    Field('bytes', 'signature', b'BMP'),
                    'i8 <width>',
                    'i8 <height>',
                    'u8 * {width * height} <pixels>',
                    ], 'construct_example')
-        b = f.build([3, 2, [7, 8, 9, 11, 12, 13]])
-        v = b'BMP\x03\x02\x07\x08\t\x0b\x0c\r'
-        assert b.tobytes() == v
-        f.parse(Bits(v))
-        assert f['width'].value == 3
-        assert f['height'].value == 2
-        assert f['pixels'].value ==[7, 8, 9, 11, 12, 13]
+        # TODO: This should be chosen by hypothesis to make it repeatable.
+        p = [random.randint(0, 255) for _ in range(w * h)]
+        b = f.build([w, h, p])
+        f.parse(b)
+        assert f['width'].value == w
+        assert f['height'].value == h
+        assert f['pixels'].value == p
         # self.assertEqual(type(f['pixels'].value), list)
 
 
@@ -176,7 +189,7 @@ class TestMethods:
     def test_get_item(self):
         f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
         assert f[0].value == 7
-        assert f[1].value == None
+        assert f[1].value is None
         assert f['pop'].value == 144
 
     def test_set_item(self):
@@ -184,7 +197,7 @@ class TestMethods:
         f[0] = 2
         assert f[0].value == 2
         f[0] = None
-        assert f[0].value == None
+        assert f[0].value is None
         f['pop'] = 999999
         assert f['pop'].value == 999999
 
@@ -212,5 +225,5 @@ class TestFinder:
         f.parse(b)
         assert f['width'].value == 352
         f.clear()
-        assert f['width'].value == None
+        assert f['width'].value is None
         f.build([352, 288])
