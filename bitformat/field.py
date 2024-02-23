@@ -265,9 +265,13 @@ class Field(SingleDtypeField):
         return cls(dtype, name, value, const)
 
     @classmethod
-    def frombits(cls, bits: Bits | str | bytes | bytearray, name: str = ''):
-        b = Bits(bits)
+    def frombits(cls, b: Bits | str | bytes | bytearray, /, name: str = ''):
+        b = Bits(b)
         return cls(Dtype('bits'), name, b)
+
+    @classmethod
+    def frombytes(cls, b: bytes | bytearray, /, name: str = ''):
+        return cls(Dtype('bytes'), name, b)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         return self._parse_common(b, vars_)

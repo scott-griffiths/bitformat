@@ -38,22 +38,19 @@ class TestCreation:
         b = f2.build()
         assert b.tobytes() == b'123'
 
-    def test_creation_with_names(self):
-        good = ['self', 'three3', '_why_', 'a_b_c', 'a1', 'a_1', 'a_1_2', 'a_1_2_3']
-        bad = ['thi<s', '[hello]', 'a b', 'a-b', 'a.b', 'a b c']
-        for name in good:
+    @given(name=st.text())
+    def test_creation_with_names(self, name):
+        assume(name != '')
+        if name.isidentifier() and '__' not in name:
             f = Field('u8', name)
             assert f.name == name
             f2 = Field.fromstring(f'u8<{name}>')
             assert f2.name == name
-
-        for name in bad:
+            with pytest.raises(ValueError):
+                _ = Field(f'u8 <{name}>', name=name)
+        else:
             with pytest.raises(ValueError):
                 _ = Field('u8', name)
-
-        for n in good:
-            with pytest.raises(ValueError):
-                _ = Field(f'u8 <{n}>', n)
 
     def test_creation_from_strings(self):
         f = Field.fromstring('bool < flag_12 > ')
@@ -64,10 +61,26 @@ class TestCreation:
         assert f.dtype.name == 'ue'
         assert f.value == 2
         assert f.bits() == '0b011'
-        f = Field('bytes', name='hello', value=b'hello world!')
-        assert f.value == b'hello world!'
+
+    @given(st.binary())
+    def test_creation_from_bytes(self, b):
+        f = Field('bytes', name='hello', value=b)
+        assert f.value == b
         assert f.name == 'hello'
         assert f.dtype == Dtype('bytes')
+
+        f = Field.frombytes(b, name='hello')
+        assert f.value == b
+        assert f.name == 'hello'
+        assert f.dtype == Dtype('bytes')
+
+
+    @given(st.binary())
+    def test_creation_from_bits(self, b):
+        f = Field.frombits(b, 'hello')
+        assert f.value == b
+        assert f.name == 'hello'
+        assert f.dtype == Dtype('bits')
 
     def test_string_creation_with_const(self):
         f1 = Field.fromstring('u1 <f1> : 1')
