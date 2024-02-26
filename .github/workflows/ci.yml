@@ -129,14 +129,14 @@ jobs:
           # make sure we test the installed code
           cp -R repo/tests/ tests/
           python -m pip install --upgrade pip
-          python -m pip install pytest
+          python -m pip install pytest hypothesis
           python -m pip install ./dist/*.whl
           # show the directory contents for diagnostics
           ls -la
 
       - name: Run pytest
         run: |
-          python -m pytest
+          python -m pytest tests/
 
   all:
     name: All successful
