@@ -79,7 +79,7 @@ The `FieldType` class shouldn't be used directly, but is a base class containing
 
 .. class:: FieldType
 
-    .. method:: bits() -> Bits
+    .. method:: tobits() -> Bits
         :abstractmethod:
 
         Return data as a Bits object.
@@ -87,7 +87,7 @@ The `FieldType` class shouldn't be used directly, but is a base class containing
     .. method:: build(values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits
         :abstractmethod:
 
-    .. method:: bytes() -> bytes
+    .. method:: tobytes() -> bytes
         :abstractmethod:
 
         Return data as bytes object, padding with up to 7 zero bits at the end if needed.

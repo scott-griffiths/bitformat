@@ -28,13 +28,13 @@ class FieldType(abc.ABC):
         return self._build([] if values is None else values, 0, {},  {} if kwargs is None else kwargs)[0]
 
     @abc.abstractmethod
-    def bits(self) -> Bits:
+    def tobits(self) -> Bits:
         """Return the bits that represent the field."""
         ...
 
-    def bytes(self) -> bytes:
+    def tobytes(self) -> bytes:
         """Return the bytes that represent the field. Pads with up to 7 zero bits if necessary."""
-        b = self.bits()
+        b = self.tobits()
         return b.tobytes()
 
     @abc.abstractmethod
@@ -107,7 +107,7 @@ class SingleDtypeField(FieldType):
                 raise ValueError(f"Can't set a field to be constant if it has no value.")
             self.const = const
 
-    def bits(self) -> Bits:
+    def tobits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
@@ -359,7 +359,6 @@ class FieldArray(SingleDtypeField):
         return True
 
 
-
 class Find(FieldType):
 
     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
@@ -372,7 +371,7 @@ class Find(FieldType):
     def _build(self, values: list[Any], index: int, _vars: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
-    def bits(self) -> Bits:
+    def tobits(self) -> Bits:
         return Bits()
 
     def clear(self) -> None:

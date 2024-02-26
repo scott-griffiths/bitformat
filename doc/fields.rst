@@ -30,11 +30,11 @@ Although you shouldn't need to deal with this type directly it is helpful to tak
 
         Removes any nesting of fields and returns a flat list of FieldsTypes.
 
-      .. method:: FieldType.bits() -> Bits
+      .. method:: FieldType.tobits() -> Bits
 
         Converts the contents to a `Bits` bit literal.
 
-      .. method:: FieldType.bytes() -> bytes
+      .. method:: FieldType.tobytes() -> bytes
 
         Converts the contents to a `bytes` object.
         Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.

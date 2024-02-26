@@ -18,7 +18,7 @@ class FieldListType(FieldType):
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
             values_used += v
-        return self.bits(), values_used
+        return self.tobits(), values_used
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         pos = 0
@@ -39,8 +39,8 @@ class FieldListType(FieldType):
         for fieldtype, v in zip(self.fieldtypes, val):
             fieldtype._setvalue(v)
 
-    def bits(self) -> Bits:
-        return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)
+    def tobits(self) -> Bits:
+        return Bits().join(fieldtype.tobits() for fieldtype in self.fieldtypes)
 
     def flatten(self) -> list[FieldType]:
         # Just return a flat list of fields

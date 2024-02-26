@@ -29,7 +29,7 @@ class TestCreation:
     def test_creation_from_bits(self):
         b = Bits('0xf, 0b1')
         f1 = Field.frombits(b)
-        assert f1.bits() == b
+        assert f1.tobits() == b
         assert f1.const == True
         with pytest.raises(ValueError):
             _ = Field(Bits())
@@ -60,7 +60,7 @@ class TestCreation:
         f = Field.fromstring('ue = 2')
         assert f.dtype.name == 'ue'
         assert f.value == 2
-        assert f.bits() == '0b011'
+        assert f.tobits() == '0b011'
 
     @given(st.binary())
     def test_creation_from_bytes(self, b):
