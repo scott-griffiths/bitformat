@@ -121,16 +121,13 @@ class SingleDtypeField(FieldType):
         return f"{self.__class__.__name__}.fromstring({self.__str__()})"
 
     @staticmethod
-    def _parse_field_str(dtype_str: str) -> tuple[str, str | None, str, int, bool | None]:
+    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, int, bool | None]:
         # The string has the form 'dtype [* items] [<name>] [= value]'
         # But there may be chars inside {} sections that should be ignored.
         # So we scan to find first real *, <, > and =
-        asterix_pos = -1
-        lessthan_pos = -1
-        greaterthan_pos = -1
-        equals_pos = -1
-        colon_pos = -1
         inside_braces = False
+        symbol_pos: dict[str, int | None] = {'*': None, '<': None, '>': None, '=': None, ':': None}
+        symbols = symbol_pos.keys()
         for pos, char in enumerate(dtype_str):
             if char == '{':
                 if inside_braces:
@@ -142,46 +139,28 @@ class SingleDtypeField(FieldType):
                 inside_braces = False
             if inside_braces:
                 continue
-            if char == '*':
-                if asterix_pos != -1:
-                    raise ValueError(f"More than one '*' found in '{dtype_str}'.")
-                asterix_pos = pos
-            if char == '<':
-                if lessthan_pos != -1:
-                    raise ValueError(f"More than one '<' found in '{dtype_str}'.")
-                lessthan_pos = pos
-            if char == '>':
-                if greaterthan_pos != -1:
-                    raise ValueError(f"More than one '>' found in '{dtype_str}'.")
-                greaterthan_pos = pos
-            if char == '=':
-                if equals_pos != -1:
-                    raise ValueError(f"More than one '=' found in '{dtype_str}'.")
-                if colon_pos != -1:
-                    raise ValueError(f"An '=' found in '{dtype_str}' as well as a ':'.")
-                equals_pos = pos
-            if char == ':':
-                if colon_pos != -1:
-                    raise ValueError(f"More than one ':' found in '{dtype_str}'.")
-                if equals_pos != -1:
-                    raise ValueError(f"A ':' found in '{dtype_str}' as well as an '='.")
-                colon_pos = pos
+            if char in symbols:
+                if symbol_pos[char] is not None:
+                    raise ValueError(f"More than one '{char}' found in '{dtype_str}'.")
+                symbol_pos[char] = pos
 
+        if symbol_pos[':'] is not None and symbol_pos['='] is not None:
+            raise ValueError(f"Both '=' and ':' were found in '{dtype_str}'.")
         value = const = None
         name = ''
         items = 1
         # Check to see if it includes a value:
-        if equals_pos != -1:
+        if (equals_pos := symbol_pos['=']) is not None:
             value = dtype_str[equals_pos + 1:]
             dtype_str = dtype_str[:equals_pos]
             const = True
-        if colon_pos != -1:
+        if (colon_pos := symbol_pos[':']) is not None:
             value = dtype_str[colon_pos + 1:]
             dtype_str = dtype_str[:colon_pos]
             const = False
         # Check if it has a name:
-        if lessthan_pos != -1:
-            if greaterthan_pos == -1:
+        if (lessthan_pos := symbol_pos['<']) is not None:
+            if (greaterthan_pos := symbol_pos['>']) is None:
                 raise ValueError(
                     f"An opening '<' was supplied in the formatted dtype '{dtype_str} but without a closing '>'.")
             name = dtype_str[lessthan_pos + 1:greaterthan_pos]
@@ -190,7 +169,7 @@ class SingleDtypeField(FieldType):
             if chars_after_name != '' and not chars_after_name.isspace():
                 raise ValueError(f"There should be no trailing characters after the <name>.")
             dtype_str = dtype_str[:lessthan_pos]
-        if asterix_pos != -1:
+        if (asterix_pos := symbol_pos['*']) is not None:
             items = dtype_str[asterix_pos + 1:]
             dtype_str = dtype_str[:asterix_pos]
         return dtype_str, name, value, items, const

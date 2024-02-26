@@ -13,7 +13,7 @@ class FieldListType(FieldType):
     def __init__(self) -> None:
         self.fieldtypes = []
 
-    def _build(self, values: list[Any], index: int, _vars: dict[str, Any] = {}, kwargs: dict[str, Any] = {}) -> tuple[Bits, int]:
+    def _build(self, values: list[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
@@ -36,8 +36,8 @@ class FieldListType(FieldType):
     def _setvalue(self, val: list[Any]) -> None:
         if len(val) != len(self.fieldtypes):
             raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
-        for i in range(len(val)):
-            self.fieldtypes[i]._setvalue(val[i])
+        for fieldtype, v in zip(self.fieldtypes, val):
+            fieldtype._setvalue(v)
 
     def bits(self) -> Bits:
         return Bits().join(fieldtype.bits() for fieldtype in self.fieldtypes)

@@ -1,5 +1,4 @@
-from __future__ import annotations
-"""
+r"""
 A library for creating and interpreting binary formats.
 """
 
