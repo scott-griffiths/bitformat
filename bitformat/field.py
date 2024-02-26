@@ -137,27 +137,26 @@ class SingleDtypeField(FieldType):
                 if not inside_braces:
                     raise ValueError(f"Closing brace found with no matching opening brace in '{dtype_str}'.")
                 inside_braces = False
-            if inside_braces:
-                continue
-            if char in symbols:
+            if not inside_braces and char in symbols:
                 if symbol_pos[char] is not None:
                     raise ValueError(f"More than one '{char}' found in '{dtype_str}'.")
                 symbol_pos[char] = pos
 
-        if symbol_pos[':'] is not None and symbol_pos['='] is not None:
-            raise ValueError(f"Both '=' and ':' were found in '{dtype_str}'.")
         value = const = None
         name = ''
         items = 1
+
         # Check to see if it includes a value:
-        if (equals_pos := symbol_pos['=']) is not None:
-            value = dtype_str[equals_pos + 1:]
-            dtype_str = dtype_str[:equals_pos]
-            const = True
-        if (colon_pos := symbol_pos[':']) is not None:
-            value = dtype_str[colon_pos + 1:]
-            dtype_str = dtype_str[:colon_pos]
-            const = False
+        colon_pos = symbol_pos[':']
+        equals_pos = symbol_pos['=']
+        if colon_pos is not None and equals_pos is not None:
+            raise ValueError(f"Both '=' and ':' were found in '{dtype_str}'. Use '=' before values that are constant, and ':' if many different values are allowable.")
+        if colon_pos is not None or equals_pos is not None:
+            const = equals_pos is not None
+            value_pos = colon_pos if colon_pos is not None else equals_pos
+            value = dtype_str[value_pos + 1:]
+            dtype_str = dtype_str[:value_pos]  # Cut off the value part at the end.
+
         # Check if it has a name:
         if (lessthan_pos := symbol_pos['<']) is not None:
             if (greaterthan_pos := symbol_pos['>']) is None:
@@ -168,10 +167,12 @@ class SingleDtypeField(FieldType):
             chars_after_name = dtype_str[greaterthan_pos + 1:]
             if chars_after_name != '' and not chars_after_name.isspace():
                 raise ValueError(f"There should be no trailing characters after the <name>.")
-            dtype_str = dtype_str[:lessthan_pos]
+            dtype_str = dtype_str[:lessthan_pos]  # Cut off the name part.
+
+        # Check if it is an array:
         if (asterix_pos := symbol_pos['*']) is not None:
             items = dtype_str[asterix_pos + 1:]
-            dtype_str = dtype_str[:asterix_pos]
+            dtype_str = dtype_str[:asterix_pos]  # Cut off the items part.
         return dtype_str, name, value, items, const
 
     def _str_common(self, indent: int, dtype, name, value, const, item_str='') -> str:
