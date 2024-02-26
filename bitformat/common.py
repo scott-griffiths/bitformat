@@ -20,6 +20,7 @@ class Colour:
             cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ''
         return x
 
+
 is_interactive_shell = hasattr(sys, 'ps1')
 colour = Colour(is_interactive_shell)
 

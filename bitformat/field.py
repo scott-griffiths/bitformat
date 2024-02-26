@@ -82,6 +82,31 @@ class SingleDtypeField(FieldType):
     """Holds the common code for other Field classes with a single Dtype.
     This class should not be used directly."""
 
+    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
+        self._bits = None
+        self.dtype = dtype
+        self.dtype_expression = None
+        if isinstance(self.dtype, str):
+            p = self.dtype.find('{')
+            if p != -1:
+                self.dtype_expression = Expression(self.dtype[p:])
+                self.dtype = self.dtype[:p]
+            else:
+                try:
+                    self.dtype = Dtype(dtype)
+                except ValueError:
+                    raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
+        self.name = name
+
+        if self.dtype_expression is None and self.dtype.length == 0:
+            raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
+        if const is None:
+            self.const = value is not None
+        else:
+            if value is None:
+                raise ValueError(f"Can't set a field to be constant if it has no value.")
+            self.const = const
+
     def bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
@@ -220,33 +245,11 @@ class SingleDtypeField(FieldType):
             vars_[self.name] = self.value
         return self._bits, 1
 
+
 class Field(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
-        self._bits = None
-        self.dtype = dtype
-        self.dtype_expression = None
-        if isinstance(self.dtype, str):
-            p = self.dtype.find('{')
-            if p != -1:
-                self.dtype_expression = Expression(self.dtype[p:])
-                self.dtype = self.dtype[:p]
-            else:
-                try:
-                    self.dtype = Dtype(dtype)
-                except ValueError:
-                    raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
-        self.name = name
-
+        super().__init__(dtype, name, value, const)
         self.value, self.value_expression = Field._perhaps_convert_to_expression(value)
-
-        if self.dtype_expression is None and self.dtype.length == 0:
-            raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
-        if const is None:
-            self.const = value is not None
-        else:
-            if value is None:
-                raise ValueError(f"Can't set a field to be constant if it has no value.")
-            self.const = const
 
     @classmethod
     def fromstring(cls, s: str, /):
@@ -310,36 +313,12 @@ class Field(SingleDtypeField):
 
 class FieldArray(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None) -> None:
-        self._bits = None
-        self.dtype = dtype
-        self.dtype_expression = None
-        if isinstance(self.dtype, str):
-            p = self.dtype.find('{')
-            if p != -1:
-                self.dtype_expression = Expression(self.dtype[p:])
-                self.dtype = self.dtype[:p]
-            else:
-                try:
-                    self.dtype = Dtype(dtype)
-                except ValueError:
-                    raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
-        self.name = name
-
+        super().__init__(dtype, name, value, const)
         try:
             self.items, self.items_expression = int(items), None
         except ValueError:
             self.items, self.items_expression = FieldArray._perhaps_convert_to_expression(items)
-
         self.value, self.value_expression = FieldArray._perhaps_convert_to_expression(value)
-
-        if self.dtype_expression is None and self.dtype.length == 0:
-            raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
-        if const is None:
-            self.const = value is not None
-        else:
-            if value is None:
-                raise ValueError(f"Can't set a field to be constant if it has no value.")
-            self.const = const
 
     @classmethod
     def fromstring(cls, s: str, /):
@@ -364,7 +343,7 @@ class FieldArray(SingleDtypeField):
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-            return Array(self.dtype, self._bits) if self._bits is not None else None
+        return Array(self.dtype, self._bits) if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
