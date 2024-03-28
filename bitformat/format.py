@@ -100,11 +100,18 @@ class Format(FieldListType):
 
     def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
         if isinstance(other, FieldType):
-            self.fieldtypes.append(copy.deepcopy(other))
+            self.fieldtypes.append(copy.copy(other))
             return self
         field = Field(other)
         self.fieldtypes.append(field)
         return self
+
+    def __copy__(self) -> Format:
+        x = Format()
+        x.name = self.name
+        x.vars = self.vars
+        x.fieldtypes = [copy.copy(f) for f in self.fieldtypes]
+        return x
 
     def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
         x = copy.deepcopy(self)

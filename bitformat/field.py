@@ -315,7 +315,18 @@ class FieldArray(SingleDtypeField):
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
-        return self._parse_common(b, vars_)
+        if self.const:
+            value = b[:len(self._bits)]
+            if value != self._bits:
+                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
+            return len(self._bits)
+        if self.dtype_expression is not None:
+            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
+        self._bits = b[:self.dtype.bitlength * self.items]
+        if self.name != '':
+            vars_[self.name] = self.value
+        return self.dtype.bitlength
+
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.items_expression is not None:
@@ -323,7 +334,7 @@ class FieldArray(SingleDtypeField):
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-        return Array(self.dtype, self._bits) if self._bits is not None else None
+        return Array(self.dtype, self._bits).tolist() if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:

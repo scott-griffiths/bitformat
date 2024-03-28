@@ -33,7 +33,7 @@ class TestCreation:
         assert f.fieldtypes[0].name == ''
         assert f.fieldtypes[0].dtype == Dtype('float', 16)
 
-    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'e4m3float', 'float64']))
+    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'p4binary8', 'float64']))
     def test_building_field(self, name):
         f = Field(name)
         b = f.build([0])
@@ -126,11 +126,12 @@ class TestArray:
         # TODO: This should be chosen by hypothesis to make it repeatable.
         p = [random.randint(0, 255) for _ in range(w * h)]
         b = f.build([w, h, p])
+        f.clear()
         f.parse(b)
         assert f['width'].value == w
         assert f['height'].value == h
         assert f['pixels'].value == p
-        # self.assertEqual(type(f['pixels'].value), list)
+
 
 
 class TestExpressions:

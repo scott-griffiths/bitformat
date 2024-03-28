@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        ds = [Dtype('u9'), Dtype('i', 4), Dtype('e4m3float'), Dtype('bytes:3'), Dtype('sie'), Dtype('bits11')]
+        ds = [Dtype('u9'), Dtype('i', 4), Dtype('p4binary8'), Dtype('bytes:3'), Dtype('sie'), Dtype('bits11')]
         for d in ds:
             f = Field(d)
             assert f.dtype == d
@@ -109,7 +109,7 @@ class TestBuilding:
         f = Field('i4')
         b = f.build([-8])
         assert b == '0x8'
-        f = Field('e4m3float')
+        f = Field('p4binary8')
         b = f.build([0.5])
         assert b == '0x38'
         f = Field('bytes:3')
