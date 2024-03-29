@@ -2,7 +2,7 @@ from __future__ import annotations
 import abc
 from bitstring import Bits, Dtype, Array
 
-from .common import colour, Expression, indent_size
+from .common import colour, Expression, _indent
 from typing import Any
 
 class FieldType(abc.ABC):
@@ -47,6 +47,10 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def _repr(self, indent: int) -> str:
+        ...
+
+    @abc.abstractmethod
     def flatten(self) -> list[FieldType]:
         """Return a flat list of all the fields in the object."""
         ...
@@ -59,7 +63,7 @@ class FieldType(abc.ABC):
         return self._str(0)
 
     def __repr__(self) -> str:
-        return self.__str__()
+        return self._repr(0)
 
     def __eq__(self, other) -> bool:
         return self.flatten() == other.flatten()
@@ -77,6 +81,7 @@ class FieldType(abc.ABC):
         self._name = val
 
     name = property(_get_name, _set_name)
+
 
 class SingleDtypeField(FieldType):
     """Holds the common code for other Field classes with a single Dtype.
@@ -116,9 +121,6 @@ class SingleDtypeField(FieldType):
 
     def flatten(self) -> list[FieldType]:
         return [self]
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.fromstring({self.__str__()})"
 
     @staticmethod
     def _parse_field_str(dtype_str: str) -> tuple[str, str, str, int, bool | None]:
@@ -175,9 +177,8 @@ class SingleDtypeField(FieldType):
             dtype_str = dtype_str[:asterix_pos]  # Cut off the items part.
         return dtype_str, name, value, items, const
 
-    def _str_common(self, indent: int, dtype, name, value, const, item_str='') -> str:
+    def _str_common(self, dtype, name, value, const, item_str='') -> str:
         d = f"{colour.purple}{dtype}{colour.off}"
-
         i = f"{colour.purple}{item_str}{colour.off}"
         n = '' if name == '' else f" <{colour.green}{name}{colour.off}>"
         divider = '=' if const else ':'
@@ -185,8 +186,7 @@ class SingleDtypeField(FieldType):
             v = f" {divider} {colour.cyan}{value.tolist()}{colour.off}"
         else:
             v = '' if value is None else f" {divider} {colour.cyan}{value}{colour.off}"
-        indent_str = ' ' * indent_size * indent
-        return f"{indent_str}'{d}{i}{n}{v}'"
+        return f"{d}{i}{n}{v}"
 
     @staticmethod
     def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
@@ -281,7 +281,15 @@ class Field(SingleDtypeField):
     value = property(_getvalue, _setvalue)
 
     def _str(self, indent: int) -> str:
-        return self._str_common(indent, self.dtype, self.name, self.value, self.const)
+        return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const)}"
+
+    # This simple repr used when field is part of a larger object
+    def _repr(self, indent: int) -> str:
+        return f"{_indent(indent)}'{self._str_common(self.dtype, self.name, self.value, self.const)}'"
+
+    # This repr is used when the field is the top level object
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.fromstring('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
@@ -353,7 +361,14 @@ class FieldArray(SingleDtypeField):
         else:
             item_str = str(self.items)
         item_str = f" * {item_str}"
-        return self._str_common(indent, self.dtype, self.name, self.value, self.const, item_str)
+        return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
+
+    def _repr(self, indent: int) -> str:
+        return f"{_indent(indent)}'{self._str_common(self.dtype, self.name, self.value, self.const)}'"
+
+    # This repr is used when the field is the top level object
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}.fromstring('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
@@ -400,11 +415,13 @@ class Find(FieldType):
         return []
 
     def _str(self, indent: int) -> str:
-        indent_str = ' ' * indent_size * indent
         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
         find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
-        s = f"{indent_str}{self.__class__.__name__}({name_str}{find_str})"
+        s = f"{_indent(indent)}{self.__class__.__name__}({name_str}{find_str})"
         return s
+
+    def _repr(self, indent: int) -> str:
+        return self._str(indent)
 
     def _getvalue(self) -> int | None:
         return self._value

@@ -4,7 +4,7 @@ from bitstring import Bits, Dtype
 from typing import Sequence, Any, Iterable
 import copy
 
-from .common import colour, indent_size
+from .common import colour, _indent
 from .field import FieldType, Field, FieldArray
 
 
@@ -90,12 +90,21 @@ class Format(FieldListType):
             self.fieldtypes.append(fieldtype)
 
     def _str(self, indent: int) -> str:
-        indent_str = ' ' * indent_size * indent
-        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-        s = f"{indent_str}{self.__class__.__name__}({name_str}\n"
+        name_str = '' if self.name == '' else f" <{colour.blue}{self.name}{colour.off}>"
+        s = f"{_indent(indent)}{self.__class__.__name__}{name_str}\n"
         for fieldtype in self.fieldtypes:
-            s += fieldtype._str(indent + 1) + ',\n'
-        s += f"{indent_str})"
+            s += fieldtype._str(indent + 1) + '\n'
+        return s
+
+    def _repr(self, indent: int) -> str:
+        name_str = '' if self.name == '' else f", {self.name!r}"
+        s = f"{_indent(indent)}{self.__class__.__name__}([\n"
+        for i, fieldtype in enumerate(self.fieldtypes):
+            s += fieldtype._repr(indent + 1)
+            if i != len(self.fieldtypes) - 1:
+                s += ','
+            s += '\n'
+        s += f"{_indent(indent)}]{name_str})"
         return s
 
     def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
@@ -131,18 +140,24 @@ class Repeat(FieldListType):
         self.count = count
         self.name = name
         if isinstance(fieldtype, str):
-            fieldtype = Field.fromstring(fieldtype)
-        if not isinstance(fieldtype, FieldType):
+            self.fieldtype = Field.fromstring(fieldtype)
+        else:
+            self.fieldtype = fieldtype
+        if not isinstance(self.fieldtype, FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-        for _ in count:
-            self.fieldtypes.append(copy.copy(fieldtype))
+
 
     def _str(self, indent: int) -> str:
-        indent_str = ' ' * indent_size * indent
-        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-        count_str = f'{colour.green}{self.count!r}{colour.off},'
-        s = f"{indent_str}{self.__class__.__name__}({name_str}{count_str}\n"
-        for fieldtype in self.fieldtypes:
-            s += fieldtype._str(indent + 1) + ',\n'
-        s += f"{indent_str})"
+        count_str = f'({colour.green}{self.count}{colour.off})'
+        name_str = '' if self.name == '' else f" <{colour.blue}{self.name}{colour.off}>"
+        s = f"{_indent(indent)}{self.__class__.__name__}{count_str}{name_str}\n"
+        s += self.fieldtype._str(indent + 1) + '\n'
+        return s
+
+    def _repr(self, indent: int) -> str:
+        s = f"{_indent(indent)}{self.__class__.__name__}({self.count!r},\n"
+        s += self.fieldtype._repr(indent + 1)
+        if self.name != '':
+            s += f",\n{_indent(indent + 1)}name={self.name!r}"
+        s += f"\n{_indent(indent)})"
         return s
