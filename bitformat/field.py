@@ -188,6 +188,15 @@ class SingleDtypeField(FieldType):
             v = '' if value is None else f" {divider} {colour.cyan}{value}{colour.off}"
         return f"{d}{i}{n}{v}"
 
+    def _repr_common(self, dtype, name, value, const, item_str='') -> str:
+        n = '' if name == '' else f" <{name}>"
+        divider = '=' if const else ':'
+        if isinstance(value, Array):
+            v = f" {divider} {value.tolist()}"
+        else:
+            v = '' if value is None else f" {divider} {value}"
+        return f"'{dtype}{item_str}{n}{v}'"
+
     @staticmethod
     def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
         if not isinstance(s, str):
@@ -285,7 +294,7 @@ class Field(SingleDtypeField):
 
     # This simple repr used when field is part of a larger object
     def _repr(self, indent: int) -> str:
-        return f"{_indent(indent)}'{self._str_common(self.dtype, self.name, self.value, self.const)}'"
+        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const)}"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
@@ -364,7 +373,7 @@ class FieldArray(SingleDtypeField):
         return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     def _repr(self, indent: int) -> str:
-        return f"{_indent(indent)}'{self._str_common(self.dtype, self.name, self.value, self.const)}'"
+        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const)}"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

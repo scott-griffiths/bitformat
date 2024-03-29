@@ -90,7 +90,7 @@ class Format(FieldListType):
             self.fieldtypes.append(fieldtype)
 
     def _str(self, indent: int) -> str:
-        name_str = '' if self.name == '' else f" <{colour.blue}{self.name}{colour.off}>"
+        name_str = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
         s = f"{_indent(indent)}{self.__class__.__name__}{name_str}\n"
         for fieldtype in self.fieldtypes:
             s += fieldtype._str(indent + 1) + '\n'
@@ -148,10 +148,10 @@ class Repeat(FieldListType):
 
 
     def _str(self, indent: int) -> str:
-        count_str = f'({colour.green}{self.count}{colour.off})'
-        name_str = '' if self.name == '' else f" <{colour.blue}{self.name}{colour.off}>"
+        count_str = f'({self.count})'
+        name_str = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
         s = f"{_indent(indent)}{self.__class__.__name__}{count_str}{name_str}\n"
-        s += self.fieldtype._str(indent + 1) + '\n'
+        s += self.fieldtype._str(indent + 1)
         return s
 
     def _repr(self, indent: int) -> str:
