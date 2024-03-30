@@ -202,30 +202,33 @@ class TestMethods:
         f['pop'] = 999999
         assert f['pop'].value == 999999
 
+def test_repeating_field():
+    f = Repeat(5, 'u8')
+    d = Array('u8', [1, 5, 9, 7, 6]).data
+    f.parse(d)
+    assert f.value == [1, 5, 9, 7, 6]
 
-class TestRepeater:
 
-    def test_repeating_field(self):
-        f = Format([
-                Repeat(5, 'u8')
+def test_find_field():
+    b = Bits('0x1234000001b3160120')
+    f = Format([
+            Find('0x000001'),
+            'hex32 <start_code> = 000001b3',
+            'u12 <width>',
+            'u12 <height>'
         ])
-        f.parse(Array('u8', [1, 5, 9, 7, 6]).data)
-        assert f.value == [[1, 5, 9, 7, 6]]
+    f.parse(b)
+    assert f['width'].value == 352
+    f.clear()
+    assert f['width'].value is None
+    f.build([352, 288])
+    assert f.tobits() == '0x000001b3160120'
 
-
-class TestFinder:
-
-    def test_find_field(self):
-        b = Bits('0x1234000001b3160120')
-        f = Format([
-                Find('0x000001'),
-                'hex32 <start_code> = 000001b3',
-                'u12 <width>',
-                'u12 <height>'
-            ])
-        f.parse(b)
-        assert f['width'].value == 352
-        f.clear()
-        assert f['width'].value is None
-        f.build([352, 288])
-        assert f.tobits() == '0x000001b3160120'
+def test_format_repr_and_str():
+    f = Format(['u8 <s>', Repeat('s + 1', Format(['u12 <width>', 'u12 <height>', Repeat('width * height', 'u8', 'data')])), 'hex <eof> = 123'], 'my_format')
+    s = str(f)
+    r = repr(f)
+    assert 'my_format' in s
+    print(s)
+    print(r)
+    assert 'my_format' in r

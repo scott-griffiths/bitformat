@@ -130,34 +130,3 @@ class Format(FieldListType):
     def append(self, value: Any) -> None:
         self.__iadd__(value)
 
-
-class Repeat(FieldListType):
-
-    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits, name: str = ''):
-        super().__init__()
-        if isinstance(count, int):
-            count = range(count)
-        self.count = count
-        self.name = name
-        if isinstance(fieldtype, str):
-            self.fieldtype = Field.fromstring(fieldtype)
-        else:
-            self.fieldtype = fieldtype
-        if not isinstance(self.fieldtype, FieldType):
-            raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-
-
-    def _str(self, indent: int) -> str:
-        count_str = f'({self.count})'
-        name_str = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
-        s = f"{_indent(indent)}{self.__class__.__name__}{count_str}{name_str}\n"
-        s += self.fieldtype._str(indent + 1)
-        return s
-
-    def _repr(self, indent: int) -> str:
-        s = f"{_indent(indent)}{self.__class__.__name__}({self.count!r},\n"
-        s += self.fieldtype._repr(indent + 1)
-        if self.name != '':
-            s += f",\n{_indent(indent + 1)}name={self.name!r}"
-        s += f"\n{_indent(indent)})"
-        return s
