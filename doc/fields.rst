@@ -188,32 +188,32 @@ use ::
 
 For simple repetition of a field of a known length the `FieldArray` class will be more efficient and easier to use.
 
+..
+    Find
+    ----
 
-Find
-----
+    .. class:: Find(bits: Bits | bytes | bytearray | str, bytealigned: bool = True, name: str = '')
 
-.. class:: Find(bits: Bits | bytes | bytearray | str, bytealigned: bool = True, name: str = '')
+    The `Find` field is used to seek to the next occurrence of a bitstring.
 
-The `Find` field is used to seek to the next occurrence of a bitstring.
+    :meth:`Find.parse` will seek to the start of the next occurrence of `bits`, and set `value` to be the number of bits that
 
-:meth:`Find.parse` will seek to the start of the next occurrence of `bits`, and set `value` to be the number of bits that
+    If `bytealigned` is `True` it will only search on byte boundaries.
 
-If `bytealigned` is `True` it will only search on byte boundaries.
+    The optional `name` parameter is used to give the number of bits skipped a name that can be referenced elsewhere.
 
-The optional `name` parameter is used to give the number of bits skipped a name that can be referenced elsewhere.
+    :meth:`Find.build` does nothing and returns an empty `Bits` object.
 
-:meth:`Find.build` does nothing and returns an empty `Bits` object.
+    :meth:`Find.value`  returns the number of bits skipped to get to the start of the found bits.
+    Note that the value will always be in bits, not bytes and that `None` will be returned if the bits could not be found.
 
-:meth:`Find.value`  returns the number of bits skipped to get to the start of the found bits.
-Note that the value will always be in bits, not bytes and that `None` will be returned if the bits could not be found.
+    :meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
 
-:meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
+..
+    Condition
+    ---------
 
-
-Condition
----------
-
-.. class:: Condition(cond: lambda, fieldtype: [FieldType | str] | None = None, name: str = '')
+    .. class:: Condition(cond: lambda, fieldtype: [FieldType | str] | None = None, name: str = '')
 
 
 

@@ -38,30 +38,12 @@ Some of these types will usually be used as part of a larger structure, where th
    * -
      -
      - ``'dtype * items <name> = value'``
-   * - :ref:`struct_quick_reference`
-     - ✓
-     - A field with multiple data types, with optional name and values.
-   * -
-     -
-     - ``'[dtype1, dtype2, ...] <name> = values'``
-   * - :ref:`structarray_quick_reference`
-     - ✓
-     - An array of multiple fixed-length data types, with optional name and value.
-   * -
-     -
-     - ``'[dtype1, dtype2, ...] * items <name> = values'``
    * - :ref:`format_quick_reference`
      - ×
      - A sequence of other FieldTypes, with optional name.
    * -
      -
      - ``Format([field1, field2, ...], 'name'])``
-   * - :ref:`find_quick_reference`
-     - ✓
-     - Seeks to the next occurrence of a bitstring value.
-   * -
-     -
-     - ``'value? <name>'``
    * - :ref:`repeat_quick_reference`
      - ×
      - Repeat another field type a number of times, with optional name.
@@ -103,12 +85,10 @@ The `FieldType` class shouldn't be used directly, but is a base class containing
 
         Fill in values for empty Fields by parsing a binary object.
 
-
     .. method:: __eq__
         :abstractmethod:
 
         Equality test.
-
 
     .. property:: name: str
 
@@ -157,45 +137,6 @@ The dtype must have a fixed length to be used in a `FieldArray` (most do).
     .. property:: value:: list[Any]
 
 
-.. _struct_quick_reference:
-
-Struct
-------
-
-A `Struct` contains a group of data types. Note that the dtypes within a `Struct` can't be named individually, but can be referred to by index within the `Struct`.
-
-.. class:: Struct(dtypes: Iterable[Dtype | str], name: str = '', value: Any = None, const: bool | None = None)
-
-    .. classmethod:: fromstring(s: str, /) -> Self
-
-    .. property:: const:: bool
-
-    .. property:: dtypes:: list[Dtype]
-
-    .. property:: value:: list[Any]
-
-
-.. _structarray_quick_reference:
-
-StructArray
------------
-
-A `StructArray` has a group of data types like `Struct`, but holds an array of those types.
-The dtypes must all have a fixed length to be used in a `StructArray`.
-
-.. class:: Struct(dtypes: Iterable[Dtype | str], items: str | int, name: str = '', value: Any = None, const: bool | None = None)
-
-    .. classmethod:: fromstring(s: str, /) -> Self
-
-    .. property:: const:: bool
-
-    .. property:: dtypes:: list[Dtype]
-
-    .. property:: items:: int
-
-    .. property:: value:: list[list[Any]]
-
-
 .. _format_quick_reference:
 
 Format
@@ -205,16 +146,6 @@ The `Format` type is central to creating useful objects in `bitformat`.
 It contains a sequence of other `FieldType` objects, which can include nested `Format`s.
 
 .. class:: Format(fieldtypes: Sequence[FieldType | str], name: str = '')
-
-
-.. _find_quick_reference:
-
-Find
-----
-
-The `Find` field is used to seek to the next occurrence of a bitstring.
-
-.. class:: Find(bits: Bits | bytes | bytearray | str, bytealigned: bool = True, name: str = '')
 
 
 .. _repeat_quick_reference:
