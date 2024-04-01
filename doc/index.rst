@@ -83,9 +83,8 @@ Documentation
 .. toctree::
 
     quick_reference
-    format
-    fields
-    api
+    manual
+
 
 
 

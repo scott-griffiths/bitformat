@@ -130,3 +130,6 @@ class Format(FieldListType):
     def append(self, value: Any) -> None:
         self.__iadd__(value)
 
+    def extend(self, values: Iterable) -> None:
+        for value in values:
+            self.__iadd__(value)

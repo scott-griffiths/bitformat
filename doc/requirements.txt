@@ -1,2 +1,2 @@
 sphinx==7.2.2
-piccolo-theme==0.17.0
+piccolo-theme==0.21.0

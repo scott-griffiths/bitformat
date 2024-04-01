@@ -244,7 +244,7 @@ class Field(SingleDtypeField):
     def fromstring(cls, s: str, /):
         dtype, name, value, items, const = cls._parse_field_str(s)
         if items != 1:
-            raise ValueError(f"Field '{s}' should not have a * in its definition. Perhaps you meant to use FieldArray?")
+            raise ValueError(f"Field '{s}' should not have a * in its definition as the number of items in a Field must be 1. Perhaps you meant to use FieldArray?")
         p = dtype.find('{')
         if p == -1:
             try:
@@ -482,9 +482,6 @@ class Repeat(FieldType):
         pass
 
     def clear(self) -> None:
-        pass
-
-    def flatten(self) -> list[FieldType]:
         pass
 
     def _getvalue(self) -> list[Any]:

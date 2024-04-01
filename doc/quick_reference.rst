@@ -54,43 +54,29 @@ Some of these types will usually be used as part of a larger structure, where th
 
 .. _fieldtype_quick_reference:
 
+
 FieldType
 ---------
 
-The `FieldType` class shouldn't be used directly, but is a base class containing the most fundamental methods that all of the other classes here support.
+A ``FieldType`` is an abstract base class for all of the other classes in this section.
+It could represent a single piece of data, it could be a container for other `FieldType` objects or it could represent an action or decision.
+You shouldn't need to deal with this type directly but its methods are available for all of the other field types.
 
-.. class:: FieldType
+Methods
+^^^^^^^
 
-    .. method:: tobits() -> Bits
-        :abstractmethod:
+* :meth:`~FieldType.build`: Given positional and keyword values, fill in the any empty field(s) and build a `Bits` object.
+* :meth:`~FieldType.parse`: Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
+* :meth:`~FieldType.flatten`: Removes any nesting of fields and returns a flat list of FieldsTypes.
+* :meth:`~FieldType.tobits`: Converts the contents to a `Bits` bit literal.
+* :meth:`~FieldType.tobytes`: Converts the contents to a `bytes` object.
+* :meth:`~FieldType.vars`: Returns the positional and keyword values that are contained in the field.
+* :meth:`~FieldType.clear`: Sets the `value` of everything that is not a marked as const to `None`.
 
-        Return data as a Bits object.
-
-    .. method:: build(values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits
-        :abstractmethod:
-
-    .. method:: tobytes() -> bytes
-        :abstractmethod:
-
-        Return data as bytes object, padding with up to 7 zero bits at the end if needed.
-
-    .. method:: clear() -> None
-        :abstractmethod:
-
-    .. method:: flatten() -> list[FieldType]
-        :abstractmethod:
-
-    .. method:: parse(b: Bits | bytes | bytearray, /) -> int
-        :abstractmethod:
-
-        Fill in values for empty Fields by parsing a binary object.
-
-    .. method:: __eq__
-        :abstractmethod:
-
-        Equality test.
-
-    .. property:: name: str
+Properties
+^^^^^^^^^^
+* :attr:`~FieldType.name`: A string that can be used to refer to the `FieldType`.
+* :attr:`~FieldType.value`: A property to get and set the value of the field.
 
 
 .. _field_quick_reference:
@@ -99,21 +85,22 @@ Field
 -----
 
 The `Field` is the fundamental building block in `bitformat`.
+It represents a well-defined amount of binary data with a single data type.
 
+``Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None)``
 
-.. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None)
+Additional methods
+^^^^^^^^^^^^^^^^^^
 
-    .. classmethod:: frombits(bits: Bits | str | bytes | bytearray, name: str = '') -> Self
+* :meth:`~Field.frombits`: Construct from ``bytes``, ``bytearray``, a ``Bits`` object or a string that can be used to construct a `Bits` object.
+* :meth:`~Field.frombytes`: Construct from a ``bytes`` or ``bytearray`` object.
+* :meth:`~Field.fromstring`: Construct from a formatted string to set the `dtype`, `name`, `value` and `const` parameters.
 
-    .. classmethod:: fromstring(s: str, /) -> Self
+Additional properties
+^^^^^^^^^^^^^^^^^^^^^
 
-    .. property:: const:: bool
-
-    .. property:: dtype:: Dtype
-
-    .. property:: value:: Any
-
-        The value of the data type. Will be `None` for an empty Field.
+* :attr:`~Field.dtype`: The data type of the field.
+* :attr:`~Field.const`: Whether the field is a constant bit literal.
 
 
 .. _fieldarray_quick_reference:
@@ -122,20 +109,21 @@ FieldArray
 ----------
 
 A `FieldArray` has a single data type like `Field`, but instead holds an array of that type.
-The dtype must have a fixed length to be used in a `FieldArray` (most do).
+The dtype must have a fixed length to be used in a `FieldArray`.
 
-.. class:: FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None)
+``FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None)``
 
-    .. classmethod:: fromstring(s: str, /) -> Self
+Additional methods
+^^^^^^^^^^^^^^^^^^
 
-    .. property:: const:: bool
+* :meth:`~Field.fromstring`: Construct from a formatted string to set the `dtype`, `items`, `name`, `value` and `const` parameters.
 
-    .. property:: dtype:: Dtype
+Additional properties
+^^^^^^^^^^^^^^^^^^^^^
 
-    .. property:: items:: int
-
-    .. property:: value:: list[Any]
-
+* :attr:`~Field.const`: Whether the field is a constant bit literal.
+* :attr:`~Field.dtype`: The data type of the field.
+* :attr:`~Field.items`: The number of items in the array.
 
 .. _format_quick_reference:
 
@@ -143,9 +131,23 @@ Format
 ------
 
 The `Format` type is central to creating useful objects in `bitformat`.
-It contains a sequence of other `FieldType` objects, which can include nested `Format`s.
+It contains a sequence of other `FieldType` objects, which can include nested `Format` objects.
 
-.. class:: Format(fieldtypes: Sequence[FieldType | str], name: str = '')
+``Format(fieldtypes: Sequence[FieldType | str], name: str = '')``
+
+Additional methods
+^^^^^^^^^^^^^^^^^^
+
+* :meth:`~Format.flatten`: Returns a flat list of `FieldType` objects.
+* :meth:`~Format.append`: Add a `FieldType` object to the end of the `Format`.
+* :meth:`~Format.extend`: Add a sequence of `FieldType` objects to the end of the `Format`.
+
+Special methods
+^^^^^^^^^^^^^^^
+
+* :meth:`~Format.__getitem__`: Get a `FieldType` object by index.
+* :meth:`~Format.__setitem__`: Set a `FieldType` object by index.
+* :meth:`~Format.__iadd__`: Add a `FieldType` object to the end of the `Format`.
 
 
 .. _repeat_quick_reference:
@@ -153,12 +155,9 @@ It contains a sequence of other `FieldType` objects, which can include nested `F
 Repeat
 ------
 
-A `Repeat` field simply repeats another field a given number of times.
+A `Repeat` field repeats another field type a given number of times.
 
-.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | str] | None = None, name: str = '')
-
-The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
-The `name` parameter is used to give the index a name that can be referenced elsewhere.
+``Repeat(count: int | Iterable[int] | str, fieldtype: FieldType | str | Dtype | Bits | None = None, name: str = '')``
 
 
 ----

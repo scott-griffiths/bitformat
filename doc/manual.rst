@@ -1,9 +1,97 @@
 .. currentmodule:: bitformat
 
-Fields, Formats and More
-========================
+User Manual
+===========
 
-A bitformat is a specification of a binary format that can say how to build it from supplied values, or how to parse binary data to retrieve those values.
+A bitformat is a specification of a binary format that says both how to build it from supplied values, and how to parse binary data to retrieve those values.
+
+It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, which has been actively maintained since 2006 and provides easy and flexible access to many types of binary data in idiomatic Python.
+
+A short example could be::
+
+    from bitformat import Format, Repeat
+
+    f = Format(['hex8 <sync_byte> = ff',
+                'u6 <items>',
+                'bool * {items + 1} <flags>',
+                Repeat('{items + 1}', [
+                       'u4 <byte_cluster_size>',
+                       'bytes{byte_cluster_size}'
+                       ])
+                ])
+
+    b = f.build([3, [True, False, True], [(2, b'ab'), (3, b'cde'), (4, b'fghi')]])
+    if f['items'] > 0 and f['flags'][0]:
+        ...
+    f.clear()
+    f.parse(b)
+
+The `Dtype <https://bitstring.readthedocs.io/en/latest/dtypes.html#dtypes>`_, `Bits <https://bitstring.readthedocs.io/en/latest/bits.html#bits>`_ and `Array <https://bitstring.readthedocs.io/en/latest/array.html#array>`_ classes of bitstring are used directly as part of bitformat's API.
+Full details of these are given in bitstring's documentation but a short summary is:
+
+Dtype
+-----
+The `Dtype` (or data type) gives an interpretation to binary data.
+Most dtypes have both a name and a length. The `Dtype` can be created directly using the constructor, but more usually it will be specified as just a string to be used to create the `Dtype`.
+
+For example, the `Dtype` for a 16-bit unsigned integer can be created by either ``Dtype('uint', 16)`` or by using the string ``'uint16'`` when a `Dtype` is required as a parameter.
+
+A non-exhaustive list of example dtype strings is given below:
+
+.. list-table::
+   :widths: 10 30
+   :header-rows: 1
+
+   * - Dtype string
+     - Description
+   * - ``'uint10' / 'u10'``
+     - A 10-bit unsigned integer
+   * - ``'int7' / 'i7'``
+     - A 7-bit signed two's complement integer
+   * - ``'float32' / 'f32'``
+     - A 32-bit IEEE floating point number
+   * - ``'bin4' / 'b4'``
+     - A 4-bit binary string
+   * - ``'hex12' / 'h12'``
+     - A 12-bit hexadecimal string (i.e. 3 hex characters)
+   * - ``'bool'``
+     - A single bit boolean
+   * - ``'bits5'``
+     - A Bits instance of length 5 bits
+   * - ``'bytes20'``
+     - 20 bytes of data
+   * - ``'pad8'``
+     - Pad bits that have no interpretation
+   * - ``'intle64'``
+     - A 64-bit signed integer in little-endian byte order
+   * - ``'uintbe16'``
+     - A 16-bit unsigned integer in big-endian byte order
+   * - ``'p3binary8'``
+     - A specialist 8-bit floating point format
+   * - ``'se'``
+     - A signed exponential Golomb code, whose length is not known in advance
+
+Note that there are no unnatural restrictions on the length of a dtype.
+If you want a 3-bit integer or 1001 padding bits then that's as easy to do as any other length.
+
+Bits
+----
+The `Bits` class can just be considered as an immutable sequence of bits.
+Instances can be created using the constructor, or by using a string that can be used to create a `Bits` object.
+
+Some examples of strings that can be converted to `Bits` objects:
+
+* ``'0b00110'``: A binary string.
+* ``'0x3fff0001'``: A hexadecimal string.
+* ``'i15=-401'``: A 15 bit signed integer representing the number -401.
+* ``'f64=1.3e5'``: A 64 bit floating point number representing 130000.
+* ``'0b001, u32=90, 0x5e'``: A sequence of bits that represent a 3-bit binary number, a 32-bit unsigned integer and a 8-bit hexadecimal number.
+
+Array
+-----
+The `Array` class is used as a container for contiguously allocated `Bits` objects with the same `Dtype`.
+
+`Array` instances act very like an ordinary Python array, but with each element being any permissible fixed-length dtype.
 
 
 FieldType
@@ -11,8 +99,9 @@ FieldType
 
 A ``FieldType`` is an abstract base class for all of the other classes in this section.
 It could represent a single piece of data, it could be a container for other `FieldType` objects or it could represent an action or decision.
-Although you shouldn't need to deal with this type directly it is helpful to take a look at the methods that are common between all of the other types.
+You shouldn't need to deal with this type directly but its methods are available for all of the other field types.
 
+Methods
 
 .. class:: FieldType()
 
@@ -93,7 +182,39 @@ It represents a well-defined amount of binary data with a single data type.
 
     .. classmethod:: fromstring(s: str, /)
 
-        Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value`, `items` and `const` parameters - see :ref:`Field strings` below.
+        Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value` and `const` parameters - see :ref:`Field strings` below.
+
+
+FieldArray
+----------
+
+An `FieldArray` field contains multiple copies of other fields that have well-defined lengths.
+
+.. class:: FieldArray(count: int | Iterable[int] | str, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
+
+The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
+The `name` parameter is used to give the FieldArray a name that can be referenced elsewhere.
+
+The main restriction is that every field in `fieldtypes` must have a well-defined length, so that each element in the `FieldArray` has the same length.
+This means that conditional fields, fields with variable lengths or fields whose length depends on the value of another field are not allowed.
+
+For example::
+
+    f = FieldArray(20, ['u6', 'bool', 'bool'])
+
+This creates an array of 20 fields, each containing a 6-bit unsigned integer followed by two bools.
+
+If you want to repeat a single field then it is usually simpler to have one field and use the `items` parameter rather than use the `FieldArray` class.
+So instead of ::
+
+    a = FieldArray(80, ['bool'])
+
+use ::
+
+    a = Field.fromstring('bool * 80')
+
+If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
+If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
 
 
 .. _Field strings:
@@ -135,37 +256,6 @@ In its simplest form is could just be a flat list of ``Field`` objects, but it c
 
 .. class:: Format(fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
 
-
-FieldArray
-----------
-
-An `FieldArray` field contains multiple copies of other fields that have well-defined lengths.
-
-.. class:: FieldArray(count: int | Iterable[int] | str, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
-
-The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
-The `name` parameter is used to give the FieldArray a name that can be referenced elsewhere.
-
-The main restriction is that every field in `fieldtypes` must have a well-defined length, so that each element in the `FieldArray` has the same length.
-This means that conditional fields, fields with variable lengths or fields whose length depends on the value of another field are not allowed.
-
-For example::
-
-    f = FieldArray(20, ['u6', 'bool', 'bool'])
-
-This creates an array of 20 fields, each containing a 6-bit unsigned integer followed by two bools.
-
-If you want to repeat a single field then it is usually simpler to have one field and use the `items` parameter rather than use the `FieldArray` class.
-So instead of ::
-
-    a = FieldArray(80, ['bool'])
-
-use ::
-
-    a = Field.fromstring('bool * 80')
-
-If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
-If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
 
 Repeat
 ------
@@ -219,7 +309,7 @@ For simple repetition of a field of a known length the `FieldArray` class will b
 
 
 Expressions
-===========
+-----------
 
 `bitformat` supports a limited evaluation syntax that looks a little like Python f-strings.
 This allows the values of named fields to be reused elsewhere with little effort.
