@@ -226,3 +226,15 @@ def test_format_repr_and_str():
     print(s)
     print(r)
     assert 'my_format' in r
+
+def test_format_get_and_set():
+    f = Format(['u8', 'u8', 'u8'])
+    for field in f:
+        field.value = 12
+    assert f.value == [12, 12, 12]
+    f[0].value = 0
+    assert f.value == [0, 12, 12]
+    g = f[:]
+    assert g.value == [0, 12, 12]
+    f[-1].value = 7
+    assert g[-1].value == 12

@@ -8,10 +8,23 @@ from .common import colour, _indent
 from .field import FieldType, Field, FieldArray
 
 
-class FieldListType(FieldType):
+class Format(FieldType):
 
-    def __init__(self) -> None:
+    def __init__(self, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> None:
         self.fieldtypes = []
+        if fieldtypes is None:
+            fieldtypes = []
+        self.name = name
+        self.vars = {}
+        for fieldtype in fieldtypes:
+            if isinstance(fieldtype, str):
+                try:
+                    fieldtype = Field.fromstring(fieldtype)
+                except ValueError:
+                    fieldtype = FieldArray.fromstring(fieldtype)
+            if not isinstance(fieldtype, FieldType):
+                raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+            self.fieldtypes.append(fieldtype)
 
     def _build(self, values: list[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
@@ -53,7 +66,10 @@ class FieldListType(FieldType):
         if isinstance(key, int):
             fieldtype = self.fieldtypes[key]
             return fieldtype
-
+        elif isinstance(key, slice):
+            a = self.__class__()
+            a.extend(self.fieldtypes[key])
+            return a
         for fieldtype in self.fieldtypes:
             if fieldtype.name == key:
                 return fieldtype
@@ -70,24 +86,6 @@ class FieldListType(FieldType):
         raise KeyError(key)
 
     value = property(_getvalue, _setvalue)
-
-class Format(FieldListType):
-
-    def __init__(self, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> None:
-        super().__init__()
-        if fieldtypes is None:
-            fieldtypes = []
-        self.name = name
-        self.vars = {}
-        for fieldtype in fieldtypes:
-            if isinstance(fieldtype, str):
-                try:
-                    fieldtype = Field.fromstring(fieldtype)
-                except ValueError:
-                    fieldtype = FieldArray.fromstring(fieldtype)
-            if not isinstance(fieldtype, FieldType):
-                raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-            self.fieldtypes.append(fieldtype)
 
     def _str(self, indent: int) -> str:
         name_str = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"

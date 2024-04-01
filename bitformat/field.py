@@ -417,6 +417,7 @@ class Find(FieldType):
         return 0
 
     def flatten(self) -> list[FieldType]:
+        # TODO
         return []
 
     def _str(self, indent: int) -> str:
@@ -431,7 +432,7 @@ class Find(FieldType):
     def _getvalue(self) -> int | None:
         return self._value
 
-    value = property(_getvalue, None)  # Don't allow the value to be set elsewhere
+    value = property(_getvalue, None)
 
 
 class Repeat(FieldType):
@@ -477,6 +478,13 @@ class Repeat(FieldType):
         for _ in self.count:
             b += self.fieldtype.build(values, kwargs)
         return b, 0
+
+    def flatten(self) -> list[FieldType]:
+        # TODO: This needs values in it. This won't work.
+        flattened_fields = []
+        for i in self.count:
+            flattened_fields.extend(self.fieldtype.flatten())
+        return flattened_fields
 
     def tobits(self) -> Bits:
         pass
