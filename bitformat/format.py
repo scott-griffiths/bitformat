@@ -131,3 +131,69 @@ class Format(FieldType):
     def extend(self, values: Iterable) -> None:
         for value in values:
             self.__iadd__(value)
+
+
+class Repeat(FieldType):
+
+    def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits | Sequence[FieldType | str]):
+        super().__init__()
+        if isinstance(count, int):
+            count = range(count)
+        self.count = count
+        if isinstance(fieldtype, str):
+            self.fieldtype = Field.fromstring(fieldtype)
+        elif isinstance(fieldtype, Bits):
+            self.fieldtype = Field.frombits(fieldtype)
+        elif isinstance(fieldtype, Dtype):
+            self.fieldtype = Field(fieldtype)
+        elif isinstance(fieldtype, Sequence):
+            self.fieldtype = Format(fieldtype)
+        else:
+            self.fieldtype = fieldtype
+        if not isinstance(self.fieldtype, FieldType):
+            raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+        self._values = []
+
+    def _str(self, indent: int) -> str:
+        count_str = f'({self.count})'
+        s = f"{_indent(indent)}{self.__class__.__name__}{count_str}\n"
+        s += self.fieldtype._str(indent + 1)
+        return s
+
+    def _repr(self, indent: int) -> str:
+        s = f"{_indent(indent)}{self.__class__.__name__}({self.count!r},\n"
+        s += self.fieldtype._repr(indent + 1)
+        s += f"\n{_indent(indent)})"
+        return s
+
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+        index = 0
+        for _ in self.count:
+            index += self.fieldtype.parse(b[index:])
+            self._values.append(self.fieldtype.value)
+        return index
+
+    def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+        b = Bits()
+        for _ in self.count:
+            b += self.fieldtype.build(values[index:], kwargs)
+            index += 1
+        return b, 0
+
+    def flatten(self) -> list[FieldType]:
+        # TODO: This needs values in it. This won't work.
+        flattened_fields = []
+        for i in self.count:
+            flattened_fields.extend(self.fieldtype.flatten())
+        return flattened_fields
+
+    def tobits(self) -> Bits:
+        pass
+
+    def clear(self) -> None:
+        pass
+
+    def _getvalue(self) -> list[Any]:
+        return self._values
+
+    value = property(_getvalue, None)

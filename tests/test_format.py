@@ -143,11 +143,11 @@ def test_example_from_docs():
     f = Format(['hex8 <sync_byte> = 0xff',
                 'u16 <items>',
                 'bool * {items + 1} <flags>',
-                Repeat('{items + 1}', Format([
+                Repeat('{items + 1}', [
                     'u4 <byte_cluster_size>',
                     'bytes{byte_cluster_size}'
-                ]), 'clusters'),
-                'u8 = {clusters[0][0] << 4}'
+                ]),
+                'u8'
                 ])
 
 
@@ -238,3 +238,31 @@ def test_format_get_and_set():
     assert g.value == [0, 12, 12]
     f[-1].value = 7
     assert g[-1].value == 12
+
+@pytest.mark.skip
+def test_repeating_from_expression():
+    f = Format([
+        'u8 <x>',
+        Repeat('x', '0xcd')
+    ], 'my_little_format')
+    b = f.build([4])
+    assert b.hex == '04cdcdcdcd'
+
+def test_repeat_with_bits():
+    f = Repeat(3, '0xab')
+    b = f.build()
+    assert b == '0xababab'
+    f2 = Repeat(2, b)
+    b2 = f2.build()
+    assert b2 == '0xabababababab'
+
+def test_repeat_with_dtype():
+    f = Repeat(4, Dtype('i4'))
+    b = f.build([1, 2, 3, 4])
+    f.parse(b)
+    assert f.value == [1, 2, 3, 4]
+
+    f = Repeat(4, Dtype('i4', scale=-200))
+    b = f.build([-400, 200, -200, 400])
+    f.parse(b)
+    assert f.value == [-400, 200, -200, 400]
