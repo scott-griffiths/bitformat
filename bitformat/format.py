@@ -26,7 +26,7 @@ class Format(FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
 
-    def _build(self, values: list[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
@@ -46,7 +46,7 @@ class Format(FieldType):
     def _getvalue(self) -> list[Any]:
         return [f.value for f in self.fieldtypes]
 
-    def _setvalue(self, val: list[Any]) -> None:
+    def _setvalue(self, val: Sequence[Any]) -> None:
         if len(val) != len(self.fieldtypes):
             raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
         for fieldtype, v in zip(self.fieldtypes, val):
@@ -182,7 +182,7 @@ class Repeat(FieldType):
             self._values.append(self.fieldtype.value)
         return index
 
-    def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         self._bits = Bits()
         if self.count_expression is not None:
             self.count = self.count_expression.safe_eval(vars_)

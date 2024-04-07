@@ -149,7 +149,7 @@ def test_example_from_docs():
                 ]),
                 'u8'
                 ])
-
+    # f.build([2, [True, False, True], [[1, b'1'], [2, b'22'], [3, b'333']], 12])
 
 def test_creating_with_keyword_value():
     f = Format(['u10 <x>', 'u10={2*x}'])
@@ -242,10 +242,10 @@ def test_format_get_and_set():
 def test_repeating_from_expression():
     f = Format([
         'u8 <x>',
-        Repeat('{x}', 'h4')
+        Repeat('{2*x}', 'h4')
     ], 'my_little_format')
-    b = f.build([4, 'a', 'b', 'c', 'd'])
-    assert b.hex == '04abcd'
+    b = f.build([2, 'a', 'b', 'c', 'd'])
+    assert b.hex == '02abcd'
 
 def test_repeat_with_const_expression():
     f = Format(['i9 <the_size>',
