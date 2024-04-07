@@ -239,14 +239,22 @@ def test_format_get_and_set():
     f[-1].value = 7
     assert g[-1].value == 12
 
-@pytest.mark.skip
 def test_repeating_from_expression():
     f = Format([
         'u8 <x>',
-        Repeat('x', '0xcd')
+        Repeat('{x}', 'h4')
     ], 'my_little_format')
-    b = f.build([4])
-    assert b.hex == '04cdcdcdcd'
+    b = f.build([4, 'a', 'b', 'c', 'd'])
+    assert b.hex == '04abcd'
+
+def test_repeat_with_const_expression():
+    f = Format(['i9 <the_size>',
+                Repeat('{the_size}', [
+                    'u5=0',
+                    'b3=111'
+                ])])
+    f.build([3])
+    assert f.tobits() == 'i9=3, 3*0x07'
 
 def test_repeat_with_bits():
     f = Repeat(3, '0xab')

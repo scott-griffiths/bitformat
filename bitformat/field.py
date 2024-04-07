@@ -3,7 +3,18 @@ import abc
 from bitstring import Bits, Dtype, Array
 
 from .common import colour, Expression, _indent
-from typing import Any, Iterable
+from typing import Any
+
+
+def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
+    if not isinstance(s, str):
+        return s, None
+    try:
+        e = Expression(s)
+    except ValueError:
+        return s, None
+    return None, e
+
 
 class FieldType(abc.ABC):
     @abc.abstractmethod
@@ -25,7 +36,12 @@ class FieldType(abc.ABC):
         ...
 
     def build(self, values: list[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits:
-        return self._build([] if values is None else values, 0, {},  {} if kwargs is None else kwargs)[0]
+        if kwargs is None:
+            kwargs = {}
+        if values is None:
+            return self._build([], 0, {}, kwargs)[0]
+        bits, values_used = self._build(values, 0, {}, kwargs)
+        return bits
 
     @abc.abstractmethod
     def tobits(self) -> Bits:
@@ -197,16 +213,6 @@ class SingleDtypeField(FieldType):
             v = '' if value is None else f" {divider} {value}"
         return f"'{dtype}{item_str}{n}{v}'"
 
-    @staticmethod
-    def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
-        if not isinstance(s, str):
-            return s, None
-        try:
-            e = Expression(s)
-        except ValueError:
-            return s, None
-        return None, e
-
     def _parse_common(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
@@ -238,7 +244,7 @@ class SingleDtypeField(FieldType):
 class Field(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         super().__init__(dtype, name, value, const)
-        self.value, self.value_expression = Field._perhaps_convert_to_expression(value)
+        self.value, self.value_expression = _perhaps_convert_to_expression(value)
 
     @classmethod
     def fromstring(cls, s: str, /):
@@ -310,8 +316,8 @@ class FieldArray(SingleDtypeField):
         try:
             self.items, self.items_expression = int(items), None
         except ValueError:
-            self.items, self.items_expression = FieldArray._perhaps_convert_to_expression(items)
-        self.value, self.value_expression = FieldArray._perhaps_convert_to_expression(value)
+            self.items, self.items_expression = _perhaps_convert_to_expression(items)
+        self.value, self.value_expression = _perhaps_convert_to_expression(value)
 
     @classmethod
     def fromstring(cls, s: str, /):

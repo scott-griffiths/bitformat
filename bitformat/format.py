@@ -5,7 +5,7 @@ from typing import Sequence, Any, Iterable
 import copy
 
 from .common import colour, _indent
-from .field import FieldType, Field, FieldArray
+from .field import FieldType, Field, FieldArray, _perhaps_convert_to_expression
 
 
 class Format(FieldType):
@@ -137,9 +137,8 @@ class Repeat(FieldType):
 
     def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits | Sequence[FieldType | str]):
         super().__init__()
-        if isinstance(count, int):
-            count = range(count)
-        self.count = count
+        self._bits = None
+        self.count, self.count_expression = _perhaps_convert_to_expression(count)
         if isinstance(fieldtype, str):
             self.fieldtype = Field.fromstring(fieldtype)
         elif isinstance(fieldtype, Bits):
@@ -155,30 +154,46 @@ class Repeat(FieldType):
         self._values = []
 
     def _str(self, indent: int) -> str:
-        count_str = f'({self.count})'
+        if self.count_expression is not None:
+            count_str = self.count_expression
+        else:
+            count_str = str(self.count)
+        count_str = f'({count_str})'
+
         s = f"{_indent(indent)}{self.__class__.__name__}{count_str}\n"
         s += self.fieldtype._str(indent + 1)
         return s
 
     def _repr(self, indent: int) -> str:
-        s = f"{_indent(indent)}{self.__class__.__name__}({self.count!r},\n"
+        count = self.count if self.count is not None else self.count_expression
+        s = f"{_indent(indent)}{self.__class__.__name__}({count!r},\n"
         s += self.fieldtype._repr(indent + 1)
         s += f"\n{_indent(indent)})"
         return s
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         index = 0
+        if self.count_expression is not None:
+            self.count = self.count_expression.safe_eval(vars_)
+        if isinstance(self.count, int):
+            self.count = range(self.count)
         for _ in self.count:
             index += self.fieldtype.parse(b[index:])
             self._values.append(self.fieldtype.value)
         return index
 
     def _build(self, values: list[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        b = Bits()
+        self._bits = Bits()
+        if self.count_expression is not None:
+            self.count = self.count_expression.safe_eval(vars_)
+        if isinstance(self.count, int):
+            self.count = range(self.count)
+        values_used = 0
         for _ in self.count:
-            b += self.fieldtype.build(values[index:], kwargs)
-            index += 1
-        return b, 0
+            bits, v = self.fieldtype._build(values, index + values_used, vars_, kwargs)
+            self._bits += bits
+            values_used += v
+        return self._bits, values_used
 
     def flatten(self) -> list[FieldType]:
         # TODO: This needs values in it. This won't work.
@@ -188,10 +203,10 @@ class Repeat(FieldType):
         return flattened_fields
 
     def tobits(self) -> Bits:
-        pass
+        return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
-        pass
+        self._bits = None
 
     def _getvalue(self) -> list[Any]:
         return self._values

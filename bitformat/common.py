@@ -66,3 +66,6 @@ class Expression:
     def __str__(self):
         value_str = '' if self.value is None else f' = {self.value}'
         return f'{{{self.code_str}{value_str}}}'
+
+    def __repr__(self):
+        return f"'{self.__str__()}'"
