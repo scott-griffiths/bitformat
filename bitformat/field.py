@@ -35,7 +35,7 @@ class FieldType(abc.ABC):
         """Build the field from the values list, starting at index. Return the bits and the number of values used."""
         ...
 
-    def build(self, values: Sequence[Any] | None = None, kwargs: dict[str, Any] | None = None) -> Bits:
+    def build(self, values: Sequence[Any] | None = None, /,  **kwargs) -> Bits:
         if kwargs is None:
             kwargs = {}
         if values is None:
@@ -111,12 +111,12 @@ class SingleDtypeField(FieldType):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         self._bits = None
         self.dtype = dtype
-        self.dtype_expression = None
+        self.dtype_length_expression = None
         if isinstance(self.dtype, str):
             p = self.dtype.find('{')
             if p != -1:
-                self.dtype_expression = Expression(self.dtype[p:])
-                self.dtype = self.dtype[:p]
+                self.dtype_length_expression = Expression(self.dtype[p:])
+                self.dtype = Dtype(self.dtype[:p])
             else:
                 try:
                     self.dtype = Dtype(dtype)
@@ -124,7 +124,7 @@ class SingleDtypeField(FieldType):
                     raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
 
-        if self.dtype_expression is None and self.dtype.length == 0:
+        if self.dtype_length_expression is None and self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if const is None:
             self.const = value is not None
@@ -224,8 +224,8 @@ class SingleDtypeField(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        if self.dtype_expression is not None:
-            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
+        if self.dtype_length_expression is not None:
+            self.dtype = Dtype(self.dtype.name, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.bitlength]
         if self.name != '':
             vars_[self.name] = self.value
@@ -233,11 +233,14 @@ class SingleDtypeField(FieldType):
 
     def _build_common(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
+            if self.name != '':
+                vars_[self.name] = self.value
             return self._bits, 0
         if self.value_expression is not None:
             self._setvalue(self.value_expression.safe_eval(vars_))
         elif self.name in kwargs.keys():
             self._setvalue(kwargs[self.name])
+            vars_[self.name] = self.value
             return self._bits, 0
         else:
             self._setvalue(values[index])
@@ -344,8 +347,8 @@ class FieldArray(SingleDtypeField):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        if self.dtype_expression is not None:
-            self.dtype = Dtype(self.dtype, self.dtype_expression.safe_eval(vars_))
+        if self.dtype_length_expression is not None:
+            self.dtype = Dtype(self.dtype, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.bitlength * self.items]
         if self.name != '':
             vars_[self.name] = self.value

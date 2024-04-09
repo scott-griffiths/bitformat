@@ -99,7 +99,7 @@ class TestBuilding:
     def test_building_with_keywords(self, x, name):
         assume('__' not in name)
         f = Field.fromstring(f'u10 <{name}>')
-        b = f.build([], {name: x})
+        b = f.build([], **{name: x})
         assert b == Bits(f'u10={x}')
 
     def test_building_lots_of_types(self):

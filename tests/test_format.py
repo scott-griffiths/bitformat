@@ -149,7 +149,8 @@ def test_example_from_docs():
                 ]),
                 'u8'
                 ])
-    # f.build([2, [True, False, True], [[1, b'1'], [2, b'22'], [3, b'333']], 12])
+    f.build([1, b'1', 2, b'22', 3, b'333', 12], items=2, flags=[True, False, True])
+
 
 def test_creating_with_keyword_value():
     f = Format(['u10 <x>', 'u10={2*x}'])

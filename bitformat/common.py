@@ -57,7 +57,10 @@ class Expression:
 
     def safe_eval(self, vars_: dict[str, Any]) -> Any:
         """Evaluate the expression, disallowing all builtins."""
-        self.value = eval(self.code, {"__builtins__": {}}, vars_)
+        try:
+            self.value = eval(self.code, {"__builtins__": {}}, vars_)
+        except NameError as e:
+            raise NameError(f'{e}, when evaluating {self.code_str!r} with vars={vars_}.')
         return self.value
 
     def clear(self):
