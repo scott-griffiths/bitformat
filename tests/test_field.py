@@ -44,22 +44,23 @@ class TestCreation:
         if name.isidentifier() and '__' not in name:
             f = Field('u8', name)
             assert f.name == name
-            f2 = Field.fromstring(f'u8<{name}>')
+            f2 = Field.fromstring(f'{name}: u8')
             assert f2.name == name
             with pytest.raises(ValueError):
-                _ = Field(f'u8 <{name}>', name=name)
+                _ = Field(f'{name}: u8', name=name)
         else:
             with pytest.raises(ValueError):
                 _ = Field('u8', name)
 
     def test_creation_from_strings(self):
-        f = Field.fromstring('bool < flag_12 > ')
+        f = Field.fromstring(' flag_12 : bool')
         assert f.dtype.name == 'bool'
         assert f.name == 'flag_12'
         assert f.value is None
         f = Field.fromstring('ue = 2')
         assert f.dtype.name == 'ue'
         assert f.value == 2
+        assert f.name == ''
         assert f.tobits() == '0b011'
 
     @given(st.binary())
@@ -83,8 +84,8 @@ class TestCreation:
         assert f.dtype == Dtype('bits')
 
     def test_string_creation_with_const(self):
-        f1 = Field.fromstring('u1 <f1> : 1')
-        f2 = Field.fromstring('u1 <f2> = 1')
+        f1 = Field.fromstring('f1: u1 ~ 1')
+        f2 = Field.fromstring('f2: u1 = 1')
         assert f1 == f2
         assert f2.const
         assert not f1.const
@@ -93,12 +94,13 @@ class TestCreation:
         assert f1.build([0]) == '0b0'
         assert f2.build([]) == '0b1'
 
+
 class TestBuilding:
 
     @given(x=st.integers(0, 1023), name=st.text().filter(str.isidentifier))
     def test_building_with_keywords(self, x, name):
         assume('__' not in name)
-        f = Field.fromstring(f'u10 <{name}>')
+        f = Field.fromstring(f'{name} :u10')
         b = f.build([], **{name: x})
         assert b == Bits(f'u10={x}')
 
@@ -134,3 +136,14 @@ class TestBuilding:
         assert f.value == 8
         f.clear()
         assert f.value is None
+
+
+def test_field_str():
+    f = Field('u8', name='x')
+    assert str(f) == 'x: uint8'
+    f = Field('u8')
+    assert str(f) == 'uint8'
+    f = Field('uint8', value=8)
+    assert str(f) == 'uint8 = 8'
+    f = Field('u8', value=8, name='x')
+    assert str(f) == 'x: uint8 = 8'

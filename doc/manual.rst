@@ -11,11 +11,11 @@ A short example could be::
 
     from bitformat import Format, Repeat
 
-    f = Format(['hex8 <sync_byte> = ff',
-                'u6 <items>',
-                'bool * {items + 1} <flags>',
+    f = Format(['sync_byte: hex8 = ff',
+                'items: u6',
+                'flags: [bool; {items + 1}]',
                 Repeat('{items + 1}', [
-                       'u4 <byte_cluster_size>',
+                       'byte_cluster_size: u4',
                        'bytes{byte_cluster_size}'
                        ])
                 ])
@@ -211,7 +211,7 @@ So instead of ::
 
 use ::
 
-    a = Field.fromstring('bool * 80')
+    a = Field.fromstring('[bool; 80]')
 
 If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
 If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
@@ -225,23 +225,28 @@ Field strings
 As a shortcut the a single string can usually be used to specify the whole field.
 To do this it should be a string of the format::
 
-    "dtype [* items] [<name>] [= value]"
+    "name: dtype = value"
 
-You can also use ``:`` instead of ``=`` before the value, which will mean that the `Field` has a value but is not set as `const`.
+or ::
+
+    "name: [dtype; items] = value"
+
+
+You can also use ``~`` instead of ``=`` before the value, which will mean that the `Field` has a value but is not set as `const`.
 This isn't usually what you want when setting a `Field` - non-const values are usually present after a bitstring has been parsed.
 
-For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.fromstring('uint12 <width> = 100')``.
+For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.fromstring('width: u12 = 100')``.
 The whitespace between the elements is optional.
 
-An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.fromstring('bits32 <sequence_header> = 0x000001b3')``.
+An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.fromstring('sequence_header: bits32 = 0x000001b3')``.
 
 This becomes more useful when the field is part of a larger structure, and the string can be used on its own to specify the field, for example::
 
     f = Format([
-                'hex8 <start_code> = 0x47',
-                'u12 <width>',
-                'u12 <height>',
-                'bool * 5'
+                'start_code: hex8 = 0x47',
+                'width: u12',
+                'height: u12',
+                '[bool; 5]'
                ])
 
 This creates four fields within a `Format` object. The first is a named bit literal and will have the `const` flag set.
@@ -318,9 +323,9 @@ To do this, you can use braces within a string to substitute a value or expressi
 This is probably easiest to explain by example::
 
     f = Format([
-                'u12 <width>',
-                'u12 <height>',
-                'u8 * {width * height} <area>'
+                'width: u12',
+                'height: u12',
+                'area: [u8; {width * height}]'
                ])
 
 Here we have two named fields followed by an array whose size is given by the product of the other two fields.
@@ -330,7 +335,7 @@ The operations allowed are limited in scope, but include simple mathematical ope
 You could for example simulate an 'if' condition by using a `Repeat` field with a boolean count.
 This will then be repeated either zero or one time::
 
-    f = Format(['float32 <val>',
+    f = Format(['val: f32',
                 Repeat('{val < 0.0}', [
                     'bytes16'])
                 ])
@@ -358,11 +363,11 @@ Expressions can be used in several places:
 
 These are often most convenient when used in field-strings, for example::
 
-    f = Format(['hex8 <sync_byte> = 0xff',
-                'u16 <items>',
-                'bool * {items + 1} <flags>',
+    f = Format(['sync_byte: hex8 = 0xff',
+                'items: u16',
+                'flags: [bool; {items + 1}]',
                 Repeat('{items + 1}', Format([
-                       'u4 <byte_cluster_size>',
+                       'byte_cluster_size: u4',
                        'bytes{byte_cluster_size}'
                        ]), 'clusters'),
                 'u8 = {clusters[0][0] << 4}'

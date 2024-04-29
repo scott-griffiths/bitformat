@@ -36,21 +36,21 @@ An Example
 
 A quick example: the MPEG-2 video standard specifies a 'sequence_header' that could be defined in bitformat by
 
-    seq_header = Format(['hex32 <sequence_header_code> = 0x000001b3',
-                         'u12   <horizontal_size_value>',
-                         'u12   <vertical_size_value>',
-                         'u4    <aspect_ratio_information>',
-                         'u4    <framte_rate_code>',
-                         'u18   <bit_rate_value>',
-                         'bool  <marker_bit>',
-                         'u10   <vbv_buffer_size_value>',
-                         'bool  <constrained_parameters_flag>',
-                         'bool  <load_intra_quantizer_matrix>',
+    seq_header = Format(['sequence_header_code: hex32 = 0x000001b3',
+                         'horizontal_size_value: u12',
+                         'vertical_size_value: u12',
+                         'aspect_ratio_information: u4',
+                         'frame_rate_code: u4',
+                         'bit_rate_value: u18',
+                         'marker_bit: bool',
+                         'vbv_buffer_size_value: u10',
+                         'constrained_parameters_flag: bool',
+                         'load_intra_quantizer_matrix: bool',
                          Repeat('{load_intra_quantizer_matrix}',
-                             'u8 * 64 <intra_quantizer_matrix>'),
-                         'bool  <load_non_intra_quantizer_matrix>',
+                             'intra_quantizer_matrix: [u8; 64]'),
+                         'load_non_intra_quantizer_matrix bool',
                          Repeat('{load_non_intra_quantizer_matrix}',
-                             'u8 * 64 <non_intra_quantizer_matrix>'),
+                             'non_intra_quantizer_matrix: [u8; 64]'),
                          Find('0x000001')
                          ], 'sequence_header')
 

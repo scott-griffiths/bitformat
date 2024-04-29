@@ -144,79 +144,127 @@ class SingleDtypeField(FieldType):
         return [self]
 
     @staticmethod
-    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, int, bool | None]:
-        # The string has the form 'dtype [* items] [<name>] [= value]'
-        # But there may be chars inside {} sections that should be ignored.
-        # So we scan to find first real *, <, > and =
+    def _find_symbols(s: str) -> dict[str, int | None]:
+        symbols = [s for s in ":=~[];"]
+        symbol_pos: dict[str, int | None] = {symbol: None for symbol in symbols}
         inside_braces = False
-        symbol_pos: dict[str, int | None] = {'*': None, '<': None, '>': None, '=': None, ':': None}
-        symbols = symbol_pos.keys()
-        for pos, char in enumerate(dtype_str):
+        before_equals = True
+        for pos, char in enumerate(s):
             if char == '{':
                 if inside_braces:
-                    raise ValueError(f"Two consecutive opening braces found in '{dtype_str}'.")
+                    raise ValueError(f"Two consecutive opening braces found in '{s}'.")
                 inside_braces = True
             if char == '}':
                 if not inside_braces:
-                    raise ValueError(f"Closing brace found with no matching opening brace in '{dtype_str}'.")
+                    raise ValueError(f"Closing brace found with no matching opening brace in '{s}'.")
                 inside_braces = False
             if not inside_braces and char in symbols:
-                if symbol_pos[char] is not None:
-                    raise ValueError(f"More than one '{char}' found in '{dtype_str}'.")
-                symbol_pos[char] = pos
+                if before_equals:
+                    if symbol_pos[char] is not None:
+                        raise ValueError(f"More than one '{char}' found in '{s}'.")
+                    symbol_pos[char] = pos
+                if char in '~=':
+                    before_equals = False
+        return symbol_pos
+
+    @staticmethod
+    def _parse_field_array_str(dtype_str: str) -> tuple[str, str, str, int, bool | None]:
+        # The string has the form 'name: [dtype; items] = value' for a FieldArray.
+        # With the name: and value being optional.
+        # But there may be chars inside {} sections that should be ignored.
+        symbol_pos = SingleDtypeField._find_symbols(dtype_str)
 
         value = const = None
         name = ''
-        items = 1
 
         # Check to see if it includes a value:
-        colon_pos = symbol_pos[':']
+        tilde_pos = symbol_pos['~']
         equals_pos = symbol_pos['=']
-        if colon_pos is not None and equals_pos is not None:
-            raise ValueError(f"Both '=' and ':' were found in '{dtype_str}'. Use '=' before values that are constant, and ':' if many different values are allowable.")
-        if colon_pos is not None or equals_pos is not None:
+        if tilde_pos is not None and equals_pos is not None:
+            raise ValueError(f"Both '=' and '~' were found in '{dtype_str}'. "
+                             f"Use '=' before values that are constant, otherwise use '~'.")
+        if tilde_pos is not None or equals_pos is not None:
             const = equals_pos is not None
-            value_pos = colon_pos if colon_pos is not None else equals_pos
+            value_pos = tilde_pos if tilde_pos is not None else equals_pos
             value = dtype_str[value_pos + 1:]
             dtype_str = dtype_str[:value_pos]  # Cut off the value part at the end.
 
         # Check if it has a name:
-        if (lessthan_pos := symbol_pos['<']) is not None:
-            if (greaterthan_pos := symbol_pos['>']) is None:
-                raise ValueError(
-                    f"An opening '<' was supplied in the formatted dtype '{dtype_str} but without a closing '>'.")
-            name = dtype_str[lessthan_pos + 1:greaterthan_pos]
+        colon_pos = symbol_pos[':']
+        if colon_pos is not None:
+            name = dtype_str[:colon_pos]
             name = name.strip()
-            chars_after_name = dtype_str[greaterthan_pos + 1:]
-            if chars_after_name != '' and not chars_after_name.isspace():
-                raise ValueError(f"There should be no trailing characters after the <name>.")
-            dtype_str = dtype_str[:lessthan_pos]  # Cut off the name part.
 
         # Check if it is an array:
-        if (asterix_pos := symbol_pos['*']) is not None:
-            items = dtype_str[asterix_pos + 1:]
-            dtype_str = dtype_str[:asterix_pos]  # Cut off the items part.
+        if (lbracket_pos := symbol_pos['[']) is not None:
+            if (rbracket_pos := symbol_pos[']']) is None:
+                raise ValueError(f"An opening '[' was supplied in the field string '{dtype_str}' but without a closing ']'.")
+            semicolon_pos = symbol_pos[';']
+            if semicolon_pos is None or semicolon_pos > rbracket_pos or semicolon_pos < lbracket_pos:
+                raise ValueError(f"An array field must have a ';' between the dtype and the number of items. For example '[u8; 10]'.")
+            items = dtype_str[semicolon_pos + 1:rbracket_pos]
+            dtype_str = dtype_str[lbracket_pos + 1:semicolon_pos]  # Cut off the items part.
+        else:
+            raise ValueError(f"An array field must have a '[dtype; items]' in the field string. "
+                             f"None was found in '{dtype_str}'.")
+
         return dtype_str, name, value, items, const
 
+    @staticmethod
+    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, bool | None]:
+        # The string has the form 'name: dtype = value' for a Field
+        # With the name and value being optional.
+        # But there may be chars inside {} sections that should be ignored.
+        symbol_pos = SingleDtypeField._find_symbols(dtype_str)
+
+        value = const = None
+        name = ''
+
+        # Check to see if it includes a value:
+        tilde_pos = symbol_pos['~']
+        equals_pos = symbol_pos['=']
+        if tilde_pos is not None and equals_pos is not None:
+            raise ValueError(f"Both '=' and '~' were found in '{dtype_str}'. "
+                             f"Use '=' before values that are constant, otherwise use '~'.")
+        if tilde_pos is not None or equals_pos is not None:
+            const = equals_pos is not None
+            value_pos = tilde_pos if tilde_pos is not None else equals_pos
+            value = dtype_str[value_pos + 1:].strip()
+            dtype_str = dtype_str[:value_pos]  # Cut off the value part at the end.
+
+        # Check if it has a name:
+        colon_pos = symbol_pos[':']
+        if colon_pos is not None:
+            name = dtype_str[:colon_pos]
+            name = name.strip()
+            dtype_str = dtype_str[colon_pos + 1:]  # Cut off the name part.
+
+        return dtype_str, name, value, const
+
     def _str_common(self, dtype, name, value, const, item_str='') -> str:
-        d = f"{colour.purple}{dtype}{colour.off}"
-        i = f"{colour.purple}{item_str}{colour.off}"
-        n = '' if name == '' else f" <{colour.green}{name}{colour.off}>"
-        divider = '=' if const else ':'
+        if item_str == '':
+            d = f"{colour.purple}{dtype}{colour.off}"
+        else:
+            d = f"{colour.purple}[{dtype}; {item_str}]{colour.off}"
+        n = '' if name == '' else f"{colour.green}{name}{colour.off}: "
+        divider = '=' if const else '~'
         if isinstance(value, Array):
             v = f" {divider} {colour.cyan}{value.tolist()}{colour.off}"
         else:
             v = '' if value is None else f" {divider} {colour.cyan}{value}{colour.off}"
-        return f"{d}{i}{n}{v}"
+        return f"{n}{d}{v}"
 
     def _repr_common(self, dtype, name, value, const, item_str='') -> str:
-        n = '' if name == '' else f" <{name}>"
-        divider = '=' if const else ':'
+        divider = '=' if const else '~'
+        if name != '':
+            name = f"{name}: "
+        if item_str != '':
+            dtype = f"[{dtype}; {item_str}]"
         if isinstance(value, Array):
             v = f" {divider} {value.tolist()}"
         else:
             v = '' if value is None else f" {divider} {value}"
-        return f"'{dtype}{item_str}{n}{v}'"
+        return f"'{name}{dtype}{v}'"
 
     def _parse_common(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
@@ -256,9 +304,7 @@ class Field(SingleDtypeField):
 
     @classmethod
     def fromstring(cls, s: str, /):
-        dtype, name, value, items, const = cls._parse_field_str(s)
-        if items != 1:
-            raise ValueError(f"Field '{s}' should not have a * in its definition as the number of items in a Field must be 1. Perhaps you meant to use FieldArray?")
+        dtype, name, value, const = cls._parse_field_str(s)
         p = dtype.find('{')
         if p == -1:
             try:
@@ -329,7 +375,7 @@ class FieldArray(SingleDtypeField):
 
     @classmethod
     def fromstring(cls, s: str, /):
-        dtype, name, value, items, const = cls._parse_field_str(s)
+        dtype, name, value, items, const = cls._parse_field_array_str(s)
         p = dtype.find('{')
         if p == -1:
             try:
@@ -379,11 +425,14 @@ class FieldArray(SingleDtypeField):
             item_str = self.items_expression
         else:
             item_str = str(self.items)
-        item_str = f" * {item_str}"
         return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     def _repr(self, indent: int) -> str:
-        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const)}"
+        if self.items_expression is not None:
+            item_str = self.items_expression
+        else:
+            item_str = str(self.items)
+        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

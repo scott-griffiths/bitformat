@@ -25,7 +25,7 @@ class TestCreation:
 
     def test_create_from_bits_string(self):
         f = Format([Field('float16', 'foo', 12.5)], 'x')
-        g = Format(['float16 <foo> =12.5'], 'y')
+        g = Format(['foo: float16=12.5'], 'y')
         assert f.tobits() == g.tobits()
         assert f.name == 'x'
 
@@ -61,7 +61,7 @@ class TestCreation:
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
-        f = Format(['0x000001b3', 'u12', 'u12 <height> = 288', 'bool <flag> =True'], 'header')
+        f = Format(['0x000001b3', 'u12', 'height:u12  = 288', 'flag: bool  =True'], 'header')
         assert f.name == 'header'
         b = f.build([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
@@ -70,8 +70,8 @@ class TestCreation:
         assert f3 == Bits('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
-        header = Format(['0x000001b3', 'u12<width>', 'u12<height>', 'bool<f1>', 'bool<f2>'], 'header')
-        main = Format(['0b1', 'i7<v1>', 'i9<v2>'], 'main')
+        header = Format(['0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
+        main = Format(['0b1', 'v1:i7', 'v2:i9'], 'main')
         f = Format([header, main, '0x47'], 'all')
         b = Bits('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
         f.parse(b)
@@ -81,7 +81,7 @@ class TestCreation:
         assert f['main']['v2'].value == -99
 
     def test_format_in_itself(self):
-        f = Format(['u8 <x>'])
+        f = Format(['x:u8'])
         f += f
         b = f.build([10, 20])
         f.clear()
@@ -95,7 +95,7 @@ class TestAddition:
         f = Format()
         f += Field.frombits('0xff')
         assert f.tobytes() == b'\xff'
-        f += Field.fromstring('i9<penguin> =-8')
+        f += Field.fromstring('penguin:i9 =-8')
         x = f['penguin']
         assert x.value == -8
         f['penguin'].value += 6
@@ -110,7 +110,7 @@ class TestArray:
         assert f.fieldtypes[0].items == 20
         a = f.build([[*range(20)]])
 
-        f2 = Format(['u8*20 <new_array>'], 'b')
+        f2 = Format(['new_array: [u8;20]'], 'b')
         assert f2.fieldtypes[0].items == 20
         assert f2.fieldtypes[0].value is None
         f2['new_array'] = a
@@ -120,9 +120,9 @@ class TestArray:
     def test_example_with_array(self, w, h):
         f = Format([
                    Field('bytes', 'signature', b'BMP'),
-                   'i8 <width>',
-                   'i8 <height>',
-                   'u8 * {width * height} <pixels>',
+                   'width: i8',
+                   'height: i8',
+                   'pixels: [u8 ; {width * height}]',
                    ], 'construct_example')
         # TODO: This should be chosen by hypothesis to make it repeatable.
         p = [random.randint(0, 255) for _ in range(w * h)]
@@ -135,16 +135,16 @@ class TestArray:
 
 
 def test_example_from_docs():
-    f = Format(['u8 <x>', 'u{x} <y>'])
+    f = Format(['x: u8', 'y: u{x}'])
     b = Bits('u8=10, u10=987')
     f.parse(b)
     assert f['y'].value == 987
 
-    f = Format(['hex8 <sync_byte> = 0xff',
-                'u16 <items>',
-                'bool * {items + 1} <flags>',
+    f = Format(['sync_byte: hex8 = 0xff',
+                'items: u16',
+                'flags: [bool ; {items + 1} ] ',
                 Repeat('{items + 1}', [
-                    'u4 <byte_cluster_size>',
+                    'byte_cluster_size: u4',
                     'bytes{byte_cluster_size}'
                 ]),
                 'u8'
@@ -153,13 +153,13 @@ def test_example_from_docs():
 
 
 def test_creating_with_keyword_value():
-    f = Format(['u10 <x>', 'u10={2*x}'])
+    f = Format(['x: u10', 'u10={2*x}'])
     b = f.build([6])
     assert b == 'u10=6, u10=12'
 
 
 def test_items():
-    f = Format(['i5 <q>', 'u3 * {q + 1}'])
+    f = Format(['q:i5', '[u3; {q + 1}]'])
     b = Bits('i5=1, u3=2, u3=0')
     f.parse(b)
     assert f[0].value == 1
@@ -175,20 +175,20 @@ def test_items():
 class TestMethods:
 
     def test_clear(self):
-        f = Format(['0x000001b3', 'u12', 'u12 <height>', 'bool <flag>'], 'header')
+        f = Format(['0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
         g = Format(['0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
         assert f == g
 
     def test_get_item(self):
-        f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
+        f = Format(['float16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
         assert f[0].value == 7
         assert f[1].value is None
         assert f['pop'].value == 144
 
     def test_set_item(self):
-        f = Format(['float16=7', 'bool', 'bytes5', 'u100 <pop> = 144'])
+        f = Format(['float16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
         f[0] = 2
         assert f[0].value == 2
         f[0] = None
@@ -207,9 +207,9 @@ def test_find_field():
     b = Bits('0x1234000001b3160120')
     f = Format([
             Find('0x000001'),
-            'hex32 <start_code> = 000001b3',
-            'u12 <width>',
-            'u12 <height>'
+            'start_code: hex32 = 000001b3',
+            'width: u12',
+            'height: u12'
         ])
     f.parse(b)
     assert f['width'].value == 352
@@ -242,14 +242,14 @@ def test_format_get_and_set():
 
 def test_repeating_from_expression():
     f = Format([
-        'u8 <x>',
+        'x: u8',
         Repeat('{2*x}', 'h4')
     ], 'my_little_format')
     b = f.build([2, 'a', 'b', 'c', 'd'])
     assert b.hex == '02abcd'
 
 def test_repeat_with_const_expression():
-    f = Format(['i9 <the_size>',
+    f = Format(['the_size: i9',
                 Repeat('{the_size}', [
                     'u5=0',
                     'b3=111'
@@ -275,3 +275,14 @@ def test_repeat_with_dtype():
     b = f.build([-400, 200, -200, 400])
     f.parse(b)
     assert f.value == [-400, 200, -200, 400]
+
+def test_field_array_str():
+    with pytest.raises(ValueError):
+        _ = FieldArray.fromstring('test   :  f32 = 0.25  ')
+    f = FieldArray.fromstring('test: [f32 ; 3]')
+    assert str(f) == 'test: [float32; 3]'
+
+def test_format_repr_string():
+    f = Format(['x:u8 = 12', 'u:bool ~ False', '[u3;44]'], 'dave')
+    r = repr(f)
+    assert r == "Format([\n    'x: uint8 = 12',\n    'u: bool ~ False',\n    '[uint3; 44]'\n], 'dave')"

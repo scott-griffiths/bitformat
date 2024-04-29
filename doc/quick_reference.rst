@@ -31,13 +31,13 @@ Some of these types will usually be used as part of a larger structure, where th
      - A single data type, with optional name and value.
    * -
      -
-     - ``'dtype <name> = value'``
+     - ``'name: dtype = value'``
    * - :ref:`fieldarray_quick_reference`
      - ✓
      - An array of a single fixed-length data type, with optional name and value.
    * -
      -
-     - ``'dtype * items <name> = value'``
+     - ``'name: [dtype; items] = value'``
    * - :ref:`format_quick_reference`
      - ×
      - A sequence of other FieldTypes, with optional name.
