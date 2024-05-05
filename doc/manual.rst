@@ -11,7 +11,7 @@ A short example could be::
 
     from bitformat import Format, Repeat
 
-    f = Format(['sync_byte: hex8 = ff',
+    f = Format(['sync_byte: const hex8 = ff',
                 'items: u6',
                 'flags: [bool; {items + 1}]',
                 Repeat('{items + 1}', [
@@ -232,8 +232,7 @@ or ::
     "name: [dtype; items] = value"
 
 
-You can also use ``~`` instead of ``=`` before the value, which will mean that the `Field` has a value but is not set as `const`.
-This isn't usually what you want when setting a `Field` - non-const values are usually present after a bitstring has been parsed.
+You can also use the ``const`` keyword after the optional name, which will mean that the `Field` has a set value.
 
 For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.fromstring('width: u12 = 100')``.
 The whitespace between the elements is optional.
@@ -243,7 +242,7 @@ An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\
 This becomes more useful when the field is part of a larger structure, and the string can be used on its own to specify the field, for example::
 
     f = Format([
-                'start_code: hex8 = 0x47',
+                'start_code: const hex8 = 0x47',
                 'width: u12',
                 'height: u12',
                 '[bool; 5]'
@@ -363,7 +362,7 @@ Expressions can be used in several places:
 
 These are often most convenient when used in field-strings, for example::
 
-    f = Format(['sync_byte: hex8 = 0xff',
+    f = Format(['sync_byte: const hex8 = ff',
                 'items: u16',
                 'flags: [bool; {items + 1}]',
                 Repeat('{items + 1}', Format([

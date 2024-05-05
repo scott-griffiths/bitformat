@@ -32,7 +32,7 @@ An Example
 
 A quick example to whet the appetite: the MPEG-2 video standard specifies a 'sequence_header' that could be defined in bitformat by ::
 
-    seq_header = Format(['sequence_header_code: hex32 = 0x000001b3',
+    seq_header = Format(['sequence_header_code: const hex32 = 0x000001b3',
                          'horizontal_size_value: u12',
                          'vertical_size_value: u12',
                          'aspect_ratio_information: u4',

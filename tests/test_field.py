@@ -120,10 +120,12 @@ class TestBuilding:
         f = Field('se')
         b = f.build([-5])
         assert b == '0b0001011'
-        # f = Field('bits11')
-        # with self.assertRaises(ValueError):
+        f = Field('bits11')
+        # TODO: This should work with bitstring 4.2.2
+        # with pytest.raises(ValueError):
         #     _ = f.build([Bits('0x7ff')])
         # b = f.build([Bits('0b111, 0xff')])
+        # assert b == '0b11111111111'
 
     def test_building_with_const(self):
         f = Field.fromstring('  const  u4 =8')

@@ -18,6 +18,7 @@ class Format(FieldType):
         self.vars = {}
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
+                # TODO: This is inefficient, parsing the string twice.
                 try:
                     fieldtype = FieldArray.fromstring(fieldtype)
                 except ValueError:
@@ -88,10 +89,14 @@ class Format(FieldType):
     value = property(_getvalue, _setvalue)
 
     def _str(self, indent: int) -> str:
-        name_str = '' if self.name == '' else f" <{colour.green}{self.name}{colour.off}>"
-        s = f"{_indent(indent)}{self.__class__.__name__}{name_str}\n"
-        for fieldtype in self.fieldtypes:
-            s += fieldtype._str(indent + 1) + '\n'
+        name_str = '' if self.name == '' else f", {colour.green}{self.name!r}{colour.off}"
+        s = f"{_indent(indent)}{self.__class__.__name__}([\n"
+        for i, fieldtype in enumerate(self.fieldtypes):
+            s += fieldtype._str(indent + 1)
+            if i != len(self.fieldtypes) - 1:
+                s += ','
+            s += '\n'
+        s += f"{_indent(indent)}]{name_str})"
         return s
 
     def _repr(self, indent: int) -> str:

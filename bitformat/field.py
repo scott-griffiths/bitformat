@@ -266,8 +266,8 @@ class Field(SingleDtypeField):
             return
         try:
             self._bits = self.dtype.build(value)
-        except ValueError:
-            raise ValueError(f"Can't use the value '{value}' with the dtype {self.dtype}.")
+        except ValueError as e:
+            raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 
     value = property(_getvalue, _setvalue)
 
