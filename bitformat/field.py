@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+import re
 from bitstring import Bits, Dtype, Array
 
 from .common import colour, Expression, _indent
@@ -98,9 +99,7 @@ class FieldType(abc.ABC):
                 raise ValueError(f"The FieldType name '{val}' is not a valid Python identifier.")
             if '__' in val:
                 raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
-
         self._name = val
-
     name = property(_get_name, _set_name)
 
 
@@ -108,7 +107,7 @@ class SingleDtypeField(FieldType):
     """Holds the common code for other Field classes with a single Dtype.
     This class should not be used directly."""
 
-    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
+    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> None:
         self._bits = None
         self.dtype = dtype
         self.dtype_length_expression = None
@@ -126,12 +125,9 @@ class SingleDtypeField(FieldType):
 
         if self.dtype_length_expression is None and self.dtype.length == 0:
             raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
-        if const is None:
-            self.const = value is not None
-        else:
-            if value is None:
-                raise ValueError(f"Can't set a field to be constant if it has no value.")
-            self.const = const
+        if const is True and value is None:
+            raise ValueError(f"Can't set a field to be constant if it has no value.")
+        self.const = const
 
     def tobits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -144,126 +140,53 @@ class SingleDtypeField(FieldType):
         return [self]
 
     @staticmethod
-    def _find_symbols(s: str) -> dict[str, int | None]:
-        symbols = [s for s in ":=~[];"]
-        symbol_pos: dict[str, int | None] = {symbol: None for symbol in symbols}
-        inside_braces = False
-        before_equals = True
-        for pos, char in enumerate(s):
-            if char == '{':
-                if inside_braces:
-                    raise ValueError(f"Two consecutive opening braces found in '{s}'.")
-                inside_braces = True
-            if char == '}':
-                if not inside_braces:
-                    raise ValueError(f"Closing brace found with no matching opening brace in '{s}'.")
-                inside_braces = False
-            if not inside_braces and char in symbols:
-                if before_equals:
-                    if symbol_pos[char] is not None:
-                        raise ValueError(f"More than one '{char}' found in '{s}'.")
-                    symbol_pos[char] = pos
-                if char in '~=':
-                    before_equals = False
-        return symbol_pos
-
-    @staticmethod
-    def _parse_field_array_str(dtype_str: str) -> tuple[str, str, str, int, bool | None]:
-        # The string has the form 'name: [dtype; items] = value' for a FieldArray.
-        # With the name: and value being optional.
-        # But there may be chars inside {} sections that should be ignored.
-        symbol_pos = SingleDtypeField._find_symbols(dtype_str)
-
-        value = const = None
-        name = ''
-
-        # Check to see if it includes a value:
-        tilde_pos = symbol_pos['~']
-        equals_pos = symbol_pos['=']
-        if tilde_pos is not None and equals_pos is not None:
-            raise ValueError(f"Both '=' and '~' were found in '{dtype_str}'. "
-                             f"Use '=' before values that are constant, otherwise use '~'.")
-        if tilde_pos is not None or equals_pos is not None:
-            const = equals_pos is not None
-            value_pos = tilde_pos if tilde_pos is not None else equals_pos
-            value = dtype_str[value_pos + 1:]
-            dtype_str = dtype_str[:value_pos]  # Cut off the value part at the end.
-
-        # Check if it has a name:
-        colon_pos = symbol_pos[':']
-        if colon_pos is not None:
-            name = dtype_str[:colon_pos]
-            name = name.strip()
-
-        # Check if it is an array:
-        if (lbracket_pos := symbol_pos['[']) is not None:
-            if (rbracket_pos := symbol_pos[']']) is None:
-                raise ValueError(f"An opening '[' was supplied in the field string '{dtype_str}' but without a closing ']'.")
-            semicolon_pos = symbol_pos[';']
-            if semicolon_pos is None or semicolon_pos > rbracket_pos or semicolon_pos < lbracket_pos:
-                raise ValueError(f"An array field must have a ';' between the dtype and the number of items. For example '[u8; 10]'.")
-            items = dtype_str[semicolon_pos + 1:rbracket_pos]
-            dtype_str = dtype_str[lbracket_pos + 1:semicolon_pos]  # Cut off the items part.
+    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, int | None, bool | None]:
+        pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
+        match = re.match(pattern, dtype_str)
+        if match:
+            name = match.group('name')
+            const = match.group('const') is not None
+            dtype = match.group('dtype').strip()
+            value = match.group('value')
         else:
-            raise ValueError(f"An array field must have a '[dtype; items]' in the field string. "
-                             f"None was found in '{dtype_str}'.")
-
-        return dtype_str, name, value, items, const
-
-    @staticmethod
-    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, bool | None]:
-        # The string has the form 'name: dtype = value' for a Field
-        # With the name and value being optional.
-        # But there may be chars inside {} sections that should be ignored.
-        symbol_pos = SingleDtypeField._find_symbols(dtype_str)
-
-        value = const = None
-        name = ''
-
-        # Check to see if it includes a value:
-        tilde_pos = symbol_pos['~']
-        equals_pos = symbol_pos['=']
-        if tilde_pos is not None and equals_pos is not None:
-            raise ValueError(f"Both '=' and '~' were found in '{dtype_str}'. "
-                             f"Use '=' before values that are constant, otherwise use '~'.")
-        if tilde_pos is not None or equals_pos is not None:
-            const = equals_pos is not None
-            value_pos = tilde_pos if tilde_pos is not None else equals_pos
-            value = dtype_str[value_pos + 1:].strip()
-            dtype_str = dtype_str[:value_pos]  # Cut off the value part at the end.
-
-        # Check if it has a name:
-        colon_pos = symbol_pos[':']
-        if colon_pos is not None:
-            name = dtype_str[:colon_pos]
-            name = name.strip()
-            dtype_str = dtype_str[colon_pos + 1:]  # Cut off the name part.
-
-        return dtype_str, name, value, const
+            raise ValueError(f"Invalid field string '{dtype_str}'.")
+        name = '' if name is None else name.strip()
+        # Now check if the dtype is actually a FieldArray
+        if dtype[0] == '[' and dtype[-1] == ']':
+            p = dtype.find(';')
+            if p == -1:
+                raise ValueError(f"Invalid field string '{dtype_str}'.")
+            items = dtype[p+1:-1].strip()
+            dtype = dtype[1:p].strip()
+        else:
+            items = None
+        return dtype, name, value, items, const
 
     def _str_common(self, dtype, name, value, const, item_str='') -> str:
+        const_str = 'const ' if const else ''
         if item_str == '':
-            d = f"{colour.purple}{dtype}{colour.off}"
+            d = f"{colour.purple}{const_str}{dtype}{colour.off}"
         else:
-            d = f"{colour.purple}[{dtype}; {item_str}]{colour.off}"
+            d = f"{colour.purple}{const_str}[{dtype}; {item_str}]{colour.off}"
         n = '' if name == '' else f"{colour.green}{name}{colour.off}: "
-        divider = '=' if const else '~'
         if isinstance(value, Array):
-            v = f" {divider} {colour.cyan}{value.tolist()}{colour.off}"
+            v = f" = {colour.cyan}{value.tolist()}{colour.off}"
         else:
-            v = '' if value is None else f" {divider} {colour.cyan}{value}{colour.off}"
+            v = '' if value is None else f" = {colour.cyan}{value}{colour.off}"
         return f"{n}{d}{v}"
 
     def _repr_common(self, dtype, name, value, const, item_str='') -> str:
-        divider = '=' if const else '~'
+        const_str = 'const ' if const else ''
         if name != '':
             name = f"{name}: "
-        if item_str != '':
-            dtype = f"[{dtype}; {item_str}]"
-        if isinstance(value, Array):
-            v = f" {divider} {value.tolist()}"
+        if item_str == '':
+            dtype = f"{const_str}{dtype}"
         else:
-            v = '' if value is None else f" {divider} {value}"
+            dtype = f"{const_str}[{dtype}; {item_str}]"
+        if isinstance(value, Array):
+            v = f" = {value.tolist()}"
+        else:
+            v = '' if value is None else f" = {value}"
         return f"'{name}{dtype}{v}'"
 
     def _parse_common(self, b: Bits, vars_: dict[str, Any]) -> int:
@@ -304,13 +227,16 @@ class Field(SingleDtypeField):
 
     @classmethod
     def fromstring(cls, s: str, /):
-        dtype, name, value, const = cls._parse_field_str(s)
+        dtype, name, value, items, const = cls._parse_field_str(s)
+        if items is not None:
+            raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
         p = dtype.find('{')
         if p == -1:
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits(dtype)  # TODO: change to  bits = Bits.fromstring(dtype)
+                bits = Bits.fromstring(dtype)
+                const = True  # If it's a bit literal, then set it to const.
                 return cls(Dtype('bits'), name, bits, const)
         else:
             _ = Dtype(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
@@ -319,11 +245,11 @@ class Field(SingleDtypeField):
     @classmethod
     def frombits(cls, b: Bits | str | bytes | bytearray, /, name: str = ''):
         b = Bits(b)
-        return cls(Dtype('bits'), name, b)
+        return cls(Dtype('bits'), name, b, const=True)
 
     @classmethod
     def frombytes(cls, b: bytes | bytearray, /, name: str = ''):
-        return cls(Dtype('bytes'), name, b)
+        return cls(Dtype('bytes'), name, b, const=True)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         return self._parse_common(b, vars_)
@@ -375,7 +301,9 @@ class FieldArray(SingleDtypeField):
 
     @classmethod
     def fromstring(cls, s: str, /):
-        dtype, name, value, items, const = cls._parse_field_array_str(s)
+        dtype, name, value, items, const = cls._parse_field_str(s)
+        if items is None:
+            raise ValueError(f"Field string '{s}' is not a FieldArray, but a Field.")
         p = dtype.find('{')
         if p == -1:
             try:

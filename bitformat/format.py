@@ -19,9 +19,9 @@ class Format(FieldType):
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
                 try:
-                    fieldtype = Field.fromstring(fieldtype)
-                except ValueError:
                     fieldtype = FieldArray.fromstring(fieldtype)
+                except ValueError:
+                    fieldtype = Field.fromstring(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)

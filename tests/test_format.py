@@ -61,7 +61,7 @@ class TestCreation:
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
-        f = Format(['0x000001b3', 'u12', 'height:u12  = 288', 'flag: bool  =True'], 'header')
+        f = Format(['0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
         assert f.name == 'header'
         b = f.build([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
@@ -119,7 +119,7 @@ class TestArray:
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
         f = Format([
-                   Field('bytes', 'signature', b'BMP'),
+                   Field('bytes', 'signature', b'BMP', const=True),
                    'width: i8',
                    'height: i8',
                    'pixels: [u8 ; {width * height}]',
@@ -140,7 +140,7 @@ def test_example_from_docs():
     f.parse(b)
     assert f['y'].value == 987
 
-    f = Format(['sync_byte: hex8 = 0xff',
+    f = Format(['sync_byte: const hex8 = 0xff',
                 'items: u16',
                 'flags: [bool ; {items + 1} ] ',
                 Repeat('{items + 1}', [
@@ -188,8 +188,8 @@ class TestMethods:
         assert f['pop'].value == 144
 
     def test_set_item(self):
-        f = Format(['float16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
-        f[0] = 2
+        f = Format(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
+        f[0] = 2  # TODO: Should this be allowed?
         assert f[0].value == 2
         f[0] = None
         assert f[0].value is None
@@ -251,8 +251,8 @@ def test_repeating_from_expression():
 def test_repeat_with_const_expression():
     f = Format(['the_size: i9',
                 Repeat('{the_size}', [
-                    'u5=0',
-                    'b3=111'
+                    'const u5=0',
+                    'const b3=111'
                 ])])
     f.build([3])
     assert f.tobits() == 'i9=3, 3*0x07'
@@ -283,6 +283,6 @@ def test_field_array_str():
     assert str(f) == 'test: [float32; 3]'
 
 def test_format_repr_string():
-    f = Format(['x:u8 = 12', 'u:bool ~ False', '[u3;44]'], 'dave')
+    f = Format(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format([\n    'x: uint8 = 12',\n    'u: bool ~ False',\n    '[uint3; 44]'\n], 'dave')"
+    assert r == "Format([\n    'x: const uint8 = 12',\n    'u: bool = False',\n    '[uint3; 44]'\n], 'dave')"

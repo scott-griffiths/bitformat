@@ -22,7 +22,7 @@ class TestCreation:
     def test_creation_from_dtype_with_value(self, x):
         f = Field(Dtype('u8'), value=x)
         assert f.value == x
-        f2 = Field.fromstring(f'u8 = {x}')
+        f2 = Field.fromstring(f'const u8 = {x}')
         assert f2.value == x
 
 
@@ -57,7 +57,7 @@ class TestCreation:
         assert f.dtype.name == 'bool'
         assert f.name == 'flag_12'
         assert f.value is None
-        f = Field.fromstring('ue = 2')
+        f = Field.fromstring('const ue = 2')
         assert f.dtype.name == 'ue'
         assert f.value == 2
         assert f.name == ''
@@ -84,8 +84,8 @@ class TestCreation:
         assert f.dtype == Dtype('bits')
 
     def test_string_creation_with_const(self):
-        f1 = Field.fromstring('f1: u1 ~ 1')
-        f2 = Field.fromstring('f2: u1 = 1')
+        f1 = Field.fromstring('f1: u1 = 1')
+        f2 = Field.fromstring('f2: const u1 = 1')
         assert f1 == f2
         assert f2.const
         assert not f1.const
@@ -126,7 +126,7 @@ class TestBuilding:
         # b = f.build([Bits('0b111, 0xff')])
 
     def test_building_with_const(self):
-        f = Field.fromstring('u4 =8')
+        f = Field.fromstring('  const  u4 =8')
         b = f.build([])
         assert b == '0x8'
         f.clear()
