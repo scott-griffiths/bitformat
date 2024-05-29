@@ -10,13 +10,12 @@ authors = [
 ]
 description = "A library for creating and interpreting binary formats."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 1 - Planning",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -25,7 +24,7 @@ classifiers = [
 ]
 keywords = ["binary", "bitarray", "bitvector", "bitfield", "bitstring"]
 dependencies = [
-  "bitstring >= 4.2.0b2, < 5.0.0",
+  "bitstring >= 4.2.3, < 5.0.0",
 ]
 
 [project.urls]
