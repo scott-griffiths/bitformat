@@ -1,0 +1,2 @@
+pytest >= 7.4.2, < 8
+hypothesis >= 6.98.13, < 7
