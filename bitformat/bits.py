@@ -109,6 +109,15 @@ class Bits:
         self._bitstore = BitStore()
         self._bitstore.immutable = True
 
+    @classmethod
+    def build(cls, dtype: Dtype | str, value: Any, /):
+        d = Dtype(dtype)
+        return d.build(value)
+
+    def parse(self, dtype: Dtype | str, /) -> Any:
+        d = Dtype(dtype)
+        return d.parse(self)
+
     # def __new__(cls: Type[TBits], auto: Optional[Union[BitsType, int]] = None, /, length: Optional[int] = None,
     #             offset: Optional[int] = None, pos: Optional[int] = None, **kwargs) -> TBits:
     #     x = super().__new__(cls)
