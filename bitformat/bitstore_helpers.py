@@ -7,9 +7,6 @@ from typing import Union, Optional, Dict, Callable
 import bitarray
 from bitformat.bitstore import BitStore
 import bitformat
-from bitformat.fp8 import p4binary_fmt, p3binary_fmt
-from bitformat.mxfp import (e3m2mxfp_fmt, e2m3mxfp_fmt, e2m1mxfp_fmt, e4m3mxfp_saturate_fmt,
-                            e5m2mxfp_saturate_fmt, e4m3mxfp_overflow_fmt, e5m2mxfp_overflow_fmt)
 
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
@@ -115,98 +112,6 @@ def bfloat2bitstore(f: Union[str, float], big_endian: bool) -> BitStore:
         # For consistency we overflow to 'inf'.
         b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
     return BitStore.frombytes(b[0:2]) if big_endian else BitStore.frombytes(b[2:4])
-
-
-def p4binary2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    u = p4binary_fmt.float_to_int8(f)
-    return int2bitstore(u, 8, False)
-
-
-def p3binary2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    u = p3binary_fmt.float_to_int8(f)
-    return int2bitstore(u, 8, False)
-
-
-def e4m3mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if bitformat.options.mxfp_overflow == 'saturate':
-        u = e4m3mxfp_saturate_fmt.float_to_int(f)
-    else:
-        u = e4m3mxfp_overflow_fmt.float_to_int(f)
-    return int2bitstore(u, 8, False)
-
-
-def e5m2mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if bitformat.options.mxfp_overflow == 'saturate':
-        u = e5m2mxfp_saturate_fmt.float_to_int(f)
-    else:
-        u = e5m2mxfp_overflow_fmt.float_to_int(f)
-    return int2bitstore(u, 8, False)
-
-
-def e3m2mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if math.isnan(f):
-        raise ValueError("Cannot convert float('nan') to e3m2mxfp format as it has no representation for it.")
-    u = e3m2mxfp_fmt.float_to_int(f)
-    return int2bitstore(u, 6, False)
-
-
-def e2m3mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if math.isnan(f):
-        raise ValueError("Cannot convert float('nan') to e2m3mxfp format as it has no representation for it.")
-    u = e2m3mxfp_fmt.float_to_int(f)
-    return int2bitstore(u, 6, False)
-
-
-def e2m1mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if math.isnan(f):
-        raise ValueError("Cannot convert float('nan') to e2m1mxfp format as it has no representation for it.")
-    u = e2m1mxfp_fmt.float_to_int(f)
-    return int2bitstore(u, 4, False)
-
-
-e8m0mxfp_allowed_values = [float(2 ** x) for x in range(-127, 128)]
-
-
-def e8m0mxfp2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if math.isnan(f):
-        return BitStore('11111111')
-    try:
-        i = e8m0mxfp_allowed_values.index(f)
-    except ValueError:
-        raise ValueError(f"{f} is not a valid e8m0mxfp value. It must be exactly 2 ** i, for -127 <= i <= 127 or float('nan') as no rounding will be done.")
-    return int2bitstore(i, 8, False)
-
-
-def mxint2bitstore(f: Union[str, float]) -> BitStore:
-    f = float(f)
-    if math.isnan(f):
-        raise ValueError("Cannot convert float('nan') to mxint format as it has no representation for it.")
-    f *= 2 ** 6  # Remove the implicit scaling factor
-    if f > 127:  # 1 + 63/64
-        return BitStore('01111111')
-    if f <= -128:  # -2
-        return BitStore('10000000')
-    # Want to round to nearest, so move by 0.5 away from zero and round down by converting to int
-    if f >= 0.0:
-        f += 0.5
-        i = int(f)
-        # For ties-round-to-even
-        if f - i == 0.0 and i % 2:
-            i -= 1
-    else:
-        f -= 0.5
-        i = int(f)
-        if f - i == 0.0 and i % 2:
-            i += 1
-    return int2bitstore(i, 8, True)
 
 
 def int2bitstore(i: int, length: int, signed: bool) -> BitStore:

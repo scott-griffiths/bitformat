@@ -34,7 +34,7 @@ class TestCreation:
         assert f.fieldtypes[0].name == ''
         assert f.fieldtypes[0].dtype == Dtype('float', 16)
 
-    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'p4binary8', 'float64']))
+    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'float64']))
     def test_building_field(self, name):
         f = Field(name)
         b = f.build([0])

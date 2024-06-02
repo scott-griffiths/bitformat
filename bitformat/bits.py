@@ -16,8 +16,6 @@ import bitformat
 from .bitstore import BitStore
 from bitformat import bitstore_helpers, utils
 from bitformat.dtypes import Dtype, dtype_register
-from bitformat.fp8 import p4binary_fmt, p3binary_fmt
-from bitformat.mxfp import e3m2mxfp_fmt, e2m3mxfp_fmt, e2m1mxfp_fmt, e4m3mxfp_saturate_fmt, e5m2mxfp_saturate_fmt
 from bitformat.bitstring_options import Colour
 
 # Things that can be converted to Bits when a Bits type is needed

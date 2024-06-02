@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        ds = [Dtype('u9'), Dtype('i', 4), Dtype('p4binary8'), Dtype('bytes:3'), Dtype('sie'), Dtype('bits11')]
+        ds = [Dtype('u9'), Dtype('i', 4), Dtype('f32'), Dtype('bytes3'), Dtype('sie'), Dtype('bits11')]
         for d in ds:
             f = Field(d)
             assert f.dtype == d
@@ -111,9 +111,6 @@ class TestBuilding:
         f = Field('i4')
         b = f.build([-8])
         assert b == '0x8'
-        f = Field('p4binary8')
-        b = f.build([0.5])
-        assert b == '0x38'
         f = Field('bytes:3')
         b = f.build([b'abc'])
         assert b == '0x616263'
@@ -121,11 +118,10 @@ class TestBuilding:
         b = f.build([-5])
         assert b == '0b0001011'
         f = Field('bits11')
-        # TODO: This should work with bitstring 4.2.2
-        # with pytest.raises(ValueError):
-        #     _ = f.build([Bits('0x7ff')])
-        # b = f.build([Bits('0b111, 0xff')])
-        # assert b == '0b11111111111'
+        with pytest.raises(ValueError):
+            _ = f.build([Bits('0x7ff')])
+        b = f.build([Bits('0b111, 0xff')])
+        assert b == '0b11111111111'
 
     def test_building_with_const(self):
         f = Field.fromstring('  const  u4 =8')

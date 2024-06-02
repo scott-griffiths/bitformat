@@ -39,20 +39,11 @@ from .dtypes import DtypeDefinition, dtype_register, Dtype
 from .bits import Bits
 from .bitstring_options import Options
 from .bitarray_ import BitArray
-from .bitstream import ConstBitStream, BitStream
-from .methods import pack
 from .array_ import Array
 from .exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
 from .dtypes import DtypeDefinition, dtype_register, Dtype
 import types
 from typing import List, Tuple, Literal
-from .mxfp import decompress_luts as mxfp_decompress_luts
-from .fp8 import decompress_luts as binary8_decompress_luts
-
-
-# Decompress the LUTs for the exotic floating point formats
-mxfp_decompress_luts()
-binary8_decompress_luts()
 
 # The Options class returns a singleton.
 options = Options()
@@ -135,47 +126,6 @@ def float_bits2chars(bitlength: Literal[16, 32, 64]):
         return 24  # Empirical value
 
 
-def p3binary_bits2chars(_: Literal[8]):
-    return 19  # Empirical value
-
-
-def p4binary_bits2chars(_: Literal[8]):
-    # Found by looking at all the possible values
-    return 13  # Empirical value
-
-
-def e4m3mxfp_bits2chars(_: Literal[8]):
-    return 13
-
-
-def e5m2mxfp_bits2chars(_: Literal[8]):
-    return 19
-
-
-def e3m2mxfp_bits2chars(_: Literal[6]):
-    # Not sure what the best value is here. It's 7 without considering the scale that could be applied.
-    return 7
-
-
-def e2m3mxfp_bits2chars(_: Literal[6]):
-    # Not sure what the best value is here.
-    return 7
-
-
-def e2m1mxfp_bits2chars(_: Literal[4]):
-    # Not sure what the best value is here.
-    return 7
-
-
-def e8m0mxfp_bits2chars(_: Literal[8]):
-    # Has same range as float32
-    return 23
-
-
-def mxint_bits2chars(_: Literal[8]):
-    # Not sure what the best value is here.
-    return 10
-
 
 def bfloat_bits2chars(_: Literal[16]):
     # Found by looking at all the possible values
@@ -241,28 +191,8 @@ dtype_definitions = [
                     variable_length=True, description="an unsigned interleaved exponential-Golomb code"),
     # Special case pad type
     DtypeDefinition('pad', Bits._setpad, Bits._getpad, None, False, None,
-                    description="a skipped section of padding"),
-
-    # MXFP and IEEE 8-bit float types
-    DtypeDefinition('p3binary', Bits._setp3binary, Bits._getp3binary, float, True, p3binary_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with binary8p3 format"),
-    DtypeDefinition('p4binary', Bits._setp4binary, Bits._getp4binary, float, True, p4binary_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with binary8p4 format"),
-    DtypeDefinition('e4m3mxfp', Bits._sete4m3mxfp, Bits._gete4m3mxfp, float, True, e4m3mxfp_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with MXFP E4M3 format"),
-    DtypeDefinition('e5m2mxfp', Bits._sete5m2mxfp, Bits._gete5m2mxfp, float, True, e5m2mxfp_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with MXFP E5M2 format"),
-    DtypeDefinition('e3m2mxfp', Bits._sete3m2mxfp, Bits._gete3m2mxfp, float, True, e3m2mxfp_bits2chars,
-                    allowed_lengths=(6,), description="a 6 bit float with MXFP E3M2 format"),
-    DtypeDefinition('e2m3mxfp', Bits._sete2m3mxfp, Bits._gete2m3mxfp, float, True, e2m3mxfp_bits2chars,
-                    allowed_lengths=(6,), description="a 6 bit float with MXFP E2M3 format"),
-    DtypeDefinition('e2m1mxfp', Bits._sete2m1mxfp, Bits._gete2m1mxfp, float, True, e2m1mxfp_bits2chars,
-                    allowed_lengths=(4,), description="a 4 bit float with MXFP E2M1 format"),
-    DtypeDefinition('e8m0mxfp', Bits._sete8m0mxfp, Bits._gete8m0mxfp, float, False, e8m0mxfp_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with MXFP E8M0 format"),
-    DtypeDefinition('mxint', Bits._setmxint, Bits._getmxint, float, True, mxint_bits2chars,
-                    allowed_lengths=(8,), description="an 8 bit float with MXFP INT8 format"),
-]
+                    description="a skipped section of padding")
+    ]
 
 
 aliases: List[Tuple[str, str]] = [
@@ -304,6 +234,6 @@ for alias in aliases:
 
 
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'Repeat',
-           'ConstBitStream', 'BitStream', 'BitArray',
-           'pack', 'Error', 'ReadError', 'InterpretError',
+           'BitArray',
+           'Error', 'ReadError', 'InterpretError',
            'ByteAlignError', 'CreationError', 'bytealigned', 'lsb0', 'Dtype', 'options']
