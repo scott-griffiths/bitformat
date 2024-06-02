@@ -187,7 +187,7 @@ class Dtype:
 
         The b parameter should be a bitstring of the appropriate length, or an object that can be converted to a bitstring."""
         b = bitformat.Bits._create_from_bitstype(b)
-        return self._get_fn(bitformat.Bits(b))
+        return self._get_fn(b)
 
     def __str__(self) -> str:
         if self._scale is not None:

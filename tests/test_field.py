@@ -102,7 +102,7 @@ class TestBuilding:
         assume('__' not in name)
         f = Field.fromstring(f'{name} :u10')
         b = f.build([], **{name: x})
-        assert b == Bits(f'u10={x}')
+        assert b == Bits.fromstring(f'u10={x}')
 
     def test_building_lots_of_types(self):
         f = Field('u4')
@@ -116,8 +116,8 @@ class TestBuilding:
         assert b == '0x616263'
         f = Field('bits11')
         with pytest.raises(ValueError):
-            _ = f.build([Bits('0x7ff')])
-        b = f.build([Bits('0b111, 0xff')])
+            _ = f.build([Bits.fromstring('0x7ff')])
+        b = f.build([Bits.fromstring('0b111, 0xff')])
         assert b == '0b11111111111'
 
     def test_building_with_const(self):

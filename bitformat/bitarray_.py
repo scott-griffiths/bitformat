@@ -8,7 +8,7 @@ from typing import Union, List, Iterable, Any, Optional
 from bitformat import utils
 from bitformat.exceptions import CreationError, Error
 from bitformat.bits import Bits, BitsType, TBits
-
+from .bitstore import BitStore
 import bitformat.dtypes
 
 
@@ -112,9 +112,8 @@ class BitArray(Bits):
                   initialising using 'bytes' or 'filename'.
 
         """
-        if self._bitstore.immutable:
-            self._bitstore = self._bitstore._copy()
-            self._bitstore.immutable = False
+        self._bitstore = BitStore()
+        self._bitstore.immutable = False
 
     def copy(self: TBits) -> TBits:
         """Return a copy of the bitstring."""

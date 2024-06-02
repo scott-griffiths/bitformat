@@ -83,11 +83,6 @@ def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
     return x
 
 
-def intle2bitstore(i: int, length: int, signed: bool) -> BitStore:
-    x = int2bitstore(i, length, signed).tobytes()
-    return BitStore.frombytes(x[::-1])
-
-
 def float2bitstore(f: Union[str, float], length: int) -> BitStore:
     f = float(f)
     fmt = {16: '>e', 32: '>f', 64: '>d'}[length]

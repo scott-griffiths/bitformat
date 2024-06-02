@@ -106,21 +106,22 @@ class Bits:
                   initialising using 'bytes' or 'filename'.
 
         """
+        self._bitstore = BitStore()
         self._bitstore.immutable = True
 
-    def __new__(cls: Type[TBits], auto: Optional[Union[BitsType, int]] = None, /, length: Optional[int] = None,
-                offset: Optional[int] = None, pos: Optional[int] = None, **kwargs) -> TBits:
-        x = super().__new__(cls)
-        if auto is None and not kwargs:
-            # No initialiser so fill with zero bits up to length
-            if length is not None:
-                x._bitstore = BitStore(length)
-                x._bitstore.setall(0)
-            else:
-                x._bitstore = BitStore()
-            return x
-        x._initialise(auto, length, offset, **kwargs)
-        return x
+    # def __new__(cls: Type[TBits], auto: Optional[Union[BitsType, int]] = None, /, length: Optional[int] = None,
+    #             offset: Optional[int] = None, pos: Optional[int] = None, **kwargs) -> TBits:
+    #     x = super().__new__(cls)
+    #     if auto is None and not kwargs:
+    #         # No initialiser so fill with zero bits up to length
+    #         if length is not None:
+    #             x._bitstore = BitStore(length)
+    #             x._bitstore.setall(0)
+    #         else:
+    #             x._bitstore = BitStore()
+    #         return x
+    #     x._initialise(auto, length, offset, **kwargs)
+    #     return x
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:

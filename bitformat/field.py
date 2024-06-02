@@ -27,7 +27,7 @@ class FieldType(abc.ABC):
 
     def parse(self, b: Bits | bytes | bytearray) -> int:
         if isinstance(b, (bytes, bytearray)):
-            b = Bits(b)
+            b = Bits.frombytes(b)
         try:
             return self._parse(b, {})
         except ValueError as e:
@@ -245,8 +245,7 @@ class Field(SingleDtypeField):
         return cls(dtype, name, value, const)
 
     @classmethod
-    def frombits(cls, b: Bits | str | bytes | bytearray, /, name: str = ''):
-        b = Bits(b)
+    def frombits(cls, b: Bits, /, name: str = ''):
         return cls(Dtype('bits'), name, b, const=True)
 
     @classmethod
@@ -387,7 +386,7 @@ class Find(FieldType):
 
     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
         super().__init__()
-        self.bits_to_find = Bits(bits)
+        self.bits_to_find = Bits.fromstring(bits)
         self.bytealigned = bytealigned
         self.name = name
         self._value = None
