@@ -42,49 +42,10 @@ from .bitarray_ import BitArray
 from .array_ import Array
 from .exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
 from .dtypes import DtypeDefinition, dtype_register, Dtype
-import types
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.
 options = Options()
-
-# These get defined properly by the module magic below. This just stops mypy complaining about them.
-bytealigned = lsb0 = None
-
-
-# An opaque way of adding module level properties. Taken from https://peps.python.org/pep-0549/
-# This is now deprecated. Use the options object directly instead.
-class _MyModuleType(types.ModuleType):
-    @property
-    def bytealigned(self) -> bool:
-        """Determines whether a number of methods default to working only on byte boundaries."""
-        return options.bytealigned
-
-    @bytealigned.setter
-    def bytealigned(self, value: bool) -> None:
-        """Determines whether a number of methods default to working only on byte boundaries."""
-        options.bytealigned = value
-
-    @property
-    def lsb0(self) -> bool:
-        """If True, the least significant bit (the final bit) is indexed as bit zero."""
-        return options.lsb0
-
-    @lsb0.setter
-    def lsb0(self, value: bool) -> None:
-        """If True, the least significant bit (the final bit) is indexed as bit zero."""
-        options.lsb0 = value
-
-
-sys.modules[__name__].__class__ = _MyModuleType
-
-
-
-
-
-
-
-
 
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
@@ -141,16 +102,8 @@ dtype_definitions = [
     # Integer types
     DtypeDefinition('uint', Bits._setuint, Bits._getuint, int, False, uint_bits2chars,
                     description="a two's complement unsigned int"),
-    DtypeDefinition('uintle', Bits._setuintle, Bits._getuintle, int, False, uint_bits2chars,
-                    allowed_lengths=(8, 16, 24, ...), description="a two's complement little-endian unsigned int"),
-    DtypeDefinition('uintbe', Bits._setuintbe, Bits._getuintbe, int, False, uint_bits2chars,
-                    allowed_lengths=(8, 16, 24, ...), description="a two's complement big-endian unsigned int"),
     DtypeDefinition('int', Bits._setint, Bits._getint, int, True, int_bits2chars,
                     description="a two's complement signed int"),
-    DtypeDefinition('intle', Bits._setintle, Bits._getintle, int, True, int_bits2chars,
-                    allowed_lengths=(8, 16, 24, ...), description="a two's complement little-endian signed int"),
-    DtypeDefinition('intbe', Bits._setintbe, Bits._getintbe, int, True, int_bits2chars,
-                    allowed_lengths=(8, 16, 24, ...), description="a two's complement big-endian signed int"),
     # String types
     DtypeDefinition('hex', Bits._sethex, Bits._gethex, str, False, hex_bits2chars,
                     allowed_lengths=(0, 4, 8, ...), description="a hexadecimal string"),
@@ -159,10 +112,8 @@ dtype_definitions = [
     DtypeDefinition('oct', Bits._setoct, Bits._getoct, str, False, oct_bits2chars,
                     allowed_lengths=(0, 3, 6, ...), description="an octal string"),
     # Float types
-    DtypeDefinition('float', Bits._setfloatbe, Bits._getfloatbe, float, True, float_bits2chars,
+    DtypeDefinition('float', Bits._setfloat, Bits._getfloat, float, True, float_bits2chars,
                     allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),
-    DtypeDefinition('floatle', Bits._setfloatle, Bits._getfloatle, float, True, float_bits2chars,
-                    allowed_lengths=(16, 32, 64), description="a little-endian floating point number"),
     # Other known length types
     DtypeDefinition('bits', Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars,
                     description="a bitstring object"),
@@ -177,8 +128,6 @@ dtype_definitions = [
 
 
 aliases: List[Tuple[str, str]] = [
-    # Floats default to big endian
-    ('float', 'floatbe'),
 
     # Some single letter aliases for popular types
     ('int', 'i'),
@@ -189,22 +138,6 @@ aliases: List[Tuple[str, str]] = [
     ('float', 'f'),
 ]
 
-# Create native-endian aliases depending on the byteorder of the system
-byteorder: str = sys.byteorder
-if byteorder == 'little':
-    aliases.extend([
-        ('uintle', 'uintne'),
-        ('intle', 'intne'),
-        ('floatle', 'floatne'),
-    ])
-else:
-    aliases.extend([
-        ('uintbe', 'uintne'),
-        ('intbe', 'intne'),
-        ('floatbe', 'floatne'),
-    ])
-
-
 for dt in dtype_definitions:
     dtype_register.add_dtype(dt)
 for alias in aliases:
@@ -214,4 +147,4 @@ for alias in aliases:
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'Repeat',
            'BitArray',
            'Error', 'ReadError', 'InterpretError',
-           'ByteAlignError', 'CreationError', 'bytealigned', 'lsb0', 'Dtype', 'options']
+           'ByteAlignError', 'CreationError', 'Dtype', 'options']

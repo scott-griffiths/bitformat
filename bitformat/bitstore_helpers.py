@@ -88,9 +88,9 @@ def intle2bitstore(i: int, length: int, signed: bool) -> BitStore:
     return BitStore.frombytes(x[::-1])
 
 
-def float2bitstore(f: Union[str, float], length: int, big_endian: bool) -> BitStore:
+def float2bitstore(f: Union[str, float], length: int) -> BitStore:
     f = float(f)
-    fmt = {16: '>e', 32: '>f', 64: '>d'}[length] if big_endian else {16: '<e', 32: '<f', 64: '<d'}[length]
+    fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
     try:
         b = struct.pack(fmt, f)
     except OverflowError:

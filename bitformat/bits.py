@@ -582,33 +582,6 @@ class Bits:
         bs = Bits._create_from_bitstype(bs)
         self._bitstore = bs._bitstore
 
-    def _setp3binary(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.p3binary2bitstore(f)
-
-    def _setp4binary(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.p4binary2bitstore(f)
-
-    def _sete4m3mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e4m3mxfp2bitstore(f)
-
-    def _sete5m2mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e5m2mxfp2bitstore(f)
-
-    def _sete3m2mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e3m2mxfp2bitstore(f)
-
-    def _sete2m3mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e2m3mxfp2bitstore(f)
-
-    def _sete2m1mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e2m1mxfp2bitstore(f)
-
-    def _sete8m0mxfp(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.e8m0mxfp2bitstore(f)
-
-    def _setmxint(self, f: float) -> None:
-        self._bitstore = bitstore_helpers.mxint2bitstore(f)
-
     def _setbytes(self, data: Union[bytearray, bytes, List], length:None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.frombytes(bytes(data))
@@ -674,121 +647,16 @@ class Bits:
             raise bitformat.InterpretError("Cannot interpret bitstring without a length as an integer.")
         return self._bitstore.slice_to_int()
 
-    def _setuintbe(self, uintbe: int, length: Optional[int] = None) -> None:
-        """Set the bitstring to a big-endian unsigned int interpretation."""
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with a uintbe initialiser.")
-        self._bitstore = bitstore_helpers.int2bitstore(uintbe, length, False)
-
-    def _getuintbe(self) -> int:
-        """Return data as a big-endian two's complement unsigned int."""
-        if len(self) % 8:
-            raise bitformat.InterpretError(f"Big-endian integers must be whole-byte. Length = {len(self)} bits.")
-        return self._getuint()
-
-    def _setintbe(self, intbe: int, length: Optional[int] = None) -> None:
-        """Set bitstring to a big-endian signed int interpretation."""
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with a intbe initialiser.")
-        self._bitstore = bitstore_helpers.int2bitstore(intbe, length, True)
-
-    def _getintbe(self) -> int:
-        """Return data as a big-endian two's complement signed int."""
-        if len(self) % 8:
-            raise bitformat.InterpretError(f"Big-endian integers must be whole-byte. Length = {len(self)} bits.")
-        return self._getint()
-
-    def _setuintle(self, uintle: int, length: Optional[int] = None) -> None:
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with a uintle initialiser.")
-        self._bitstore = bitstore_helpers.intle2bitstore(uintle, length, False)
-
-    def _getuintle(self) -> int:
-        """Interpret as a little-endian unsigned int."""
-        if len(self) % 8:
-            raise bitformat.InterpretError(f"Little-endian integers must be whole-byte. Length = {len(self)} bits.")
-        bs = BitStore.frombytes(self._bitstore.tobytes()[::-1])
-        return bs.slice_to_uint()
-
-    def _setintle(self, intle: int, length: Optional[int] = None) -> None:
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
-        if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with an intle initialiser.")
-        self._bitstore = bitstore_helpers.intle2bitstore(intle, length, True)
-
-    def _getintle(self) -> int:
-        """Interpret as a little-endian signed int."""
-        if len(self) % 8:
-            raise bitformat.InterpretError(f"Little-endian integers must be whole-byte. Length = {len(self)} bits.")
-        bs = BitStore.frombytes(self._bitstore.tobytes()[::-1])
-        return bs.slice_to_int()
-
-    def _getp4binary(self) -> float:
-        u = self._getuint()
-        return p4binary_fmt.lut_binary8_to_float[u]
-
-    def _getp3binary(self) -> float:
-        u = self._getuint()
-        return p3binary_fmt.lut_binary8_to_float[u]
-
-    def _gete4m3mxfp(self) -> float:
-        u = self._getuint()
-        return e4m3mxfp_saturate_fmt.lut_int_to_float[u]
-
-    def _gete5m2mxfp(self) -> float:
-        u = self._getuint()
-        return e5m2mxfp_saturate_fmt.lut_int_to_float[u]
-
-    def _gete3m2mxfp(self) -> float:
-        u = self._getuint()
-        return e3m2mxfp_fmt.lut_int_to_float[u]
-
-    def _gete2m3mxfp(self) -> float:
-        u = self._getuint()
-        return e2m3mxfp_fmt.lut_int_to_float[u]
-
-    def _gete2m1mxfp(self) -> float:
-        u = self._getuint()
-        return e2m1mxfp_fmt.lut_int_to_float[u]
-
-    def _gete8m0mxfp(self) -> float:
-        u = self._getuint() - 127
-        if u == 128:
-            return float('nan')
-        return 2.0 ** u
-
-    def _getmxint(self) -> float:
-        u = self._getint()
-        return float(u) * 2 ** -6
-
-    def _setfloat(self, f: float, length: Optional[int], big_endian: bool) -> None:
+    def _setfloat(self, f: float, length: Optional[int]) -> None:
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
         if length is None or length not in [16, 32, 64]:
             raise bitformat.CreationError("A length of 16, 32, or 64 must be specified with a float initialiser.")
-        self._bitstore = bitstore_helpers.float2bitstore(f, length, big_endian)
+        self._bitstore = bitstore_helpers.float2bitstore(f, length)
 
-    def _setfloatbe(self, f: float, length: Optional[int] = None) -> None:
-        self._setfloat(f, length, True)
-
-    def _getfloatbe(self) -> float:
+    def _getfloat(self) -> float:
         """Interpret the whole bitstring as a big-endian float."""
         fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
-        return struct.unpack(fmt, self._bitstore.tobytes())[0]
-
-    def _setfloatle(self, f: float, length: Optional[int] = None) -> None:
-        self._setfloat(f, length, False)
-
-    def _getfloatle(self) -> float:
-        """Interpret the whole bitstring as a little-endian float."""
-        fmt = {16: '<e', 32: '<f', 64: '<d'}[len(self)]
         return struct.unpack(fmt, self._bitstore.tobytes())[0]
 
     def _setbool(self, value: Union[bool, str]) -> None:
