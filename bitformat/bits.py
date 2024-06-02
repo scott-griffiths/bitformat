@@ -66,46 +66,7 @@ class Bits:
     """
     __slots__ = ('_bitstore', '_filename')
 
-    def __init__(self, auto: Optional[Union[BitsType, int]] = None, /, length: Optional[int] = None,
-                 offset: Optional[int] = None, **kwargs) -> None:
-        """Either specify an 'auto' initialiser:
-        A string of comma separated tokens, an integer, a file object,
-        a bytearray, a boolean iterable, an array or another bitstring.
-
-        Or initialise via **kwargs with one (and only one) of:
-        bin -- binary string representation, e.g. '0b001010'.
-        hex -- hexadecimal string representation, e.g. '0x2ef'
-        oct -- octal string representation, e.g. '0o777'.
-        bytes -- raw data as a bytes object, for example read from a binary file.
-        int -- a signed integer.
-        uint -- an unsigned integer.
-        float / floatbe -- a big-endian floating point number.
-        bool -- a boolean (True or False).
-        se -- a signed exponential-Golomb code.
-        ue -- an unsigned exponential-Golomb code.
-        sie -- a signed interleaved exponential-Golomb code.
-        uie -- an unsigned interleaved exponential-Golomb code.
-        floatle -- a little-endian floating point number.
-        floatne -- a native-endian floating point number.
-        bfloat / bfloatbe - a big-endian bfloat format 16-bit floating point number.
-        bfloatle -- a little-endian bfloat format 16-bit floating point number.
-        bfloatne -- a native-endian bfloat format 16-bit floating point number.
-        intbe -- a signed big-endian whole byte integer.
-        intle -- a signed little-endian whole byte integer.
-        intne -- a signed native-endian whole byte integer.
-        uintbe -- an unsigned big-endian whole byte integer.
-        uintle -- an unsigned little-endian whole byte integer.
-        uintne -- an unsigned native-endian whole byte integer.
-        filename -- the path of a file which will be opened in binary read-only mode.
-
-        Other keyword arguments:
-        length -- length of the bitstring in bits, if needed and appropriate.
-                  It must be supplied for all integer and float initialisers.
-        offset -- bit offset to the data. These offset bits are
-                  ignored and this is mainly intended for use when
-                  initialising using 'bytes' or 'filename'.
-
-        """
+    def __init__(self) -> None:
         self._bitstore = BitStore()
         self._bitstore.immutable = True
 
@@ -118,20 +79,6 @@ class Bits:
         d = Dtype(dtype)
         return d.parse(self)
 
-    # def __new__(cls: Type[TBits], auto: Optional[Union[BitsType, int]] = None, /, length: Optional[int] = None,
-    #             offset: Optional[int] = None, pos: Optional[int] = None, **kwargs) -> TBits:
-    #     x = super().__new__(cls)
-    #     if auto is None and not kwargs:
-    #         # No initialiser so fill with zero bits up to length
-    #         if length is not None:
-    #             x._bitstore = BitStore(length)
-    #             x._bitstore.setall(0)
-    #         else:
-    #             x._bitstore = BitStore()
-    #         return x
-    #     x._initialise(auto, length, offset, **kwargs)
-    #     return x
-
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
         if isinstance(auto, cls):
@@ -139,49 +86,6 @@ class Bits:
         b = super().__new__(cls)
         b._setauto_no_length_or_offset(auto)
         return b
-
-    def _initialise(self, auto: Any, /, length: Optional[int], offset: Optional[int], **kwargs) -> None:
-        if auto is not None:
-            if isinstance(auto, numbers.Integral):
-                # Initialise with s zero bits.
-                if auto < 0:
-                    raise bitformat.CreationError(f"Can't create bitstring of negative length {auto}.")
-                self._bitstore = BitStore(int(auto))
-                self._bitstore.setall(0)
-                return
-            self._setauto(auto, length, offset)
-            return
-        k, v = kwargs.popitem()
-        if k == 'bytes':
-            # Special case for bytes as we want to allow offsets and lengths to work only on creation.
-            self._setbytes_with_truncation(v, length, offset)
-            return
-        if k == 'filename':
-            self._setfile(v, length, offset)
-            return
-        if k == 'bitarray':
-            self._setbitarray(v, length, offset)
-            return
-        if k == 'auto':
-            raise bitformat.CreationError(
-                f"The 'auto' parameter should not be given explicitly - just use the first positional argument. "
-                f"Instead of '{self.__class__.__name__}(auto=x)' use '{self.__class__.__name__}(x)'.")
-        if offset is not None:
-            raise bitformat.CreationError("offset cannot be used when initialising with '{k}'.")
-        try:
-            Dtype(k, length).set_fn(self, v)
-        except ValueError as e:
-            raise bitformat.CreationError(e)
-
-    def __getattr__(self, attribute: str) -> Any:
-        # Support for arbitrary attributes like u16 or f64.
-        try:
-            d = Dtype(attribute)
-        except ValueError:
-            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{attribute}'.")
-        if d.bitlength is not None and len(self) != d.bitlength:
-            raise ValueError(f"bitstring length {len(self)} doesn't match length {d.bitlength} of property '{attribute}'.")
-        return d.get_fn(self)
 
     def __iter__(self) -> Iterable[bool]:
         return iter(self._bitstore)
@@ -277,10 +181,10 @@ class Bits:
             return ''.join(('0x', self[0:MAX_CHARS*4]._gethex(), '...'))
         # If it's quite short and we can't do hex then use bin
         if length < 32 and length % 4 != 0:
-            return '0b' + self.bin
+            return '0b' + self.parse('bin')
         # If we can use hex then do so
         if not length % 4:
-            return '0x' + self.hex
+            return '0x' + self.parse('hex')
         # Otherwise first we do as much as we can in hex
         # then add on 1, 2 or 3 bits on at the end
         bits_at_end = length % 4
@@ -509,8 +413,6 @@ class Bits:
             self._bitstore = BitStore.frombytes(bytearray(s))
         elif isinstance(s, io.BytesIO):
             self._bitstore = BitStore.frombytes(s.getvalue())
-        elif isinstance(s, io.BufferedReader):
-            self._setfile(s.name)
         elif isinstance(s, bitarray.bitarray):
             self._bitstore = BitStore(s)
         elif isinstance(s, array.array):
@@ -524,69 +426,6 @@ class Bits:
                             f"clearer that a bitstring of {int(s)} zero bits will be created.")
         else:
             raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
-
-    def _setauto(self, s: BitsType, length: Optional[int], offset: Optional[int], /) -> None:
-        """Set bitstring from a bitstring, file, bool, array, iterable or string."""
-        # As s can be so many different things it's important to do the checks
-        # in the correct order, as some types are also other allowed types.
-        if offset is None and length is None:
-            return self._setauto_no_length_or_offset(s)
-        if offset is None:
-            offset = 0
-
-        if isinstance(s, io.BytesIO):
-            if length is None:
-                length = s.seek(0, 2) * 8 - offset
-            byteoffset, offset = divmod(offset, 8)
-            bytelength = (length + byteoffset * 8 + offset + 7) // 8 - byteoffset
-            if length + byteoffset * 8 + offset > s.seek(0, 2) * 8:
-                raise bitformat.CreationError("BytesIO object is not long enough for specified length and offset.")
-            self._bitstore = BitStore.frombytes(s.getvalue()[byteoffset: byteoffset + bytelength]).getslice(
-                offset, offset + length)
-            return
-
-        if isinstance(s, io.BufferedReader):
-            self._setfile(s.name, length, offset)
-            return
-
-        if isinstance(s, (str, Bits, bytes, bytearray, memoryview, io.BytesIO, io.BufferedReader,
-                          bitarray.bitarray, array.array, abc.Iterable)):
-            raise bitformat.CreationError(f"Cannot initialise bitstring from type '{type(s)}' when using explicit lengths or offsets.")
-        raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
-
-    def _setfile(self, filename: str, length: Optional[int] = None, offset: Optional[int] = None) -> None:
-        """Use file as source of bits."""
-        with open(pathlib.Path(filename), 'rb') as source:
-            if offset is None:
-                offset = 0
-            m = mmap.mmap(source.fileno(), 0, access=mmap.ACCESS_READ)
-            if offset == 0:
-                self._filename = source.name
-                self._bitstore = BitStore.frombuffer(m, length=length)
-            else:
-                # If offset is given then always read into memory.
-                temp = BitStore.frombuffer(m)
-                if length is None:
-                    if offset > len(temp):
-                        raise bitformat.CreationError(f"The offset of {offset} bits is greater than the file length ({len(temp)} bits).")
-                    self._bitstore = temp.getslice(offset, None)
-                else:
-                    self._bitstore = temp.getslice(offset, offset + length)
-                    if len(self) != length:
-                        raise bitformat.CreationError(f"Can't use a length of {length} bits and an offset of {offset} bits as file length is only {len(temp)} bits.")
-
-    def _setbitarray(self, ba: bitarray.bitarray, length: Optional[int], offset: Optional[int]) -> None:
-        if offset is None:
-            offset = 0
-        if offset > len(ba):
-            raise bitformat.CreationError(f"Offset of {offset} too large for bitarray of length {len(ba)}.")
-        if length is None:
-            self._bitstore = BitStore(ba[offset:])
-        else:
-            if offset + length > len(ba):
-                raise bitformat.CreationError(
-                    f"Offset of {offset} and length of {length} too large for bitarray of length {len(ba)}.")
-            self._bitstore = BitStore(ba[offset: offset + length])
 
     def _setbits(self, bs: BitsType, length: None = None) -> None:
         bs = Bits._create_from_bitstype(bs)
@@ -1220,25 +1059,6 @@ class Bits:
         """
         return self._bitstore.tobytes()
 
-    def tobitarray(self) -> bitarray.bitarray:
-        """Convert the bitstring to a bitarray object."""
-        if self._bitstore.modified_length is not None:
-            # Removes the offset and truncates to length
-            return self._bitstore.getslice(0, len(self))._bitarray
-        else:
-            return self._bitstore._bitarray
-
-    def tofile(self, f: BinaryIO) -> None:
-        """Write the bitstring to a file object, padding with zero bits if needed.
-
-        Up to seven zero bits will be added at the end to byte align.
-
-        """
-        # If the bitstring is file based then we don't want to read it all in to memory first.
-        chunk_size = 8 * 100 * 1024 * 1024  # 100 MiB
-        for chunk in self.cut(chunk_size):
-            f.write(chunk.tobytes())
-
     def startswith(self, prefix: BitsType, start: Optional[int] = None, end: Optional[int] = None) -> bool:
         """Return whether the current bitstring starts with prefix.
 
@@ -1509,7 +1329,3 @@ class Bits:
         x = super().__new__(cls)
         x._bitstore = bitstore_helpers.str_to_bitstore(s)
         return x
-
-    len = length = property(_getlength, doc="The length of the bitstring in bits. Read only.")
-
-

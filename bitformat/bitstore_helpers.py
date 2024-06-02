@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import struct
-import math
 import functools
 from typing import Union, Optional, Dict, Callable
 import bitarray

@@ -246,7 +246,7 @@ def test_repeating_from_expression():
         Repeat('{2*x}', 'h4')
     ], 'my_little_format')
     b = f.build([2, 'a', 'b', 'c', 'd'])
-    assert b.hex == '02abcd'
+    assert b.parse('hex') == '02abcd'
 
 def test_repeat_with_const_expression():
     f = Format(['the_size: i9',

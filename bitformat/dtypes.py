@@ -357,19 +357,11 @@ class Register:
     @classmethod
     def add_dtype(cls, definition: DtypeDefinition):
         cls.names[definition.name] = definition
-        if definition.get_fn is not None:
-            setattr(bitformat.bits.Bits, definition.name, property(fget=definition.get_fn, doc=f"The bitstring as {definition.description}. Read only."))
-        if definition.set_fn is not None:
-            setattr(bitformat.bitarray_.BitArray, definition.name, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"The bitstring as {definition.description}. Read and write."))
 
     @classmethod
     def add_dtype_alias(cls, name: str, alias: str):
         cls.names[alias] = cls.names[name]
         definition = cls.names[alias]
-        if definition.get_fn is not None:
-            setattr(bitformat.bits.Bits, alias, property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
-        if definition.set_fn is not None:
-            setattr(bitformat.bitarray_.BitArray, alias, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"An alias for '{name}'. Read and write."))
 
     @classmethod
     def get_dtype(cls, name: str, length: Optional[int], scale: Union[None, float, int] = None) -> Dtype:
