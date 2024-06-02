@@ -64,44 +64,6 @@ def oct2bitstore(octstring: str) -> BitStore:
     return BitStore(ba)
 
 
-def ue2bitstore(i: Union[str, int]) -> BitStore:
-    i = int(i)
-    if i < 0:
-        raise bitformat.CreationError("Cannot use negative initialiser for unsigned exponential-Golomb.")
-    if i == 0:
-        return BitStore('1')
-    tmp = i + 1
-    leadingzeros = -1
-    while tmp > 0:
-        tmp >>= 1
-        leadingzeros += 1
-    remainingpart = i + 1 - (1 << leadingzeros)
-    return BitStore('0' * leadingzeros + '1') + int2bitstore(remainingpart, leadingzeros, False)
-
-
-def se2bitstore(i: Union[str, int]) -> BitStore:
-    i = int(i)
-    if i > 0:
-        u = (i * 2) - 1
-    else:
-        u = -2 * i
-    return ue2bitstore(u)
-
-
-def uie2bitstore(i: Union[str, int]) -> BitStore:
-    i = int(i)
-    if i < 0:
-        raise bitformat.CreationError("Cannot use negative initialiser for unsigned interleaved exponential-Golomb.")
-    return BitStore('1' if i == 0 else '0' + '0'.join(bin(i + 1)[3:]) + '1')
-
-
-def sie2bitstore(i: Union[str, int]) -> BitStore:
-    i = int(i)
-    if i == 0:
-        return BitStore('1')
-    else:
-        return uie2bitstore(abs(i)) + (BitStore('1') if i < 0 else BitStore('0'))
-
 def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
     i = int(i)
     try:

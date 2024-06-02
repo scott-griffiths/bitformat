@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        ds = [Dtype('u9'), Dtype('i', 4), Dtype('f32'), Dtype('bytes3'), Dtype('sie'), Dtype('bits11')]
+        ds = [Dtype('u9'), Dtype('i', 4), Dtype('f32'), Dtype('bytes3'), Dtype('bits11')]
         for d in ds:
             f = Field(d)
             assert f.dtype == d
@@ -57,9 +57,9 @@ class TestCreation:
         assert f.dtype.name == 'bool'
         assert f.name == 'flag_12'
         assert f.value is None
-        f = Field.fromstring('const ue = 2')
-        assert f.dtype.name == 'ue'
-        assert f.value == 2
+        f = Field.fromstring('const u3 = 3')
+        assert f.dtype.name == 'uint'
+        assert f.value == 3
         assert f.name == ''
         assert f.tobits() == '0b011'
 
@@ -114,9 +114,6 @@ class TestBuilding:
         f = Field('bytes:3')
         b = f.build([b'abc'])
         assert b == '0x616263'
-        f = Field('se')
-        b = f.build([-5])
-        assert b == '0b0001011'
         f = Field('bits11')
         with pytest.raises(ValueError):
             _ = f.build([Bits('0x7ff')])
