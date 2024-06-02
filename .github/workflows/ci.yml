@@ -78,13 +78,11 @@ jobs:
           - name: 🐧
             runs-on: ubuntu-latest
           - name: 🍎
-            runs-on: macos-latest
+            # This would preferably be macos-latest, but it has pip updating bugs right now.
+            runs-on: macos-12
           - name: 🪟
             runs-on: windows-latest
         python:
-          - name: CPython 3.9
-            major_dot_minor: '3.9'
-            action: '3.9'
           - name: CPython 3.10
             major_dot_minor: '3.10'
             action: '3.10'
@@ -94,9 +92,9 @@ jobs:
           - name: CPython 3.12
             major_dot_minor: '3.12'
             action: '3.12'
-          - name: PyPy 3.9
-            major_dot_minor: '3.9'
-            action: 'pypy-3.9'
+          - name: PyPy 3.10
+            major_dot_minor: '3.10'
+            action: 'pypy-3.10'
 
 
     steps:
