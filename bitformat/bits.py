@@ -791,24 +791,6 @@ class Bits:
         fmt = {16: '<e', 32: '<f', 64: '<d'}[len(self)]
         return struct.unpack(fmt, self._bitstore.tobytes())[0]
 
-    def _getbfloatbe(self) -> float:
-        zero_padded = self + Bits(16)
-        return zero_padded._getfloatbe()
-
-    def _setbfloatbe(self, f: Union[float, str], length: Optional[int] = None) -> None:
-        if length is not None and length != 16:
-            raise bitformat.CreationError(f"bfloats must be length 16, received a length of {length} bits.")
-        self._bitstore = bitstore_helpers.bfloat2bitstore(f, True)
-
-    def _getbfloatle(self) -> float:
-        zero_padded = Bits(16) + self
-        return zero_padded._getfloatle()
-
-    def _setbfloatle(self, f: Union[float, str], length: Optional[int] = None) -> None:
-        if length is not None and length != 16:
-            raise bitformat.CreationError(f"bfloats must be length 16, received a length of {length} bits.")
-        self._bitstore = bitstore_helpers.bfloat2bitstore(f, False)
-
     def _setue(self, i: int) -> None:
         """Initialise bitstring with unsigned exponential-Golomb code for integer i.
 

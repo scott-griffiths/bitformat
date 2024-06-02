@@ -15,8 +15,7 @@
 
 **bitformat** is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
 
-It is intended to complement the [**bitstring**](https://github.com/scott-griffiths/bitstring) module from the same author, and uses its `Dtype`, `Bits` and `Array` classes as the basis for building complex bit formats.
-
+It is from the author of the widely used [**bitstring**](https://github.com/scott-griffiths/bitstring) module.
 
 ----
 

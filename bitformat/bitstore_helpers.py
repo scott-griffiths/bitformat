@@ -102,18 +102,6 @@ def sie2bitstore(i: Union[str, int]) -> BitStore:
     else:
         return uie2bitstore(abs(i)) + (BitStore('1') if i < 0 else BitStore('0'))
 
-
-def bfloat2bitstore(f: Union[str, float], big_endian: bool) -> BitStore:
-    f = float(f)
-    fmt = '>f' if big_endian else '<f'
-    try:
-        b = struct.pack(fmt, f)
-    except OverflowError:
-        # For consistency we overflow to 'inf'.
-        b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
-    return BitStore.frombytes(b[0:2]) if big_endian else BitStore.frombytes(b[2:4])
-
-
 def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
     i = int(i)
     try:

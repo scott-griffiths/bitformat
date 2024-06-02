@@ -126,12 +126,6 @@ def float_bits2chars(bitlength: Literal[16, 32, 64]):
         return 24  # Empirical value
 
 
-
-def bfloat_bits2chars(_: Literal[16]):
-    # Found by looking at all the possible values
-    return 23  # Empirical value
-
-
 def bits_bits2chars(bitlength: int):
     # For bits type we can see how long it needs to be printed by trying any value
     temp = Bits(bitlength)
@@ -169,10 +163,6 @@ dtype_definitions = [
                     allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),
     DtypeDefinition('floatle', Bits._setfloatle, Bits._getfloatle, float, True, float_bits2chars,
                     allowed_lengths=(16, 32, 64), description="a little-endian floating point number"),
-    DtypeDefinition('bfloat', Bits._setbfloatbe, Bits._getbfloatbe, float, True, bfloat_bits2chars,
-                    allowed_lengths=(16,), description="a 16 bit big-endian bfloat floating point number"),
-    DtypeDefinition('bfloatle', Bits._setbfloatle, Bits._getbfloatle, float, True, bfloat_bits2chars,
-                    allowed_lengths=(16,), description="a 16 bit little-endian bfloat floating point number"),
     # Other known length types
     DtypeDefinition('bits', Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars,
                     description="a bitstring object"),
@@ -198,7 +188,6 @@ dtype_definitions = [
 aliases: List[Tuple[str, str]] = [
     # Floats default to big endian
     ('float', 'floatbe'),
-    ('bfloat', 'bfloatbe'),
 
     # Some single letter aliases for popular types
     ('int', 'i'),
@@ -216,14 +205,12 @@ if byteorder == 'little':
         ('uintle', 'uintne'),
         ('intle', 'intne'),
         ('floatle', 'floatne'),
-        ('bfloatle', 'bfloatne'),
     ])
 else:
     aliases.extend([
         ('uintbe', 'uintne'),
         ('intbe', 'intne'),
         ('floatbe', 'floatne'),
-        ('bfloatbe', 'bfloatne'),
     ])
 
 
