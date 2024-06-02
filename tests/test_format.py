@@ -243,7 +243,7 @@ def test_format_get_and_set():
 def test_repeating_from_expression():
     f = Format([
         'x: u8',
-        Repeat('{2*x}', 'h4')
+        Repeat('{2*x}', 'hex4')
     ], 'my_little_format')
     b = f.build([2, 'a', 'b', 'c', 'd'])
     assert b.parse('hex') == '02abcd'
@@ -252,7 +252,7 @@ def test_repeat_with_const_expression():
     f = Format(['the_size: i9',
                 Repeat('{the_size}', [
                     'const u5=0',
-                    'const b3=111'
+                    'const bin3=111'
                 ])])
     f.build([3])
     assert f.tobits() == 'i9=3, 3*0x07'

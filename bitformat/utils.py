@@ -24,56 +24,6 @@ LITERAL_RE: Pattern[str] = re.compile(r'^(?P<name>0([xob]))(?P<value>.+)', re.IG
 STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])(?P<fmt>(?:\d*[bBhHlLqQefd])+)$')
 # The same as above, but it doesn't insist on an endianness as it's byteswapping anyway.
 BYTESWAP_STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])?(?P<fmt>(?:\d*[bBhHlLqQefd])+)$')
-# An endianness indicator followed by exactly one struct.pack codes
-SINGLE_STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])(?P<fmt>[bBhHlLqQefd])$')
-
-# A number followed by a single character struct.pack code
-STRUCT_SPLIT_RE: Pattern[str] = re.compile(r'\d*[bBhHlLqQefd]')
-
-# These replicate the struct.pack codes
-# Big-endian
-REPLACEMENTS_BE: Dict[str, str] = {'b': 'int8', 'B': 'uint8',
-                                   'h': 'intbe16', 'H': 'uintbe16',
-                                   'l': 'intbe32', 'L': 'uintbe32',
-                                   'q': 'intbe64', 'Q': 'uintbe64',
-                                   'e': 'floatbe16', 'f': 'floatbe32', 'd': 'floatbe64'}
-# Little-endian
-REPLACEMENTS_LE: Dict[str, str] = {'b': 'int8', 'B': 'uint8',
-                                   'h': 'intle16', 'H': 'uintle16',
-                                   'l': 'intle32', 'L': 'uintle32',
-                                   'q': 'intle64', 'Q': 'uintle64',
-                                   'e': 'floatle16', 'f': 'floatle32', 'd': 'floatle64'}
-
-# Native-endian
-REPLACEMENTS_NE: Dict[str, str] = {'b': 'int8', 'B': 'uint8',
-                                   'h': 'intne16', 'H': 'uintne16',
-                                   'l': 'intne32', 'L': 'uintne32',
-                                   'q': 'intne64', 'Q': 'uintne64',
-                                   'e': 'floatne16', 'f': 'floatne32', 'd': 'floatne64'}
-
-# Size in bytes of all the pack codes.
-PACK_CODE_SIZE: Dict[str, int] = {'b': 1, 'B': 1, 'h': 2, 'H': 2, 'l': 4, 'L': 4,
-                                  'q': 8, 'Q': 8, 'e': 2, 'f': 4, 'd': 8}
-
-
-def structparser(m: Match[str]) -> List[str]:
-    """Parse struct-like format string token into sub-token list."""
-    endian = m.group('endian')
-    # Split the format string into a list of 'q', '4h' etc.
-    formatlist = re.findall(STRUCT_SPLIT_RE, m.group('fmt'))
-    # Now deal with multiplicative factors, 4h -> hhhh etc.
-    fmt = ''.join([f[-1] * int(f[:-1]) if len(f) != 1 else
-                   f for f in formatlist])
-    if endian in '@=':
-        # Native endianness
-        tokens = [REPLACEMENTS_NE[c] for c in fmt]
-    elif endian == '<':
-        tokens = [REPLACEMENTS_LE[c] for c in fmt]
-    else:
-        assert endian == '>'
-        tokens = [REPLACEMENTS_BE[c] for c in fmt]
-    return tokens
-
 
 @functools.lru_cache(CACHE_SIZE)
 def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, Optional[int]]:
@@ -94,23 +44,6 @@ def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, Optional[int]]:
         else:
             raise ValueError(f"Can't parse 'name[:]length' token '{fmt}'.")
     return name, length
-
-
-@functools.lru_cache(CACHE_SIZE)
-def parse_single_struct_token(fmt: str) -> Optional[Tuple[str, Optional[int]]]:
-    if m := SINGLE_STRUCT_PACK_RE.match(fmt):
-        endian = m.group('endian')
-        f = m.group('fmt')
-        if endian == '>':
-            fmt = REPLACEMENTS_BE[f]
-        elif endian == '<':
-            fmt = REPLACEMENTS_LE[f]
-        else:
-            assert endian in '=@'
-            fmt = REPLACEMENTS_NE[f]
-        return parse_name_length_token(fmt)
-    else:
-        return None
 
 
 @functools.lru_cache(CACHE_SIZE)
@@ -155,8 +88,7 @@ def preprocess_tokens(fmt: str) -> List[str]:
             factor = int(m.group('factor'))
             meta_token = m.group('token')
 
-        # Parse struct-like format into sub-tokens or treat as single token
-        tokens = structparser(m) if (m := STRUCT_PACK_RE.match(meta_token)) else [meta_token]
+        tokens = [meta_token]
 
         # Extend final tokens list with parsed tokens, repeated by the factor
         final_tokens.extend(tokens * factor)

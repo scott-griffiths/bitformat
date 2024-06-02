@@ -128,13 +128,9 @@ dtype_definitions = [
 
 
 aliases: List[Tuple[str, str]] = [
-
-    # Some single letter aliases for popular types
+    # Longer aliases for some popular types
     ('i', 'int'),
     ('u', 'uint'),
-    ('hex', 'h'),
-    ('oct', 'o'),
-    ('bin', 'b'),
     ('f', 'float'),
 ]
 
@@ -145,6 +141,5 @@ for alias in aliases:
 
 
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'Repeat',
-           'BitArray',
-           'Error', 'ReadError', 'InterpretError',
-           'ByteAlignError', 'CreationError', 'Dtype', 'options']
+           'BitArray', 'Error', 'ReadError', 'InterpretError',
+           'ByteAlignError', 'CreationError', 'options']
