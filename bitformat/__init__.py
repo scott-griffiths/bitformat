@@ -100,9 +100,9 @@ def bool_bits2chars(_: Literal[1]):
 
 dtype_definitions = [
     # Integer types
-    DtypeDefinition('uint', Bits._setuint, Bits._getuint, int, False, uint_bits2chars,
+    DtypeDefinition('u', Bits._setuint, Bits._getuint, int, False, uint_bits2chars,
                     description="a two's complement unsigned int"),
-    DtypeDefinition('int', Bits._setint, Bits._getint, int, True, int_bits2chars,
+    DtypeDefinition('i', Bits._setint, Bits._getint, int, True, int_bits2chars,
                     description="a two's complement signed int"),
     # String types
     DtypeDefinition('hex', Bits._sethex, Bits._gethex, str, False, hex_bits2chars,
@@ -112,7 +112,7 @@ dtype_definitions = [
     DtypeDefinition('oct', Bits._setoct, Bits._getoct, str, False, oct_bits2chars,
                     allowed_lengths=(0, 3, 6, ...), description="an octal string"),
     # Float types
-    DtypeDefinition('float', Bits._setfloat, Bits._getfloat, float, True, float_bits2chars,
+    DtypeDefinition('f', Bits._setfloat, Bits._getfloat, float, True, float_bits2chars,
                     allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),
     # Other known length types
     DtypeDefinition('bits', Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars,
@@ -130,12 +130,12 @@ dtype_definitions = [
 aliases: List[Tuple[str, str]] = [
 
     # Some single letter aliases for popular types
-    ('int', 'i'),
-    ('uint', 'u'),
+    ('i', 'int'),
+    ('u', 'uint'),
     ('hex', 'h'),
     ('oct', 'o'),
     ('bin', 'b'),
-    ('float', 'f'),
+    ('f', 'float'),
 ]
 
 for dt in dtype_definitions:

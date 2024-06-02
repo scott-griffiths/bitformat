@@ -58,7 +58,7 @@ class TestCreation:
         assert f.name == 'flag_12'
         assert f.value is None
         f = Field.fromstring('const u3 = 3')
-        assert f.dtype.name == 'uint'
+        assert f.dtype.name == 'u'
         assert f.value == 3
         assert f.name == ''
         assert f.tobits() == '0b011'
@@ -135,10 +135,10 @@ class TestBuilding:
 
 def test_field_str():
     f = Field('u8', name='x')
-    assert str(f) == 'x: uint8'
+    assert str(f) == 'x: u8'
     f = Field('u8')
-    assert str(f) == 'uint8'
+    assert str(f) == 'u8'
     f = Field('uint8', value=8)
-    assert str(f) == 'uint8 = 8'
+    assert str(f) == 'u8 = 8'
     f = Field('u8', value=8, name='x')
-    assert str(f) == 'x: uint8 = 8'
+    assert str(f) == 'x: u8 = 8'

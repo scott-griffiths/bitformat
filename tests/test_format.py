@@ -280,9 +280,9 @@ def test_field_array_str():
     with pytest.raises(ValueError):
         _ = FieldArray.fromstring('test   :  f32 = 0.25  ')
     f = FieldArray.fromstring('test: [f32 ; 3]')
-    assert str(f) == 'test: [float32; 3]'
+    assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():
     f = Format(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format([\n    'x: const uint8 = 12',\n    'u: bool = False',\n    '[uint3; 44]'\n], 'dave')"
+    assert r == "Format([\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n], 'dave')"
