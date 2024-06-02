@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import bitstring
-from bitstring.bits import Bits, BitsType
-from bitstring.dtypes import Dtype
+import bitformat
+from bitformat.bits import Bits, BitsType
+from bitformat.dtypes import Dtype
 from typing import Union, List, Any, Optional, overload, TypeVar, Tuple
 import copy
 import numbers
@@ -103,7 +103,7 @@ class ConstBitStream(Bits):
         if pos < 0:
             pos += len(self._bitstore)
         if pos < 0 or pos > len(self._bitstore):
-            raise bitstring.CreationError(f"Cannot set pos to {pos} when length is {len(self._bitstore)}.")
+            raise bitformat.CreationError(f"Cannot set pos to {pos} when length is {len(self._bitstore)}.")
         self._pos = pos
         self._bitstore.immutable = True
 
@@ -114,7 +114,7 @@ class ConstBitStream(Bits):
     def _getbytepos(self) -> int:
         """Return the current position in the stream in bytes. Must be byte aligned."""
         if self._pos % 8:
-            raise bitstring.ByteAlignError("Not byte aligned when using bytepos property.")
+            raise bitformat.ByteAlignError("Not byte aligned when using bytepos property.")
         return self._pos // 8
 
     def _setbitpos(self, pos: int) -> None:
@@ -331,11 +331,11 @@ class ConstBitStream(Bits):
             if fmt < 0:
                 raise ValueError("Cannot read negative amount.")
             if fmt > len(self) - self._pos:
-                raise bitstring.ReadError(f"Cannot read {fmt} bits, only {len(self) - self._pos} available.")
+                raise bitformat.ReadError(f"Cannot read {fmt} bits, only {len(self) - self._pos} available.")
             bs = self._slice(self._pos, self._pos + fmt)
             self._pos += fmt
             return bs
-        dtype = bitstring.dtypes.Dtype(fmt)
+        dtype = bitformat.dtypes.Dtype(fmt)
         if dtype.bitlength is None and not dtype.variable_length:
             # No length specified? Try again, but read to end.
             bitlength = len(self) - self._pos
@@ -344,7 +344,7 @@ class ConstBitStream(Bits):
                 raise ValueError(
                     f"The '{dtype.name}' type must have a bit length that is a multiple of {dtype.bits_per_item}"
                     f" so cannot be read from the {bitlength} bits that are available.")
-            dtype = bitstring.dtypes.Dtype(fmt, items)
+            dtype = bitformat.dtypes.Dtype(fmt, items)
         if dtype.bitlength is not None:
             val = dtype.read_fn(self, self._pos)
             self._pos += dtype.bitlength
@@ -353,7 +353,7 @@ class ConstBitStream(Bits):
 
         if self._pos > len(self):
             self._pos = p
-            raise bitstring.ReadError(f"Reading off end of bitstring with fmt '{fmt}'. Only {len(self) - p} bits available.")
+            raise bitformat.ReadError(f"Reading off end of bitstring with fmt '{fmt}'. Only {len(self) - p} bits available.")
         return val
 
     def readlist(self, fmt: Union[str, List[Union[int, str, Dtype]]], **kwargs) \
@@ -398,7 +398,7 @@ class ConstBitStream(Bits):
         oldpos = self._pos
         p = self.find(bs, self._pos, bytealigned=bytealigned)
         if not p:
-            raise bitstring.ReadError("Substring not found")
+            raise bitformat.ReadError("Substring not found")
         self._pos += len(bs)
         return self._slice(oldpos, self._pos)
 
@@ -498,7 +498,7 @@ class ConstBitStream(Bits):
                       """)
 
 
-class BitStream(ConstBitStream, bitstring.BitArray):
+class BitStream(ConstBitStream, bitformat.BitArray):
     """A container or stream holding a mutable sequence of bits
 
     Subclass of the ConstBitStream and BitArray classes. Inherits all of

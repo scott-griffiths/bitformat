@@ -8,7 +8,7 @@ import struct
 import zlib
 import array
 import bitarray
-from bitstring.luts import binary8_luts_compressed
+from bitformat.luts import binary8_luts_compressed
 import math
 
 

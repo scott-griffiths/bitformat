@@ -3,8 +3,8 @@ from __future__ import annotations
 import functools
 from typing import Optional, Dict, Any, Union, Tuple, Callable
 import inspect
-import bitstring
-from bitstring import utils
+import bitformat
+from bitformat import utils
 
 CACHE_SIZE = 256
 
@@ -171,12 +171,12 @@ class Dtype:
         x._set_scale(scale)
         return x
 
-    def build(self, value: Any, /) -> bitstring.Bits:
+    def build(self, value: Any, /) -> bitformat.Bits:
         """Create a bitstring from a value.
 
         The value parameter should be of a type appropriate to the dtype.
         """
-        b = bitstring.Bits()
+        b = bitformat.Bits()
         self._set_fn(b, value)
         if self.bitlength is not None and len(b) != self.bitlength:
             raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
@@ -186,8 +186,8 @@ class Dtype:
         """Parse a bitstring to find its value.
 
         The b parameter should be a bitstring of the appropriate length, or an object that can be converted to a bitstring."""
-        b = bitstring.Bits._create_from_bitstype(b)
-        return self._get_fn(bitstring.Bits(b))
+        b = bitformat.Bits._create_from_bitstype(b)
+        return self._get_fn(bitformat.Bits(b))
 
     def __str__(self) -> str:
         if self._scale is not None:
@@ -204,7 +204,7 @@ class Dtype:
         else:
             try:
                 # This will only succeed for powers of two from -127 to 127.
-                e8m0 = bitstring.Bits(e8m0mxfp=self._scale)
+                e8m0 = bitformat.Bits(e8m0mxfp=self._scale)
             except ValueError:
                 scale_str = f', scale={self._scale}'
             else:
@@ -280,9 +280,9 @@ class DtypeDefinition:
             def allowed_length_checked_get_fn(bs):
                 if len(bs) not in self.allowed_lengths:
                     if self.allowed_lengths.only_one_value():
-                        raise bitstring.InterpretError(f"'{self.name}' dtypes must have a length of {self.allowed_lengths.values[0]}, but received a length of {len(bs)}.")
+                        raise bitformat.InterpretError(f"'{self.name}' dtypes must have a length of {self.allowed_lengths.values[0]}, but received a length of {len(bs)}.")
                     else:
-                        raise bitstring.InterpretError(f"'{self.name}' dtypes must have a length in {self.allowed_lengths}, but received a length of {len(bs)}.")
+                        raise bitformat.InterpretError(f"'{self.name}' dtypes must have a length in {self.allowed_lengths}, but received a length of {len(bs)}.")
                 return get_fn(bs)
             self.get_fn = allowed_length_checked_get_fn  # Interpret everything and check the length
         else:
@@ -296,7 +296,7 @@ class DtypeDefinition:
             else:
                 def read_fn(bs, start, length):
                     if len(bs) < start + length:
-                        raise bitstring.ReadError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
+                        raise bitformat.ReadError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
                     return self.get_fn(bs[start:start + length])
             self.read_fn = read_fn
         else:
@@ -311,8 +311,8 @@ class DtypeDefinition:
             def read_fn(bs, start):
                 try:
                     x, length = get_fn(bs[start:])
-                except bitstring.InterpretError:
-                    raise bitstring.ReadError
+                except bitformat.InterpretError:
+                    raise bitformat.ReadError
                 return x, start + length
             self.read_fn = read_fn
         self.bitlength2chars_fn = bitlength2chars_fn
@@ -358,18 +358,18 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         cls.names[definition.name] = definition
         if definition.get_fn is not None:
-            setattr(bitstring.bits.Bits, definition.name, property(fget=definition.get_fn, doc=f"The bitstring as {definition.description}. Read only."))
+            setattr(bitformat.bits.Bits, definition.name, property(fget=definition.get_fn, doc=f"The bitstring as {definition.description}. Read only."))
         if definition.set_fn is not None:
-            setattr(bitstring.bitarray_.BitArray, definition.name, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"The bitstring as {definition.description}. Read and write."))
+            setattr(bitformat.bitarray_.BitArray, definition.name, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"The bitstring as {definition.description}. Read and write."))
 
     @classmethod
     def add_dtype_alias(cls, name: str, alias: str):
         cls.names[alias] = cls.names[name]
         definition = cls.names[alias]
         if definition.get_fn is not None:
-            setattr(bitstring.bits.Bits, alias, property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
+            setattr(bitformat.bits.Bits, alias, property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
         if definition.set_fn is not None:
-            setattr(bitstring.bitarray_.BitArray, alias, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"An alias for '{name}'. Read and write."))
+            setattr(bitformat.bitarray_.BitArray, alias, property(fget=definition.get_fn, fset=definition.set_fn, doc=f"An alias for '{name}'. Read and write."))
 
     @classmethod
     def get_dtype(cls, name: str, length: Optional[int], scale: Union[None, float, int] = None) -> Dtype:

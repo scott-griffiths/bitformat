@@ -1,7 +1,9 @@
 from __future__ import annotations
 import abc
 import re
-from bitstring import Bits, Dtype, Array
+from .array_ import Array
+from .bits import Bits
+from .dtypes import Dtype
 
 from .common import colour, Expression, _indent
 from typing import Any, Sequence

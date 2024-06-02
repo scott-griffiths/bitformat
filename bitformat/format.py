@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from bitstring import Bits, Dtype
+from .bits import Bits
+from .dtypes import Dtype
 from typing import Sequence, Any, Iterable
 import copy
 

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import bitstring
-from bitstring.bitstream import BitStream
-from bitstring.utils import tokenparser
-from bitstring.exceptions import CreationError
+import bitformat
+from bitformat.bitstream import BitStream
+from bitformat.utils import tokenparser
+from bitformat.exceptions import CreationError
 from typing import Union, List
-from bitstring.bitstore import BitStore
-from bitstring.bitstore_helpers import bitstore_from_token
+from bitformat.bitstore import BitStore
+from bitformat.bitstore_helpers import bitstore_from_token
 
 
 def pack(fmt: Union[str, List[str]], *values, **kwargs) -> BitStream:
@@ -71,7 +71,7 @@ def pack(fmt: Union[str, List[str]], *values, **kwargs) -> BitStream:
                 # Take the next value from the ones provided
                 value = next(value_iter)
             if name == 'bits':
-                value = bitstring.bits.Bits(value)
+                value = bitformat.bits.Bits(value)
                 if length is not None and length != len(value):
                     raise CreationError(f"Token with length {length} packed with value of length {len(value)}.")
                 bsl.append(value._bitstore)
@@ -86,7 +86,7 @@ def pack(fmt: Union[str, List[str]], *values, **kwargs) -> BitStream:
     except StopIteration:
         # Good, we've used up all the *values.
         s = BitStream()
-        if bitstring.options.lsb0:
+        if bitformat.options.lsb0:
             bsl.reverse()
         for b in bsl:
             s._bitstore += b

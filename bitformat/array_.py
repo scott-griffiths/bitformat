@@ -3,13 +3,13 @@ from __future__ import annotations
 import math
 import numbers
 from collections.abc import Sized
-from bitstring.exceptions import CreationError
+from bitformat.exceptions import CreationError
 from typing import Union, List, Iterable, Any, Optional, BinaryIO, overload, TextIO
-from bitstring.bits import Bits, BitsType
-from bitstring.bitarray_ import BitArray
-from bitstring.dtypes import Dtype, dtype_register
-from bitstring import utils
-from bitstring.bitstring_options import Options, Colour
+from bitformat.bits import Bits, BitsType
+from bitformat.bitarray_ import BitArray
+from bitformat.dtypes import Dtype, dtype_register
+from bitformat import utils
+from bitformat.bitstring_options import Options, Colour
 import copy
 import array
 import operator

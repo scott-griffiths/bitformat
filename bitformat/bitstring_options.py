@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import bitstring
+import bitformat
 import os
 
 
@@ -43,9 +43,9 @@ class Options:
 
     def set_lsb0(self, value: bool) -> None:
         self._lsb0 = bool(value)
-        Bits = bitstring.bits.Bits
-        BitArray = bitstring.bitarray_.BitArray
-        BitStore = bitstring.bitstore.BitStore
+        Bits = bitformat.bits.Bits
+        BitArray = bitformat.bitarray_.BitArray
+        BitStore = bitformat.bitstore.BitStore
 
         lsb0_methods = {
             Bits: {'_find': Bits._find_lsb0, '_rfind': Bits._rfind_lsb0, '_findall': Bits._findall_lsb0},

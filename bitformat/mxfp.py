@@ -2,7 +2,7 @@ import array
 import math
 import struct
 import bitarray
-from bitstring.luts import mxfp_luts_compressed
+from bitformat.luts import mxfp_luts_compressed
 import zlib
 from typing import Optional
 

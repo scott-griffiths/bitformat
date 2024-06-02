@@ -5,11 +5,11 @@ import numbers
 import re
 from collections import abc
 from typing import Union, List, Iterable, Any, Optional
-from bitstring import utils
-from bitstring.exceptions import CreationError, Error
-from bitstring.bits import Bits, BitsType, TBits
+from bitformat import utils
+from bitformat.exceptions import CreationError, Error
+from bitformat.bits import Bits, BitsType, TBits
 
-import bitstring.dtypes
+import bitformat.dtypes
 
 
 class BitArray(Bits):
@@ -125,7 +125,7 @@ class BitArray(Bits):
             # First try the ordinary attribute setter
             super().__setattr__(attribute, value)
         except AttributeError:
-            dtype = bitstring.dtypes.Dtype(attribute)
+            dtype = bitformat.dtypes.Dtype(attribute)
             x = object.__new__(Bits)
             if (set_fn := dtype.set_fn) is None:
                 raise AttributeError(f"Cannot set attribute '{attribute}' as it does not have a set_fn.")
@@ -270,7 +270,7 @@ class BitArray(Bits):
 
     def _replace(self, old: Bits, new: Bits, start: int, end: int, count: int, bytealigned: Optional[bool]) -> int:
         if bytealigned is None:
-            bytealigned = bitstring.options.bytealigned
+            bytealigned = bitformat.options.bytealigned
         # First find all the places where we want to do the replacements
         starting_points: List[int] = []
         for x in self.findall(old, start, end, bytealigned=bytealigned):
@@ -291,7 +291,7 @@ class BitArray(Bits):
         # Final replacement
         replacement_list.append(new._bitstore)
         replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
-        if bitstring.options.lsb0:
+        if bitformat.options.lsb0:
             # Addition of bitarray is always on the right, so assemble from other end
             replacement_list.reverse()
         self._bitstore.clear()
