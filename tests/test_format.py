@@ -271,7 +271,7 @@ def test_repeat_with_dtype():
     f.parse(b)
     assert f.value == [1, 2, 3, 4]
 
-    f = Repeat(4, Dtype('i4', scale=-200))
+    f = Repeat(4, Dtype('i40'))
     b = f.build([-400, 200, -200, 400])
     f.parse(b)
     assert f.value == [-400, 200, -200, 400]

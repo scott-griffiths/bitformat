@@ -14,7 +14,6 @@ class BitStore:
                  immutable: bool = False) -> None:
         self._bitarray = bitarray.bitarray(initializer)
         self.immutable = immutable
-        self.modified_length = None
 
     @classmethod
     def frombytes(cls, b: Union[bytes, bytearray, memoryview], /) -> BitStore:
@@ -22,30 +21,12 @@ class BitStore:
         x._bitarray = bitarray.bitarray()
         x._bitarray.frombytes(b)
         x.immutable = False
-        x.modified_length = None
-        return x
-
-    @classmethod
-    def frombuffer(cls, buffer, /, length: Optional[int] = None) -> BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(buffer=buffer)
-        x.immutable = True
-        x.modified_length = length
-        # Here 'modified' means it shouldn't be changed further, so setting, deleting etc. are disallowed.
-        if x.modified_length is not None:
-            if x.modified_length < 0:
-                raise CreationError("Can't create bitstring with a negative length.")
-            if x.modified_length > len(x._bitarray):
-                raise CreationError(
-                    f"Can't create bitstring with a length of {x.modified_length} from {len(x._bitarray)} bits of data.")
         return x
 
     def setall(self, value: int, /) -> None:
         self._bitarray.setall(value)
 
     def tobytes(self) -> bytes:
-        if self.modified_length is not None:
-            return self._bitarray[:self.modified_length].tobytes()
         return self._bitarray.tobytes()
 
     def slice_to_uint(self, start: Optional[int] = None, end: Optional[int] = None) -> int:
@@ -178,15 +159,9 @@ class BitStore:
         return bool(self._bitarray.__getitem__(index))
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        if self.modified_length is not None:
-            key = slice(*key.indices(self.modified_length))
         return BitStore(self._bitarray.__getitem__(key))
 
     def getslice(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
-        if self.modified_length is not None:
-            key = slice(*slice(start, stop, None).indices(self.modified_length))
-            start = key.start
-            stop = key.stop
         return BitStore(self._bitarray[start:stop])
 
     def invert(self, index: Optional[int] = None, /) -> None:
@@ -202,7 +177,7 @@ class BitStore:
         return self._bitarray.all()
 
     def __len__(self) -> int:
-        return self.modified_length if self.modified_length is not None else len(self._bitarray)
+        return len(self._bitarray)
 
     def setitem(self, key, value, /):
         if isinstance(value, BitStore):

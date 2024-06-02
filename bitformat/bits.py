@@ -420,10 +420,6 @@ class Bits:
         elif isinstance(s, abc.Iterable):
             # Evaluate each item as True or False and set bits to 1 or 0.
             self._setbin_unsafe(''.join(str(int(bool(x))) for x in s))
-        elif isinstance(s, numbers.Integral):
-            raise TypeError(f"It's no longer possible to auto initialise a bitstring from an integer."
-                            f" Use '{self.__class__.__name__}({s})' instead of just '{s}' as this makes it "
-                            f"clearer that a bitstring of {int(s)} zero bits will be created.")
         else:
             raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
 

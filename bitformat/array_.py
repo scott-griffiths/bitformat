@@ -70,11 +70,6 @@ class Array:
     def __init__(self, dtype: Union[str, Dtype], initializer: Optional[Union[int, Array, array.array, Iterable, Bits, bytes, bytearray, memoryview, BinaryIO]] = None,
                  trailing_bits: Optional[BitsType] = None) -> None:
         self.data = BitArray()
-        if isinstance(dtype, Dtype) and dtype.scale == 'auto':
-            if isinstance(initializer, (int, Bits, bytes, bytearray, memoryview, BinaryIO)):
-                raise TypeError("An Array with an 'auto' scale factor can only be created from an iterable of values.")
-            auto_scale = self._calculate_auto_scale(initializer, dtype.name, dtype.length)
-            dtype = Dtype(dtype.name, dtype.length, scale=auto_scale)
         try:
             self._set_dtype(dtype)
         except ValueError as e:
@@ -126,8 +121,6 @@ class Array:
             if dtype.length is None:
                 raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
             self._dtype = dtype
-        if self._dtype.scale == 'auto':
-            raise ValueError("A Dtype with an 'auto' scale factor can only be used when creating a new Array.")
 
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
@@ -257,7 +250,7 @@ class Array:
             name_value = utils.parse_single_struct_token('=' + iterable.typecode)
             if name_value is None:
                 raise ValueError(f"Cannot extend from array with typecode {iterable.typecode}.")
-            other_dtype = dtype_register.get_dtype(*name_value, scale=None)
+            other_dtype = dtype_register.get_dtype(*name_value)
             if self._dtype.name != other_dtype.name or self._dtype.length != other_dtype.length:
                 raise ValueError(
                     f"Cannot extend an Array with format '{self._dtype}' from an array with typecode '{iterable.typecode}'.")
