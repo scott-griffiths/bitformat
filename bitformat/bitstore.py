@@ -2,26 +2,7 @@ from __future__ import annotations
 
 import bitarray
 from bitformat.exceptions import CreationError
-from typing import Union, Iterable, Optional, overload, Iterator, Any
-
-
-def offset_slice_indices_lsb0(key: slice, length: int) -> slice:
-    # First convert slice to all integers
-    # Length already should take account of the offset
-    start, stop, step = key.indices(length)
-    new_start = length - stop
-    new_stop = length - start
-    # For negative step we sometimes get a negative stop, which can't be used correctly in a new slice
-    return slice(new_start, None if new_stop < 0 else new_stop, step)
-
-
-def offset_start_stop_lsb0(start: Optional[int], stop: Optional[int], length: int) -> tuple[int, int]:
-    # First convert slice to all integers
-    # Length already should take account of the offset
-    start, stop, _ = slice(start, stop, None).indices(length)
-    new_start = length - stop
-    new_stop = length - start
-    return new_start, new_stop
+from typing import Union, Iterable, Optional, Iterator, Any
 
 
 class BitStore:
@@ -119,7 +100,7 @@ class BitStore:
         if not bytealigned:
             return self._bitarray.find(bs._bitarray, start, end)
         try:
-            return next(self.findall_msb0(bs, start, end, bytealigned))
+            return next(self.findall(bs, start, end, bytealigned))
         except StopIteration:
             return -1
 
@@ -127,11 +108,11 @@ class BitStore:
         if not bytealigned:
             return self._bitarray.find(bs._bitarray, start, end, right=True)
         try:
-            return next(self.rfindall_msb0(bs, start, end, bytealigned))
+            return next(self.rfindall(bs, start, end, bytealigned))
         except StopIteration:
             return -1
 
-    def findall_msb0(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
+    def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
         if bytealigned is True and len(bs) % 8 == 0:
             # Special case, looking for whole bytes on whole byte boundaries
             bytes_ = bs.tobytes()
@@ -159,7 +140,7 @@ class BitStore:
                 if (p % 8) == 0:
                     yield p
 
-    def rfindall_msb0(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
+    def rfindall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
         i = self._bitarray.itersearch(bs._bitarray, start, end, right=True)
         if not bytealigned:
             for p in i:
@@ -193,63 +174,24 @@ class BitStore:
         # Use getindex or getslice instead
         raise NotImplementedError
 
-    def getindex_msb0(self, index: int, /) -> bool:
+    def getindex(self, index: int, /) -> bool:
         return bool(self._bitarray.__getitem__(index))
 
-    def getslice_withstep_msb0(self, key: slice, /) -> BitStore:
+    def getslice_withstep(self, key: slice, /) -> BitStore:
         if self.modified_length is not None:
             key = slice(*key.indices(self.modified_length))
         return BitStore(self._bitarray.__getitem__(key))
 
-    def getslice_withstep_lsb0(self, key: slice, /) -> BitStore:
-        key = offset_slice_indices_lsb0(key, len(self))
-        return BitStore(self._bitarray.__getitem__(key))
-
-    def getslice_msb0(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
+    def getslice(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
         if self.modified_length is not None:
             key = slice(*slice(start, stop, None).indices(self.modified_length))
             start = key.start
             stop = key.stop
         return BitStore(self._bitarray[start:stop])
 
-    def getslice_lsb0(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
-        start, stop = offset_start_stop_lsb0(start, stop, len(self))
-        return BitStore(self._bitarray[start:stop])
-
-    def getindex_lsb0(self, index: int, /) -> bool:
-        return bool(self._bitarray.__getitem__(-index - 1))
-
-    @overload
-    def setitem_lsb0(self, key: int, value: int, /) -> None:
-        ...
-
-    @overload
-    def setitem_lsb0(self, key: slice, value: BitStore, /) -> None:
-        ...
-
-    def setitem_lsb0(self, key: Union[int, slice], value: Union[int, BitStore], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bitarray.__setitem__(new_slice, value._bitarray)
-        else:
-            self._bitarray.__setitem__(-key - 1, value)
-
-    def delitem_lsb0(self, key: Union[int, slice], /) -> None:
-        if isinstance(key, slice):
-            new_slice = offset_slice_indices_lsb0(key, len(self))
-            self._bitarray.__delitem__(new_slice)
-        else:
-            self._bitarray.__delitem__(-key - 1)
-
-    def invert_msb0(self, index: Optional[int] = None, /) -> None:
+    def invert(self, index: Optional[int] = None, /) -> None:
         if index is not None:
             self._bitarray.invert(index)
-        else:
-            self._bitarray.invert()
-
-    def invert_lsb0(self, index: Optional[int] = None, /) -> None:
-        if index is not None:
-            self._bitarray.invert(-index - 1)
         else:
             self._bitarray.invert()
 
@@ -262,11 +204,11 @@ class BitStore:
     def __len__(self) -> int:
         return self.modified_length if self.modified_length is not None else len(self._bitarray)
 
-    def setitem_msb0(self, key, value, /):
+    def setitem(self, key, value, /):
         if isinstance(value, BitStore):
             self._bitarray.__setitem__(key, value._bitarray)
         else:
             self._bitarray.__setitem__(key, value)
 
-    def delitem_msb0(self, key, /):
+    def delitem(self, key, /):
         self._bitarray.__delitem__(key)

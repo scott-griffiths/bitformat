@@ -38,7 +38,6 @@ class Dtype:
 
     >>> u12 = Dtype('uint', 12)  # length separate from token string.
     >>> float16 = Dtype('float16')  # length part of token string.
-    >>> mxfp = Dtype('e3m2mxfp', scale=2 ** 6)  # dtype with scaling factor
 
     """
 
@@ -199,21 +198,7 @@ class Dtype:
     def __repr__(self) -> str:
         hide_length = self._variable_length or dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
         length_str = '' if hide_length else ', ' + str(self._length)
-        if self._scale is None:
-            scale_str = ''
-        else:
-            try:
-                # This will only succeed for powers of two from -127 to 127.
-                e8m0 = bitformat.Bits(e8m0mxfp=self._scale)
-            except ValueError:
-                scale_str = f', scale={self._scale}'
-            else:
-                power_of_two = e8m0.uint - 127
-                if power_of_two in [0, 1]:
-                    scale_str = f', scale={self._scale}'
-                else:
-                    scale_str = f', scale=2 ** {power_of_two}'
-        return f"{self.__class__.__name__}('{self._name}'{length_str}{scale_str})"
+        return f"{self.__class__.__name__}('{self._name}'{length_str})"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
