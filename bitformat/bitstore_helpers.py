@@ -26,7 +26,6 @@ def str_to_bitstore(s: str) -> BitStore:
     bs = BitStore()
     for token in tokens:
         bs += bitstore_from_token(*token)
-    bs.immutable = True
     return bs
 
 
@@ -34,13 +33,13 @@ def bin2bitstore(binstring: str) -> BitStore:
     binstring = tidy_input_string(binstring)
     binstring = binstring.replace('0b', '')
     try:
-        return BitStore(binstring)
+        return BitStore.fromstr(binstring)
     except ValueError:
         raise bitformat.CreationError(f"Invalid character in bin initialiser {binstring}.")
 
 
 def bin2bitstore_unsafe(binstring: str) -> BitStore:
-    return BitStore(binstring)
+    return BitStore.fromstr(binstring)
 
 
 def hex2bitstore(hexstring: str) -> BitStore:
@@ -50,7 +49,7 @@ def hex2bitstore(hexstring: str) -> BitStore:
         ba = bitarray.util.hex2ba(hexstring)
     except ValueError:
         raise bitformat.CreationError("Invalid symbol in hex initialiser.")
-    return BitStore(ba)
+    return BitStore.frombitarray(ba)
 
 
 def oct2bitstore(octstring: str) -> BitStore:
@@ -60,13 +59,13 @@ def oct2bitstore(octstring: str) -> BitStore:
         ba = bitarray.util.base2ba(8, octstring)
     except ValueError:
         raise bitformat.CreationError("Invalid symbol in oct initialiser.")
-    return BitStore(ba)
+    return BitStore.frombitarray(ba)
 
 
 def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
     i = int(i)
     try:
-        x = BitStore(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
+        x = BitStore.frombitarray(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
     except OverflowError as e:
         if signed:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):

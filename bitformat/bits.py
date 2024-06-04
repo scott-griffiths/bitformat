@@ -64,11 +64,10 @@ class Bits:
     len -- Length of the bitstring in bits.
 
     """
-    __slots__ = ('_bitstore', '_filename')
+    __slots__ = ('_bitstore',)
 
     def __init__(self) -> None:
         self._bitstore = BitStore()
-        self._bitstore.immutable = True
 
     @classmethod
     def build(cls, dtype: Dtype | str, value: Any, /):
@@ -78,6 +77,14 @@ class Bits:
     def parse(self, dtype: Dtype | str, /) -> Any:
         d = Dtype(dtype)
         return d.parse(self)
+
+    @classmethod
+    def zeros(cls, length: int, /):
+        return Dtype('u', length).build(0)
+
+    @classmethod
+    def ones(cls, length: int, /):
+        return Dtype('i', length).build(-1)
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
@@ -116,11 +123,8 @@ class Bits:
 
         """
         bs = self.__class__._create_from_bitstype(bs)
-        s = self._copy() if len(bs) <= len(self) else bs._copy()
-        if len(bs) <= len(self):
-            s._addright(bs)
-        else:
-            s._addleft(self)
+        s = self._copy()
+        s._addright(bs)
         return s
 
     def __radd__(self: TBits, bs: BitsType) -> TBits:
@@ -192,15 +196,11 @@ class Bits:
                         ', ', '0b', self[length - bits_at_end:]._getbin()))
 
     def _repr(self, classname: str, length: int, pos: int):
-        pos_string = f', pos={pos}' if pos else ''
-        if hasattr(self, '_filename') and self._filename:
-            return f"{classname}(filename={self._filename!r}, length={length}{pos_string})"
-        else:
-            s = self.__str__()
-            lengthstring = ''
-            if s.endswith('...'):
-                lengthstring = f'  # length={length}'
-            return f"{classname}('{s}'{pos_string}){lengthstring}"
+        s = self.__str__()
+        lengthstring = ''
+        if s.endswith('...'):
+            lengthstring = f'  # length={length}'
+        return f"{classname}.fromstring('{s}'){lengthstring}"
 
     def __repr__(self) -> str:
         """Return representation that could be used to recreate the bitstring.
@@ -414,7 +414,7 @@ class Bits:
         elif isinstance(s, io.BytesIO):
             self._bitstore = BitStore.frombytes(s.getvalue())
         elif isinstance(s, bitarray.bitarray):
-            self._bitstore = BitStore(s)
+            self._bitstore = BitStore.frombitarray(s)
         elif isinstance(s, array.array):
             self._bitstore = BitStore.frombytes(s.tobytes())
         elif isinstance(s, abc.Iterable):
@@ -508,9 +508,9 @@ class Bits:
         # We deliberately don't want to have implicit conversions to bool here.
         # If we did then it would be difficult to deal with the 'False' string.
         if value in (1, 'True', '1'):
-            self._bitstore = BitStore('1')
+            self._bitstore = BitStore.fromstr('1')
         elif value in (0, 'False', '0'):
-            self._bitstore = BitStore('0')
+            self._bitstore = BitStore.fromstr('0')
         else:
             raise bitformat.CreationError(f"Cannot initialise boolean with {value}.")
 
@@ -521,7 +521,7 @@ class Bits:
         return None
 
     def _setpad(self, value: None, length: int) -> None:
-        self._bitstore = BitStore(length)
+        self._bitstore = BitStore.fromint(length)
 
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
         """Reset the bitstring to the value given in binstring."""
@@ -604,10 +604,7 @@ class Bits:
 
     def _addleft(self, bs: Bits, /) -> None:
         """Prepend a bitstring to the current bitstring."""
-        if bs._bitstore.immutable:
-            self._bitstore = bs._bitstore._copy() + self._bitstore
-        else:
-            self._bitstore = bs._bitstore + self._bitstore
+        self._bitstore = bs._bitstore._copy() + self._bitstore
 
     def _truncateleft(self: TBits, bits: int, /) -> TBits:
         """Truncate bits from the start of the bitstring. Return the truncated bits."""

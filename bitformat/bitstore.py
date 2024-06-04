@@ -1,26 +1,41 @@
 from __future__ import annotations
 
 import bitarray
-from bitformat.exceptions import CreationError
+import copy
 from typing import Union, Iterable, Optional, Iterator, Any
 
 
 class BitStore:
     """A light wrapper around bitarray that does the LSB0 stuff"""
 
-    __slots__ = ('_bitarray', 'modified_length', 'immutable')
+    __slots__ = ('_bitarray',)
 
-    def __init__(self, initializer: Union[int, bitarray.bitarray, str, None] = None,
-                 immutable: bool = False) -> None:
-        self._bitarray = bitarray.bitarray(initializer)
-        self.immutable = immutable
+    def __init__(self) -> None:
+        self._bitarray = bitarray.bitarray()
+
+    @classmethod
+    def frombitarray(cls, b: bitarray.bitarray) -> BitStore:
+        x = super().__new__(cls)
+        x._bitarray = b
+        return x
+
+    @classmethod
+    def fromint(cls, i: int) -> BitStore:
+        x = super().__new__(cls)
+        x._bitarray = bitarray.bitarray(i)
+        return x
+
+    @classmethod
+    def fromstr(cls, s: str) -> BitStore:
+        x = super().__new__(cls)
+        x._bitarray = bitarray.bitarray(s)
+        return x
 
     @classmethod
     def frombytes(cls, b: Union[bytes, bytearray, memoryview], /) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray()
         x._bitarray.frombytes(b)
-        x.immutable = False
         return x
 
     def setall(self, value: int, /) -> None:
@@ -57,13 +72,13 @@ class BitStore:
         return self._bitarray == other._bitarray
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        return BitStore(self._bitarray & other._bitarray)
+        return BitStore.frombitarray(self._bitarray & other._bitarray)
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        return BitStore(self._bitarray | other._bitarray)
+        return BitStore.frombitarray(self._bitarray | other._bitarray)
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        return BitStore(self._bitarray ^ other._bitarray)
+        return BitStore.frombitarray(self._bitarray ^ other._bitarray)
 
     def __iand__(self, other: BitStore, /) -> BitStore:
         self._bitarray &= other._bitarray
@@ -146,10 +161,12 @@ class BitStore:
 
     def _copy(self) -> BitStore:
         """Always creates a copy, even if instance is immutable."""
-        return BitStore(self._bitarray)
+        s_copy = self.__class__()
+        s_copy._bitarray = copy.copy(self._bitarray)
+        return s_copy
 
     def copy(self) -> BitStore:
-        return self if self.immutable else self._copy()
+        return self
 
     def __getitem__(self, item: Union[int, slice], /) -> Union[int, BitStore]:
         # Use getindex or getslice instead
@@ -159,10 +176,10 @@ class BitStore:
         return bool(self._bitarray.__getitem__(index))
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        return BitStore(self._bitarray.__getitem__(key))
+        return BitStore.frombitarray(self._bitarray.__getitem__(key))
 
     def getslice(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
-        return BitStore(self._bitarray[start:stop])
+        return BitStore.frombitarray(self._bitarray[start:stop])
 
     def invert(self, index: Optional[int] = None, /) -> None:
         if index is not None:

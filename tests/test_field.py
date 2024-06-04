@@ -91,7 +91,8 @@ class TestCreation:
         assert not f1.const
         f1.clear()
         f2.clear()
-        assert f1.build([0]) == '0b0'
+        temp = f1.build([0])
+        assert temp == '0b0'
         assert f2.build([]) == '0b1'
 
 
