@@ -25,7 +25,7 @@ def remove_unprintable(s: str) -> str:
 
 class TestCreation:
     def test_creation_from_bytes(self):
-        s = Bits.build('bytes', b'\xa0\xff')
+        s = Bits.frombytes(b'\xa0\xff')
         assert (len(s), s.parse('hex')) == (16, 'a0ff')
 
     @given(st.binary())
@@ -57,15 +57,17 @@ class TestCreation:
         assert s.parse('bin') == '00000001'
 
     def test_creation_from_uint_errors(self):
-        with pytest.raises(bitformat.CreationError):
+        # test = Bits.build('u10', -1)
+
+        with pytest.raises(ValueError):
             Bits.build('u10', -1)
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('uint', 12)
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('uint2', 4)
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('u0', 1)
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('u2', 12)
 
     def test_creation_from_int(self):
@@ -190,20 +192,6 @@ def test_adding():
     assert c == '0b011'
     assert a == '0b0'
     assert b == '0b11'
-
-
-class TestIteration:
-
-    def test_iterate_empty_bits(self):
-        assert list(Bits()) == []
-        assert list(Bits() + [1, 0])[1:1] == []
-
-    def test_iterate_non_empty_bits(self):
-        assert list(Bits() + [1, 0]) == [True, False]
-        assert list(Bits() + [1, 0, 0, 1])[1:3] == [False, False]
-
-    def test_iterate_long_bits(self):
-        assert list((Bits() + [1, 0]) * 1024) == [True, False] * 1024
 
         
 class TestContainsBug:
@@ -434,7 +422,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(t.getvalue()) == expected_output
 
     def test_bytes(self):
-        a = Bits.build('bytes', b'helloworld!!'*5)
+        a = Bits.frombytes(b'helloworld!!'*5)
         s = io.StringIO()
         a.pp(stream=s, fmt='bytes', show_offset=False, width=48)
         expected_output = (

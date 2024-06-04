@@ -1,17 +1,13 @@
 from __future__ import annotations
 
 import numbers
-import pathlib
 import sys
-import mmap
 import struct
 import array
 import io
 from collections import abc
 import functools
 from typing import Tuple, Union, List, Iterable, Any, Optional, BinaryIO, TextIO, overload, Iterator, Type, TypeVar
-import bitarray
-import bitarray.util
 import bitformat
 from .bitstore import BitStore
 from bitformat import bitstore_helpers, utils
@@ -19,7 +15,7 @@ from bitformat.dtypes import Dtype, dtype_register
 from bitformat.bitstring_options import Colour
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bool, BinaryIO, bytearray, bytes, memoryview, bitarray.bitarray]
+BitsType = Union['Bits', str, Iterable[Any], bool, BinaryIO, bytearray, bytes, memoryview]
 
 TBits = TypeVar("TBits", bound='Bits')
 
@@ -28,42 +24,7 @@ MAX_CHARS: int = 250
 
 
 class Bits:
-    """A container holding an immutable sequence of bits.
 
-    For a mutable container use the BitArray class instead.
-
-    Methods:
-
-    all() -- Check if all specified bits are set to 1 or 0.
-    any() -- Check if any of specified bits are set to 1 or 0.
-    copy() - Return a copy of the bitstring.
-    count() -- Count the number of bits set to 1 or 0.
-    cut() -- Create generator of constant sized chunks.
-    endswith() -- Return whether the bitstring ends with a sub-string.
-    find() -- Find a sub-bitstring in the current bitstring.
-    findall() -- Find all occurrences of a sub-bitstring in the current bitstring.
-    fromstring() -- Create a bitstring from a formatted string.
-    join() -- Join bitstrings together using current bitstring.
-    pp() -- Pretty print the bitstring.
-    rfind() -- Seek backwards to find a sub-bitstring.
-    split() -- Create generator of chunks split by a delimiter.
-    startswith() -- Return whether the bitstring starts with a sub-bitstring.
-    tobitarray() -- Return bitstring as a bitarray from the bitarray package.
-    tobytes() -- Return bitstring as bytes, padding if needed.
-    tofile() -- Write bitstring to file, padding if needed.
-    unpack() -- Interpret bits using format string.
-
-    Special methods:
-
-    Also available are the operators [], ==, !=, +, *, ~, <<, >>, &, |, ^.
-
-    Properties:
-
-    [GENERATED_PROPERTY_DESCRIPTIONS]
-
-    len -- Length of the bitstring in bits.
-
-    """
     __slots__ = ('_bitstore',)
 
     def __init__(self) -> None:
@@ -74,9 +35,31 @@ class Bits:
         d = Dtype(dtype)
         return d.build(value)
 
-    def parse(self, dtype: Dtype | str, /) -> Any:
-        d = Dtype(dtype)
-        return d.parse(self)
+    @classmethod
+    def fromstring(cls: TBits, s: str, /) -> TBits:
+        """Create a new bitstring from a formatted string."""
+        x = super().__new__(cls)
+        x._bitstore = bitstore_helpers.str_to_bitstore(s)
+        return x
+
+    @classmethod
+    def frombytes(cls, b: bytes, /):
+        x = super().__new__(cls)
+        x._bitstore = BitStore.frombytes(b)
+        return x
+
+    @classmethod
+    def join(cls, sequence: Iterable[Any], /):
+        """Return concatenation of bitstrings.
+
+        sequence -- A sequence of bitstrings.
+
+        """
+        x = super().__new__(cls)
+        x._bitstore = BitStore()
+        for item in sequence:
+            x._addright(Bits._create_from_bitstype(item))
+        return x
 
     @classmethod
     def zeros(cls, length: int, /):
@@ -85,6 +68,10 @@ class Bits:
     @classmethod
     def ones(cls, length: int, /):
         return Dtype('i', length).build(-1)
+
+    def parse(self, dtype: Dtype | str, /) -> Any:
+        d = Dtype(dtype)
+        return d.parse(self)
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
@@ -195,7 +182,9 @@ class Bits:
         return ''.join(('0x', self[0:length - bits_at_end]._gethex(),
                         ', ', '0b', self[length - bits_at_end:]._getbin()))
 
-    def _repr(self, classname: str, length: int, pos: int):
+    def _repr(self, classname: str, length: int):
+        if length == 0:
+            return f"{classname}()"
         s = self.__str__()
         lengthstring = ''
         if s.endswith('...'):
@@ -208,12 +197,12 @@ class Bits:
         If the returned string is too long it will be truncated. See __str__().
 
         """
-        return self._repr(self.__class__.__name__, len(self), 0)
+        return self._repr(self.__class__.__name__, len(self))
 
     def __eq__(self, bs: Any, /) -> bool:
         """Return True if two bitstrings have the same binary representation.
 
-        >>> BitArray('0b1110') == '0xe'
+        >>> Bits.fromstring('0b1110') == '0xe'
         True
 
         """
@@ -225,7 +214,7 @@ class Bits:
     def __ne__(self, bs: Any, /) -> bool:
         """Return False if two bitstrings have the same binary representation.
 
-        >>> BitArray('0b111') == '0x7'
+        >>> Bits.fromstring('0b111') == '0x7'
         False
 
         """
@@ -255,7 +244,7 @@ class Bits:
             raise ValueError("Cannot shift an empty bitstring.")
         n = min(n, len(self))
         s = self._absolute_slice(n, len(self))
-        s._addright(Bits(n))
+        s._addright(Bits.zeros(n))
         return s
 
     def __rshift__(self: TBits, n: int, /) -> TBits:
@@ -413,10 +402,6 @@ class Bits:
             self._bitstore = BitStore.frombytes(bytearray(s))
         elif isinstance(s, io.BytesIO):
             self._bitstore = BitStore.frombytes(s.getvalue())
-        elif isinstance(s, bitarray.bitarray):
-            self._bitstore = BitStore.frombitarray(s)
-        elif isinstance(s, array.array):
-            self._bitstore = BitStore.frombytes(s.tobytes())
         elif isinstance(s, abc.Iterable):
             # Evaluate each item as True or False and set bits to 1 or 0.
             self._setbin_unsafe(''.join(str(int(bool(x))) for x in s))
@@ -661,38 +646,6 @@ class Bits:
         """Flip bit at pos 1<->0."""
         assert 0 <= pos < len(self)
         self._bitstore.invert(pos)
-
-    def _invert_all(self) -> None:
-        """Invert every bit."""
-        self._bitstore.invert()
-
-    def _ilshift(self: TBits, n: int, /) -> TBits:
-        """Shift bits by n to the left in place. Return self."""
-        assert 0 < n <= len(self)
-        self._addright(Bits(n))
-        self._truncateleft(n)
-        return self
-
-    def _irshift(self: TBits, n: int, /) -> TBits:
-        """Shift bits by n to the right in place. Return self."""
-        assert 0 < n <= len(self)
-        self._addleft(Bits(n))
-        self._truncateright(n)
-        return self
-
-    def _imul(self: TBits, n: int, /) -> TBits:
-        """Concatenate n copies of self in place. Return self."""
-        assert n >= 0
-        if n == 0:
-            self._clear()
-        else:
-            m = 1
-            old_len = len(self)
-            while m * 2 < n:
-                self._addright(self)
-                m *= 2
-            self._addright(self[0:(n - m) * old_len])
-        return self
 
     def _getbits(self: TBits):
         return self._copy()
@@ -962,29 +915,6 @@ class Bits:
         # Have generated count bitstrings, so time to quit.
         return
 
-    def join(self: TBits, sequence: Iterable[Any]) -> TBits:
-        """Return concatenation of bitstrings joined by self.
-
-        sequence -- A sequence of bitstrings.
-
-        """
-        s = self.__class__()
-        if len(self) == 0:
-            # Optimised version that doesn't need to add self between every item
-            for item in sequence:
-                s._addright(Bits._create_from_bitstype(item))
-            return s
-        else:
-            sequence_iter = iter(sequence)
-            try:
-                s._addright(Bits._create_from_bitstype(next(sequence_iter)))
-            except StopIteration:
-                return s
-            for item in sequence_iter:
-                s._addright(self)
-                s._addright(Bits._create_from_bitstype(item))
-            return s
-
     def tobytes(self) -> bytes:
         """Return the bitstring as bytes, padding with zero bits if needed.
 
@@ -1246,10 +1176,3 @@ class Bits:
         # Note that if you want a new copy (different ID), use _copy instead.
         # The copy can return self as it's immutable.
         return self
-
-    @classmethod
-    def fromstring(cls: TBits, s: str, /) -> TBits:
-        """Create a new bitstring from a formatted string."""
-        x = super().__new__(cls)
-        x._bitstore = bitstore_helpers.str_to_bitstore(s)
-        return x

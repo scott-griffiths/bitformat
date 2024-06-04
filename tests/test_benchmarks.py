@@ -3,12 +3,12 @@ sys.path.insert(0, '..')
 import bitformat
 import random
 import math
-
+import itertools
 
 def test_cutting(benchmark):
     def cut():
         s = bitformat.Bits.fromstring('0xef1356a6200b3, 0b0')
-        s *= 6000
+        s = bitformat.Bits.join(itertools.repeat(s, 6000))
         c = 0
         for triplet in s.cut(3):
             if triplet == '0b001':

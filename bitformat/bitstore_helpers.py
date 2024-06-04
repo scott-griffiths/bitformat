@@ -6,6 +6,7 @@ from typing import Union, Optional, Dict, Callable
 import bitarray
 from bitformat.bitstore import BitStore
 import bitformat
+import bitarray.util
 
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
