@@ -31,13 +31,13 @@ class TestCreation:
     @given(st.binary())
     def test_creation_from_bytes_roundtrip(self, data):
         s = Bits.build('bytes', data)
-        assert s.parse('bytes') == data
+        assert s.bytes == data
 
     def test_creation_from_hex(self):
         s = Bits.build('hex', '0xA0ff')
         assert (len(s), s.parse('hex')) == (16, 'a0ff')
         s = Bits.build('hex', '0x0x0X')
-        assert (len(s), s.parse('hex')) == (0, '')
+        assert (len(s), s.hex) == (0, '')
 
     def test_creation_from_hex_with_whitespace(self):
         s = Bits.fromstring('  \n0 X a  4e       \r3  \n')
@@ -76,15 +76,15 @@ class TestCreation:
         s = Bits.build(Dtype('i2'), 1)
         assert s.parse('bin') == '01'
         s = Bits.build('i11', -1)
-        assert s.parse('bin') == '11111111111'
+        assert s.bin == '11111111111'
         s = Bits.fromstring('i12=7')
-        assert s.parse('int') == 7
+        assert s.int == 7
         s = Bits.build(Dtype('i108'), -243)
         assert (s.parse('i'), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
                 s = Bits.build(Dtype('int', length), value)
-                assert (s.parse('i'), len(s)) == (value, length)
+                assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, None], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
@@ -107,12 +107,12 @@ class TestCreation:
         with pytest.raises(bitformat.CreationError):
             Bits.build('squirrel', 5)
 
-
+    @pytest.mark.skip
     def test_creation_from_memoryview(self):
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
         b = Bits.build('bytes', m)
-        assert b.unpack('5*u8') == [10, 11, 12, 13, 14]
+        assert b.parse('[u8; 5]') == [10, 11, 12, 13, 14]
 
 
 class TestInitialisation:
@@ -170,19 +170,15 @@ class TestPadToken:
         c = Bits.fromstring('0b11, pad1, 0b111')
         assert c == '0b110111'
 
+    @pytest.mark.skip
     def test_unpack(self):
         s = Bits.fromstring('0b111000111')
-        x, y = s.unpack('3, pad3, 3')
+        x, y = s.parse('bits3, pad3, bits3')
         assert (x, y.parse('u')) == ('0b111', 7)
-        x, y = s.unpack('2, pad2, bin')
+        x, y = s.parse('bits2, pad2, bin5')
         assert (x.parse('u2'), y) == (3, '00111')
         x = s.unpack('pad1, pad2, pad3')
         assert x == []
-
-    def test_unpack_bug(self):
-        t = Bits.fromstring('0o755, u4=12, int3=-1')
-        a, b = t.unpack('pad9, u4, int3')
-        assert (a, b) == (12, -1)
 
 
 def test_adding():

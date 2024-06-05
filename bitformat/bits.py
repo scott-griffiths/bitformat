@@ -3,7 +3,6 @@ from __future__ import annotations
 import numbers
 import sys
 import struct
-import array
 import io
 from collections import abc
 import functools
@@ -416,21 +415,6 @@ class Bits:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.frombytes(bytes(data))
 
-    def _setbytes_with_truncation(self, data: Union[bytearray, bytes], length: Optional[int] = None, offset: Optional[int] = None) -> None:
-        """Set the data from a bytes or bytearray object, with optional offset and length truncations."""
-        if offset is None and length is None:
-            return self._setbytes(data)
-        data = bytearray(data)
-        if offset is None:
-            offset = 0
-        if length is None:
-            # Use to the end of the data
-            length = len(data) * 8 - offset
-        else:
-            if length + offset > len(data) * 8:
-                raise bitformat.CreationError(f"Not enough data present. Need {length + offset} bits, have {len(data) * 8}.")
-        self._bitstore = BitStore.frombytes(data).getslice(offset, offset + length)
-
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
@@ -567,22 +551,6 @@ class Bits:
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def _readtoken(self, name: str, pos: int, length: Optional[int]) -> Tuple[Union[float, int, str, None, Bits], int]:
-        """Reads a token from the bitstring and returns the result."""
-        dtype = dtype_register.get_dtype(name, length)
-        if dtype.bitlength is not None and dtype.bitlength > len(self) - pos:
-            raise bitformat.ReadError("Reading off the end of the data. "
-                            f"Tried to read {dtype.bitlength} bits when only {len(self) - pos} available.")
-        try:
-            val = dtype.read_fn(self, pos)
-            if isinstance(val, tuple):
-                return val
-            else:
-                assert length is not None
-                return val, pos + dtype.bitlength
-        except KeyError:
-            raise ValueError(f"Can't parse token {name}:{length}")
-
     def _addright(self, bs: Bits, /) -> None:
         """Add a bitstring to the RHS of the current bitstring."""
         self._bitstore += bs._bitstore
@@ -657,82 +625,6 @@ class Bits:
         if not 0 <= start <= end <= len(self):
             raise ValueError(f"Invalid slice positions for bitstring length {len(self)}: start={start}, end={end}.")
         return start, end
-
-    def unpack(self, fmt: Union[str, List[Union[str, int]]], **kwargs) -> List[Union[int, float, str, Bits, bool, bytes, None]]:
-        """Interpret the whole bitstring using fmt and return list.
-
-        fmt -- A single string or a list of strings with comma separated tokens
-               describing how to interpret the bits in the bitstring. Items
-               can also be integers, for reading new bitstring of the given length.
-        kwargs -- A dictionary or keyword-value pairs - the keywords used in the
-                  format string will be replaced with their given value.
-
-        Raises ValueError if the format is not understood. If not enough bits
-        are available then all bits to the end of the bitstring will be used.
-
-        See the docstring for 'read' for token examples.
-
-        """
-        return self._readlist(fmt, 0, **kwargs)[0]
-
-    def _readlist(self, fmt: Union[str, List[Union[str, int, Dtype]]], pos: int, **kwargs) \
-            -> Tuple[List[Union[int, float, str, Bits, bool, bytes, None]], int]:
-        if isinstance(fmt, str):
-            fmt = [fmt]
-        # Convert to a flat list of Dtypes
-        dtype_list = []
-        for f_item in fmt:
-            if isinstance(f_item, numbers.Integral):
-                dtype_list.append(Dtype('bits', f_item))
-            elif isinstance(f_item, Dtype):
-                dtype_list.append(f_item)
-            else:
-                token_list = utils.preprocess_tokens(f_item)
-                for t in token_list:
-                    try:
-                        name, length = utils.parse_name_length_token(t, **kwargs)
-                    except ValueError:
-                        dtype_list.append(Dtype('bits', int(t)))
-                    else:
-                        dtype_list.append(Dtype(name, length))
-        return self._read_dtype_list(dtype_list, pos)
-
-    def _read_dtype_list(self, dtypes: List[Dtype], pos: int) -> Tuple[List[Union[int, float, str, Bits, bool, bytes, None]], int]:
-        has_stretchy_token = False
-        bits_after_stretchy_token = 0
-        for dtype in dtypes:
-            stretchy = dtype.bitlength is None and not dtype.variable_length
-            if stretchy:
-                if has_stretchy_token:
-                    raise bitformat.Error("It's not possible to have more than one 'filler' token.")
-                has_stretchy_token = True
-            elif has_stretchy_token:
-                if dtype.variable_length:
-                    raise bitformat.Error(f"It's not possible to parse a variable length token '{dtype}' after a 'filler' token.")
-                bits_after_stretchy_token += dtype.bitlength
-
-        # We should have precisely zero or one stretchy token
-        vals = []
-        for dtype in dtypes:
-            stretchy = dtype.bitlength is None and not dtype.variable_length
-            if stretchy:
-                bits_remaining = len(self) - pos
-                # Set length to the remaining bits
-                bitlength = max(bits_remaining - bits_after_stretchy_token, 0)
-                items, remainder = divmod(bitlength, dtype.bits_per_item)
-                if remainder != 0:
-                    raise ValueError(
-                        f"The '{dtype.name}' type must have a bit length that is a multiple of {dtype.bits_per_item}"
-                        f" so cannot be created from the {bitlength} bits that are available for this stretchy token.")
-                dtype = Dtype(dtype.name, items)
-            if dtype.bitlength is not None:
-                val = dtype.read_fn(self, pos)
-                pos += dtype.bitlength
-            else:
-                val, pos = dtype.read_fn(self, pos)
-            if val is not None:  # Don't append pad tokens
-                vals.append(val)
-        return vals, pos
 
     def find(self, bs: BitsType, /, start: Optional[int] = None, end: Optional[int] = None,
              bytealigned: Optional[bool] = None) -> Union[Tuple[int], Tuple[()]]:
