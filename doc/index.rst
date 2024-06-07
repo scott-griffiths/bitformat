@@ -85,6 +85,7 @@ Documentation
 
     quick_reference
     manual
+    api
 
 
 

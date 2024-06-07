@@ -3,6 +3,18 @@
 API Reference
 =============
 
+.. autoclass:: Bits
+    :members:
+    :undoc-members:
+
+.. autoclass:: Dtype
+    :members:
+    :undoc-members:
+
+.. autoclass:: Array
+    :members:
+    :undoc-members:
+
 .. autoclass:: Field
     :inherited-members:
     :members:
@@ -18,7 +30,5 @@ API Reference
     :members:
     :undoc-members:
 
-.. autoclass:: Find
-    :members:
-    :undoc-members:
+
 

@@ -23,6 +23,18 @@ MAX_CHARS: int = 250
 
 
 class Bits:
+    """
+    A container of binary data.
+
+    To construct use a builder method:
+
+    * ``Bits.build(dtype, value)`` - Combine a data type with a value.
+    * ``Bits.fromstring(s)`` - Use a formatted string.
+    * ``Bits.frombytes(b)`` - Directly from a ``bytes`` object.
+    * ``Bits.zeros(n)`` - Initialise with zero bits.
+    * ``Bits.ones(n)`` - Initialise with one bits.
+    * ``Bits.join(iterable)`` - Concatenate from an iterable such as a list.
+    """
 
     __slots__ = ('_bitstore',)
 
@@ -30,7 +42,15 @@ class Bits:
         self._bitstore = BitStore()
 
     @classmethod
-    def build(cls, dtype: Dtype | str, value: Any, /):
+    def build(cls, dtype: Dtype | str, value: Any, /) -> TBits:
+        """
+        :param dtype: The data type to build.
+        :type dtype: Dtype | str
+        :param value: A value appropriate for the data type.
+        :type value: Any
+        :returns: A newly constructed ``Bits``.
+        :rtype: Bits
+        """
         d = Dtype(dtype)
         return d.build(value)
 
@@ -42,13 +62,13 @@ class Bits:
         return x
 
     @classmethod
-    def frombytes(cls, b: bytes, /):
+    def frombytes(cls, b: bytes, /) -> TBits:
         x = super().__new__(cls)
         x._bitstore = BitStore.frombytes(b)
         return x
 
     @classmethod
-    def join(cls, sequence: Iterable[Any], /):
+    def join(cls, sequence: Iterable[Any], /) -> TBits:
         """Return concatenation of bitstrings.
 
         sequence -- A sequence of bitstrings.
@@ -61,11 +81,11 @@ class Bits:
         return x
 
     @classmethod
-    def zeros(cls, length: int, /):
+    def zeros(cls, length: int, /) -> TBits:
         return Dtype('u', length).build(0)
 
     @classmethod
-    def ones(cls, length: int, /):
+    def ones(cls, length: int, /) -> TBits:
         return Dtype('i', length).build(-1)
 
     def parse(self, dtype: Dtype | str, /) -> Any:
@@ -89,36 +109,28 @@ class Bits:
         # The copy can return self as it's immutable.
         return self
 
-    def __lt__(self, other: Any) -> bool:
+    def __lt__(self, other: Any, /) -> bool:
         # bitstrings can't really be ordered.
         return NotImplemented
 
-    def __gt__(self, other: Any) -> bool:
+    def __gt__(self, other: Any, /) -> bool:
         return NotImplemented
 
-    def __le__(self, other: Any) -> bool:
+    def __le__(self, other: Any, /) -> bool:
         return NotImplemented
 
-    def __ge__(self, other: Any) -> bool:
+    def __ge__(self, other: Any, /) -> bool:
         return NotImplemented
 
-    def __add__(self: TBits, bs: BitsType) -> TBits:
-        """Concatenate bitstrings and return new bitstring.
-
-        bs -- the bitstring to append.
-
-        """
+    def __add__(self: TBits, bs: BitsType, /) -> TBits:
+        """Concatenate Bits and return new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         s = self._copy()
         s._addright(bs)
         return s
 
-    def __radd__(self: TBits, bs: BitsType) -> TBits:
-        """Append current bitstring to bs and return new bitstring.
-
-        bs -- An object that can be 'auto' initialised as a bitstring that will be appended to.
-
-        """
+    def __radd__(self: TBits, bs: BitsType, /) -> TBits:
+        """Concatenate Bits and return new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         return bs.__add__(self)
 
@@ -131,16 +143,7 @@ class Bits:
         ...
 
     def __getitem__(self: TBits, key: Union[slice, int], /) -> Union[TBits, bool]:
-        """Return a new bitstring representing a slice of the current bitstring.
-
-        Indices are in units of the step parameter (default 1 bit).
-        Stepping is used to specify the number of bits in each item.
-
-        >>> print(BitArray('0b00110')[1:4])
-        '0b011'
-        >>> print(BitArray('0x00112233')[1:3:8])
-        '0x1122'
-
+        """Return a new Bits representing a slice of the current Bits.
         """
         if isinstance(key, numbers.Integral):
             return bool(self._bitstore.getindex(key))
@@ -220,9 +223,9 @@ class Bits:
         return not self.__eq__(bs)
 
     def __invert__(self: TBits) -> TBits:
-        """Return bitstring with every bit inverted.
+        """Return Bits with every bit inverted.
 
-        Raises Error if the bitstring is empty.
+        Raises Error if Bits is empty.
 
         """
         if len(self) == 0:

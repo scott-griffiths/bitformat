@@ -76,7 +76,92 @@ If you want a 3-bit integer or 1001 padding bits then that's as easy to do as an
 
 Bits
 ----
-The `Bits` class can just be considered as an immutable sequence of bits.
+The `Bits` class represents an immutable sequence of bits.
+
+There are several builder methods used to create ``Bits`` objects.
+The constructor for ``Bits`` itself doesn't take any arguments so you will need to use these methods to create new non-empty ``Bits`` objects.
+
+.. list-table::
+   :header-rows: 1
+
+   * - Method name
+     - Description
+   * - ``Bits.build(dtype, value)``
+     - Combine a data type with a value.
+   * - ``Bits.fromstring(s)``
+     - Use a formatted string.
+   * - ``Bits.frombytes(b)``
+     - Directly from a ``bytes`` object.
+   * - ``Bits.zeros(n)``
+     - Initialise with zero bits.
+   * - ``Bits.ones(n)``
+     - Initialise with one bits.
+   * - ``Bits.join(iterable)``
+     - Concatenate from an iterable such as a list.
+
+Instances are built by pairing a ``Dtype`` with a value using the ``build`` class method.
+
+For example::
+
+    a = Bits.build('bin', '110')
+    b = Bits.build('hex', 'abcde')
+    c = Bits.build('bytes', b'hello')
+    d = Bits.build('f32', 13.81)       # IEEE 32-bit float
+    e = Bits.build('i7', -31)          # 7-bit signed integer
+
+The first parameter of ``build`` is the data type, which can be either a ``Dtype`` or a string that can be used to create one.
+The second parameter is a value that makes sense for that data type, which could be a binary string, a floating point number, an integer etc. depending on the ``Dtype``.
+
+Another way to create a ``Bits`` instance is to use the ``fromstring`` class method.
+This lets you give both the data type and value in a single string. ::
+
+    a = Bits.fromstring('0b110')
+    b = Bits.fromstring('0xabcde')
+    c = Bits.fromstring('bytes=hello!!!')
+    d = Bits.fromstring('f32=13.5')
+    e = Bits.fromstring('i7=-31')
+
+Note that the binary and hexadecimal examples have missed out the `'bin='` or `'hex='` parts, but as the strings start with `'0b'` for binary and `'0x'` for hexadecimal the string parser can work out what is meant.
+
+You can also initialise directly from ``bytes`` with the ``frombytes`` class method::
+
+    c = Bits.frombytes(b'hello!!!')
+
+
+The companion to the ``Bits.build`` class method is the ``parse`` method.
+This takes a ``Bits`` and interprets it according to a data-type to create a new value. ::
+
+    >>> a.parse('bin')
+    '110'
+    >>> b.parse('hex')
+    'abcde'
+    >>> c.parse('bytes')
+    b'hello!!!'
+    >>> d.parse('f32')
+    13.5
+    >>> e.parse('i7')
+    -31
+
+Of course the ``Bits`` object is just a collection of bits and doesn't know how it was created, so any interpretation that makes sense is allowed ::
+
+    >>> a.parse('oct')
+    '6'
+    >>> b.parse('u')  # unsigned int
+    TODO
+    >>> c.parse('f64')
+    TODO
+    >>> d.parse('hex')
+    TODO
+    >>> e.parse('bin')
+    TODO
+
+As a short-cut, for simple dtypes, properties can be used instead of ``parse`` to get different interpretations of the ``Bits`` ::
+
+    >>> a.oct
+    '6'
+    TODO
+
+
 Instances can be created using the constructor, or by using a string that can be used to create a `Bits` object.
 
 Some examples of strings that can be converted to `Bits` objects:
