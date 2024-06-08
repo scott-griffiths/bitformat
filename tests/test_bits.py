@@ -263,7 +263,7 @@ class TestPrettyPrinting:
     def test_separator(self):
         a = Bits.fromstring('0x0f0f'*9)
         s = io.StringIO()
-        a.pp('hex:32', sep='!-!', stream=s)
+        a.pp('hex32', sep='!-!', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex32', length=144 bits> [
   0: 0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f
 ] + trailing_bits = 0x0f0f
@@ -288,7 +288,7 @@ class TestPrettyPrinting:
 ]
 """
         s = io.StringIO()
-        a.pp(stream=s, fmt='hex, bin:12')
+        a.pp(stream=s, fmt='hex, bin12')
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex, bin12', length=16 bits> [
  0: f0f : 111100001111
 ] + trailing_bits = 0x0
@@ -353,7 +353,7 @@ class TestPrettyPrinting:
 
         a = Bits.zeros(400)
         s = io.StringIO()
-        a.pp(stream=s, fmt='hex:0', show_offset=False, width=80)
+        a.pp(stream=s, fmt='hex0', show_offset=False, width=80)
         expected_output = """<Bits, fmt='hex0', length=400 bits> [
 00000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000                                                            
@@ -363,7 +363,7 @@ class TestPrettyPrinting:
 
         s = io.StringIO()
         a = Bits.fromstring('u48 = 10')
-        a.pp(stream=s, width=20, fmt='hex:0, oct:0', show_offset=False)
+        a.pp(stream=s, width=20, fmt='hex0, oct0', show_offset=False)
         expected_output = """<Bits, fmt='hex0, oct0', length=48 bits> [
 000000 : 00000000
 00000a : 00000012
@@ -391,7 +391,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
         t = io.StringIO()
-        a.pp('hex, oct:0', width=1, show_offset=False, stream=t)
+        a.pp('hex, oct0', width=1, show_offset=False, stream=t)
         expected_output = """<Bits, fmt='hex, oct0', length=480 bits> [
 053977 : 01234567
 053977 : 01234567

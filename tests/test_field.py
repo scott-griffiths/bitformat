@@ -112,7 +112,7 @@ class TestBuilding:
         f = Field('i4')
         b = f.build([-8])
         assert b == '0x8'
-        f = Field('bytes:3')
+        f = Field('bytes3')
         b = f.build([b'abc'])
         assert b == '0x616263'
         f = Field('bits11')

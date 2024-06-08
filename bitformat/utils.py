@@ -5,11 +5,11 @@ import re
 from typing import Tuple, List, Optional, Pattern, Dict, Union, Match
 
 
-# A token name followed by optional : then an integer number
-NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?):?(\d*)$')
+# A token name followed by an integer number
+NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$')
 
-# A token name followed by optional : then an arbitrary keyword
-NAME_KWARG_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?):?([a-zA-Z0-9_]+)$')
+# A token name followed by : then an arbitrary keyword
+NAME_KWARG_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?):([a-zA-Z0-9_]+)$')
 
 CACHE_SIZE = 256
 
@@ -39,10 +39,10 @@ def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, Optional[int]]:
             try:
                 length_str = kwargs[m.group(2)]
             except KeyError:
-                raise ValueError(f"Can't parse 'name[:]length' token '{fmt}'.")
+                raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
             length = int(length_str)
         else:
-            raise ValueError(f"Can't parse 'name[:]length' token '{fmt}'.")
+            raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
     return name, length
 
 

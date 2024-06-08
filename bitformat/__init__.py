@@ -89,7 +89,7 @@ def float_bits2chars(bitlength: Literal[16, 32, 64]):
 
 def bits_bits2chars(bitlength: int):
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits(bitlength)
+    temp = Bits.zeros(bitlength)
     return len(str(temp))
 
 
@@ -141,5 +141,5 @@ for alias in aliases:
 
 
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'Repeat',
-           'BitArray', 'Error', 'ReadError', 'InterpretError',
+           'Error', 'ReadError', 'InterpretError',
            'ByteAlignError', 'CreationError', 'options']
