@@ -647,7 +647,7 @@ class Bits:
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
 
-        >>> BitArray('0xc3e').find('0b1111')
+        >>> Bits.fromstring('0xc3e').find('0b1111')
         (6,)
 
         """

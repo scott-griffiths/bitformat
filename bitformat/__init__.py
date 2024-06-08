@@ -38,7 +38,6 @@ from .bits import Bits
 from .dtypes import DtypeDefinition, dtype_register, Dtype
 from .bits import Bits
 from .bitstring_options import Options
-from .bitarray_ import BitArray
 from .array_ import Array
 from .exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
 from .dtypes import DtypeDefinition, dtype_register, Dtype

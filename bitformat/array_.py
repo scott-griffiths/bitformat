@@ -6,7 +6,6 @@ from collections.abc import Sized
 from bitformat.exceptions import CreationError
 from typing import Union, List, Iterable, Any, Optional, BinaryIO, overload, TextIO
 from bitformat.bits import Bits, BitsType
-from bitformat.bitarray_ import BitArray
 from bitformat.dtypes import Dtype, dtype_register
 from bitformat import utils
 from .bitstore import BitStore
@@ -26,10 +25,9 @@ class Array:
     The dtype string can be typecode as used in the struct module or any fixed-length bitstring
     format.
 
-    a = Array('>H', [1, 15, 105])
     b = Array('int5', [-9, 0, 4])
 
-    The Array data is stored compactly as a BitArray object and the Array behaves very like
+    The Array data is stored compactly as a Bits object and the Array behaves very like
     a list of items of the given format. Both the Array data and fmt properties can be freely
     modified after creation. If the data length is not a multiple of the fmt length then the
     Array will have 'trailing_bits' which will prevent some methods from appending to the
@@ -57,10 +55,10 @@ class Array:
 
     Properties:
 
-    data -- The BitArray binary data of the Array. Can be freely modified.
+    data -- The Bits binary data of the Array. Can be freely modified.
     dtype -- The format string or typecode. Can be freely modified.
     itemsize -- The length *in bits* of a single item. Read only.
-    trailing_bits -- If the data length is not a multiple of the fmt length, this BitArray
+    trailing_bits -- If the data length is not a multiple of the fmt length, this Bits
                      gives the leftovers at the end of the data.
 
 
@@ -103,9 +101,9 @@ class Array:
         return self._dtype.length
 
     @property
-    def trailing_bits(self) -> BitArray:
+    def trailing_bits(self) -> Bits:
         trailing_bit_length = len(self.data) % self._dtype.bitlength
-        return BitArray() if trailing_bit_length == 0 else self.data[-trailing_bit_length:]
+        return Bits() if trailing_bit_length == 0 else self.data[-trailing_bit_length:]
 
     @property
     def dtype(self) -> Dtype:
@@ -149,9 +147,9 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step != 1:
-                d = BitArray()
+                d = Bits()
                 for s in range(start * self._dtype.length, stop * self._dtype.length, step * self._dtype.length):
-                    d.append(self.data[s: s + self._dtype.length])
+                    d += self.data[s: s + self._dtype.length]
                 a = self.__class__(self._dtype)
                 a.data = d
                 return a
@@ -180,7 +178,7 @@ class Array:
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = BitArray()
+                new_data = Bits()
                 for x in value:
                     new_data += self._create_element(x)
                 self._data.setitem(slice(start * self._dtype.length, stop * self._dtype.length), new_data._bitstore)
@@ -418,7 +416,7 @@ class Array:
     def _apply_op_to_all_elements(self, op, value: Union[int, float, None], is_comparison: bool = False) -> Array:
         """Apply op with value to each element of the Array and return a new Array"""
         new_array = self.__class__('bool' if is_comparison else self._dtype)
-        new_data = BitArray()
+        new_data = Bits()
         failures = index = 0
         msg = ''
         if value is not None:
@@ -430,7 +428,7 @@ class Array:
         for i in range(len(self)):
             v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
             try:
-                new_data.append(new_array._create_element(partial_op(v)))
+                new_data += new_array._create_element(partial_op(v))
             except (CreationError, ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
@@ -445,13 +443,13 @@ class Array:
     def _apply_op_to_all_elements_inplace(self, op, value: Union[int, float]) -> Array:
         """Apply op with value to each element of the Array in place."""
         # This isn't really being done in-place, but it's simpler and faster for now?
-        new_data = BitArray()
+        new_data = Bits()
         failures = index = 0
         msg = ''
         for i in range(len(self)):
             v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
             try:
-                new_data.append(self._create_element(op(v, value)))
+                new_data += self._create_element(op(v, value))
             except (CreationError, ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
@@ -491,14 +489,14 @@ class Array:
         else:
             new_type = self._promotetype(self._dtype, other._dtype)
         new_array = self.__class__(new_type)
-        new_data = BitArray()
+        new_data = Bits()
         failures = index = 0
         msg = ''
         for i in range(len(self)):
             a = self._dtype.read_fn(self.data, start=self._dtype.length * i)
             b = other._dtype.read_fn(other.data, start=other._dtype.length * i)
             try:
-                new_data.append(new_array._create_element(op(a, b)))
+                new_data += new_array._create_element(op(a, b))
             except (CreationError, ValueError, ZeroDivisionError) as e:
                 if failures == 0:
                     msg = str(e)
@@ -659,7 +657,7 @@ class Array:
         neg = self._apply_op_to_all_elements(operator.neg, None)
         return neg._apply_op_to_all_elements(operator.add, other)
 
-    # Reverse operators between a scalar and something that can be a BitArray.
+    # Reverse operators between a scalar and something that can be a Bits.
 
     def __rand__(self, other: BitsType) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.iand, other)
