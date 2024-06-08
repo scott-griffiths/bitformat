@@ -5,8 +5,10 @@ from typing import Any
 
 indent_size = 4
 
+
 def _indent(level: int) -> str:
     return ' ' * (level * indent_size)
+
 
 class Colour:
     """A class to hold colour codes for terminal output. If use_colour is False, all codes are empty strings."""

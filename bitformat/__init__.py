@@ -31,7 +31,6 @@ __version__ = "0.0.2"
 __author__ = "Scott Griffiths"
 
 
-import sys
 from .field import Field, FieldArray
 from .format import Format, Repeat
 from .bits import Bits

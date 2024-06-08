@@ -4,7 +4,7 @@ import math
 import numbers
 from collections.abc import Sized
 from bitformat.exceptions import CreationError
-from typing import Union, List, Iterable, Any, Optional, BinaryIO, overload, TextIO
+from typing import Union, List, Iterable, Any, Optional, overload, TextIO
 from bitformat.bits import Bits, BitsType
 from bitformat.dtypes import Dtype, dtype_register
 from bitformat import utils
@@ -39,13 +39,11 @@ class Array:
     byteswap() -- Change byte endianness of all items.
     count() -- Count the number of occurences of a value.
     extend() -- Append new items to the end of the Array from an iterable.
-    fromfile() -- Append items read from a file object.
     insert() -- Insert an item at a given position.
     pop() -- Remove and return an item.
     pp() -- Pretty print the Array.
     reverse() -- Reverse the order of all items.
     tobytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
-    tofile() -- Write Array data to a file, padding with zero bits at the end if needed.
     tolist() -- Return Array items as a list.
 
     Special methods:
@@ -307,26 +305,6 @@ class Array:
 
         """
         return self.data.tobytes()
-
-    def tofile(self, f: BinaryIO) -> None:
-        """Write the Array data to a file object, padding with zero bits if needed.
-
-        Up to seven zero bits will be added at the end to byte align.
-
-        """
-        self.data.tofile(f)
-
-    def fromfile(self, f: BinaryIO, n: Optional[int] = None) -> None:
-        trailing_bit_length = len(self.data) % self._dtype.bitlength
-        if trailing_bit_length != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.bitlength} bits).")
-
-        new_data = Bits(f)
-        max_items = len(new_data) // self._dtype.length
-        items_to_append = max_items if n is None else min(n, max_items)
-        self.data += new_data[0: items_to_append * self._dtype.bitlength]
-        if n is not None and items_to_append < n:
-            raise EOFError(f"Only {items_to_append} were appended, not the {n} items requested.")
 
     def reverse(self) -> None:
         trailing_bit_length = len(self.data) % self._dtype.length

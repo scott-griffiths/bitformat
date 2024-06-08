@@ -6,7 +6,7 @@ import struct
 import io
 from collections import abc
 import functools
-from typing import Tuple, Union, List, Iterable, Any, Optional, BinaryIO, TextIO, overload, Iterator, Type, TypeVar
+from typing import Tuple, Union, List, Iterable, Any, Optional, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
 from .bitstore import BitStore
 from bitformat import bitstore_helpers, utils
@@ -14,7 +14,7 @@ from bitformat.dtypes import Dtype, dtype_register
 from bitformat.bitstring_options import Colour
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bool, BinaryIO, bytearray, bytes, memoryview]
+BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview]
 
 TBits = TypeVar("TBits", bound='Bits')
 
@@ -222,74 +222,6 @@ class Bits:
         """
         return not self.__eq__(bs)
 
-    def __invert__(self: TBits) -> TBits:
-        """Return Bits with every bit inverted.
-
-        Raises Error if Bits is empty.
-
-        """
-        if len(self) == 0:
-            raise bitformat.Error("Cannot invert empty bitstring.")
-        s = self._copy()
-        s._invert_all()
-        return s
-
-    def __lshift__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring with bits shifted by n to the left.
-
-        n -- the number of bits to shift. Must be >= 0.
-
-        """
-        if n < 0:
-            raise ValueError("Cannot shift by a negative amount.")
-        if len(self) == 0:
-            raise ValueError("Cannot shift an empty bitstring.")
-        n = min(n, len(self))
-        s = self._absolute_slice(n, len(self))
-        s._addright(Bits.zeros(n))
-        return s
-
-    def __rshift__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring with bits shifted by n to the right.
-
-        n -- the number of bits to shift. Must be >= 0.
-
-        """
-        if n < 0:
-            raise ValueError("Cannot shift by a negative amount.")
-        if len(self) == 0:
-            raise ValueError("Cannot shift an empty bitstring.")
-        if not n:
-            return self._copy()
-        s = self.__class__(length=min(n, len(self)))
-        n = min(n, len(self))
-        s._addright(self._absolute_slice(0, len(self) - n))
-        return s
-
-    def __mul__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring consisting of n concatenations of self.
-
-        Called for expression of the form 'a = b*3'.
-        n -- The number of concatenations. Must be >= 0.
-
-        """
-        if n < 0:
-            raise ValueError("Cannot multiply by a negative integer.")
-        if not n:
-            return self.__class__()
-        s = self._copy()
-        s._imul(n)
-        return s
-
-    def __rmul__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring consisting of n concatenations of self.
-
-        Called for expressions of the form 'a = 3*b'.
-        n -- The number of concatenations. Must be >= 0.
-
-        """
-        return self.__mul__(n)
-
     def __and__(self: TBits, bs: BitsType, /) -> TBits:
         """Bit-wise 'and' between two bitstrings. Returns new bitstring.
 
@@ -390,10 +322,6 @@ class Bits:
         """Return False if bitstring is empty, otherwise return True."""
         return len(self) != 0
 
-    def _clear(self) -> None:
-        """Reset the bitstring to an empty state."""
-        self._bitstore = BitStore()
-
     def _setauto_no_length_or_offset(self, s: BitsType, /) -> None:
         """Set bitstring from a bitstring, file, bool, array, iterable or string."""
         if isinstance(s, str):
@@ -414,7 +342,7 @@ class Bits:
         bs = Bits._create_from_bitstype(bs)
         self._bitstore = bs._bitstore
 
-    def _setbytes(self, data: Union[bytearray, bytes, List], length:None = None) -> None:
+    def _setbytes(self, data: Union[bytearray, bytes, List], length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.frombytes(bytes(data))
 
@@ -544,79 +472,9 @@ class Bits:
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def _absolute_slice(self: TBits, start: int, end: int) -> TBits:
-        """Used internally to get a slice, without error checking.
-        Uses MSB0 bit numbering even if LSB0 is set."""
-        if end == start:
-            return self.__class__()
-        assert start < end, f"start={start}, end={end}"
-        bs = self.__class__()
-        bs._bitstore = self._bitstore.getslice(start, end)
-        return bs
-
     def _addright(self, bs: Bits, /) -> None:
         """Add a bitstring to the RHS of the current bitstring."""
         self._bitstore += bs._bitstore
-
-    def _addleft(self, bs: Bits, /) -> None:
-        """Prepend a bitstring to the current bitstring."""
-        self._bitstore = bs._bitstore._copy() + self._bitstore
-
-    def _truncateleft(self: TBits, bits: int, /) -> TBits:
-        """Truncate bits from the start of the bitstring. Return the truncated bits."""
-        assert 0 <= bits <= len(self)
-        if bits == 0:
-            return self.__class__()
-        truncated_bits = self._absolute_slice(0, bits)
-        if bits == len(self):
-            self._clear()
-            return truncated_bits
-        self._bitstore = self._bitstore.getslice(bits, None)
-        return truncated_bits
-
-    def _truncateright(self: TBits, bits: int, /) -> TBits:
-        """Truncate bits from the end of the bitstring. Return the truncated bits."""
-        assert 0 <= bits <= len(self)
-        if bits == 0:
-            return self.__class__()
-        truncated_bits = self._absolute_slice(len(self) - bits, len(self))
-        if bits == len(self):
-            self._clear()
-            return truncated_bits
-        self._bitstore = self._bitstore.getslice(None, -bits)
-        return truncated_bits
-
-    def _insert(self, bs: Bits, pos: int, /) -> None:
-        """Insert bs at pos."""
-        assert 0 <= pos <= len(self)
-        self._bitstore[pos: pos] = bs._bitstore
-        return
-
-    def _overwrite(self, bs: Bits, pos: int, /) -> None:
-        """Overwrite with bs at pos."""
-        assert 0 <= pos <= len(self)
-        if bs is self:
-            # Just overwriting with self, so do nothing.
-            assert pos == 0
-            return
-        self._bitstore[pos: pos + len(bs)] = bs._bitstore
-
-    def _delete(self, bits: int, pos: int, /) -> None:
-        """Delete bits at pos."""
-        assert 0 <= pos <= len(self)
-        assert pos + bits <= len(self), f"pos={pos}, bits={bits}, len={len(self)}"
-        del self._bitstore[pos: pos + bits]
-        return
-
-    def _reversebytes(self, start: int, end: int) -> None:
-        """Reverse bytes in-place."""
-        assert (end - start) % 8 == 0
-        self._bitstore[start:end] = BitStore.frombytes(self._bitstore.getslice(start, end).tobytes()[::-1])
-
-    def _invert(self, pos: int, /) -> None:
-        """Flip bit at pos 1<->0."""
-        assert 0 <= pos < len(self)
-        self._bitstore.invert(pos)
 
     def _getbits(self: TBits):
         return self._copy()
@@ -690,7 +548,7 @@ class Bits:
         return self._findall(bs, start, end, count, ba)
 
     def _findall(self, bs: Bits, start: int, end: int, count: Optional[int],
-                      bytealigned: bool) -> Iterable[int]:
+                 bytealigned: bool) -> Iterable[int]:
         c = 0
         for i in self._bitstore.findall(bs._bitstore, start, end, bytealigned):
             if count is not None and c >= count:
@@ -758,56 +616,6 @@ class Bits:
             if len(nextchunk) != bits:
                 return
             start_ += bits
-        return
-
-    def split(self, delimiter: BitsType, start: Optional[int] = None, end: Optional[int] = None,
-              count: Optional[int] = None, bytealigned: Optional[bool] = None) -> Iterable[Bits]:
-        """Return bitstring generator by splitting using a delimiter.
-
-        The first item returned is the initial bitstring before the delimiter,
-        which may be an empty bitstring.
-
-        delimiter -- The bitstring used as the divider.
-        start -- The bit position to start the split. Defaults to 0.
-        end -- The bit position one past the last bit to use in the split.
-               Defaults to len(self).
-        count -- If specified then at most count items are generated.
-                 Default is to split as many times as possible.
-        bytealigned -- If True splits will only occur on byte boundaries.
-
-        Raises ValueError if the delimiter is empty.
-
-        """
-        delimiter = Bits._create_from_bitstype(delimiter)
-        if len(delimiter) == 0:
-            raise ValueError("split delimiter cannot be empty.")
-        start, end = self._validate_slice(start, end)
-        bytealigned_: bool = bitformat.options.bytealigned if bytealigned is None else bytealigned
-        if count is not None and count < 0:
-            raise ValueError("Cannot split - count must be >= 0.")
-        if count == 0:
-            return
-        f = functools.partial(self._find, bs=delimiter, bytealigned=bytealigned_)
-        found = f(start=start, end=end)
-        if not found:
-            # Initial bits are the whole bitstring being searched
-            yield self._slice(start, end)
-            return
-        # yield the bytes before the first occurrence of the delimiter, even if empty
-        yield self._slice(start, found[0])
-        startpos = pos = found[0]
-        c = 1
-        while count is None or c < count:
-            pos += len(delimiter)
-            found = f(start=pos, end=end)
-            if not found:
-                # No more occurrences, so return the rest of the bitstring
-                yield self._slice(startpos, end)
-                return
-            c += 1
-            yield self._slice(startpos, found[0])
-            startpos = pos = found[0]
-        # Have generated count bitstrings, so time to quit.
         return
 
     def tobytes(self) -> bytes:
@@ -892,7 +700,7 @@ class Bits:
 
     @staticmethod
     def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype,
-                     colour_start: str, colour_end: str, width: Optional[int]=None) -> Tuple[str, int]:
+                     colour_start: str, colour_end: str, width: Optional[int] = None) -> Tuple[str, int]:
         get_fn = dtype.get_fn
         if dtype.name == 'bytes':  # Special case for bytes to print one character each.
             get_fn = Bits._getbytes_printable
@@ -1040,7 +848,7 @@ class Bits:
         stream -- A TextIO object with a write() method. Defaults to sys.stdout.
 
         >>> s.pp('hex16')
-        >>> s.pp('b, h', sep='_', show_offset=False)
+        >>> s.pp('bin, hex', sep='_', show_offset=False)
 
         """
         colour = Colour(not bitformat.options.no_color)

@@ -164,7 +164,8 @@ class SingleDtypeField(FieldType):
             items = None
         return dtype, name, value, items, const
 
-    def _str_common(self, dtype, name, value, const, item_str='') -> str:
+    @staticmethod
+    def _str_common(dtype, name, value, const, item_str='') -> str:
         const_str = 'const ' if const else ''
         if item_str == '':
             d = f"{colour.purple}{const_str}{dtype}{colour.off}"
@@ -177,7 +178,8 @@ class SingleDtypeField(FieldType):
             v = '' if value is None else f" = {colour.cyan}{value}{colour.off}"
         return f"{n}{d}{v}"
 
-    def _repr_common(self, dtype, name, value, const, item_str='') -> str:
+    @staticmethod
+    def _repr_common(dtype, name, value, const, item_str='') -> str:
         const_str = 'const ' if const else ''
         if name != '':
             name = f"{name}: "
@@ -329,7 +331,6 @@ class FieldArray(SingleDtypeField):
             vars_[self.name] = self.value
         return self.dtype.bitlength
 
-
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
@@ -425,4 +426,3 @@ class Find(FieldType):
         return self._value
 
     value = property(_getvalue, None)
-

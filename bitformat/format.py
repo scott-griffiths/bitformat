@@ -204,7 +204,7 @@ class Repeat(FieldType):
     def flatten(self) -> list[FieldType]:
         # TODO: This needs values in it. This won't work.
         flattened_fields = []
-        for i in self.count:
+        for _ in self.count:
             flattened_fields.extend(self.fieldtype.flatten())
         return flattened_fields
 

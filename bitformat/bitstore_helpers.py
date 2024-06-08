@@ -71,11 +71,11 @@ def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
         if signed:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
                 raise bitformat.CreationError(f"{i} is too large a signed integer for a bitstring of length {length}. "
-                                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
+                                              f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
         else:
             if i >= (1 << length):
                 raise bitformat.CreationError(f"{i} is too large an unsigned integer for a bitstring of length {length}. "
-                                    f"The allowed range is [0, {(1 << length) - 1}].")
+                                              f"The allowed range is [0, {(1 << length) - 1}].")
             if i < 0:
                 raise bitformat.CreationError("uint cannot be initialised with a negative number.")
         raise e
