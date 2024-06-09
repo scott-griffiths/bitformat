@@ -16,7 +16,9 @@ copyright = f'2024 - {year}, Scott Griffiths'
 author = 'Scott Griffiths'
 release = '0.0.1'
 
-extensions = ['sphinx.ext.autodoc']
+extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
+              ]
 add_module_names = False
 
 templates_path = ['_templates']
