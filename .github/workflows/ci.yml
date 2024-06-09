@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           # This allows the matrix to specify just the major.minor version while still
           # expanding it to get the latest patch version including alpha releases.
@@ -127,7 +127,7 @@ jobs:
           # make sure we test the installed code
           cp -R repo/tests/ tests/
           python -m pip install --upgrade pip
-          python -m pip install pytest hypothesis
+          python -m pip install -r tests/requirements.txt
           python -m pip install ./dist/*.whl
           # show the directory contents for diagnostics
           ls -la
