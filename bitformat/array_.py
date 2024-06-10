@@ -4,7 +4,7 @@ import math
 import numbers
 from collections.abc import Sized
 from bitformat.exceptions import CreationError
-from typing import Union, List, Iterable, Any, Optional, overload, TextIO
+from typing import Union, Iterable, Any, overload, TextIO
 from bitformat.bits import Bits, BitsType
 from bitformat.dtypes import Dtype, dtype_register
 from bitformat import utils
@@ -62,8 +62,8 @@ class Array:
 
     """
 
-    def __init__(self, dtype: Union[str, Dtype], initializer: Optional[Union[int, Array, Iterable, Bits, bytes, bytearray, memoryview]] = None,
-                 trailing_bits: Optional[BitsType] = None) -> None:
+    def __init__(self, dtype: Union[str, Dtype], initializer: Union[int, Array, Iterable, Bits, bytes, bytearray, memoryview] | None = None,
+                 trailing_bits: BitsType | None = None) -> None:
         self._data = BitStore()
         try:
             self._set_dtype(dtype)
@@ -230,7 +230,7 @@ class Array:
         new_array = self.__class__(dtype, self.tolist())
         return new_array
 
-    def tolist(self) -> List[ElementType]:
+    def tolist(self) -> list[ElementType]:
         return [self._dtype.read_fn(self.data, start=start)
                 for start in range(0, len(self.data) - self._dtype.length + 1, self._dtype.length)]
 
@@ -312,7 +312,7 @@ class Array:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
         self.data = Bits.join([self.data[s - self._dtype.length: s] for s in range(len(self.data), 0, -self._dtype.length)])
 
-    def pp(self, fmt: Optional[str] = None, width: int = 120,
+    def pp(self, fmt: str | None = None, width: int = 120,
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty-print the Array contents.
 

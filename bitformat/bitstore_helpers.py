@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 import functools
-from typing import Union, Optional, Dict, Callable
+from typing import Union, Dict, Callable
 import bitarray
 from bitformat.bitstore import BitStore
 import bitformat
@@ -103,7 +103,7 @@ literal_bit_funcs: Dict[str, Callable[..., BitStore]] = {
 }
 
 
-def bitstore_from_token(name: str, token_length: Optional[int], value: Optional[str]) -> BitStore:
+def bitstore_from_token(name: str, token_length: int | None, value: str | None) -> BitStore:
     if name in literal_bit_funcs:
         return literal_bit_funcs[name](value)
     try:

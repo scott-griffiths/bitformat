@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Optional, Dict, Any, Union, Tuple, Callable
+from typing import Dict, Any, Union, Tuple, Callable
 import inspect
 import bitformat
 from bitformat import utils
@@ -27,11 +27,11 @@ class Dtype:
     _is_signed: bool
     _set_fn_needs_length: bool
     _variable_length: bool
-    _bitlength: Optional[int]
+    _bitlength: int | None
     _bits_per_item: int
-    _length: Optional[int]
+    _length: int | None
 
-    def __new__(cls, token: Union[str, Dtype], /, length: Optional[int] = None) -> Dtype:
+    def __new__(cls, token: Union[str, Dtype], /, length: int | None = None) -> Dtype:
         if isinstance(token, cls):
             return token
         if length is None:
@@ -52,7 +52,7 @@ class Dtype:
         return self._length
 
     @property
-    def bitlength(self) -> Optional[int]:
+    def bitlength(self) -> int | None:
         """The number of bits needed to represent a single instance of the data type. Set to None for variable length dtypes."""
         return self._bitlength
 
@@ -77,7 +77,7 @@ class Dtype:
         return self._is_signed
 
     @property
-    def set_fn(self) -> Optional[Callable]:
+    def set_fn(self) -> Union[Callable, None]:
         """A function to set the value of the data type."""
         return self._set_fn
 
@@ -102,7 +102,7 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, length: Optional[int]) -> Dtype:
+    def _create(cls, definition: DtypeDefinition, length: int | None) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
         x._bitlength = x._length = length
@@ -257,7 +257,7 @@ class DtypeDefinition:
             self.read_fn = read_fn
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, length: Optional[int] = None) -> Dtype:
+    def get_dtype(self, length: int | None = None) -> Dtype:
         if self.allowed_lengths:
             if length is None:
                 if self.allowed_lengths.only_one_value():
@@ -285,7 +285,7 @@ class DtypeDefinition:
 class Register:
     """A singleton class that holds all the DtypeDefinitions. Not (yet) part of the public interface."""
 
-    _instance: Optional[Register] = None
+    _instance: Register | None = None
     names: Dict[str, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
@@ -310,7 +310,7 @@ class Register:
                     property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
 
     @classmethod
-    def get_dtype(cls, name: str, length: Optional[int]) -> Dtype:
+    def get_dtype(cls, name: str, length: int | None) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:

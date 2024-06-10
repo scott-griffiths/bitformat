@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import bitarray
 import copy
-from typing import Union, Iterable, Optional, Iterator, Any
+from typing import Union, Iterable, Iterator, Any
 
 
 class BitStore:
@@ -44,19 +44,19 @@ class BitStore:
     def tobytes(self) -> bytes:
         return self._bitarray.tobytes()
 
-    def slice_to_uint(self, start: Optional[int] = None, end: Optional[int] = None) -> int:
+    def slice_to_uint(self, start: int | None = None, end: int | None = None) -> int:
         return bitarray.util.ba2int(self.getslice(start, end)._bitarray, signed=False)
 
-    def slice_to_int(self, start: Optional[int] = None, end: Optional[int] = None) -> int:
+    def slice_to_int(self, start: int | None = None, end: int | None = None) -> int:
         return bitarray.util.ba2int(self.getslice(start, end)._bitarray, signed=True)
 
-    def slice_to_hex(self, start: Optional[int] = None, end: Optional[int] = None) -> str:
+    def slice_to_hex(self, start: int | None = None, end: int | None = None) -> str:
         return bitarray.util.ba2hex(self.getslice(start, end)._bitarray)
 
-    def slice_to_bin(self, start: Optional[int] = None, end: Optional[int] = None) -> str:
+    def slice_to_bin(self, start: int | None = None, end: int | None = None) -> str:
         return self.getslice(start, end)._bitarray.to01()
 
-    def slice_to_oct(self, start: Optional[int] = None, end: Optional[int] = None) -> str:
+    def slice_to_oct(self, start: int | None = None, end: int | None = None) -> str:
         return bitarray.util.ba2base(8, self.getslice(start, end)._bitarray)
 
     def __iadd__(self, other: BitStore, /) -> BitStore:
@@ -178,10 +178,10 @@ class BitStore:
     def getslice_withstep(self, key: slice, /) -> BitStore:
         return BitStore.frombitarray(self._bitarray.__getitem__(key))
 
-    def getslice(self, start: Optional[int], stop: Optional[int], /) -> BitStore:
+    def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
         return BitStore.frombitarray(self._bitarray[start:stop])
 
-    def invert(self, index: Optional[int] = None, /) -> None:
+    def invert(self, index: int | None = None, /) -> None:
         if index is not None:
             self._bitarray.invert(index)
         else:

@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import functools
 import re
-from typing import Tuple, List, Optional, Pattern, Dict, Union, Match
-
+from typing import Tuple, List, Pattern, Union
 
 # A token name followed by an integer number
 NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$')
@@ -26,7 +25,7 @@ STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])(?P<fmt>(?:\d*[bB
 BYTESWAP_STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])?(?P<fmt>(?:\d*[bBhHlLqQefd])+)$')
 
 @functools.lru_cache(CACHE_SIZE)
-def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, Optional[int]]:
+def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, int | None]:
     # Any single token with just a name and length
     if m2 := NAME_INT_RE.match(fmt):
         name = m2.group(1)
@@ -47,7 +46,7 @@ def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, Optional[int]]:
 
 
 @functools.lru_cache(CACHE_SIZE)
-def parse_single_token(token: str) -> Tuple[str, str, Optional[str]]:
+def parse_single_token(token: str) -> Tuple[str, str, str | None]:
     if (equals_pos := token.find('=')) == -1:
         value = None
     else:
@@ -97,7 +96,7 @@ def preprocess_tokens(fmt: str) -> List[str]:
 
 @functools.lru_cache(CACHE_SIZE)
 def tokenparser(fmt: str, keys: Tuple[str, ...] = ()) -> \
-        Tuple[bool, List[Tuple[str, Union[int, str, None], Optional[str]]]]:
+        Tuple[bool, List[Tuple[str, Union[int, str, None], str | None]]]:
     """Divide the format string into tokens and parse them.
 
     Return stretchy token and list of [initialiser, length, value]
@@ -112,7 +111,7 @@ def tokenparser(fmt: str, keys: Tuple[str, ...] = ()) -> \
     """
     tokens = preprocess_tokens(fmt)
     stretchy_token = False
-    ret_vals: List[Tuple[str, Union[str, int, None], Optional[str]]] = []
+    ret_vals: List[Tuple[str, Union[str, int, None], str | None]] = []
     for token in tokens:
         if keys and token in keys:
             # Don't bother parsing it, it's a keyword argument

@@ -5,7 +5,7 @@ import sys
 import struct
 import io
 from collections import abc
-from typing import Tuple, Union, List, Iterable, Any, Optional, TextIO, overload, Iterator, Type, TypeVar
+from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
 from .bitstore import BitStore
 from bitformat import bitstore_helpers, utils
@@ -13,7 +13,7 @@ from bitformat.dtypes import Dtype, dtype_register
 from bitformat.bitstring_options import Colour
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview]
+BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
 
 TBits = TypeVar("TBits", bound='Bits')
 
@@ -62,7 +62,7 @@ class Bits:
         return d.build(value)
 
     @classmethod
-    def fromstring(cls: TBits, s: str, /) -> TBits:
+    def fromstring(cls, s: str, /) -> TBits:
         """Create a new bitstring from a formatted string."""
         x = super().__new__(cls)
         x._bitstore = bitstore_helpers.str_to_bitstore(s)
@@ -104,7 +104,19 @@ class Bits:
         if isinstance(auto, cls):
             return auto
         b = super().__new__(cls)
-        b._setauto_no_length_or_offset(auto)
+        if isinstance(auto, str):
+            b._bitstore = bitstore_helpers.str_to_bitstore(auto)
+        elif isinstance(auto, Bits):
+            b._bitstore = auto._bitstore.copy()
+        elif isinstance(auto, (bytes, bytearray, memoryview)):
+            b._bitstore = BitStore.frombytes(bytearray(auto))
+        elif isinstance(auto, io.BytesIO):
+            b._bitstore = BitStore.frombytes(auto.getvalue())
+        elif isinstance(auto, abc.Iterable):
+            # Evaluate each item as True or False and set bits to 1 or 0.
+            b._setbin_unsafe(''.join(str(int(bool(x))) for x in auto))
+        else:
+            raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
         return b
 
     def __iter__(self) -> Iterable[bool]:
@@ -204,7 +216,7 @@ class Bits:
     def _repr(self, classname: str, length: int):
         if length == 0:
             s = ''
-        if length % 4 == 0:
+        elif length % 4 == 0:
             s = '0x' + self.parse('hex')
         else:
             s = '0b' + self.parse('bin')
@@ -221,7 +233,7 @@ class Bits:
     def __eq__(self, bs: Any, /) -> bool:
         """Return True if two bitstrings have the same binary representation.
 
-        >>> Bits.fromstring('0b1110') == '0xe'
+        >>> Bits('0b1110') == '0xe'
         True
 
         """
@@ -233,7 +245,7 @@ class Bits:
     def __ne__(self, bs: Any, /) -> bool:
         """Return False if two bitstrings have the same binary representation.
 
-        >>> Bits.fromstring('0b111') == '0x7'
+        >>> Bits('0b111') == '0x7'
         False
 
         """
@@ -339,27 +351,11 @@ class Bits:
         """Return False if bitstring is empty, otherwise return True."""
         return len(self) != 0
 
-    def _setauto_no_length_or_offset(self, s: BitsType, /) -> None:
-        """Set Bits from a Bits, bytes, iterable or string."""
-        if isinstance(s, str):
-            self._bitstore = bitstore_helpers.str_to_bitstore(s)
-        elif isinstance(s, Bits):
-            self._bitstore = s._bitstore.copy()
-        elif isinstance(s, (bytes, bytearray, memoryview)):
-            self._bitstore = BitStore.frombytes(bytearray(s))
-        elif isinstance(s, io.BytesIO):
-            self._bitstore = BitStore.frombytes(s.getvalue())
-        elif isinstance(s, abc.Iterable):
-            # Evaluate each item as True or False and set bits to 1 or 0.
-            self._setbin_unsafe(''.join(str(int(bool(x))) for x in s))
-        else:
-            raise TypeError(f"Cannot initialise bitstring from type '{type(s)}'.")
-
     def _setbits(self, bs: BitsType, length: None = None) -> None:
         bs = Bits._create_from_bitstype(bs)
         self._bitstore = bs._bitstore
 
-    def _setbytes(self, data: Union[bytearray, bytes, List], length: None = None) -> None:
+    def _setbytes(self, data: Union[bytearray, bytes, list], length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.frombytes(bytes(data))
 
@@ -379,7 +375,7 @@ class Bits:
         string = ''.join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
 
-    def _setuint(self, uint: int, length: Optional[int] = None) -> None:
+    def _setuint(self, uint: int, length: int | None = None) -> None:
         """Reset the bitstring to have given unsigned int interpretation."""
         # If no length given, and we've previously been given a length, use it.
         if length is None and hasattr(self, 'len') and len(self) != 0:
@@ -394,7 +390,7 @@ class Bits:
             raise bitformat.InterpretError("Cannot interpret a zero length bitstring as an integer.")
         return self._bitstore.slice_to_uint()
 
-    def _setint(self, int_: int, length: Optional[int] = None) -> None:
+    def _setint(self, int_: int, length: int | None = None) -> None:
         """Reset the bitstring to have given signed int interpretation."""
         # If no length given, and we've previously been given a length, use it.
         if length is None and hasattr(self, 'len') and len(self) != 0:
@@ -409,7 +405,7 @@ class Bits:
             raise bitformat.InterpretError("Cannot interpret bitstring without a length as an integer.")
         return self._bitstore.slice_to_int()
 
-    def _setfloat(self, f: float, length: Optional[int]) -> None:
+    def _setfloat(self, f: float, length: int | None) -> None:
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
         if length is None or length not in [16, 32, 64]:
@@ -496,7 +492,7 @@ class Bits:
     def _getbits(self: TBits):
         return self._copy()
 
-    def _validate_slice(self, start: Optional[int], end: Optional[int]) -> Tuple[int, int]:
+    def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""
         start = 0 if start is None else (start + len(self) if start < 0 else start)
         end = len(self) if end is None else (end + len(self) if end < 0 else end)
@@ -504,8 +500,8 @@ class Bits:
             raise ValueError(f"Invalid slice positions for bitstring length {len(self)}: start={start}, end={end}.")
         return start, end
 
-    def find(self, bs: BitsType, /, start: Optional[int] = None, end: Optional[int] = None,
-             bytealigned: Optional[bool] = None) -> Union[Tuple[int], Tuple[()]]:
+    def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
+             bytealigned: bool | None = None) -> Union[tuple[int], tuple[()]]:
         """Find first occurrence of substring bs.
 
         Returns a single item tuple with the bit position if found, or an
@@ -534,13 +530,13 @@ class Bits:
         p = self._find(bs, start, end, ba)
         return p
 
-    def _find(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
+    def _find(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[tuple[int], tuple[()]]:
         """Find first occurrence of a binary string."""
         p = self._bitstore.find(bs._bitstore, start, end, bytealigned)
         return () if p == -1 else (p,)
 
-    def findall(self, bs: BitsType, start: Optional[int] = None, end: Optional[int] = None, count: Optional[int] = None,
-                bytealigned: Optional[bool] = None) -> Iterable[int]:
+    def findall(self, bs: BitsType, start: int| None = None, end: int | None = None, count: int | None = None,
+                bytealigned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         bs -- The bitstring to find.
@@ -564,7 +560,7 @@ class Bits:
         ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
         return self._findall(bs, start, end, count, ba)
 
-    def _findall(self, bs: Bits, start: int, end: int, count: Optional[int],
+    def _findall(self, bs: Bits, start: int, end: int, count: int | None,
                  bytealigned: bool) -> Iterable[int]:
         c = 0
         for i in self._bitstore.findall(bs._bitstore, start, end, bytealigned):
@@ -574,8 +570,8 @@ class Bits:
             yield i
         return
 
-    def rfind(self, bs: BitsType, /, start: Optional[int] = None, end: Optional[int] = None,
-              bytealigned: Optional[bool] = None) -> Union[Tuple[int], Tuple[()]]:
+    def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
+              bytealigned: bool | None = None) -> Union[tuple[int], tuple[()]]:
         """Find final occurrence of substring bs.
 
         Returns a single item tuple with the bit position if found, or an
@@ -601,13 +597,13 @@ class Bits:
         p = self._rfind(bs, start, end, ba)
         return p
 
-    def _rfind(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[Tuple[int], Tuple[()]]:
+    def _rfind(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[tuple[int], tuple[()]]:
         """Find final occurrence of a binary string."""
         p = self._bitstore.rfind(bs._bitstore, start, end, bytealigned)
         return () if p == -1 else (p,)
 
-    def cut(self, bits: int, start: Optional[int] = None, end: Optional[int] = None,
-            count: Optional[int] = None) -> Iterator[Bits]:
+    def cut(self, bits: int, start: int | None = None, end: int | None = None,
+            count: int | None = None) -> Iterator[Bits]:
         """Return bitstring generator by cutting into bits sized chunks.
 
         bits -- The size in bits of the bitstring chunks to generate.
@@ -643,7 +639,7 @@ class Bits:
         """
         return self._bitstore.tobytes()
 
-    def startswith(self, prefix: BitsType, start: Optional[int] = None, end: Optional[int] = None) -> bool:
+    def startswith(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current bitstring starts with prefix.
 
         prefix -- The bitstring to search for.
@@ -655,7 +651,7 @@ class Bits:
         start, end = self._validate_slice(start, end)
         return self._slice(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
-    def endswith(self, suffix: BitsType, start: Optional[int] = None, end: Optional[int] = None) -> bool:
+    def endswith(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current bitstring ends with suffix.
 
         suffix -- The bitstring to search for.
@@ -667,7 +663,7 @@ class Bits:
         start, end = self._validate_slice(start, end)
         return self._slice(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
 
-    def all(self, value: Any, pos: Optional[Iterable[int]] = None) -> bool:
+    def all(self, value: Any, pos: Iterable[int] | None = None) -> bool:
         """Return True if one or many bits are all set to bool(value).
 
         value -- If value is True then checks for bits set to 1, otherwise
@@ -684,7 +680,7 @@ class Bits:
                 return False
         return True
 
-    def any(self, value: Any, pos: Optional[Iterable[int]] = None) -> bool:
+    def any(self, value: Any, pos: Iterable[int] | None = None) -> bool:
         """Return True if any of one or many bits are set to bool(value).
 
         value -- If value is True then checks for bits set to 1, otherwise
@@ -717,7 +713,7 @@ class Bits:
 
     @staticmethod
     def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype,
-                     colour_start: str, colour_end: str, width: Optional[int] = None) -> Tuple[str, int]:
+                     colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.get_fn
         if dtype.name == 'bytes':  # Special case for bytes to print one character each.
             get_fn = Bits._getbytes_printable
@@ -740,7 +736,7 @@ class Bits:
         return x, chars_used
 
     @staticmethod
-    def _chars_per_group(bits_per_group: int, fmt: Optional[str]):
+    def _chars_per_group(bits_per_group: int, fmt: str | None):
         """How many characters are needed to represent a number of bits with a given format."""
         if fmt is None or dtype_register[fmt].bitlength2chars_fn is None:
             return 0
@@ -753,7 +749,7 @@ class Bits:
             raise ValueError
         return 24 // dtype_register[fmt].bitlength2chars_fn(24)
 
-    def _pp(self, dtype1: Dtype, dtype2: Optional[Dtype], bits_per_group: int, width: int, sep: str, format_sep: str,
+    def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
         colour = Colour(not bitformat.options.no_color)
@@ -850,7 +846,7 @@ class Bits:
                     bits_per_group //= 2
         return dtype1, dtype2, bits_per_group, has_length_in_fmt
 
-    def pp(self, fmt: Optional[str] = None, width: int = 120, sep: str = ' ',
+    def pp(self, fmt: str | None = None, width: int = 120, sep: str = ' ',
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the bitstring's value.
 
