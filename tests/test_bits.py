@@ -40,7 +40,7 @@ class TestCreation:
         assert (len(s), s.hex) == (0, '')
 
     def test_creation_from_hex_with_whitespace(self):
-        s = Bits.fromstring('  \n0 X a  4e       \r3  \n')
+        s = Bits('  \n0 X a  4e       \r3  \n')
         assert s.parse('hex') == 'a4e3'
 
     @pytest.mark.parametrize("bad_val", ['0xx0', '0xX0', '0Xx0', '-2e'])
@@ -133,10 +133,10 @@ class TestInitialisation:
         assert b[0] == 11
 
     def test_find_all(self):
-        a = Bits.fromstring('0b0010011')
+        a = Bits('0b0010011')
         b = list(a.findall([1]))
         assert b == [2, 5, 6]
-        t = Bits.fromstring('0b10')
+        t = Bits('0b10')
         tp = list(t.findall('0b1'))
         assert tp == [0]
 
@@ -148,8 +148,8 @@ class TestCut:
             assert t == '0b000111'
 
 def test_unorderable():
-    a = Bits.fromstring('0b000111')
-    b = Bits.fromstring('0b000111')
+    a = Bits('0b000111')
+    b = Bits('0b000111')
     with pytest.raises(TypeError):
         _ = a < b
     with pytest.raises(TypeError):
@@ -211,7 +211,7 @@ class TestUnderscoresInLiterals:
     def test_binary_creation(self):
         a = Bits.build('bin', '0000_0001_0010')
         assert a.parse('bin') == '000000010010'
-        b = Bits.fromstring('0b0011_1100_1111_0000')
+        b = Bits('0b0011_1100_1111_0000')
         assert b.parse('bin') == '0011110011110000'
         v = 0b1010_0000
         c = Bits.build('uint8', 0b1010_0000)
@@ -266,7 +266,7 @@ class TestPrettyPrinting:
         a.pp('hex32', sep='!-!', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex32', length=144 bits> [
   0: 0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f
-] + trailing_bits = 0x0f0f
+] + trailing_bits = 0b0000111100001111
 """
 
     def test_multi_line(self):
@@ -291,7 +291,7 @@ class TestPrettyPrinting:
         a.pp(stream=s, fmt='hex, bin12')
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex, bin12', length=16 bits> [
  0: f0f : 111100001111
-] + trailing_bits = 0x0
+] + trailing_bits = 0b0000
 """
 
     def test_multi_line_multi_format(self):

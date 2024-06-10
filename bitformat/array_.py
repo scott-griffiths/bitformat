@@ -365,7 +365,7 @@ class Array:
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = " + str(self.data[-trailing_bit_length:]))
+            stream.write(" + trailing_bits = 0b" + self.data[-trailing_bit_length:].parse('bin'))
         stream.write("\n")
 
     def equals(self, other: Any) -> bool:

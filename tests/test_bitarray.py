@@ -127,7 +127,7 @@ class TestRepr:
 
     def test_standard_repr(self):
         a = Bits.fromstring('0o12345')
-        assert repr(a) == "Bits.fromstring('0b001010011100101')"
+        assert repr(a) == "Bits('0b001010011100101')"
 
 
 class TestNewProperties:

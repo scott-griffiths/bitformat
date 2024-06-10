@@ -99,7 +99,7 @@ The constructor for ``Bits`` itself doesn't take any arguments so you will need 
    * - ``Bits.join(iterable)``
      - Concatenate from an iterable such as a list.
 
-Instances are built by pairing a ``Dtype`` with a value using the ``build`` class method.
+Instances can be built by pairing a ``Dtype`` with a value using the ``build`` class method.
 
 For example::
 
@@ -123,7 +123,7 @@ This lets you give both the data type and value in a single string. ::
 
 Note that the binary and hexadecimal examples have missed out the `'bin='` or `'hex='` parts, but as the strings start with `'0b'` for binary and `'0x'` for hexadecimal the string parser can work out what is meant.
 
-You can also initialise directly from ``bytes`` with the ``frombytes`` class method::
+You can also initialise directly from a ``bytes`` object with the ``frombytes`` class method::
 
     c = Bits.frombytes(b'hello!!!')
 
@@ -155,14 +155,27 @@ Of course the ``Bits`` object is just a collection of bits and doesn't know how 
     >>> e.parse('bin')
     TODO
 
-As a short-cut, for simple dtypes, properties can be used instead of ``parse`` to get different interpretations of the ``Bits`` ::
+As a short-cut, for simple dtypes, properties can be used instead of the ``parse`` method to get different interpretations of the ``Bits`` ::
 
-    >>> a.oct
-    '6'
-    TODO
+    >>> a.bin
+    '110'
+    >>> b.hex
+    'abcde'
+    >>> c.bytes
+    b'hello!!!'
+    >>> d.f
+    13.5
+    >>> e.i
+    -31
 
+In places where a ``Bits`` is expected, a formatted string that can be used to more conveniently create the `Bits` object.
+For example, if ``a`` is a ``Bits`` object, instead of
 
-Instances can be created using the constructor, or by using a string that can be used to create a `Bits` object.
+    a += Bits.build('u8', 65)
+
+you can equivalently write
+
+    a += 'u8 = 65'
 
 Some examples of strings that can be converted to `Bits` objects:
 
@@ -171,6 +184,9 @@ Some examples of strings that can be converted to `Bits` objects:
 * ``'i15=-401'``: A 15 bit signed integer representing the number -401.
 * ``'f64=1.3e5'``: A 64 bit floating point number representing 130000.
 * ``'0b001, u32=90, 0x5e'``: A sequence of bits that represent a 3-bit binary number, a 32-bit unsigned integer and a 8-bit hexadecimal number.
+
+
+
 
 Array
 -----

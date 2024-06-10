@@ -5,7 +5,6 @@ import sys
 import struct
 import io
 from collections import abc
-import functools
 from typing import Tuple, Union, List, Iterable, Any, Optional, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
 from .bitstore import BitStore
@@ -19,7 +18,7 @@ BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview]
 TBits = TypeVar("TBits", bound='Bits')
 
 # Maximum number of digits to use in __str__ and __repr__.
-MAX_CHARS: int = 250
+MAX_CHARS: int = 80
 
 
 class Bits:
@@ -38,8 +37,16 @@ class Bits:
 
     __slots__ = ('_bitstore',)
 
-    def __init__(self) -> None:
-        self._bitstore = BitStore()
+    def __init__(self, s: str | None = None, /) -> None:
+        pass
+
+    def __new__(cls, s: str | None = None, /) -> TBits:
+        x = super().__new__(cls)
+        if s is not None:
+            x._bitstore = bitstore_helpers.str_to_bitstore(s)
+        else:
+            x._bitstore = BitStore()
+        return x
 
     @classmethod
     def build(cls, dtype: Dtype | str, value: Any, /) -> TBits:
@@ -159,39 +166,49 @@ class Bits:
         return self.tobytes()
 
     def __str__(self) -> str:
-        """Return approximate string representation of bitstring for printing.
+        """Return string representations of Bits for printing.
 
-        Short strings will be given wholly in hexadecimal or binary. Longer
-        strings may be part hexadecimal and part binary. Very long strings will
-        be truncated with '...'.
+        Very long strings will be truncated with '...'.
 
         """
         length = len(self)
-        if not length:
+        if length == 0:
             return ''
         if length > MAX_CHARS * 4:
             # Too long for hex. Truncate...
-            return ''.join(('0x', self[0:MAX_CHARS*4]._gethex(), '...'))
-        # If it's quite short and we can't do hex then use bin
-        if length < 32 and length % 4 != 0:
-            return '0b' + self.parse('bin')
-        # If we can use hex then do so
-        if not length % 4:
-            return '0x' + self.parse('hex')
-        # Otherwise first we do as much as we can in hex
-        # then add on 1, 2 or 3 bits on at the end
-        bits_at_end = length % 4
-        return ''.join(('0x', self[0:length - bits_at_end]._gethex(),
-                        ', ', '0b', self[length - bits_at_end:]._getbin()))
+            return '0x' + self[0:MAX_CHARS*4].parse('hex') + f'...  # {length} bits'
+        hex_str = bin_str = f_str = u_str = i_str = ''
+        if length % 4 == 0:
+            t = self.parse('hex')
+            with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
+            hex_str = f'hex == 0x{with_underscores}'
+        if length <= 64:
+            t = self.parse('bin')
+            with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
+            bin_str = f'bin == 0b{with_underscores}'
+            u_str = f'u{length} == {self.parse("u"):_}'
+            i_str = f'i{length} == {self.parse("i"):_}'
+        if length in [16, 32, 64]:
+            f_str = f'f{length} == {self.parse("f")}'
+        interpretations = [x for x in [hex_str, bin_str, u_str, i_str, f_str] if x != '']
+        if not interpretations:
+            # First we do as much as we can in hex
+            # then add on 1, 2 or 3 bits on at the end
+            bits_at_end = length % 4
+            t = self[0:length - bits_at_end].parse('hex')
+            hex_with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
+            bin_at_end = self[length - bits_at_end:].parse('bin')
+            return f'0x{hex_with_underscores}, 0b{bin_at_end}'
+        return '\n'.join(interpretations)
 
     def _repr(self, classname: str, length: int):
         if length == 0:
-            return f"{classname}()"
-        s = self.__str__()
-        lengthstring = ''
-        if s.endswith('...'):
-            lengthstring = f'  # length={length}'
-        return f"{classname}.fromstring('{s}'){lengthstring}"
+            s = ''
+        if length % 4 == 0:
+            s = '0x' + self.parse('hex')
+        else:
+            s = '0b' + self.parse('bin')
+        return f"{classname}('{s}')"
 
     def __repr__(self) -> str:
         """Return representation that could be used to recreate the bitstring.
@@ -323,7 +340,7 @@ class Bits:
         return len(self) != 0
 
     def _setauto_no_length_or_offset(self, s: BitsType, /) -> None:
-        """Set bitstring from a bitstring, file, bool, array, iterable or string."""
+        """Set Bits from a Bits, bytes, iterable or string."""
         if isinstance(s, str):
             self._bitstore = bitstore_helpers.str_to_bitstore(s)
         elif isinstance(s, Bits):
@@ -869,7 +886,7 @@ class Bits:
                  output_stream, 1)
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = " + str(self[-trailing_bit_length:]))
+            output_stream.write(" + trailing_bits = 0b" + self[-trailing_bit_length:].parse('bin'))
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return
