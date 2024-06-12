@@ -165,9 +165,6 @@ class BitStore:
         s_copy._bitarray = copy.copy(self._bitarray)
         return s_copy
 
-    def copy(self) -> BitStore:
-        return self
-
     def __getitem__(self, item: Union[int, slice], /) -> Union[int, BitStore]:
         # Use getindex or getslice instead
         raise NotImplementedError
@@ -201,6 +198,3 @@ class BitStore:
             self._bitarray.__setitem__(key, value._bitarray)
         else:
             self._bitarray.__setitem__(key, value)
-
-    def delitem(self, key, /):
-        self._bitarray.__delitem__(key)

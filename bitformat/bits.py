@@ -4,7 +4,6 @@ import numbers
 import sys
 import struct
 import io
-import re
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
@@ -111,10 +110,8 @@ class Bits:
         b = super().__new__(cls)
         if isinstance(auto, str):
             b._bitstore = bitstore_helpers.str_to_bitstore(auto)
-        elif isinstance(auto, Bits):
-            b._bitstore = auto._bitstore.copy()
         elif isinstance(auto, (bytes, bytearray, memoryview)):
-            b._bitstore = BitStore.frombytes(bytearray(auto))
+            b._bitstore = BitStore.frombytes(bytes(auto))
         elif isinstance(auto, io.BytesIO):
             b._bitstore = BitStore.frombytes(auto.getvalue())
         elif isinstance(auto, abc.Iterable):
@@ -562,59 +559,6 @@ class Bits:
         """Add a bitstring to the RHS of the current bitstring."""
         self._bitstore += bs._bitstore
 
-    def _addleft(self, bs: Bits, /) -> None:
-        """Prepend a bitstring to the current bitstring."""
-        if bs._bitstore.immutable:
-            self._bitstore = bs._bitstore._copy() + self._bitstore
-        else:
-            self._bitstore = bs._bitstore + self._bitstore
-
-    def _truncateleft(self: TBits, bits: int, /) -> TBits:
-        """Truncate bits from the start of the bitstring. Return the truncated bits."""
-        assert 0 <= bits <= len(self)
-        if bits == 0:
-            return self.__class__()
-        truncated_bits = self._absolute_slice(0, bits)
-        if bits == len(self):
-            self._clear()
-            return truncated_bits
-        self._bitstore = self._bitstore.getslice_msb0(bits, None)
-        return truncated_bits
-
-    def _truncateright(self: TBits, bits: int, /) -> TBits:
-        """Truncate bits from the end of the bitstring. Return the truncated bits."""
-        assert 0 <= bits <= len(self)
-        if bits == 0:
-            return self.__class__()
-        truncated_bits = self._absolute_slice(len(self) - bits, len(self))
-        if bits == len(self):
-            self._clear()
-            return truncated_bits
-        self._bitstore = self._bitstore.getslice_msb0(None, -bits)
-        return truncated_bits
-
-    def _insert(self, bs: Bits, pos: int, /) -> None:
-        """Insert bs at pos."""
-        assert 0 <= pos <= len(self)
-        self._bitstore[pos: pos] = bs._bitstore
-        return
-
-    def _overwrite(self, bs: Bits, pos: int, /) -> None:
-        """Overwrite with bs at pos."""
-        assert 0 <= pos <= len(self)
-        if bs is self:
-            # Just overwriting with self, so do nothing.
-            assert pos == 0
-            return
-        self._bitstore[pos: pos + len(bs)] = bs._bitstore
-
-    def _delete(self, bits: int, pos: int, /) -> None:
-        """Delete bits at pos."""
-        assert 0 <= pos <= len(self)
-        assert pos + bits <= len(self), f"pos={pos}, bits={bits}, len={len(self)}"
-        del self._bitstore[pos: pos + bits]
-        return
-
     def _reversebytes(self, start: int, end: int) -> None:
         """Reverse bytes in-place."""
         assert (end - start) % 8 == 0
@@ -629,20 +573,6 @@ class Bits:
     def _invert_all(self) -> None:
         """Invert every bit."""
         self._bitstore.invert()
-
-    def _ilshift(self: TBits, n: int, /) -> TBits:
-        """Shift bits by n to the left in place. Return self."""
-        assert 0 < n <= len(self)
-        self._addright(Bits(n))
-        self._truncateleft(n)
-        return self
-
-    def _irshift(self: TBits, n: int, /) -> TBits:
-        """Shift bits by n to the right in place. Return self."""
-        assert 0 < n <= len(self)
-        self._addleft(Bits(n))
-        self._truncateright(n)
-        return self
 
     def _imul(self: TBits, n: int, /) -> TBits:
         """Concatenate n copies of self in place. Return self."""
