@@ -92,9 +92,9 @@ It represents a well-defined amount of binary data with a single data type.
 Additional methods
 ^^^^^^^^^^^^^^^^^^
 
-* :meth:`~Field.frombits`: Construct from ``bytes``, ``bytearray``, a ``Bits`` object or a string that can be used to construct a `Bits` object.
-* :meth:`~Field.frombytes`: Construct from a ``bytes`` or ``bytearray`` object.
-* :meth:`~Field.fromstring`: Construct from a formatted string to set the `dtype`, `name`, `value` and `const` parameters.
+* :meth:`~Field.from_bits`: Construct from ``bytes``, ``bytearray``, a ``Bits`` object or a string that can be used to construct a `Bits` object.
+* :meth:`~Field.from_bytes`: Construct from a ``bytes`` or ``bytearray`` object.
+* :meth:`~Field.from_string`: Construct from a formatted string to set the `dtype`, `name`, `value` and `const` parameters.
 
 Additional properties
 ^^^^^^^^^^^^^^^^^^^^^
@@ -116,7 +116,7 @@ The dtype must have a fixed length to be used in a `FieldArray`.
 Additional methods
 ^^^^^^^^^^^^^^^^^^
 
-* :meth:`~Field.fromstring`: Construct from a formatted string to set the `dtype`, `items`, `name`, `value` and `const` parameters.
+* :meth:`~Field.from_string`: Construct from a formatted string to set the `dtype`, `items`, `name`, `value` and `const` parameters.
 
 Additional properties
 ^^^^^^^^^^^^^^^^^^^^^

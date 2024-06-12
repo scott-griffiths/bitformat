@@ -80,7 +80,7 @@ class TestByteAligned:
 
     def test_not_byte_aligned(self):
         a = Bits.fromstring('0x00 ff 0f f')
-        li = list(a.find_all('0xff'))
+        li = list(a.findall('0xff'))
         assert li == [8, 20]
         p = a.find('0x0f')[0]
         assert p == 4
@@ -92,7 +92,7 @@ class TestByteAligned:
     def test_byte_aligned(self):
         bitformat.options.bytealigned = True
         a = Bits.fromstring('0x00 ff 0f f')
-        li = list(a.find_all('0xff'))
+        li = list(a.findall('0xff'))
         assert li == [8]
         p = a.find('0x0f')[0]
         assert p == 16
@@ -137,7 +137,7 @@ class TestNewProperties:
             _ = b.u
 
     def test_bytes_properties(self):
-        a = Bits.from_bytes(b'hello')
+        a = Bits.frombytes(b'hello')
         assert a.bytes == b'hello'
 
     def test_conversion_to_bytes(self):
@@ -260,5 +260,5 @@ class TestNumpy:
 def test_bytes_from_list():
     s = Bits.build('bytes', [1, 2])
     assert s == '0x0102'
-    s = Bits.from_bytes(bytearray([1, 2]))
+    s = Bits.frombytes(bytearray([1, 2]))
     assert s == '0x0102'

@@ -9,7 +9,8 @@ from bitformat.bits import Bits, BitsType
 from bitformat.dtypes import Dtype, dtype_register
 from bitformat import utils
 from .bitstore import BitStore
-from bitformat.bitstring_options import Options, Colour
+from bitformat.bitformat_options import Options
+from bitformat.common import Colour
 import copy
 import operator
 import sys
@@ -75,7 +76,7 @@ class Array:
         elif isinstance(initializer, Bits):
             self._data = initializer._bitstore._copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
-            self._data = BitStore.frombytes(initializer)
+            self._data = BitStore.from_bytes(initializer)
         elif initializer is not None:
             self.extend(initializer)
         if trailing_bits is not None:

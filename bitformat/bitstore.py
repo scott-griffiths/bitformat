@@ -32,7 +32,7 @@ class BitStore:
         return x
 
     @classmethod
-    def frombytes(cls, b: Union[bytes, bytearray, memoryview], /) -> BitStore:
+    def from_bytes(cls, b: Union[bytes, bytearray, memoryview], /) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray()
         x._bitarray.frombytes(b)

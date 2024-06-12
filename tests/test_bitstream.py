@@ -55,7 +55,7 @@ class TestFind:
         assert s.find('0b000', start=2) == (6,)
 
     def test_find_bytes(self):
-        s = Bits.fromstring('0x010203040102ff')
+        s = Bits.from_string('0x010203040102ff')
         assert s.find('0x05', bytealigned=True) == ()
         assert s.find('0x02', bytealigned=True) == (8,)
         assert s.find('0x02', start=16, bytealigned=True) == (40,)
@@ -131,7 +131,7 @@ class TestRfind:
 
 class TestShift:
     def test_shift_left(self):
-        s = Bits.fromstring('0b1010')
+        s = Bits.from_string('0b1010')
         t = s << 1
         assert s.bin == '1010'
         assert t.bin == '0100'
@@ -203,9 +203,9 @@ class TestReplace:
         assert a.hex == 'fff23ef3234'
 
     def test_replace5(self):
-        a = Bits.fromstring('0xab')
-        b = Bits.fromstring('0xcd')
-        c = Bits.fromstring('0xabef')
+        a = Bits.from_string('0xab')
+        b = Bits.from_string('0xcd')
+        c = Bits.from_string('0xabef')
         c = c.replace(a, b)
         assert c == '0xcdef'
         assert a == '0xab'
@@ -1282,7 +1282,7 @@ class TestMoreMisc:
 
     def test_float_init_strings(self):
         for s in ('5', '+0.0001', '-1e101', '4.', '.2', '-.65', '43.21E+32'):
-            a = Bits.fromstring(f'float64={s}')
+            a = Bits.from_string(f'float64={s}')
             assert a.float == float(s)
         for s in ('5', '+0.5', '-1e2', '4.', '.25', '-.75'):
             a = Bits.build('f16', s)
@@ -1337,7 +1337,7 @@ class TestMoreMisc:
         a = Bits.zeros(1)
         assert a == '0b0'
         a = Bits.zeros(1007)
-        assert a == Bits.fromstring('u1007 = 0')
+        assert a == Bits.from_string('u1007 = 0')
         with pytest.raises(bitformat.CreationError):
             _ = Bits.zeros(-1)
         with pytest.raises(TypeError):

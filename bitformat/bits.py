@@ -10,7 +10,7 @@ import bitformat
 from .bitstore import BitStore
 from bitformat import bitstore_helpers, utils
 from bitformat.dtypes import Dtype, dtype_register
-from bitformat.bitstring_options import Colour
+from bitformat.common import colour
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
@@ -28,8 +28,8 @@ class Bits:
     To construct use a builder method:
 
     * ``Bits.build(dtype, value)`` - Combine a data type with a value.
-    * ``Bits.fromstring(s)`` - Use a formatted string.
-    * ``Bits.frombytes(b)`` - Directly from a ``bytes`` object.
+    * ``Bits.from_string(s)`` - Use a formatted string.
+    * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
     * ``Bits.zeros(n)`` - Initialise with zero bits.
     * ``Bits.ones(n)`` - Initialise with one bits.
     * ``Bits.join(iterable)`` - Concatenate from an iterable such as a list.
@@ -62,7 +62,7 @@ class Bits:
         return d.build(value)
 
     @classmethod
-    def fromstring(cls, s: str, /) -> TBits:
+    def from_string(cls, s: str, /) -> TBits:
         """Create a new Bits from a formatted string."""
         x = super().__new__(cls)
         x._bitstore = bitstore_helpers.str_to_bitstore(s)
@@ -71,7 +71,7 @@ class Bits:
     @classmethod
     def from_bytes(cls, b: bytes, /) -> TBits:
         x = super().__new__(cls)
-        x._bitstore = BitStore.frombytes(b)
+        x._bitstore = BitStore.from_bytes(b)
         return x
 
     @classmethod
@@ -111,9 +111,9 @@ class Bits:
         if isinstance(auto, str):
             b._bitstore = bitstore_helpers.str_to_bitstore(auto)
         elif isinstance(auto, (bytes, bytearray, memoryview)):
-            b._bitstore = BitStore.frombytes(bytes(auto))
+            b._bitstore = BitStore.from_bytes(bytes(auto))
         elif isinstance(auto, io.BytesIO):
-            b._bitstore = BitStore.frombytes(auto.getvalue())
+            b._bitstore = BitStore.from_bytes(auto.getvalue())
         elif isinstance(auto, abc.Iterable):
             # Evaluate each item as True or False and set bits to 1 or 0.
             b._setbin_unsafe(''.join(str(int(bool(x))) for x in auto))
@@ -427,7 +427,7 @@ class Bits:
 
     def _setbytes(self, data: Union[bytearray, bytes, list], length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
-        self._bitstore = BitStore.frombytes(bytes(data))
+        self._bitstore = BitStore.from_bytes(bytes(data))
 
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
@@ -562,7 +562,7 @@ class Bits:
     def _reversebytes(self, start: int, end: int) -> None:
         """Reverse bytes in-place."""
         assert (end - start) % 8 == 0
-        reversed_bytes = BitStore.frombytes(self._bitstore.getslice(start, end).tobytes()[::-1])
+        reversed_bytes = BitStore.from_bytes(self._bitstore.getslice(start, end).tobytes()[::-1])
         self._bitstore = self._bitstore.getslice(0, start) + reversed_bytes + self._bitstore.getslice(end, None)
 
     def _invert(self, pos: int, /) -> None:
@@ -617,7 +617,7 @@ class Bits:
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
 
-        >>> Bits.fromstring('0xc3e').find('0b1111')
+        >>> Bits.from_string('0xc3e').find('0b1111')
         (6,)
 
         """
@@ -851,7 +851,6 @@ class Bits:
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
-        colour = Colour(not bitformat.options.no_color)
         name1 = dtype1.name
         name2 = dtype2.name if dtype2 is not None else None
         if dtype1.variable_length:
@@ -963,7 +962,6 @@ class Bits:
         >>> s.pp('bin, hex', sep='_', show_offset=False)
 
         """
-        colour = Colour(not bitformat.options.no_color)
         if fmt is None:
             fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
         token_list = utils.preprocess_tokens(fmt)

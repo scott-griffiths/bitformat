@@ -90,7 +90,7 @@ def float2bitstore(f: Union[str, float], length: int) -> BitStore:
     except OverflowError:
         # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
         b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
-    return BitStore.frombytes(b)
+    return BitStore.from_bytes(b)
 
 
 literal_bit_funcs: Dict[str, Callable[..., BitStore]] = {

@@ -21,9 +21,9 @@ class Format(FieldType):
             if isinstance(fieldtype, str):
                 # TODO: This is inefficient, parsing the string twice.
                 try:
-                    fieldtype = FieldArray.fromstring(fieldtype)
+                    fieldtype = FieldArray.from_string(fieldtype)
                 except ValueError:
-                    fieldtype = Field.fromstring(fieldtype)
+                    fieldtype = Field.from_string(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
@@ -146,9 +146,9 @@ class Repeat(FieldType):
         self._bits = None
         self.count, self.count_expression = _perhaps_convert_to_expression(count)
         if isinstance(fieldtype, str):
-            self.fieldtype = Field.fromstring(fieldtype)
+            self.fieldtype = Field.from_string(fieldtype)
         elif isinstance(fieldtype, Bits):
-            self.fieldtype = Field.frombits(fieldtype)
+            self.fieldtype = Field.from_bits(fieldtype)
         elif isinstance(fieldtype, Dtype):
             self.fieldtype = Field(fieldtype)
         elif isinstance(fieldtype, Sequence):

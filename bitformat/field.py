@@ -230,7 +230,7 @@ class Field(SingleDtypeField):
         self.value, self.value_expression = _perhaps_convert_to_expression(value)
 
     @classmethod
-    def fromstring(cls, s: str, /):
+    def from_string(cls, s: str, /):
         dtype, name, value, items, const = cls._parse_field_str(s)
         if items is not None:
             raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
@@ -239,7 +239,7 @@ class Field(SingleDtypeField):
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits.fromstring(dtype)
+                bits = Bits.from_string(dtype)
                 const = True  # If it's a bit literal, then set it to const.
                 return cls(Dtype('bits'), name, bits, const)
         else:
@@ -247,11 +247,11 @@ class Field(SingleDtypeField):
         return cls(dtype, name, value, const)
 
     @classmethod
-    def frombits(cls, b: Bits, /, name: str = ''):
+    def from_bits(cls, b: Bits, /, name: str = ''):
         return cls(Dtype('bits'), name, b, const=True)
 
     @classmethod
-    def frombytes(cls, b: bytes | bytearray, /, name: str = ''):
+    def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
         return cls(Dtype('bytes'), name, b, const=True)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
@@ -283,7 +283,7 @@ class Field(SingleDtypeField):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.fromstring('{self.__str__()}')"
+        return f"{self.__class__.__name__}.from_string('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
@@ -303,7 +303,7 @@ class FieldArray(SingleDtypeField):
         self.value, self.value_expression = _perhaps_convert_to_expression(value)
 
     @classmethod
-    def fromstring(cls, s: str, /):
+    def from_string(cls, s: str, /):
         dtype, name, value, items, const = cls._parse_field_str(s)
         if items is None:
             raise ValueError(f"Field string '{s}' is not a FieldArray, but a Field.")
@@ -312,7 +312,7 @@ class FieldArray(SingleDtypeField):
             try:
                 dtype = Dtype(dtype)
             except ValueError:
-                bits = Bits.fromstring(dtype)
+                bits = Bits.from_string(dtype)
                 return cls(Dtype('bits'), items, name, bits, const)
         return cls(dtype, items, name, value, const)
 
@@ -366,7 +366,7 @@ class FieldArray(SingleDtypeField):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.fromstring('{self.__str__()}')"
+        return f"{self.__class__.__name__}.from_string('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         if self.dtype != other.dtype:
@@ -387,7 +387,7 @@ class Find(FieldType):
 
     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
         super().__init__()
-        self.bits_to_find = Bits.fromstring(bits)
+        self.bits_to_find = Bits.from_string(bits)
         self.bytealigned = bytealigned
         self.name = name
         self._value = None

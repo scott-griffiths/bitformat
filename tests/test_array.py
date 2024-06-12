@@ -43,9 +43,9 @@ class TestCreation:
         assert a[3] == '44'
 
     def test_creation_from_bits_format(self):
-        a = Bits.fromstring('0x000102030405')
+        a = Bits.from_string('0x000102030405')
         b = Array('bits8', a)
-        c = Array('bits8', [Bits.fromstring('0x00'), '0x01', '0x02', '0x03', '0x04', '0x05'])
+        c = Array('bits8', [Bits.from_string('0x00'), '0x01', '0x02', '0x03', '0x04', '0x05'])
         assert b.equals(c)
 
     # def test_creation_from_float8(self):
@@ -204,7 +204,7 @@ class TestArrayMethods:
     def test_equals_with_trailing_bits(self):
         a = Array('hex4', ['a', 'b', 'c', 'd', 'e', 'f'])
         c = Array('hex4')
-        c.data = Bits.fromstring('0xabcdef, 0b11')
+        c.data = Bits.from_string('0xabcdef, 0b11')
         assert a.tolist() == c.tolist()
         assert a != c
         a.data += '0b11'
@@ -230,7 +230,7 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             b[0] = 12
         with pytest.raises(ValueError):
-            b[0] = Bits.fromstring('0xfff')
+            b[0] = Bits.from_string('0xfff')
         b[0] = 'fff'
         assert b.data.hex == 'fff345'
 
@@ -631,7 +631,7 @@ class TestArrayOperations:
 
     def test_rshift(self):
         a = Array(dtype='u8')
-        a.data = Bits.fromstring('0x00010206')
+        a.data = Bits.from_string('0x00010206')
         b = a >> 1
         assert a.tolist() == [0, 1, 2, 6]
         assert b.tolist() == [0, 0, 1, 3]
@@ -689,7 +689,7 @@ class TestCreationFromBits:
         a = Array('bits8')
         a.append('0xff')
         assert len(a) == 1
-        assert a[0] == Bits.fromstring('0xff')
+        assert a[0] == Bits.from_string('0xff')
         with pytest.raises(TypeError):
             a += 8
         a.append(Bits.zeros(8))
@@ -862,7 +862,7 @@ class TestMisc:
         assert b.data == b'\x00'*5
 
     def test_bytes_trailing_bits(self):
-        b = Bits.fromstring('0x000000, 0b111')
+        b = Bits.from_string('0x000000, 0b111')
         a = Array('bytes1', b)
         assert a.trailing_bits == '0b111'
 

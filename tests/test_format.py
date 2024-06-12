@@ -38,18 +38,18 @@ class TestCreation:
     def test_building_field(self, name):
         f = Field(name)
         b = f.build([0])
-        assert b == Bits.fromstring(f'{name}=0')
+        assert b == Bits.from_string(f'{name}=0')
 
     def test_create_from_bits(self):
-        b = Bits.fromstring('0xabc')
-        f = Format([Field.frombits(b)])
+        b = Bits.from_string('0xabc')
+        f = Format([Field.from_bits(b)])
         x = f.build([])
         assert f.name == ''
         assert x == '0xabc'
         assert isinstance(x, Bits)
 
     def test_create_from_bits_with_name(self):
-        f = Format([Field.frombits('0xabc', 'some_bits')])
+        f = Format([Field.from_bits('0xabc', 'some_bits')])
         x = f.build([])
         assert x, '0xabc'
 
@@ -67,13 +67,13 @@ class TestCreation:
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
         f2 = Format([f, 'bytes5'], 'main')
         f3 = f2.build([352, b'12345'])
-        assert f3 == Bits.fromstring('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
+        assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
         header = Format(['0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
         main = Format(['0b1', 'v1:i7', 'v2:i9'], 'main')
         f = Format([header, main, '0x47'], 'all')
-        b = Bits.fromstring('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
+        b = Bits.from_string('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
         f.parse(b)
         t = f['header']
         assert t['width'].value == 100
@@ -93,9 +93,9 @@ class TestAddition:
 
     def test_adding_bits(self):
         f = Format()
-        f += Field.frombits('0xff')
+        f += Field.from_bits('0xff')
         assert f.tobytes() == b'\xff'
-        f += Field.fromstring('penguin:i9 =-8')
+        f += Field.from_string('penguin:i9 =-8')
         x = f['penguin']
         assert x.value == -8
         f['penguin'].value += 6
@@ -136,7 +136,7 @@ class TestArray:
 
 def test_example_from_docs():
     f = Format(['x: u8', 'y: u{x}'])
-    b = Bits.fromstring('u8=10, u10=987')
+    b = Bits.from_string('u8=10, u10=987')
     f.parse(b)
     assert f['y'].value == 987
 
@@ -160,7 +160,7 @@ def test_creating_with_keyword_value():
 
 def test_items():
     f = Format(['q:i5', '[u3; {q + 1}]'])
-    b = Bits.fromstring('i5=1, u3=2, u3=0')
+    b = Bits.from_string('i5=1, u3=2, u3=0')
     f.parse(b)
     assert f[0].value == 1
     assert f[1].value == [2, 0]
@@ -169,7 +169,7 @@ def test_items():
     assert b2 == b
     f.clear()
     b3 = f.build([3, [1, 2, 3, 4]])
-    assert b3 == Bits.fromstring('i5=3, u3=1, u3=2, u3=3, u3=4')
+    assert b3 == Bits.from_string('i5=3, u3=1, u3=2, u3=3, u3=4')
 
 
 class TestMethods:
@@ -278,8 +278,8 @@ def test_repeat_with_dtype():
 
 def test_field_array_str():
     with pytest.raises(ValueError):
-        _ = FieldArray.fromstring('test   :  f32 = 0.25  ')
-    f = FieldArray.fromstring('test: [f32 ; 3]')
+        _ = FieldArray.from_string('test   :  f32 = 0.25  ')
+    f = FieldArray.from_string('test: [f32 ; 3]')
     assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():

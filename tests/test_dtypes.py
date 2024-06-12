@@ -92,7 +92,7 @@ class TestCreatingNewDtypes:
 
     def test_new_alias(self):
         dtype_register.add_dtype_alias('bin', 'cat')
-        a = Bits.fromstring('0b110110')
+        a = Bits.from_string('0b110110')
         assert a.cat == '110110'
         a = Bits.build('cat', '11110000')
         assert a.cat == '11110000'
@@ -100,7 +100,7 @@ class TestCreatingNewDtypes:
     def test_new_type(self):
         md = DtypeDefinition('uint_r', Bits._setuint, Bits._getuint)
         dtype_register.add_dtype(md)
-        a = Bits.fromstring('0xf')
+        a = Bits.from_string('0xf')
         assert a.uint_r == 15
         a = Bits.build('uint_r4',  1)
         assert a == '0x1'
@@ -112,7 +112,7 @@ class TestCreatingNewDtypes:
             return bs.count(1)
         md = DtypeDefinition('counter', None, get_fn)
         dtype_register.add_dtype(md)
-        a = Bits.fromstring('0x010f')
+        a = Bits.from_string('0x010f')
         assert a.counter == 5
         with pytest.raises(AttributeError):
             a.counter = 4

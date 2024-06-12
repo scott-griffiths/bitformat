@@ -35,11 +35,9 @@ from .field import Field, FieldArray
 from .format import Format, Repeat
 from .bits import Bits
 from .dtypes import DtypeDefinition, dtype_register, Dtype
-from .bits import Bits
-from .bitstring_options import Options
+from .bitformat_options import Options
 from .array_ import Array
 from .exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
-from .dtypes import DtypeDefinition, dtype_register, Dtype
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.

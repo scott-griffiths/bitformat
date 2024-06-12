@@ -88,9 +88,9 @@ The constructor for ``Bits`` itself doesn't take any arguments so you will need 
      - Description
    * - ``Bits.build(dtype, value)``
      - Combine a data type with a value.
-   * - ``Bits.fromstring(s)``
+   * - ``Bits.from_string(s)``
      - Use a formatted string.
-   * - ``Bits.frombytes(b)``
+   * - ``Bits.from_bytes(b)``
      - Directly from a ``bytes`` object.
    * - ``Bits.zeros(n)``
      - Initialise with zero bits.
@@ -112,20 +112,20 @@ For example::
 The first parameter of ``build`` is the data type, which can be either a ``Dtype`` or a string that can be used to create one.
 The second parameter is a value that makes sense for that data type, which could be a binary string, a floating point number, an integer etc. depending on the ``Dtype``.
 
-Another way to create a ``Bits`` instance is to use the ``fromstring`` class method.
+Another way to create a ``Bits`` instance is to use the ``from_string`` class method.
 This lets you give both the data type and value in a single string. ::
 
-    a = Bits.fromstring('0b110')
-    b = Bits.fromstring('0xabcde')
-    c = Bits.fromstring('bytes=hello!!!')
-    d = Bits.fromstring('f32=13.5')
-    e = Bits.fromstring('i7=-31')
+    a = Bits.from_string('0b110')
+    b = Bits.from_string('0xabcde')
+    c = Bits.from_string('bytes=hello!!!')
+    d = Bits.from_string('f32=13.5')
+    e = Bits.from_string('i7=-31')
 
 Note that the binary and hexadecimal examples have missed out the `'bin='` or `'hex='` parts, but as the strings start with `'0b'` for binary and `'0x'` for hexadecimal the string parser can work out what is meant.
 
-You can also initialise directly from a ``bytes`` object with the ``frombytes`` class method::
+You can also initialise directly from a ``bytes`` object with the ``from_bytes`` class method::
 
-    c = Bits.frombytes(b'hello!!!')
+    c = Bits.from_bytes(b'hello!!!')
 
 
 The companion to the ``Bits.build`` class method is the ``parse`` method.
@@ -275,13 +275,13 @@ It represents a well-defined amount of binary data with a single data type.
     You can declare that a field is a constant bit literal by setting `const` to `True` - this means that it won't need its value set when building, and will require its value present when parsing.
     You can only set `const` to `True` when creating a field if you also provide a value.
 
-    .. classmethod:: frombits(bits: Bits | str | bytes | bytearray) -> Field
+    .. classmethod:: from_bits(bits: Bits | str | bytes | bytearray) -> Field
 
         For convenience you can also construct either a `Bits` object, a ``bytes`` or ``bytearray``, or a string that can be used to construct a `Bits` object (e.g. ``'0x47'``).
         This will will cause the `dtype` to be set to ``Dtype('bits')`` and the `value` to be set to the `Bits` object.
         Setting a bit literal in this way will cause the `const` parameter to default to `True`.
 
-    .. classmethod:: fromstring(s: str, /)
+    .. classmethod:: from_string(s: str, /)
 
         Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value` and `const` parameters - see :ref:`Field strings` below.
 
@@ -312,7 +312,7 @@ So instead of ::
 
 use ::
 
-    a = Field.fromstring('[bool; 80]')
+    a = Field.from_string('[bool; 80]')
 
 If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
 If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
@@ -335,10 +335,10 @@ or ::
 
 You can also use the ``const`` keyword after the optional name, which will mean that the `Field` has a set value.
 
-For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.fromstring('width: u12 = 100')``.
+For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.from_string('width: u12 = 100')``.
 The whitespace between the elements is optional.
 
-An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.fromstring('sequence_header: bits32 = 0x000001b3')``.
+An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.from_string('sequence_header: bits32 = 0x000001b3')``.
 
 This becomes more useful when the field is part of a larger structure, and the string can be used on its own to specify the field, for example::
 
@@ -379,7 +379,7 @@ So instead of ::
 
 use ::
 
-    r = Field.fromstring('float64 * 10')  # Creates a single field with an array of ten float64
+    r = Field.from_string('float64 * 10')  # Creates a single field with an array of ten float64
 
 For simple repetition of a field of a known length the `FieldArray` class will be more efficient and easier to use.
 

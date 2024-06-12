@@ -51,7 +51,7 @@ class TestCreation:
     def test_creation_from_bin(self):
         s = Bits.build('bin', '1010000011111111')
         assert (len(s), s.parse('hex')) == (16, 'a0ff')
-        s = Bits.fromstring('0b00')[:1]
+        s = Bits.from_string('0b00')[:1]
         assert s.parse('bin') == '0'
         s = Bits.build('bin', ' 0000 \n 0001\r ')
         assert s.parse('bin') == '00000001'
@@ -77,7 +77,7 @@ class TestCreation:
         assert s.parse('bin') == '01'
         s = Bits.build('i11', -1)
         assert s.bin == '11111111111'
-        s = Bits.fromstring('i12=7')
+        s = Bits.from_string('i12=7')
         assert s.int == 7
         s = Bits.build(Dtype('i108'), -243)
         assert (s.parse('i'), len(s)) == (-243, 108)
@@ -94,7 +94,7 @@ class TestCreation:
     def test_creation_from_bool(self):
         a = Bits.build('bool', 1)
         assert a == 'bool=1'
-        b = Bits.fromstring('bool1=0')
+        b = Bits.from_string('bool1=0')
         assert b == [0]
 
     def test_creation_from_bool_errors(self):
@@ -121,14 +121,14 @@ class TestInitialisation:
         assert a == ''
 
     def test_find(self):
-        a = Bits.fromstring('0xabcd')
+        a = Bits.from_string('0xabcd')
         r = a.find('0xbc')
         assert r[0] == 4
         r = a.find('0x23462346246', bytealigned=True)
         assert not r
 
     def test_rfind(self):
-        a = Bits.fromstring('0b11101010010010')
+        a = Bits.from_string('0b11101010010010')
         b = a.rfind('0b010')
         assert b[0] == 11
 
@@ -163,16 +163,16 @@ def test_unorderable():
 class TestPadToken:
 
     def test_creation(self):
-        a = Bits.fromstring('pad10')
+        a = Bits.from_string('pad10')
         assert a == Bits.build('bin','0b0000000000')
-        b = Bits.fromstring('pad0')
+        b = Bits.from_string('pad0')
         assert b == Bits()
-        c = Bits.fromstring('0b11, pad1, 0b111')
+        c = Bits.from_string('0b11, pad1, 0b111')
         assert c == '0b110111'
 
     @pytest.mark.skip
     def test_unpack(self):
-        s = Bits.fromstring('0b111000111')
+        s = Bits.from_string('0b111000111')
         x, y = s.parse('bits3, pad3, bits3')
         assert (x, y.parse('u')) == ('0b111', 7)
         x, y = s.parse('bits2, pad2, bin5')
@@ -182,8 +182,8 @@ class TestPadToken:
 
 
 def test_adding():
-    a = Bits.fromstring('0b0')
-    b = Bits.fromstring('0b11')
+    a = Bits.from_string('0b0')
+    b = Bits.from_string('0b11')
     c = a + b
     assert c == '0b011'
     assert a == '0b0'
@@ -193,19 +193,19 @@ def test_adding():
 class TestContainsBug:
 
     def test_contains(self):
-        a = Bits.fromstring('0b1, 0x0001dead0001')
+        a = Bits.from_string('0b1, 0x0001dead0001')
         assert '0xdead' in a
         assert not '0xfeed' in a
 
-        assert '0b1' in Bits.fromstring('0xf')
-        assert not '0b0' in Bits.fromstring('0xf')
+        assert '0b1' in Bits.from_string('0xf')
+        assert not '0b0' in Bits.from_string('0xf')
 
 
 class TestUnderscoresInLiterals:
     def test_hex_creation(self):
         a = Bits.build('hex', 'ab_cd__ef')
         assert a.parse('hex') == 'abcdef'
-        b = Bits.fromstring('0x0102_0304')
+        b = Bits.from_string('0x0102_0304')
         assert b.parse('u') == 0x0102_0304
 
     def test_binary_creation(self):
@@ -220,14 +220,14 @@ class TestUnderscoresInLiterals:
     def test_octal_creation(self):
         a = Bits.build('oct', '0011_2233_4455_6677')
         assert a.parse('uint') == 0o001122334455_6677
-        b = Bits.fromstring('0o123_321_123_321')
+        b = Bits.from_string('0o123_321_123_321')
         assert b.parse('u') == 0o123_321_123321
 
 
 class TestPrettyPrinting:
 
     def test_simplest_cases(self):
-        a = Bits.fromstring('0b101011110000')
+        a = Bits.from_string('0b101011110000')
         s = io.StringIO()
         a.pp(stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin', length=12 bits> [
@@ -261,7 +261,7 @@ class TestPrettyPrinting:
 """
 
     def test_separator(self):
-        a = Bits.fromstring('0x0f0f'*9)
+        a = Bits.from_string('0x0f0f'*9)
         s = io.StringIO()
         a.pp('hex32', sep='!-!', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex32', length=144 bits> [
@@ -280,7 +280,7 @@ class TestPrettyPrinting:
 """
 
     def test_multiformat(self):
-        a = Bits.fromstring('0b1111000011110000')
+        a = Bits.from_string('0b1111000011110000')
         s = io.StringIO()
         a.pp(stream=s, fmt='bin, hex')
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin, hex', length=16 bits> [
@@ -362,7 +362,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
         s = io.StringIO()
-        a = Bits.fromstring('u48 = 10')
+        a = Bits.from_string('u48 = 10')
         a.pp(stream=s, width=20, fmt='hex0, oct0', show_offset=False)
         expected_output = """<Bits, fmt='hex0, oct0', length=48 bits> [
 000000 : 00000000
@@ -372,7 +372,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
     def test_oct(self):
-        a = Bits.fromstring('0o01234567'*20)
+        a = Bits.from_string('0o01234567'*20)
         s = io.StringIO()
         a.pp(stream=s, fmt='oct', show_offset=False, width=20)
         expected_output = """<Bits, fmt='oct', length=480 bits> [
@@ -440,7 +440,7 @@ oworld!!helloworld!!
         assert remove_unprintable(s.getvalue()) == expected_output
 
     def test_bool(self):
-        a = Bits.fromstring('0b1100')
+        a = Bits.from_string('0b1100')
         s = io.StringIO()
         a.pp(stream=s, fmt='bool', show_offset=False, width=20)
         expected_output = """<Bits, fmt='bool', length=4 bits> [
@@ -453,7 +453,7 @@ oworld!!helloworld!!
 class TestPrettyPrintingErrors:
 
     def test_wrong_formats(self):
-        a = Bits.fromstring('0x12341234')
+        a = Bits.from_string('0x12341234')
         with pytest.raises(ValueError):
             a.pp('binary')
         with pytest.raises(ValueError):
@@ -472,7 +472,7 @@ class TestPrettyPrintingErrors:
 class TestPrettyPrinting_NewFormats:
 
     def test_float(self):
-        a = Bits.fromstring('float32=10.5')
+        a = Bits.from_string('float32=10.5')
         s = io.StringIO()
         a.pp('float32', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='float32', length=32 bits> [
