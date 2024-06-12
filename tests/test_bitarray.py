@@ -2,8 +2,6 @@
 
 import pytest
 import sys
-import os
-import bitarray
 import bitformat
 from bitformat import Bits, Dtype
 
@@ -31,7 +29,7 @@ class TestAll:
         s = Bits.fromstring('0o123')
         assert s.oct == '123'
 
-@pytest.mark.skip(reason='not implemented')
+
 class TestNoPosAttribute:
     def test_replace(self):
         s = Bits.fromstring('0b01')
@@ -77,7 +75,7 @@ class TestNoPosAttribute:
         assert s == '0b1000'
         assert t == '0b0100'
 
-@pytest.mark.skip(reason='not implemented')
+
 class TestByteAligned:
 
     def test_not_byte_aligned(self):
@@ -105,7 +103,6 @@ class TestByteAligned:
         bitformat.options.bytealigned = False
 
 
-
 def test_copy_method():
     s = Bits.zeros(9)
     t = s.copy()
@@ -122,7 +119,6 @@ def test_adding():
     assert b == '0b11'
 
 
-
 class TestRepr:
 
     def test_standard_repr(self):
@@ -132,7 +128,6 @@ class TestRepr:
 
 class TestNewProperties:
 
-
     def test_getter_length_errors(self):
         a = Bits.fromstring('0x123')
         with pytest.raises(bitformat.InterpretError):
@@ -140,12 +135,6 @@ class TestNewProperties:
         b = Bits()
         with pytest.raises(bitformat.InterpretError):
             _ = b.u
-
-    @pytest.mark.skip(reason='not implemented')
-    def test_unpack(self):
-        a = Bits.fromstring('0xff160120')
-        b = a.unpack('hex8, [u12; 2]')
-        assert b == ['ff', [352, 288]]
 
     def test_bytes_properties(self):
         a = Bits.frombytes(b'hello')
@@ -244,27 +233,6 @@ class TestBFloats:
         assert ninf32 == Bits.fromstring('f32 = -1e60')
         assert ninf16 == Bits.fromstring('f16 = -100000')
 
-    @pytest.mark.skip
-    def test_big_endian_string_initialisers(self):
-        a = BitArray('bfloatbe=4.5')
-        b = BitArray('bfloatbe:16=-2.25')
-        assert a.bfloatbe == 4.5
-        assert b.bfloatbe == -2.25
-
-    @pytest.mark.skip
-    def test_litte_endian_string_initialisers(self):
-        a = BitArray('bfloatle=4.5')
-        b = BitArray('bfloatle:16=-2.25')
-        assert a.bfloatle == 4.5
-        assert b.bfloatle == -2.25
-
-    @pytest.mark.skip
-    def test_native_endian_string_initialisers(self):
-        a = BitArray('bfloatne=4.5')
-        b = BitArray('bfloatne:16=-2.25')
-        assert a.bfloatne == 4.5
-        assert b.bfloatne == -2.25
-
 
 try:
     import numpy as np
@@ -277,22 +245,15 @@ class TestNumpy:
 
     @pytest.mark.skipif(not numpy_installed, reason="numpy not installed.")
     def test_getting(self):
-        a = BitArray('0b110')
+        a = Bits('0b110')
         p = np.int_(1)
         assert a[p] is True
         p = np.short(0)
         assert a[p] is True
 
     @pytest.mark.skipif(not numpy_installed, reason="numpy not installed.")
-    def test_setting(self):
-        a = BitArray('0b110')
-        p = np.int_(1)
-        a[p] = '0b1111'
-        assert a == '0b111110'
-
-    @pytest.mark.skipif(not numpy_installed, reason="numpy not installed.")
     def test_creation(self):
-        a = BitArray(np.longlong(12))
+        a = Bits.zeros(np.longlong(12))
         assert a.hex == '000'
 
 

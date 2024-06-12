@@ -114,7 +114,7 @@ dtype_definitions = [
                     allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),
     # Other known length types
     DtypeDefinition('bits', Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars,
-                    description="a bitstring object"),
+                    description="a Bits object"),
     DtypeDefinition('bool', Bits._setbool, Bits._getbool, bool, False, bool_bits2chars,
                     allowed_lengths=(1,), description="a bool (True or False)"),
     DtypeDefinition('bytes', Bits._setbytes, Bits._getbytes, bytes, False, bytes_bits2chars,

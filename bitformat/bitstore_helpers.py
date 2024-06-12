@@ -70,11 +70,11 @@ def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
     except OverflowError as e:
         if signed:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise bitformat.CreationError(f"{i} is too large a signed integer for a bitstring of length {length}. "
+                raise bitformat.CreationError(f"{i} is too large a signed integer for a Bits of length {length}. "
                                               f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
         else:
             if i >= (1 << length):
-                raise bitformat.CreationError(f"{i} is too large an unsigned integer for a bitstring of length {length}. "
+                raise bitformat.CreationError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
                                               f"The allowed range is [0, {(1 << length) - 1}].")
             if i < 0:
                 raise bitformat.CreationError("uint cannot be initialised with a negative number.")
@@ -109,9 +109,9 @@ def bitstore_from_token(name: str, token_length: int | None, value: str | None) 
     try:
         d = bitformat.dtypes.Dtype(name, token_length)
     except ValueError as e:
-        raise bitformat.CreationError(f"Can't parse token: {e}")
+        raise bitformat.CreationError(f"Can't parse token: '{e}'")
     if value is None and name != 'pad':
-        raise ValueError(f"Token {name} requires a value.")
+        raise ValueError(f"Token '{name}' requires a value.")
     bs = d.build(value)._bitstore
     if token_length is not None and len(bs) != d.bitlength:
         raise bitformat.CreationError(f"Token with length {token_length} packed with value of length {len(bs)} "

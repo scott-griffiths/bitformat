@@ -8,7 +8,7 @@ class Error(Exception):
 
 
 class ReadError(Error, IndexError):
-    """Reading or peeking past the end of a bitstring."""
+    """Reading or peeking past the end of a Bits."""
 
 
 InterpretError = ValueError
@@ -20,4 +20,4 @@ class ByteAlignError(Error):
 
 
 CreationError = ValueError
-"""Inappropriate argument during bitstring creation."""
+"""Inappropriate argument during Bits creation."""

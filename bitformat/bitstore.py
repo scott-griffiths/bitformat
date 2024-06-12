@@ -6,7 +6,7 @@ from typing import Union, Iterable, Iterator, Any
 
 
 class BitStore:
-    """A light wrapper around bitarray that does the LSB0 stuff"""
+    """A light wrapper around bitarray"""
 
     __slots__ = ('_bitarray',)
 
