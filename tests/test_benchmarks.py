@@ -41,7 +41,7 @@ def test_findall(benchmark):
         i = random.randrange(0, 2 ** 20000000)
         s = bitformat.Bits.build('u20000000', i)
         for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
-            x = len(list(s.findall(ss)))
+            x = len(list(s.find_all(ss)))
         return x
     c = benchmark(finding)
     assert c == 289

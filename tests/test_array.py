@@ -36,7 +36,7 @@ class TestCreation:
 
     def test_creation_from_bytes_explicit(self):
         a = Array('hex8')
-        a.data = Bits.frombytes(b'ABCD')
+        a.data = Bits.from_bytes(b'ABCD')
         assert a[0] == '41'
         assert a[1] == '42'
         assert a[2] == '43'

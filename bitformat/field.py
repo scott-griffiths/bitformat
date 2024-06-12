@@ -27,7 +27,7 @@ class FieldType(abc.ABC):
 
     def parse(self, b: Bits | bytes | bytearray) -> int:
         if isinstance(b, (bytes, bytearray)):
-            b = Bits.frombytes(b)
+            b = Bits.from_bytes(b)
         try:
             return self._parse(b, {})
         except ValueError as e:

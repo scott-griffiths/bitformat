@@ -250,7 +250,7 @@ class TestSimpleConversions:
         assert Bits('0b11110').i == -2
 
     def test_convert_to_hex(self):
-        assert Bits.frombytes(b'\x00\x12\x23\xff').hex == '001223ff'
+        assert Bits.from_bytes(b'\x00\x12\x23\xff').hex == '001223ff'
         s = Bits('0b11111')
         with pytest.raises(bitformat.InterpretError):
             _ = s.hex
@@ -772,24 +772,24 @@ class TestManyDifferentThings:
 
     def test_find_all(self):
         a = Bits('0b11111')
-        p = a.findall('0b1')
+        p = a.find_all('0b1')
         assert list(p) == [0, 1, 2, 3, 4]
-        p = a.findall('0b11')
+        p = a.find_all('0b11')
         assert list(p) == [0, 1, 2, 3]
-        p = a.findall('0b10')
+        p = a.find_all('0b10')
         assert list(p) == []
         a = Bits('0x4733eeff66554747335832434547')
-        p = a.findall('0x47', bytealigned=True)
+        p = a.find_all('0x47', bytealigned=True)
         assert list(p) == [0, 6 * 8, 7 * 8, 13 * 8]
-        p = a.findall('0x4733', bytealigned=True)
+        p = a.find_all('0x4733', bytealigned=True)
         assert list(p) == [0, 7 * 8]
         a = Bits('0b1001001001001001001')
-        p = a.findall('0b1001', bytealigned=False)
+        p = a.find_all('0b1001', bytealigned=False)
         assert list(p) == [0, 3, 6, 9, 12, 15]
 
     def test_find_all_generator(self):
         a = Bits('0xff1234512345ff1234ff12ff')
-        p = a.findall('0xff', bytealigned=True)
+        p = a.find_all('0xff', bytealigned=True)
         assert next(p) == 0
         assert next(p) == 6 * 8
         assert next(p) == 9 * 8
@@ -800,9 +800,9 @@ class TestManyDifferentThings:
     def test_find_all_count(self):
         s = Bits('0b1') * 100
         for i in [0, 1, 23]:
-            assert len(list(s.findall('0b1', count=i))) == i
+            assert len(list(s.find_all('0b1', count=i))) == i
         with pytest.raises(ValueError):
-            _ = s.findall('0b1', bytealigned=True, count=-1)
+            _ = s.find_all('0b1', bytealigned=True, count=-1)
 
     def test_contains(self):
         a = Bits('0b1') + '0x0001dead0001'
@@ -835,7 +835,7 @@ class TestManyDifferentThings:
         assert a == b
 
     def test_non_zero_bits_at_end(self):
-        a = Bits.frombytes(b'\xff')[:5]
+        a = Bits.from_bytes(b'\xff')[:5]
         b = Bits('0b00')
         a += b
         assert a == '0b1111100'
@@ -992,45 +992,45 @@ class TestManyDifferentThings:
 
     def test_startswith(self):
         a = Bits()
-        assert a.startswith(Bits())
-        assert not a.startswith('0b0')
+        assert a.starts_with(Bits())
+        assert not a.starts_with('0b0')
         a = Bits('0x12ff')
-        assert a.startswith('0x1')
-        assert a.startswith('0b0001001')
-        assert a.startswith('0x12ff')
-        assert not a.startswith('0x12ff, 0b1')
-        assert not a.startswith('0x2')
+        assert a.starts_with('0x1')
+        assert a.starts_with('0b0001001')
+        assert a.starts_with('0x12ff')
+        assert not a.starts_with('0x12ff, 0b1')
+        assert not a.starts_with('0x2')
 
     def test_startswith_start_end(self):
         s = Bits('0x123456')
-        assert s.startswith('0x234', 4)
-        assert not s.startswith('0x123', end=11)
-        assert s.startswith('0x123', end=12)
-        assert s.startswith('0x34', 8, 16)
-        assert not s.startswith('0x34', 7, 16)
-        assert not s.startswith('0x34', 9, 16)
-        assert not s.startswith('0x34', 8, 15)
+        assert s.starts_with('0x234', 4)
+        assert not s.starts_with('0x123', end=11)
+        assert s.starts_with('0x123', end=12)
+        assert s.starts_with('0x34', 8, 16)
+        assert not s.starts_with('0x34', 7, 16)
+        assert not s.starts_with('0x34', 9, 16)
+        assert not s.starts_with('0x34', 8, 15)
 
     def test_endswith(self):
         a = Bits()
-        assert a.endswith('')
-        assert not a.endswith(Bits('0b1'))
+        assert a.ends_with('')
+        assert not a.ends_with(Bits('0b1'))
         a = Bits('0xf2341')
-        assert a.endswith('0x41')
-        assert a.endswith('0b001')
-        assert a.endswith('0xf2341')
-        assert not a.endswith('0x1f2341')
-        assert not a.endswith('0o34')
+        assert a.ends_with('0x41')
+        assert a.ends_with('0b001')
+        assert a.ends_with('0xf2341')
+        assert not a.ends_with('0x1f2341')
+        assert not a.ends_with('0o34')
 
     def test_endswith_start_end(self):
         s = Bits('0x123456')
-        assert s.endswith('0x234', end=16)
-        assert not s.endswith('0x456', start=13)
-        assert s.endswith('0x456', start=12)
-        assert s.endswith('0x34', 8, 16)
-        assert s.endswith('0x34', 7, 16)
-        assert not s.endswith('0x34', 9, 16)
-        assert not s.endswith('0x34', 8, 15)
+        assert s.ends_with('0x234', end=16)
+        assert not s.ends_with('0x456', start=13)
+        assert s.ends_with('0x456', start=12)
+        assert s.ends_with('0x34', 8, 16)
+        assert s.ends_with('0x34', 7, 16)
+        assert not s.ends_with('0x34', 9, 16)
+        assert not s.ends_with('0x34', 8, 15)
 
     def test_const_bit_stream_set_creation(self):
         sl = [Bits.build('u7', i) for i in range(15)]
@@ -1437,13 +1437,13 @@ class TestBugs:
 
         # findall
         s = Bits('0x1234151f')
-        li = list(s.findall('0x1', bytealigned=True, start=-15))
+        li = list(s.find_all('0x1', bytealigned=True, start=-15))
         assert li == [24]
-        li = list(s.findall('0x1', bytealigned=True, start=-16))
+        li = list(s.find_all('0x1', bytealigned=True, start=-16))
         assert li == [16, 24]
-        li = list(s.findall('0x1', bytealigned=True, end=-5))
+        li = list(s.find_all('0x1', bytealigned=True, end=-5))
         assert li == [0, 16]
-        li = list(s.findall('0x1', bytealigned=True, end=-4))
+        li = list(s.find_all('0x1', bytealigned=True, end=-4))
         assert li == [0, 16, 24]
 
         # rfind
@@ -1459,15 +1459,15 @@ class TestBugs:
 
         # startswith
         s = Bits('0xfe0012fe1200fe')
-        assert s.startswith('0x00f', start=-16)
-        assert s.startswith('0xfe00', end=-40)
-        assert not s.startswith('0xfe00', end=-41)
+        assert s.starts_with('0x00f', start=-16)
+        assert s.starts_with('0xfe00', end=-40)
+        assert not s.starts_with('0xfe00', end=-41)
 
         # endswith
-        assert s.endswith('0x00fe', start=-16)
-        assert not s.endswith('0x00fe', start=-15)
-        assert not s.endswith('0x00fe', end=-1)
-        assert s.endswith('0x00f', end=-4)
+        assert s.ends_with('0x00fe', start=-16)
+        assert not s.ends_with('0x00fe', start=-15)
+        assert not s.ends_with('0x00fe', end=-1)
+        assert s.ends_with('0x00f', end=-4)
 
         # replace
         s = s.replace('0xfe', '', end=-1)
@@ -1565,7 +1565,7 @@ def test_overwrite_with_self():
     assert s == '0b1101'
 
 def test_byte_swap():
-    b = Bits.frombytes(b'\x01\x02\x03\x04')
+    b = Bits.from_bytes(b'\x01\x02\x03\x04')
     b = b.byteswap()
     assert b == '0x04030201'
 

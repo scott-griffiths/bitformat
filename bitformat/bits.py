@@ -69,7 +69,7 @@ class Bits:
         return x
 
     @classmethod
-    def frombytes(cls, b: bytes, /) -> TBits:
+    def from_bytes(cls, b: bytes, /) -> TBits:
         x = super().__new__(cls)
         x._bitstore = BitStore.frombytes(b)
         return x
@@ -634,8 +634,8 @@ class Bits:
         p = self._bitstore.find(bs._bitstore, start, end, bytealigned)
         return () if p == -1 else (p,)
 
-    def findall(self, bs: BitsType, start: int| None = None, end: int | None = None, count: int | None = None,
-                bytealigned: bool | None = None) -> Iterable[int]:
+    def find_all(self, bs: BitsType, start: int | None = None, end: int | None = None, count: int | None = None,
+                 bytealigned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         bs -- The bitstring to find.
@@ -738,7 +738,7 @@ class Bits:
         """
         return self._bitstore.tobytes()
 
-    def startswith(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
+    def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current bitstring starts with prefix.
 
         prefix -- The bitstring to search for.
@@ -750,7 +750,7 @@ class Bits:
         start, end = self._validate_slice(start, end)
         return self._slice(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
-    def endswith(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
+    def ends_with(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current bitstring ends with suffix.
 
         suffix -- The bitstring to search for.
@@ -1213,7 +1213,7 @@ class Bits:
             bytealigned = bitformat.options.bytealigned
         # First find all the places where we want to do the replacements
         starting_points: list[int] = []
-        for x in self.findall(old, start, end, bytealigned=bytealigned):
+        for x in self.find_all(old, start, end, bytealigned=bytealigned):
             if not starting_points:
                 starting_points.append(x)
             elif x >= starting_points[-1] + len(old):

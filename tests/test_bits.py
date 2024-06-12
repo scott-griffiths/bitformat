@@ -25,7 +25,7 @@ def remove_unprintable(s: str) -> str:
 
 class TestCreation:
     def test_creation_from_bytes(self):
-        s = Bits.frombytes(b'\xa0\xff')
+        s = Bits.from_bytes(b'\xa0\xff')
         assert (len(s), s.parse('hex')) == (16, 'a0ff')
 
     @given(st.binary())
@@ -134,10 +134,10 @@ class TestInitialisation:
 
     def test_find_all(self):
         a = Bits('0b0010011')
-        b = list(a.findall([1]))
+        b = list(a.find_all([1]))
         assert b == [2, 5, 6]
         t = Bits('0b10')
-        tp = list(t.findall('0b1'))
+        tp = list(t.find_all('0b1'))
         assert tp == [0]
 
 
@@ -418,7 +418,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(t.getvalue()) == expected_output
 
     def test_bytes(self):
-        a = Bits.frombytes(b'helloworld!!'*5)
+        a = Bits.from_bytes(b'helloworld!!' * 5)
         s = io.StringIO()
         a.pp(stream=s, fmt='bytes', show_offset=False, width=48)
         expected_output = (
