@@ -35,7 +35,7 @@ def test_cutting(benchmark):
 #             s += bitformat.BitArray(104)
 #     benchmark(token_parsing)
 
-def test_findall(benchmark):
+def test_find_all(benchmark):
     def finding():
         random.seed(999)
         i = random.randrange(0, 2 ** 20000000)
@@ -66,7 +66,7 @@ def test_findall(benchmark):
 #         for i in range(2, math.ceil(math.sqrt(limit))):
 #             if is_prime[i]:
 #                 is_prime.set(False, range(i * i, limit, i))
-#         twin_primes = len(list(is_prime.findall('0b101')))
+#         twin_primes = len(list(is_prime.find_all('0b101')))
 #         return twin_primes
 #     c = benchmark(primes)
 #     assert c == 8169

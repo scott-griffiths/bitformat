@@ -1394,7 +1394,7 @@ class TestBugs:
         found = t.find('0x998', bytealigned=True, end=-20)
         assert found == 16
 
-        # findall
+        # find_all
         s = Bits('0x1234151f')
         li = list(s.find_all('0x1', bytealigned=True, start=-15))
         assert li == [24]

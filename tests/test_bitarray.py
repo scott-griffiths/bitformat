@@ -26,34 +26,34 @@ class TestAll:
         s = Bits() + '0o12345670'
         assert len(s) == 24
         assert s.bin == '001010011100101110111000'
-        s = Bits.fromstring('0o123')
+        s = Bits.from_string('0o123')
         assert s.oct == '123'
 
 
 class TestNoPosAttribute:
     def test_replace(self):
-        s = Bits.fromstring('0b01')
+        s = Bits.from_string('0b01')
         s = s.replace('0b1', '0b11')
         assert s == '0b011'
 
     def test_insert(self):
-        s = Bits.fromstring('0b00')
+        s = Bits.from_string('0b00')
         s = s.insert('0xf', 1)
         assert s == '0b011110'
 
     def test_insert_self(self):
-        b = Bits.fromstring('0b10')
+        b = Bits.from_string('0b10')
         b = b.insert(b, 0)
         assert b == '0b1010'
-        c = Bits.fromstring('0x00ff')
+        c = Bits.from_string('0x00ff')
         c = c.insert(c, 8)
         assert c == '0x0000ffff'
-        a = Bits.fromstring('0b11100')
+        a = Bits.from_string('0b11100')
         a = a.insert(a, 3)
         assert a == '0b1111110000'
 
     def test_overwrite(self):
-        s = Bits.fromstring('0b01110')
+        s = Bits.from_string('0b01110')
         s = s.overwrite('0b000', 1)
         assert s == '0b00000'
 
@@ -64,13 +64,13 @@ class TestNoPosAttribute:
         assert t == [1, 0]
 
     def test_rol(self):
-        s = Bits.fromstring('0b0001')
+        s = Bits.from_string('0b0001')
         t = s.rol(1)
         assert s == '0b0001'
         assert t == '0b0010'
 
     def test_ror(self):
-        s = Bits.fromstring('0b1000')
+        s = Bits.from_string('0b1000')
         t = s.ror(1)
         assert s == '0b1000'
         assert t == '0b0100'
@@ -79,8 +79,8 @@ class TestNoPosAttribute:
 class TestByteAligned:
 
     def test_not_byte_aligned(self):
-        a = Bits.fromstring('0x00 ff 0f f')
-        li = list(a.findall('0xff'))
+        a = Bits.from_string('0x00 ff 0f f')
+        li = list(a.find_all('0xff'))
         assert li == [8, 20]
         p = a.find('0x0f')
         assert p == 4
@@ -91,8 +91,8 @@ class TestByteAligned:
 
     def test_byte_aligned(self):
         bitformat.options.bytealigned = True
-        a = Bits.fromstring('0x00 ff 0f f')
-        li = list(a.findall('0xff'))
+        a = Bits.from_string('0x00 ff 0f f')
+        li = list(a.find_all('0xff'))
         assert li == [8]
         p = a.find('0x0f')
         assert p == 16
@@ -111,8 +111,8 @@ def test_copy_method():
 
 
 def test_adding():
-    a = Bits.fromstring('0b0')
-    b = Bits.fromstring('0b11')
+    a = Bits.from_string('0b0')
+    b = Bits.from_string('0b11')
     c = a + b
     assert c == '0b011'
     assert a == '0b0'
@@ -122,14 +122,14 @@ def test_adding():
 class TestRepr:
 
     def test_standard_repr(self):
-        a = Bits.fromstring('0o12345')
+        a = Bits.from_string('0o12345')
         assert repr(a) == "Bits('0b001010011100101')"
 
 
 class TestNewProperties:
 
     def test_getter_length_errors(self):
-        a = Bits.fromstring('0x123')
+        a = Bits.from_string('0x123')
         with pytest.raises(bitformat.InterpretError):
             _ = a.f
         b = Bits()
@@ -137,11 +137,11 @@ class TestNewProperties:
             _ = b.u
 
     def test_bytes_properties(self):
-        a = Bits.frombytes(b'hello')
+        a = Bits.from_bytes(b'hello')
         assert a.bytes == b'hello'
 
     def test_conversion_to_bytes(self):
-        a = Bits.fromstring('0x41424344, 0b1')
+        a = Bits.from_string('0x41424344, 0b1')
         b = bytes(a)
         assert b == b'ABCD\x80'
         a = Bits()
@@ -182,7 +182,7 @@ class TestBFloats:
 
     @pytest.mark.skip
     def test_little_endian(self):
-        a = BitArray.fromstring('f32=1000')
+        a = BitArray.from_string('f32=1000')
         b = BitArray(bfloat=a.f)
         assert a[0:16] == b[0:16]
 
@@ -215,23 +215,23 @@ class TestBFloats:
 
     def test_overflows(self):
         inf16 = Bits.build('f16', float('inf'))
-        inf32 = Bits.fromstring('f32 = inf')
+        inf32 = Bits.from_string('f32 = inf')
         inf64 = Dtype('f64').build(float('inf'))
 
-        s = Bits.fromstring('f64 = 1e400')
+        s = Bits.from_string('f64 = 1e400')
         assert s == inf64
-        s = Bits.fromstring('f32 = 1e60')
+        s = Bits.from_string('f32 = 1e60')
         assert s == inf32
-        s = Bits.fromstring('f16 = 100000')
+        s = Bits.from_string('f16 = 100000')
         assert s == inf16
 
         ninf16 = Dtype('f16').build(float('-inf'))
         ninf32 = Dtype('f32').build(float('-inf'))
         ninf64 = Dtype('f64').build(float('-inf'))
 
-        assert ninf64 == Bits.fromstring('f64 = -1e400')
-        assert ninf32 == Bits.fromstring('f32 = -1e60')
-        assert ninf16 == Bits.fromstring('f16 = -100000')
+        assert ninf64 == Bits.from_string('f64 = -1e400')
+        assert ninf32 == Bits.from_string('f32 = -1e60')
+        assert ninf16 == Bits.from_string('f16 = -100000')
 
 
 try:
@@ -260,5 +260,5 @@ class TestNumpy:
 def test_bytes_from_list():
     s = Bits.build('bytes', [1, 2])
     assert s == '0x0102'
-    s = Bits.frombytes(bytearray([1, 2]))
+    s = Bits.from_bytes(bytearray([1, 2]))
     assert s == '0x0102'
