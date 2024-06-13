@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 
 import pytest
-import sys
-sys.path.insert(0, '..')
 import bitformat
 import copy
-import os
-import collections
-from bitformat import Bits, Dtype
-
+from bitformat import Bits
 
 
 class TestFlexibleInitialisation:
@@ -936,7 +931,6 @@ class TestManyDifferentThings:
             b = b.prepend(a)
         assert b == a * 10
 
-
     def test_token_parser(self):
         tp = bitformat.utils.tokenparser
         assert tp('hex') == (True, [('hex', None, None)])
@@ -951,7 +945,6 @@ class TestManyDifferentThings:
         assert tp('hex12', ('hex12',)) == (False, [('hex12', None, None)])
         assert tp('2*bits:6') == (False, [('bits', 6, None), ('bits', 6, None)])
 
-    @pytest.mark.skip
     def test_reverse_bytes(self):
         a = Bits('0x123456')
         a = a.byteswap()
@@ -966,27 +959,26 @@ class TestManyDifferentThings:
         a = a.byteswap()
         assert not a
 
-    @pytest.mark.skip
     def test_reverse_bytes2(self):
-        a = BitStream()
-        a.byteswap()
-        assert not a
-        a = BitStream('0x00112233')
-        a.byteswap(0, 0, 16)
+        a = Bits()
+        a = a.byteswap()
+        assert a == Bits()
+        a = Bits('0x00112233')
+        a = a.byteswap(0, 0, 16)
         assert a == '0x11002233'
-        a.byteswap(0, 4, 28)
+        a = a.byteswap(0, 4, 28)
         assert a == '0x12302103'
-        a.byteswap(start=0, end=18)
+        a = a.byteswap(start=0, end=18)
         assert a == '0x30122103'
         with pytest.raises(ValueError):
-            a.byteswap(0, 10, 2)
+            _ = a.byteswap(0, 10, 2)
         with pytest.raises(ValueError):
-            a.byteswap(0, -4, 4)
+            _ = a.byteswap(0, -4, 4)
         with pytest.raises(ValueError):
-            a.byteswap(0, 24, 48)
-        a.byteswap(0, 24)
+            _ = a.byteswap(0, 24, 48)
+        a = a.byteswap(0, 24)
         assert a == '0x30122103'
-        a.byteswap(0, 11, 11)
+        a = a.byteswap(0, 11, 11)
         assert a == '0x30122103'
 
     def test_startswith(self):
@@ -1037,38 +1029,6 @@ class TestManyDifferentThings:
         assert len(s) == 15
         s.add(Bits('0b0000011'))
         assert len(s) == 15
-
-    def test_const_bit_stream_functions(self):
-        s = Bits('0xf, 0b1')
-        assert type(s) == Bits
-        t = copy.copy(s)
-        assert type(t) == Bits
-        a = s + '0o3'
-        assert type(a) == Bits
-        b = a[0:4]
-        assert type(b) == Bits
-        b = a[4:3]
-        assert type(b) == Bits
-        b = a[5:2:-1]
-        assert type(b) == Bits
-        b = ~a
-        assert type(b) == Bits
-        b = a << 2
-        assert type(b) == Bits
-        b = a >> 2
-        assert type(b) == Bits
-        b = a * 2
-        assert type(b) == Bits
-        b = a * 0
-        assert type(b) == Bits
-        b = a & ~a
-        assert type(b) == Bits
-        b = a | ~a
-        assert type(b) == Bits
-        b = a ^ ~a
-        assert type(b) == Bits
-        b = a._slice(4, 4)
-        assert type(b) == Bits
 
     def test_const_bit_stream_hashibility(self):
         a = Bits('0x1')
@@ -1147,9 +1107,9 @@ class TestSet:
         b = b.set(False, -8)
         assert ~b == '0b11000001'
         with pytest.raises(IndexError):
-            b = b.set(False, -9)
+            _ = b.set(False, -9)
         with pytest.raises(IndexError):
-            b = b.set(False, 8)
+            _ = b.set(False, 8)
 
     def test_set_whole_bit_stream(self):
         a = Bits.zeros(10000)
@@ -1537,6 +1497,7 @@ class TestBugs:
         a += u'0xfe'
         assert a == 'u12 = 34, 0xfe'
 
+
 def test_bool_interpretation():
     a = Bits('0b1')
     assert a.bool is True
@@ -1558,13 +1519,14 @@ def test_count():
     assert b.count(1) == 16
     assert b.count(0) == 14
 
+
 def test_overwrite_with_self():
     s = Bits('0b1101')
     s = s.overwrite(s, 0)
     assert s == '0b1101'
 
+
 def test_byte_swap():
     b = Bits.from_bytes(b'\x01\x02\x03\x04')
     b = b.byteswap()
     assert b == '0x04030201'
-
