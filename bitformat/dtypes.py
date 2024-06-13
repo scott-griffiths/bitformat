@@ -26,7 +26,6 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _set_fn_needs_length: bool
-    _variable_length: bool
     _bitlength: int | None
     _bits_per_item: int
     _length: int | None
@@ -48,23 +47,18 @@ class Dtype:
 
     @property
     def length(self) -> int:
-        """The length of the data type in units of bits_per_item. Set to None for variable length dtypes."""
+        """The length of the data type in units of bits_per_item."""
         return self._length
 
     @property
-    def bitlength(self) -> int | None:
-        """The number of bits needed to represent a single instance of the data type. Set to None for variable length dtypes."""
+    def bitlength(self) -> int:
+        """The number of bits needed to represent a single instance of the data type."""
         return self._bitlength
 
     @property
     def bits_per_item(self) -> int:
         """The number of bits for each unit of length. Usually 1, but equals 8 for bytes type."""
         return self._bits_per_item
-
-    @property
-    def variable_length(self) -> bool:
-        """If True then the length of the data type depends on the data being interpreted, and must not be specified."""
-        return self._variable_length
 
     @property
     def return_type(self) -> Any:
@@ -110,8 +104,7 @@ class Dtype:
         if x._bitlength is not None:
             x._bitlength *= x._bits_per_item
         x._set_fn_needs_length = definition.set_fn_needs_length
-        x._variable_length = definition.variable_length
-        if x._variable_length or dtype_register.names[x._name].allowed_lengths.only_one_value():
+        if dtype_register.names[x._name].allowed_lengths.only_one_value():
             x._read_fn = definition.read_fn
         else:
             x._read_fn = functools.partial(definition.read_fn, length=x._bitlength)
@@ -146,12 +139,12 @@ class Dtype:
         return self._get_fn(b)
 
     def __str__(self) -> str:
-        hide_length = self._variable_length or dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
         length_str = '' if hide_length else str(self._length)
         return f"{self._name}{length_str}"
 
     def __repr__(self) -> str:
-        hide_length = self._variable_length or dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
         length_str = '' if hide_length else ', ' + str(self._length)
         return f"{self.__class__.__name__}('{self._name}'{length_str})"
 
@@ -193,21 +186,16 @@ class DtypeDefinition:
     Not (yet) part of the public interface."""
 
     def __init__(self, name: str, set_fn, get_fn, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 variable_length: bool = False, allowed_lengths: Tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
+                 allowed_lengths: Tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
 
         # Consistency checks
         if int(multiplier) != multiplier or multiplier <= 0:
             raise ValueError("multiplier must be an positive integer")
-        if variable_length and allowed_lengths:
-            raise ValueError("A variable length dtype can't have allowed lengths.")
-        if variable_length and set_fn is not None and 'length' in inspect.signature(set_fn).parameters:
-            raise ValueError("A variable length dtype can't have a set_fn which takes a length.")
 
         self.name = name
         self.description = description
         self.return_type = return_type
         self.is_signed = is_signed
-        self.variable_length = variable_length
         self.allowed_lengths = AllowedLengths(allowed_lengths)
 
         self.multiplier = multiplier
@@ -229,32 +217,16 @@ class DtypeDefinition:
             self.get_fn = get_fn  # Interpret everything
 
         # Create a reading function from the get_fn.
-        if not self.variable_length:
-            if self.allowed_lengths.only_one_value():
-                def read_fn(bs, start):
-                    return self.get_fn(bs[start:start + self.allowed_lengths.values[0]])
-            else:
-                def read_fn(bs, start, length):
-                    if len(bs) < start + length:
-                        raise bitformat.ReadError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
-                    return self.get_fn(bs[start:start + length])
-            self.read_fn = read_fn
-        else:
-            # We only find out the length when we read/get.
-            def length_checked_get_fn(bs):
-                x, length = get_fn(bs)
-                if length != len(bs):
-                    raise ValueError
-                return x
-            self.get_fn = length_checked_get_fn
-
+        if self.allowed_lengths.only_one_value():
             def read_fn(bs, start):
-                try:
-                    x, length = get_fn(bs[start:])
-                except bitformat.InterpretError:
-                    raise bitformat.ReadError
-                return x, start + length
-            self.read_fn = read_fn
+                return self.get_fn(bs[start:start + self.allowed_lengths.values[0]])
+        else:
+            def read_fn(bs, start, length):
+                if len(bs) < start + length:
+                    raise bitformat.ReadError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
+                return self.get_fn(bs[start:start + length])
+        self.read_fn = read_fn
+
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def get_dtype(self, length: int | None = None) -> Dtype:
@@ -271,8 +243,6 @@ class DtypeDefinition:
         if length is None:
             d = Dtype._create(self, None)
             return d
-        if self.variable_length:
-            raise ValueError(f"A length ({length}) shouldn't be supplied for the variable length dtype '{self.name}'.")
         d = Dtype._create(self, length)
         return d
 

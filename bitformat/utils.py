@@ -12,17 +12,11 @@ NAME_KWARG_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?):([a-zA-Z0-9
 
 CACHE_SIZE = 256
 
-DEFAULT_BITS: Pattern[str] = re.compile(r'^(?P<len>[^=]+)?(=(?P<value>.*))?$', re.IGNORECASE)
-
 MULTIPLICATIVE_RE: Pattern[str] = re.compile(r'^(?P<factor>.*)\*(?P<token>.+)')
 
 # Hex, oct or binary literals
 LITERAL_RE: Pattern[str] = re.compile(r'^(?P<name>0([xob]))(?P<value>.+)', re.IGNORECASE)
 
-# An endianness indicator followed by one or more struct.pack codes
-STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])(?P<fmt>(?:\d*[bBhHlLqQefd])+)$')
-# The same as above, but it doesn't insist on an endianness as it's byteswapping anyway.
-BYTESWAP_STRUCT_PACK_RE: Pattern[str] = re.compile(r'^(?P<endian>[<>@=])?(?P<fmt>(?:\d*[bBhHlLqQefd])+)$')
 
 @functools.lru_cache(CACHE_SIZE)
 def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, int | None]:
@@ -70,12 +64,9 @@ def parse_single_token(token: str) -> Tuple[str, str, str | None]:
 
 @functools.lru_cache(CACHE_SIZE)
 def preprocess_tokens(fmt: str) -> List[str]:
-    # Remove whitespace and expand brackets
-    fmt = expand_brackets(''.join(fmt.split()))
-
-    # Split tokens by ',' and remove whitespace
-    # The meta_tokens can either be ordinary single tokens or multiple struct-format token strings.
-    meta_tokens = [f.strip() for f in fmt.split(',')]
+    # Remove whitespace
+    fmt = ''.join(fmt.split())
+    meta_tokens = fmt.split(',')
     final_tokens = []
 
     for meta_token in meta_tokens:
@@ -135,35 +126,3 @@ def tokenparser(fmt: str, keys: Tuple[str, ...] = ()) -> \
                     raise ValueError(f"Don't understand length '{length}' of token.")
         ret_vals.append((name, length, value))
     return stretchy_token, ret_vals
-
-
-BRACKET_RE = re.compile(r'(?P<factor>\d+)\*\(')
-
-
-def expand_brackets(s: str) -> str:
-    """Expand all brackets."""
-    while True:
-        start = s.find('(')
-        if start == -1:
-            break
-        count = 1  # Number of hanging open brackets
-        p = start + 1
-        while p < len(s):
-            count += (s[p] == '(') - (s[p] == ')')
-            if count == 0:
-                break
-            p += 1
-        if count != 0:
-            raise ValueError(f"Unbalanced parenthesis in '{s}'.")
-        if start == 0 or s[start - 1] != '*':
-            s = s[0:start] + s[start + 1:p] + s[p + 1:]
-        else:
-            # Looks for first number*(
-            m = BRACKET_RE.search(s)
-            if m:
-                factor = int(m.group('factor'))
-                matchstart = m.start('factor')
-                s = s[0:matchstart] + (factor - 1) * (s[start + 1:p] + ',') + s[start + 1:p] + s[p + 1:]
-            else:
-                raise ValueError(f"Failed to parse '{s}'.")
-    return s

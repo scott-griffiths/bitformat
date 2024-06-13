@@ -827,10 +827,6 @@ class Bits:
         """Internal pretty print method."""
         name1 = dtype1.name
         name2 = dtype2.name if dtype2 is not None else None
-        if dtype1.variable_length:
-            raise ValueError(f"Can't use Dtype '{dtype1}' in pp() as it has a variable length.")
-        if dtype2 is not None and dtype2.variable_length:
-            raise ValueError(f"Can't use Dtype '{dtype2}' in pp() as it has a variable length.")
         offset_width = 0
         offset_sep = ': '
         if show_offset:
