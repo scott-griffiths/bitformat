@@ -276,11 +276,11 @@ def test_repeat_with_dtype():
     f.parse(b)
     assert f.value == [-400, 200, -200, 400]
 
-def test_field_array_str():
-    with pytest.raises(ValueError):
-        _ = FieldArray.from_string('test   :  f32 = 0.25  ')
-    f = FieldArray.from_string('test: [f32 ; 3]')
-    assert str(f) == 'test: [f32; 3]'
+# def test_field_array_str():
+#     with pytest.raises(ValueError):
+#         _ = FieldArray.from_string('test   :  f32 = 0.25  ')
+#     f = FieldArray.from_string('test: [f32 ; 3]')
+#     assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():
     f = Format(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')

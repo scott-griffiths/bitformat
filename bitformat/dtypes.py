@@ -14,8 +14,8 @@ class Dtype:
 
     Dtype instances are immutable. They are often created implicitly elsewhere via a token string.
 
-    >>> u12 = Dtype('uint', 12)  # length separate from token string.
-    >>> float16 = Dtype('float16')  # length part of token string.
+    >>> u12 = Dtype('uint', 12)
+    >>> float16 = Dtype('float16')
 
     """
 
@@ -297,13 +297,13 @@ class Register:
         del cls.names[name]
 
     def __repr__(self) -> str:
-        s = [f"{'key':<12}:{'name':^12}{'signed':^8}{'set_fn_needs_length':^23}{'allowed_lengths':^16}{'multiplier':^12}{'return_type':<13}"]
-        s.append('-' * 85)
+        s = [f"{'key':<12}:{'name':^12}{'signed':^8}{'allowed_lengths':^16}{'multiplier':^12}{'return_type':<13}"]
+        s.append('-' * 72)
         for key in self.names:
             m = self.names[key]
             allowed = '' if not m.allowed_lengths else m.allowed_lengths
             ret = 'None' if m.return_type is None else m.return_type.__name__
-            s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{m.set_fn_needs_length:^16}{allowed!s:^16}{m.multiplier:^12}{ret:<13} # {m.description}")
+            s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.multiplier:^12}{ret:<13} # {m.description}")
         return '\n'.join(s)
 
 

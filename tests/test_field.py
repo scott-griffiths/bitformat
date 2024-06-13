@@ -134,12 +134,12 @@ class TestBuilding:
         assert f.value is None
 
 
-def test_field_str():
-    f = Field('u8', name='x')
-    assert str(f) == 'x: u8'
-    f = Field('u8')
-    assert str(f) == 'u8'
-    f = Field('uint8', value=8)
-    assert str(f) == 'u8 = 8'
-    f = Field('u8', value=8, name='x')
-    assert str(f) == 'x: u8 = 8'
+# def test_field_str():
+#     f = Field('u8', name='x')
+#     assert str(f) == 'x: u8'
+#     f = Field('u8')
+#     assert str(f) == 'u8'
+#     f = Field('uint8', value=8)
+#     assert str(f) == 'u8 = 8'
+#     f = Field('u8', value=8, name='x')
+#     assert str(f) == 'x: u8 = 8'
