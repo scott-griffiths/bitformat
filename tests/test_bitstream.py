@@ -42,44 +42,44 @@ class TestFlexibleInitialisation:
 class TestFind:
     def test_find1(self):
         s = Bits('0b0000110110000')
-        assert s.find(Bits('0b11011')) == (4,)
+        assert s.find(Bits('0b11011')) == 4
 
     def test_find_with_offset(self):
         s = Bits('0x112233')[4:]
-        assert s.find('0x23') == (8,)
+        assert s.find('0x23') == 8
 
     def test_find_corner_cases(self):
         s = Bits('0b000111000111')
-        assert s.find('0b000') == (0,)
-        assert s.find('0b0111000111') == (2,)
-        assert s.find('0b000', start=2) == (6,)
+        assert s.find('0b000') == 0
+        assert s.find('0b0111000111') == 2
+        assert s.find('0b000', start=2) == 6
 
     def test_find_bytes(self):
         s = Bits.from_string('0x010203040102ff')
-        assert s.find('0x05', bytealigned=True) == ()
-        assert s.find('0x02', bytealigned=True) == (8,)
-        assert s.find('0x02', start=16, bytealigned=True) == (40,)
-        assert s.find('0x02', start=1, bytealigned=True) == (8,)
+        assert s.find('0x05', bytealigned=True) is None
+        assert s.find('0x02', bytealigned=True) == 8
+        assert s.find('0x02', start=16, bytealigned=True) == 40
+        assert s.find('0x02', start=1, bytealigned=True) == 8
 
     def test_find_bytes_aligned_corner_cases(self):
         s = Bits('0xff')
-        assert s.find(s)
-        assert not s.find(Bits('0x12'))
-        assert not s.find(Bits('0xffff'))
+        assert s.find(s) is not None
+        assert s.find(Bits('0x12')) is None
+        assert s.find(Bits('0xffff')) is None
 
     def test_find_byte_aligned(self):
         s = Bits.build('hex', '0x12345678')
-        assert s.find(Bits('0x56'), bytealigned=True) == (16,)
+        assert s.find(Bits('0x56'), bytealigned=True) == 16
         assert not s.find(Bits('0x45'), start=16, bytealigned=True)
         s = Bits('0x1234')
-        assert s.find('0x1234') == (0,)
+        assert s.find('0x1234') == 0
         s += '0b111'
         s.find('0b1', start=17, bytealigned=True)
-        assert not s.find('0b1', start=17, bytealigned=True)
+        assert s.find('0b1', start=17, bytealigned=True) is None
 
     def test_find_byte_aligned_with_offset(self):
         s = Bits('0x112233')[4:]
-        assert s.find('0x23', bytealigned=True) == (8,)
+        assert s.find('0x23', bytealigned=True) == 8
 
     def test_find_byte_aligned_errors(self):
         s = Bits('0xffff')
@@ -93,29 +93,29 @@ class TestRfind:
     def test_rfind(self):
         a = Bits('0b001001001')
         b = a.rfind('0b001')
-        assert b == (6,)
+        assert b == 6
         big = Bits.zeros(100000) + '0x12' + Bits.zeros(10000)
         found = big.rfind('0x12', bytealigned=True)
-        assert found == (100000,)
+        assert found == 100000
 
     def test_rfind_byte_aligned(self):
         a = Bits('0x8888')
         b = a.rfind('0b1', bytealigned=True)
-        assert b == (8,)
+        assert b == 8
 
     def test_rfind_startbit(self):
         a = Bits('0x0000ffffff')
         b = a.rfind('0x0000', start=1, bytealigned=True)
-        assert b == ()
+        assert b is None
         b = a.rfind('0x00', start=1, bytealigned=True)
-        assert b == (8,)
+        assert b == 8
 
     def test_rfind_endbit(self):
         a = Bits('0x000fff')
         b = a.rfind('0b011', start=0, end=14, bytealigned=False)
-        assert bool(b) is True
+        assert b is not None
         b = a.rfind('0b011', 0, 13, False)
-        assert b == ()
+        assert b is None
 
     def test_rfind_errors(self):
         a = Bits('0x43234234')
@@ -511,11 +511,11 @@ class TestAdding:
 
     def test_find_using_auto(self):
         s = Bits('0b000000010100011000')
-        assert s.find('0b101') == (7,)
+        assert s.find('0b101') == 7
 
     def test_findbytealigned_using_auto(self):
         s = Bits('0x00004700')
-        assert s.find('0b01000111', bytealigned=True) == (16,)
+        assert s.find('0b01000111', bytealigned=True) == 16
 
     def test_append_using_auto(self):
         s = Bits('0b000')
@@ -715,46 +715,45 @@ class TestManyDifferentThings:
     def test_find_byte_aligned_with_bits(self):
         a = Bits('0x00112233445566778899')
         x = a.find('0b0001', bytealigned=True)
-        assert x == (8,)
+        assert x == 8
 
     def test_find_startbit_not_byte_aligned(self):
         a = Bits('0b0010000100')
         found = a.find('0b1', start=4)
-        assert found == (7,)
+        assert found == 7
         found = a.find('0b1', start=2)
-        assert found == (2,)
+        assert found == 2
         found = a.find('0b1', bytealigned=False, start=8)
-        assert found == ()
+        assert found is None
 
     def test_find_endbit_not_byte_aligned(self):
         a = Bits('0b0010010000')
         found = a.find('0b1', bytealigned=False, end=2)
-        assert found == ()
+        assert found is None
         found = a.find('0b1', end=3)
-        assert found == (2,)
+        assert found == 2
         found = a.find('0b1', bytealigned=False, start=3, end=5)
-        assert found == ()
+        assert found is None
         found = a.find('0b1', start=3, end=6)
-        assert found[0] == 5
+        assert found == 5
 
     def test_find_startbit_byte_aligned(self):
         a = Bits('0xff001122ff0011ff')
         found = a.find('0x22', start=23, bytealigned=True)
-        assert found == (24,)
+        assert found == 24
         found = a.find('0x22', start=24, bytealigned=True)
-        assert found == (24,)
+        assert found == 24
         found = a.find('0x22', start=25, bytealigned=True)
-        assert found == ()
+        assert found is None
         found = a.find('0b111', start=40, bytealigned=True)
-        assert found == (56,)
+        assert found == 56
 
     def test_find_endbit_byte_aligned(self):
         a = Bits('0xff001122ff0011ff')
         found = a.find('0x22', end=31, bytealigned=True)
-        assert not found
+        assert found is None
         found = a.find('0x22', end=32, bytealigned=True)
-        assert found
-        assert found[0] == 24
+        assert found == 24
 
     def test_find_start_endbit_errors(self):
         a = Bits('0b00100')
@@ -1427,13 +1426,13 @@ class TestBugs:
 
         # find
         found = t.find('0x998', bytealigned=True, start=-31)
-        assert not found
+        assert found is None
         found = t.find('0x998', bytealigned=True, start=-32)
-        assert found == (16,)
+        assert found == 16
         found = t.find('0x988', bytealigned=True, end=-21)
-        assert not found
+        assert found is None
         found = t.find('0x998', bytealigned=True, end=-20)
-        assert found == (16,)
+        assert found == 16
 
         # findall
         s = Bits('0x1234151f')
@@ -1448,9 +1447,9 @@ class TestBugs:
 
         # rfind
         found = s.rfind('0x1f', end=-1)
-        assert not found
+        assert found is None
         found = s.rfind('0x12', start=-31)
-        assert not found
+        assert found is None
 
         # cut
         s = Bits('0x12345')

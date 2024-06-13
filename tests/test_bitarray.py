@@ -82,9 +82,9 @@ class TestByteAligned:
         a = Bits.fromstring('0x00 ff 0f f')
         li = list(a.findall('0xff'))
         assert li == [8, 20]
-        p = a.find('0x0f')[0]
+        p = a.find('0x0f')
         assert p == 4
-        p = a.rfind('0xff')[0]
+        p = a.rfind('0xff')
         assert p == 20
         a = a.replace('0xff', '')
         assert a == '0x000'
@@ -94,9 +94,9 @@ class TestByteAligned:
         a = Bits.fromstring('0x00 ff 0f f')
         li = list(a.findall('0xff'))
         assert li == [8]
-        p = a.find('0x0f')[0]
+        p = a.find('0x0f')
         assert p == 16
-        p = a.rfind('0xff')[0]
+        p = a.rfind('0xff')
         assert p == 8
         a = a.replace('0xff', '')
         assert a == '0x000ff'

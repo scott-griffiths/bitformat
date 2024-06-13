@@ -401,7 +401,7 @@ class Bits:
 
         """
         found = Bits.find(self, bs, bytealigned=False)
-        return bool(found)
+        return False if found is None else True
 
     def __hash__(self) -> int:
         """Return an integer hash of the object."""
@@ -600,12 +600,10 @@ class Bits:
         return start, end
 
     def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
-             bytealigned: bool | None = None) -> Union[tuple[int], tuple[()]]:
+             bytealigned: bool | None = None) -> int | None:
         """Find first occurrence of substring bs.
 
-        Returns a single item tuple with the bit position if found, or an
-        empty tuple if not found. The bit position (pos property) will
-        also be set to the start of the substring if it is found.
+        Returns a the bit position if found, or None if not found.
 
         bs -- The bitstring to find.
         start -- The bit position to start the search. Defaults to 0.
@@ -618,7 +616,7 @@ class Bits:
         if end < start.
 
         >>> Bits.from_string('0xc3e').find('0b1111')
-        (6,)
+        6
 
         """
         bs = Bits._create_from_bitstype(bs)
@@ -626,13 +624,8 @@ class Bits:
             raise ValueError("Cannot find an empty Bits.")
         start, end = self._validate_slice(start, end)
         ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
-        p = self._find(bs, start, end, ba)
-        return p
-
-    def _find(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[tuple[int], tuple[()]]:
-        """Find first occurrence of a binary string."""
-        p = self._bitstore.find(bs._bitstore, start, end, bytealigned)
-        return () if p == -1 else (p,)
+        p = self._bitstore.find(bs._bitstore, start, end, ba)
+        return None if p == -1 else p
 
     def find_all(self, bs: BitsType, start: int | None = None, end: int | None = None, count: int | None = None,
                  bytealigned: bool | None = None) -> Iterable[int]:
@@ -670,12 +663,10 @@ class Bits:
         return
 
     def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
-              bytealigned: bool | None = None) -> Union[tuple[int], tuple[()]]:
+              bytealigned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.
 
-        Returns a single item tuple with the bit position if found, or an
-        empty tuple if not found. The bit position (pos property) will
-        also be set to the start of the substring if it is found.
+        Returns a the bit position if found, or None if not found.
 
         bs -- The bitstring to find.
         start -- The bit position to end the reverse search. Defaults to 0.
@@ -693,13 +684,8 @@ class Bits:
         ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._rfind(bs, start, end, ba)
-        return p
-
-    def _rfind(self, bs: Bits, start: int, end: int, bytealigned: bool) -> Union[tuple[int], tuple[()]]:
-        """Find final occurrence of a binary string."""
-        p = self._bitstore.rfind(bs._bitstore, start, end, bytealigned)
-        return () if p == -1 else (p,)
+        p = self._bitstore.rfind(bs._bitstore, start, end, ba)
+        return None if p == -1 else p
 
     def cut(self, bits: int, start: int | None = None, end: int | None = None,
             count: int | None = None) -> Iterator[Bits]:
