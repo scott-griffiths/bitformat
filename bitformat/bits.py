@@ -78,7 +78,7 @@ class Bits:
     def join(cls, sequence: Iterable[Any], /) -> TBits:
         """Return concatenation of Bits.
 
-        sequence -- A sequence of bitstrings.
+        sequence -- A sequence of Bits.
 
         """
         x = super().__new__(cls)
@@ -131,7 +131,7 @@ class Bits:
         return self
 
     def __lt__(self, other: Any, /) -> bool:
-        # bitstrings can't really be ordered.
+        # Bits can't really be ordered.
         return NotImplemented
 
     def __gt__(self, other: Any, /) -> bool:
@@ -173,7 +173,7 @@ class Bits:
         return bs
 
     def __len__(self) -> int:
-        """Return the length of the bitstring in bits."""
+        """Return the length of the Bits in bits."""
         return self._getlength()
 
     def __bytes__(self) -> bytes:
@@ -225,7 +225,7 @@ class Bits:
         return f"{classname}('{s}')"
 
     def __repr__(self) -> str:
-        """Return representation that could be used to recreate the bitstring.
+        """Return representation that could be used to recreate the Bits..
 
         If the returned string is too long it will be truncated. See __str__().
 
@@ -233,7 +233,7 @@ class Bits:
         return self._repr(self.__class__.__name__, len(self))
 
     def __eq__(self, bs: Any, /) -> bool:
-        """Return True if two bitstrings have the same binary representation.
+        """Return True if two Bits have the same binary representation.
 
         >>> Bits('0b1110') == '0xe'
         True
@@ -245,7 +245,7 @@ class Bits:
             return False
 
     def __ne__(self, bs: Any, /) -> bool:
-        """Return False if two bitstrings have the same binary representation.
+        """Return False if two Bits have the same binary representation.
 
         >>> Bits('0b111') == '0x7'
         False
@@ -254,9 +254,9 @@ class Bits:
         return not self.__eq__(bs)
 
     def __invert__(self: TBits) -> TBits:
-        """Return bitstring with every bit inverted.
+        """Return the Bits with every bit inverted.
 
-        Raises Error if the bitstring is empty.
+        Raises Error if the Bits is empty.
 
         """
         if len(self) == 0:
@@ -266,7 +266,7 @@ class Bits:
         return s
 
     def __lshift__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring with bits shifted by n to the left.
+        """Return Bits shifted by n to the left.
 
         n -- the number of bits to shift. Must be >= 0.
 
@@ -281,7 +281,7 @@ class Bits:
         return s
 
     def __rshift__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring with bits shifted by n to the right.
+        """Return Bits shifted by n to the right.
 
         n -- the number of bits to shift. Must be >= 0.
 
@@ -298,7 +298,7 @@ class Bits:
         return s
 
     def __mul__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring consisting of n concatenations of self.
+        """Return new Bits consisting of n concatenations of self.
 
         Called for expression of the form 'a = b*3'.
         n -- The number of concatenations. Must be >= 0.
@@ -313,7 +313,7 @@ class Bits:
         return s
 
     def __rmul__(self: TBits, n: int, /) -> TBits:
-        """Return bitstring consisting of n concatenations of self.
+        """Return Bits consisting of n concatenations of self.
 
         Called for expressions of the form 'a = 3*b'.
         n -- The number of concatenations. Must be >= 0.
@@ -322,11 +322,9 @@ class Bits:
         return self.__mul__(n)
 
     def __and__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'and' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'and' between two Bits. Returns new Bits.
 
-        bs -- The bitstring to '&' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         if bs is self:
@@ -337,21 +335,17 @@ class Bits:
         return s
 
     def __rand__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'and' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'and' between two Bits. Returns new Bits.
 
-        bs -- the bitstring to '&' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         return self.__and__(bs)
 
     def __or__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'or' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'or' between two Bits. Returns new Bits.
 
-        bs -- The bitstring to '|' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         if bs is self:
@@ -362,21 +356,17 @@ class Bits:
         return s
 
     def __ror__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'or' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'or' between two Bits. Returns new Bits.
 
-        bs -- The bitstring to '|' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         return self.__or__(bs)
 
     def __xor__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'xor' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'xor' between two Bits. Returns new Bits.
 
-        bs -- The bitstring to '^' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         bs = Bits._create_from_bitstype(bs)
@@ -385,19 +375,17 @@ class Bits:
         return s
 
     def __rxor__(self: TBits, bs: BitsType, /) -> TBits:
-        """Bit-wise 'xor' between two bitstrings. Returns new bitstring.
+        """Bit-wise 'xor' between two Bits. Returns new Bits.
 
-        bs -- The bitstring to '^' with.
-
-        Raises ValueError if the two bitstrings have differing lengths.
+        Raises ValueError if the two Bits have differing lengths.
 
         """
         return self.__xor__(bs)
 
     def __contains__(self, bs: BitsType, /) -> bool:
-        """Return whether bs is contained in the current bitstring.
+        """Return whether bs is contained in the current Bits.
 
-        bs -- The bitstring to search for.
+        bs -- The Bits to search for.
 
         """
         found = Bits.find(self, bs, bytealigned=False)
@@ -405,20 +393,20 @@ class Bits:
 
     def __hash__(self) -> int:
         """Return an integer hash of the object."""
-        # Only requirement is that equal bitstring should return the same hash.
-        # For equal bitstrings the bytes at the start/end will be the same and they will have the same length
+        # Only requirement is that equal Bits should return the same hash.
+        # For equal Bits the bytes at the start/end will be the same and they will have the same length
         # (need to check the length as there could be zero padding when getting the bytes). We do not check any
-        # bit position inside the bitstring as that does not feature in the __eq__ operation.
+        # bit position inside the Bits as that does not feature in the __eq__ operation.
         if len(self) <= 2000:
-            # Use the whole bitstring.
+            # Use the whole Bits.
             return hash((self.tobytes(), len(self)))
         else:
-            # We can't in general hash the whole bitstring (it could take hours!)
+            # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
             return hash(((self[:800] + self[-800:]).tobytes(), len(self)))
 
     def __bool__(self) -> bool:
-        """Return False if bitstring is empty, otherwise return True."""
+        """Return False if Bits is empty, otherwise return True."""
         return len(self) != 0
 
     def _setbits(self, bs: BitsType, length: None = None) -> None:
@@ -446,7 +434,7 @@ class Bits:
         return string
 
     def _setuint(self, uint: int, length: int | None = None) -> None:
-        """Reset the bitstring to have given unsigned int interpretation."""
+        """Reset the Bits to have given unsigned int interpretation."""
         # If no length given, and we've previously been given a length, use it.
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
@@ -461,7 +449,7 @@ class Bits:
         return self._bitstore.slice_to_uint()
 
     def _setint(self, int_: int, length: int | None = None) -> None:
-        """Reset the bitstring to have given signed int interpretation."""
+        """Reset the Bits to have given signed int interpretation."""
         # If no length given, and we've previously been given a length, use it.
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
@@ -483,7 +471,7 @@ class Bits:
         self._bitstore = bitstore_helpers.float2bitstore(f, length)
 
     def _getfloat(self) -> float:
-        """Interpret the whole bitstring as a big-endian float."""
+        """Interpret the whole Bits as a big-endian float."""
         fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
         return struct.unpack(fmt, self._bitstore.tobytes())[0]
 
@@ -507,7 +495,7 @@ class Bits:
         self._bitstore = BitStore.fromint(length)
 
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
-        """Reset the bitstring to the value given in binstring."""
+        """Reset the Bits to the value given in binstring."""
         self._bitstore = bitstore_helpers.bin2bitstore(binstring)
 
     def _setbin_unsafe(self, binstring: str, length: None = None) -> None:
@@ -519,7 +507,7 @@ class Bits:
         return self._bitstore.slice_to_bin()
 
     def _setoct(self, octstring: str, length: None = None) -> None:
-        """Reset the bitstring to have the value given in octstring."""
+        """Reset the Bits to have the value given in octstring."""
         self._bitstore = bitstore_helpers.oct2bitstore(octstring)
 
     def _getoct(self) -> str:
@@ -527,19 +515,19 @@ class Bits:
         return self._bitstore.slice_to_oct()
 
     def _sethex(self, hexstring: str, length: None = None) -> None:
-        """Reset the bitstring to have the value given in hexstring."""
+        """Reset the Bits to have the value given in hexstring."""
         self._bitstore = bitstore_helpers.hex2bitstore(hexstring)
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string.
 
-        Raises an InterpretError if the bitstring's length is not a multiple of 4.
+        Raises an InterpretError if the Bits's length is not a multiple of 4.
 
         """
         return self._bitstore.slice_to_hex()
 
     def _getlength(self) -> int:
-        """Return the length of the bitstring in bits."""
+        """Return the length of the Bits in bits."""
         return len(self._bitstore)
 
     def _copy(self: TBits) -> TBits:
@@ -556,7 +544,7 @@ class Bits:
         return bs
 
     def _addright(self, bs: Bits, /) -> None:
-        """Add a bitstring to the RHS of the current bitstring."""
+        """Add a Bits to the RHS of the current Bits."""
         self._bitstore += bs._bitstore
 
     def _reversebytes(self, start: int, end: int) -> None:
@@ -605,11 +593,11 @@ class Bits:
 
         Returns a the bit position if found, or None if not found.
 
-        bs -- The bitstring to find.
+        bs -- The Bits to find.
         start -- The bit position to start the search. Defaults to 0.
         end -- The bit position one past the last bit to search.
                Defaults to len(self).
-        bytealigned -- If True the bitstring will only be
+        bytealigned -- If True the Bits will only be
                        found on byte boundaries.
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
@@ -631,12 +619,12 @@ class Bits:
                  bytealigned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
-        bs -- The bitstring to find.
+        bs -- The Bits to find.
         start -- The bit position to start the search. Defaults to 0.
         end -- The bit position one past the last bit to search.
                Defaults to len(self).
         count -- The maximum number of occurrences to find.
-        bytealigned -- If True the bitstring will only be found on
+        bytealigned -- If True the Bits will only be found on
                        byte boundaries.
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
@@ -668,11 +656,11 @@ class Bits:
 
         Returns a the bit position if found, or None if not found.
 
-        bs -- The bitstring to find.
+        bs -- The Bits to find.
         start -- The bit position to end the reverse search. Defaults to 0.
         end -- The bit position one past the first bit to reverse search.
                Defaults to len(self).
-        bytealigned -- If True the bitstring will only be found on byte
+        bytealigned -- If True the Bits will only be found on byte
                        boundaries.
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
@@ -689,9 +677,9 @@ class Bits:
 
     def cut(self, bits: int, start: int | None = None, end: int | None = None,
             count: int | None = None) -> Iterator[Bits]:
-        """Return bitstring generator by cutting into bits sized chunks.
+        """Return Bits generator by cutting into bits sized chunks.
 
-        bits -- The size in bits of the bitstring chunks to generate.
+        bits -- The size in bits of the Bits chunks to generate.
         start -- The bit position to start the first cut. Defaults to 0.
         end -- The bit position one past the last bit to use in the cut.
                Defaults to len(self).
@@ -717,7 +705,7 @@ class Bits:
         return
 
     def tobytes(self) -> bytes:
-        """Return the bitstring as bytes, padding with zero bits if needed.
+        """Return the Bits as bytes, padding with zero bits if needed.
 
         Up to seven zero bits will be added at the end to byte align.
 
@@ -725,9 +713,9 @@ class Bits:
         return self._bitstore.tobytes()
 
     def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
-        """Return whether the current bitstring starts with prefix.
+        """Return whether the current Bits starts with prefix.
 
-        prefix -- The bitstring to search for.
+        prefix -- The Bits to search for.
         start -- The bit position to start from. Defaults to 0.
         end -- The bit position to end at. Defaults to len(self).
 
@@ -737,9 +725,9 @@ class Bits:
         return self._slice(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
     def ends_with(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
-        """Return whether the current bitstring ends with suffix.
+        """Return whether the current Bits ends with suffix.
 
-        suffix -- The bitstring to search for.
+        suffix -- The Bits to search for.
         start -- The bit position to start from. Defaults to 0.
         end -- The bit position to end at. Defaults to len(self).
 
@@ -754,7 +742,7 @@ class Bits:
         value -- If value is True then checks for bits set to 1, otherwise
                  checks for bits set to 0.
         pos -- An iterable of bit positions. Negative numbers are treated in
-               the same way as slice indices. Defaults to the whole bitstring.
+               the same way as slice indices. Defaults to the whole Bits.
 
         """
         value = 1 if bool(value) else 0
@@ -771,7 +759,7 @@ class Bits:
         value -- If value is True then checks for bits set to 1, otherwise
                  checks for bits set to 0.
         pos -- An iterable of bit positions. Negative numbers are treated in
-               the same way as slice indices. Defaults to the whole bitstring.
+               the same way as slice indices. Defaults to the whole Bits.
 
         """
         value = 1 if bool(value) else 0
@@ -932,7 +920,7 @@ class Bits:
 
     def pp(self, fmt: str | None = None, width: int = 120, sep: str = ' ',
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
-        """Pretty print the bitstring's value.
+        """Pretty print the Bits's value.
 
         fmt -- Printed data format. One or two of 'bin', 'oct', 'hex' or 'bytes'.
               The number of bits represented in each printed group defaults to 8 for hex and bin,
@@ -971,7 +959,7 @@ class Bits:
         return
 
     def copy(self: TBits) -> TBits:
-        """Return a copy of the bitstring."""
+        """Return a copy of the Bits."""
         # Note that if you want a new copy (different ID), use _copy instead.
         # The copy can return self as it's immutable.
         return self
@@ -985,7 +973,7 @@ class Bits:
     def insert(self, bs: BitsType, pos: int, /) -> TBits:
         """Insert bs at bit position pos.
 
-        bs -- The bitstring to insert.
+        bs -- The Bits to insert.
         pos -- The bit position to insert at.
 
         Raises ValueError if pos < 0 or pos > len(self).
@@ -1029,7 +1017,7 @@ class Bits:
         value -- If bool(value) is True bits are set to 1, otherwise they are set to 0.
         pos -- Either a single bit position or an iterable of bit positions.
                Negative numbers are treated in the same way as slice indices.
-               Defaults to the entire bitstring.
+               Defaults to the entire Bits.
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -1117,7 +1105,7 @@ class Bits:
 
         fmt -- An integer number of bytes or
                an iterable of integers. Defaults to 0, which byte reverses the
-               whole bitstring.
+               whole Bits.
         start -- Start bit position, defaults to 0.
         end -- End bit position, defaults to len(self).
         repeat -- If True (the default) the byte swapping pattern is repeated
@@ -1146,7 +1134,7 @@ class Bits:
         if totalbitsize == 0:
             return s
         if repeat:
-            # Try to repeat up to the end of the bitstring.
+            # Try to repeat up to the end of the Bits.
             finalbit = end_v
         else:
             # Just try one (set of) byteswap(s).
@@ -1166,8 +1154,8 @@ class Bits:
 
         Returns number of replacements made.
 
-        old -- The bitstring to replace.
-        new -- The replacement bitstring.
+        old -- The Bits to replace.
+        new -- The replacement Bits.
         start -- Any occurrences that start before this will not be replaced.
                  Defaults to 0.
         end -- Any occurrences that finish after this will not be replaced.
@@ -1187,7 +1175,7 @@ class Bits:
         old = self._create_from_bitstype(old)
         new = self._create_from_bitstype(new)
         if len(old) == 0:
-            raise ValueError("Empty bitstring cannot be replaced.")
+            raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
 
         if new is self:

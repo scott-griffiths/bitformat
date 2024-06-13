@@ -1,6 +1,6 @@
 
 class Error(Exception):
-    """Base class for errors in the bitstring module."""
+    """Base class for errors in the bitformat module."""
 
     def __init__(self, *params: object) -> None:
         self.msg = params[0] if params else ''

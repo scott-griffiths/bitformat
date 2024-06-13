@@ -23,7 +23,7 @@ options = Options()
 
 class Array:
     """Return an Array whose elements are initialised according to the fmt string.
-    The dtype string can be typecode as used in the struct module or any fixed-length bitstring
+    The dtype string can be typecode as used in the struct module or any fixed-length Bits
     format.
 
     b = Array('int5', [-9, 0, 4])

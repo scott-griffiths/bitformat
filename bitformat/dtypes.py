@@ -128,7 +128,7 @@ class Dtype:
         return x
 
     def build(self, value: Any, /) -> bitformat.Bits:
-        """Create a bitstring from a value.
+        """Create and return a new Bits from a value.
 
         The value parameter should be of a type appropriate to the dtype.
         """
@@ -139,9 +139,9 @@ class Dtype:
         return b
 
     def parse(self, b: BitsType, /) -> Any:
-        """Parse a bitstring to find its value.
+        """Parse a Bits to find its value.
 
-        The b parameter should be a bitstring of the appropriate length, or an object that can be converted to a bitstring."""
+        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits."""
         b = bitformat.Bits._create_from_bitstype(b)
         return self._get_fn(b)
 
