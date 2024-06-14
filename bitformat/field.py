@@ -173,7 +173,7 @@ class SingleDtypeField(FieldType):
             d = f"{colour.purple}{const_str}[{dtype}; {item_str}]{colour.off}"
         n = '' if name == '' else f"{colour.green}{name}{colour.off}: "
         if isinstance(value, Array):
-            v = f" = {colour.cyan}{value.tolist()}{colour.off}"
+            v = f" = {colour.cyan}{value.to_list()}{colour.off}"
         else:
             v = '' if value is None else f" = {colour.cyan}{value}{colour.off}"
         return f"{n}{d}{v}"
@@ -188,7 +188,7 @@ class SingleDtypeField(FieldType):
         else:
             dtype = f"{const_str}[{dtype}; {item_str}]"
         if isinstance(value, Array):
-            v = f" = {value.tolist()}"
+            v = f" = {value.to_list()}"
         else:
             v = '' if value is None else f" = {value}"
         return f"'{name}{dtype}{v}'"
@@ -337,7 +337,7 @@ class FieldArray(SingleDtypeField):
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-        return Array(self.dtype, self._bits).tolist() if self._bits is not None else None
+        return Array(self.dtype, self._bits).to_list() if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:

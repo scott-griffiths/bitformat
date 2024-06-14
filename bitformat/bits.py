@@ -42,10 +42,10 @@ class Bits:
 
     def __new__(cls, s: str | None = None, /) -> TBits:
         x = super().__new__(cls)
-        if s is not None:
-            x._bitstore = bitstore_helpers.str_to_bitstore(s)
-        else:
+        if s is None:
             x._bitstore = BitStore()
+        else:
+            x._bitstore = bitstore_helpers.str_to_bitstore(s)
         return x
 
     @classmethod
@@ -174,7 +174,7 @@ class Bits:
 
     def __len__(self) -> int:
         """Return the length of the Bits in bits."""
-        return self._getlength()
+        return len(self._bitstore)
 
     def __bytes__(self) -> bytes:
         return self.tobytes()
@@ -525,10 +525,6 @@ class Bits:
 
         """
         return self._bitstore.slice_to_hex()
-
-    def _getlength(self) -> int:
-        """Return the length of the Bits in bits."""
-        return len(self._bitstore)
 
     def _copy(self: TBits) -> TBits:
         """Create and return a new copy of the Bits (always in memory)."""

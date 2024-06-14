@@ -45,7 +45,7 @@ class Array:
     pp() -- Pretty print the Array.
     reverse() -- Reverse the order of all items.
     tobytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
-    tolist() -- Return Array items as a list.
+    to_list() -- Return Array items as a list.
 
     Special methods:
 
@@ -220,7 +220,7 @@ class Array:
             self._data = self._data.getslice(0, start) + self._data.getslice(start + self._dtype.length, None)
 
     def __repr__(self) -> str:
-        list_str = f"{self.tolist()}"
+        list_str = f"{self.to_list()}"
         trailing_bit_length = len(self.data) % self._dtype.length
         final_str = "" if trailing_bit_length == 0 else ", trailing_bits=" + repr(
             self.data[-trailing_bit_length:])
@@ -228,10 +228,10 @@ class Array:
 
     def astype(self, dtype: Union[str, Dtype]) -> Array:
         """Return Array with elements of new dtype, initialised from current Array."""
-        new_array = self.__class__(dtype, self.tolist())
+        new_array = self.__class__(dtype, self.to_list())
         return new_array
 
-    def tolist(self) -> list[ElementType]:
+    def to_list(self) -> list[ElementType]:
         return [self._dtype.read_fn(self.data, start=start)
                 for start in range(0, len(self.data) - self._dtype.length + 1, self._dtype.length)]
 
