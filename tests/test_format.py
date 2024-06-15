@@ -20,7 +20,7 @@ class TestCreation:
         f = Format([Field(d)], 'x')
         x = f.build([1000])
         assert f.name == 'x'
-        assert x == 'uint:12=1000'
+        assert x == 'u12=1000'
         assert len(x) == 12
 
     def test_create_from_bits_string(self):

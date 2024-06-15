@@ -51,7 +51,7 @@ class Expression:
         if bad_nodes:
             raise SyntaxError(f"bitformat.Expression: Disallowed operations used in expression '{self.code_str}'. "
                               f"Disallowed nodes were: {bad_nodes}. "
-                              f"If you think this operation should be allowed, please raise bug report.")
+                              f"If you think this operation should be allowed, please raise a bug report.")
         if '__' in self.code_str:
             raise SyntaxError(f"bitformat.Expression: Invalid expression '{self.code_str}'. Double underscores are not permitted.")
         code = compile(self.code_str, "<string>", "eval")

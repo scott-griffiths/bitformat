@@ -8,13 +8,13 @@ from bitformat import Bits
 
 class TestFlexibleInitialisation:
     def test_flexible_initialisation(self):
-        a = Bits('uint:8=12')
-        c = Bits(' uint : 8 =  12')
+        a = Bits('uint 8=12')
+        c = Bits(' uint  8 =  12')
         assert a == c == Bits.build('uint8', 12)
         assert a.uint == 12
-        a = Bits('     int:2=  -1')
-        b = Bits('int :2   = -1')
-        c = Bits(' int:  2  =-1  ')
+        a = Bits('     int2=  -1')
+        b = Bits('int 2   = -1')
+        c = Bits(' int  2  =-1  ')
         assert a == b == c == Bits.build('i2', -1)
 
     def test_flexible_initialisation2(self):
@@ -28,7 +28,7 @@ class TestFlexibleInitialisation:
     def test_multiple_string_initialisation(self):
         a = Bits('0b1 , 0x1')
         assert a == '0b10001'
-        b = Bits('uint:32 = 12, 0b11') + 'int:100=-100, 0o44'
+        b = Bits('u32 = 12, 0b11') + 'int100=-100, 0o44'
         assert b[0: 32].uint == 12
         assert b[32: 34].bin == '11'
         assert b[34: 134].int == -100
@@ -936,14 +936,13 @@ class TestManyDifferentThings:
         assert tp('hex') == (True, [('hex', None, None)])
         assert tp('hex=14') == (True, [('hex', None, '14')])
         assert tp('0xef') == (False, [('0x', None, 'ef')])
-        assert tp('uint:12') == (False, [('uint', 12, None)])
-        assert tp('int:30=-1') == (False, [('int', 30, '-1')])
+        assert tp('uint12') == (False, [('uint', 12, None)])
+        assert tp('i30=-1') == (False, [('i', 30, '-1')])
         assert tp('bits10') == (False, [('bits', 10, None)])
-        assert tp('bits:10') == (False, [('bits', 10, None)])
         assert tp('123') == (False, [('bits', 123, None)])
         assert tp('123') == (False, [('bits', 123, None)])
         assert tp('hex12', ('hex12',)) == (False, [('hex12', None, None)])
-        assert tp('2*bits:6') == (False, [('bits', 6, None), ('bits', 6, None)])
+        assert tp('2*bits6') == (False, [('bits', 6, None), ('bits', 6, None)])
 
     def test_reverse_bytes(self):
         a = Bits('0x123456')
@@ -1492,7 +1491,7 @@ class TestBugs:
             s.byteswap(5.4)
 
     def test_unicode(self):
-        a = Bits(u'uint:12=34')
+        a = Bits(u'u12=34')
         assert a.uint == 34
         a += u'0xfe'
         assert a == 'u12 = 34, 0xfe'

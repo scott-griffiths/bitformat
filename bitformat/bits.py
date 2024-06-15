@@ -306,7 +306,7 @@ class Bits:
         """
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
-        if not n:
+        if n == 0:
             return self.__class__()
         s = self._copy()
         s._imul(n)
@@ -328,7 +328,7 @@ class Bits:
 
         """
         if bs is self:
-            return self.copy()
+            return self
         bs = Bits._create_from_bitstype(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
@@ -349,7 +349,7 @@ class Bits:
 
         """
         if bs is self:
-            return self.copy()
+            return self
         bs = Bits._create_from_bitstype(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore

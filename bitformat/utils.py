@@ -7,9 +7,6 @@ from typing import Tuple, List, Pattern, Union
 # A token name followed by an integer number
 NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$')
 
-# A token name followed by : then an arbitrary keyword
-NAME_KWARG_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?):([a-zA-Z0-9_]+)$')
-
 CACHE_SIZE = 256
 
 MULTIPLICATIVE_RE: Pattern[str] = re.compile(r'^(?P<factor>.*)\*(?P<token>.+)')
@@ -26,16 +23,7 @@ def parse_name_length_token(fmt: str, **kwargs) -> Tuple[str, int | None]:
         length_str = m2.group(2)
         length = None if length_str == '' else int(length_str)
     else:
-        # Maybe the length is in the kwargs?
-        if m := NAME_KWARG_RE.match(fmt):
-            name = m.group(1)
-            try:
-                length_str = kwargs[m.group(2)]
-            except KeyError:
-                raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
-            length = int(length_str)
-        else:
-            raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
+        raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
     return name, length
 
 
@@ -51,10 +39,6 @@ def parse_single_token(token: str) -> Tuple[str, str, str | None]:
         name = m2.group(1)
         length_str = m2.group(2)
         length = None if length_str == '' else length_str
-    elif m3 := NAME_KWARG_RE.match(token):
-        # name then a keyword for a length
-        name = m3.group(1)
-        length = m3.group(2)
     else:
         # If you don't specify a 'name' then the default is 'bits'
         name = 'bits'

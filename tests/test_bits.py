@@ -508,7 +508,3 @@ class TestPrettyPrinting_NewFormats:
  0:  4635066033680416768 :                    76.25
 ] + trailing_bits = 0b11111
 """
-
-
-
-
