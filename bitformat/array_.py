@@ -29,8 +29,8 @@ class Array:
     b = Array('int5', [-9, 0, 4])
 
     The Array data is stored compactly as a Bits object and the Array behaves very like
-    a list of items of the given format. Both the Array data and fmt properties can be freely
-    modified after creation. If the data length is not a multiple of the fmt length then the
+    a list of items of the given format. The Array dtype can be freely
+    modified after creation. If the data length is not a multiple of the dtype length then the
     Array will have 'trailing_bits' which will prevent some methods from appending to the
     Array.
 
@@ -44,6 +44,7 @@ class Array:
     pop() -- Remove and return an item.
     pp() -- Pretty print the Array.
     reverse() -- Reverse the order of all items.
+    to_bits() -- Return the Array data as a Bits object.
     to_bytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
     to_list() -- Return Array items as a list.
 
@@ -54,7 +55,7 @@ class Array:
 
     Properties:
 
-    data -- The Bits binary data of the Array. Can be freely modified.
+    data -- The Bits binary data of the Array.
     dtype -- The format string or typecode. Can be freely modified.
     item_size -- The length *in bits* of a single item. Read only.
     trailing_bits -- If the data length is not a multiple of the fmt length, this Bits
@@ -74,6 +75,7 @@ class Array:
         if isinstance(initializer, numbers.Integral):
             self._data = BitStore.from_zeros(initializer * self._dtype.bitlength)
         elif isinstance(initializer, Bits):
+            # We may change the internal BitStore, so need to make a copy here.
             self._data = initializer._bitstore._copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
             self._data = BitStore.from_bytes(initializer)
@@ -87,8 +89,9 @@ class Array:
 
     @property
     def data(self) -> Bits:
+        # The internal BitStore could change later, so we need to copy data to make an immutable Bits.
         x = Bits()
-        x._bitstore = self._data
+        x._bitstore = self._data._copy()
         return x
 
     @data.setter
@@ -306,6 +309,11 @@ class Array:
 
         """
         return self.data.to_bytes()
+
+    def to_bits(self) -> Bits:
+        x = Bits()
+        x._bitstore = self._data._copy()
+        return x
 
     def reverse(self) -> None:
         trailing_bit_length = len(self.data) % self._dtype.length

@@ -871,3 +871,12 @@ class TestMisc:
         y = Array('float16', [100, 2.0, 0.0, 4])
         x = x + (y == 0.0)
         assert x.to_list() == [1, 2, 4, 4]
+
+
+def test_mutability():
+    a = Array('u8', [1, 2])
+    b = a.data
+    assert b.to_bytes() == b'\x01\x02'
+    assert isinstance(b, Bits)
+    a[0] += 5
+    assert b.to_bytes() == b'\x01\x02'
