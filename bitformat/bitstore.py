@@ -14,19 +14,19 @@ class BitStore:
         self._bitarray = bitarray.bitarray()
 
     @classmethod
-    def frombitarray(cls, b: bitarray.bitarray) -> BitStore:
+    def from_bitarray(cls, b: bitarray.bitarray) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = b
         return x
 
     @classmethod
-    def fromint(cls, i: int) -> BitStore:
+    def from_int(cls, i: int) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray(i)
         return x
 
     @classmethod
-    def fromstr(cls, s: str) -> BitStore:
+    def from_binstr(cls, s: str) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray(s)
         return x
@@ -72,13 +72,13 @@ class BitStore:
         return self._bitarray == other._bitarray
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        return BitStore.frombitarray(self._bitarray & other._bitarray)
+        return BitStore.from_bitarray(self._bitarray & other._bitarray)
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        return BitStore.frombitarray(self._bitarray | other._bitarray)
+        return BitStore.from_bitarray(self._bitarray | other._bitarray)
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        return BitStore.frombitarray(self._bitarray ^ other._bitarray)
+        return BitStore.from_bitarray(self._bitarray ^ other._bitarray)
 
     def __iand__(self, other: BitStore, /) -> BitStore:
         self._bitarray &= other._bitarray
@@ -173,10 +173,10 @@ class BitStore:
         return bool(self._bitarray.__getitem__(index))
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        return BitStore.frombitarray(self._bitarray.__getitem__(key))
+        return BitStore.from_bitarray(self._bitarray.__getitem__(key))
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        return BitStore.frombitarray(self._bitarray[start:stop])
+        return BitStore.from_bitarray(self._bitarray[start:stop])
 
     def invert(self, index: int | None = None, /) -> None:
         if index is not None:

@@ -90,7 +90,7 @@ class Bits:
     @classmethod
     def zeros(cls, length: int, /) -> TBits:
         x = super().__new__(cls)
-        x._bitstore = BitStore.fromint(length)
+        x._bitstore = BitStore.from_int(length)
         return x
 
     @classmethod
@@ -479,9 +479,9 @@ class Bits:
         # We deliberately don't want to have implicit conversions to bool here.
         # If we did then it would be difficult to deal with the 'False' string.
         if value in (1, 'True', '1'):
-            self._bitstore = BitStore.fromstr('1')
+            self._bitstore = BitStore.from_binstr('1')
         elif value in (0, 'False', '0'):
-            self._bitstore = BitStore.fromstr('0')
+            self._bitstore = BitStore.from_binstr('0')
         else:
             raise bitformat.CreationError(f"Cannot initialise boolean with {value}.")
 
@@ -492,7 +492,7 @@ class Bits:
         return None
 
     def _setpad(self, value: None, length: int) -> None:
-        self._bitstore = BitStore.fromint(length)
+        self._bitstore = BitStore.from_int(length)
 
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""

@@ -4,6 +4,7 @@ import pytest
 import bitformat
 import copy
 from bitformat import Bits
+from bitformat.bitstore_helpers import tokenparser
 
 
 class TestFlexibleInitialisation:
@@ -932,7 +933,7 @@ class TestManyDifferentThings:
         assert b == a * 10
 
     def test_token_parser(self):
-        tp = bitformat.utils.tokenparser
+        tp = tokenparser
         assert tp('hex') == [('hex', None, None)]
         assert tp('hex=14') == [('hex', None, '14')]
         assert tp('0xef') == [('0x', None, 'ef')]
