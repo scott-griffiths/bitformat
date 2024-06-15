@@ -939,7 +939,6 @@ class TestManyDifferentThings:
         assert tp('uint12') == [('uint', 12, None)]
         assert tp('i30=-1') == [('i', 30, '-1')]
         assert tp('bits10') == [('bits', 10, None)]
-        assert tp('2*bits6') == [('bits', 6, None), ('bits', 6, None)]
 
     def test_reverse_bytes(self):
         a = Bits('0x123456')

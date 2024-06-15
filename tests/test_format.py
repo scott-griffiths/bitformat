@@ -255,7 +255,7 @@ def test_repeat_with_const_expression():
                     'const bin3=111'
                 ])])
     f.build([3])
-    assert f.to_bits() == 'i9=3, 3*0x07'
+    assert f.to_bits() == 'i9=3, 0x070707'
 
 def test_repeat_with_bits():
     f = Repeat(3, '0xab')

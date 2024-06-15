@@ -9,8 +9,6 @@ NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$')
 
 CACHE_SIZE = 256
 
-MULTIPLICATIVE_RE: Pattern[str] = re.compile(r'^(?P<factor>.*)\*(?P<token>.+)')
-
 # Hex, oct or binary literals
 LITERAL_RE: Pattern[str] = re.compile(r'^(?P<name>0([xob]))(?P<value>.+)', re.IGNORECASE)
 
@@ -48,23 +46,7 @@ def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
 def preprocess_tokens(fmt: str) -> list[str]:
     # Remove whitespace
     fmt = ''.join(fmt.split())
-    meta_tokens = fmt.split(',')
-    final_tokens = []
-
-    for meta_token in meta_tokens:
-        if meta_token == '':
-            continue
-        # Extract factor and actual token if a multiplicative factor exists
-        factor = 1
-        if m := MULTIPLICATIVE_RE.match(meta_token):
-            factor = int(m.group('factor'))
-            meta_token = m.group('token')
-
-        tokens = [meta_token]
-
-        # Extend final tokens list with parsed tokens, repeated by the factor
-        final_tokens.extend(tokens * factor)
-    return final_tokens
+    return [token for token in fmt.split(',') if token]
 
 
 @functools.lru_cache(CACHE_SIZE)
@@ -76,18 +58,17 @@ def tokenparser(fmt: str) -> \
     initialiser is one of: hex, oct, bin, uint, int, 0x, 0o, 0b etc.
     length is None if not known, as is value.
 
-    tokens must be of the form: [factor*][initialiser][length][=value]
+    tokens must be of the form: [initialiser][length][=value]
 
     """
-    tokens = preprocess_tokens(fmt)
+    fmt = ''.join(fmt.split())  # Remove whitespace
     ret_vals: list[tuple[str, str | int | None, str | None]] = []
-    for token in tokens:
-        if token == '':
+    for token in fmt.split(','):
+        if not token:
             continue
         # Match literal tokens of the form 0x... 0o... and 0b...
         if m := LITERAL_RE.match(token):
             ret_vals.append((m.group('name'), None, m.group('value')))
             continue
-        name, length, value = parse_single_token(token)
-        ret_vals.append((name, length, value))
+        ret_vals.append(parse_single_token(token))
     return ret_vals
