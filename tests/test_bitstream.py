@@ -933,16 +933,15 @@ class TestManyDifferentThings:
 
     def test_token_parser(self):
         tp = bitformat.utils.tokenparser
-        assert tp('hex') == (True, [('hex', None, None)])
-        assert tp('hex=14') == (True, [('hex', None, '14')])
-        assert tp('0xef') == (False, [('0x', None, 'ef')])
-        assert tp('uint12') == (False, [('uint', 12, None)])
-        assert tp('i30=-1') == (False, [('i', 30, '-1')])
-        assert tp('bits10') == (False, [('bits', 10, None)])
-        assert tp('123') == (False, [('bits', 123, None)])
-        assert tp('123') == (False, [('bits', 123, None)])
-        assert tp('hex12', ('hex12',)) == (False, [('hex12', None, None)])
-        assert tp('2*bits6') == (False, [('bits', 6, None), ('bits', 6, None)])
+        assert tp('hex') == [('hex', None, None)]
+        assert tp('hex=14') == [('hex', None, '14')]
+        assert tp('0xef') == [('0x', None, 'ef')]
+        assert tp('uint12') == [('uint', 12, None)]
+        assert tp('i30=-1') == [('i', 30, '-1')]
+        assert tp('bits10') == [('bits', 10, None)]
+        assert tp('123') == [('bits', 123, None)]
+        assert tp('123') == [('bits', 123, None)]
+        assert tp('2*bits6') == [('bits', 6, None), ('bits', 6, None)]
 
     def test_reverse_bytes(self):
         a = Bits('0x123456')

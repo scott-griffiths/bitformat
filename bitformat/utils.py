@@ -70,28 +70,20 @@ def preprocess_tokens(fmt: str) -> List[str]:
 
 
 @functools.lru_cache(CACHE_SIZE)
-def tokenparser(fmt: str, keys: Tuple[str, ...] = ()) -> \
-        Tuple[bool, List[Tuple[str, Union[int, str, None], str | None]]]:
+def tokenparser(fmt: str) -> \
+        list[tuple[str, int | str | None, str | None]]:
     """Divide the format string into tokens and parse them.
 
-    Return stretchy token and list of [initialiser, length, value]
-    initialiser is one of: hex, oct, bin, uint, int, se, ue, 0x, 0o, 0b etc.
+    Return list of [initialiser, length, value]
+    initialiser is one of: hex, oct, bin, uint, int, 0x, 0o, 0b etc.
     length is None if not known, as is value.
 
-    If the token is in the keyword dictionary (keys) then it counts as a
-    special case and isn't messed with.
-
-    tokens must be of the form: [factor*][initialiser][:][length][=value]
+    tokens must be of the form: [factor*][initialiser][length][=value]
 
     """
     tokens = preprocess_tokens(fmt)
-    stretchy_token = False
-    ret_vals: List[Tuple[str, Union[str, int, None], str | None]] = []
+    ret_vals: list[tuple[str, str | int | None, str | None]] = []
     for token in tokens:
-        if keys and token in keys:
-            # Don't bother parsing it, it's a keyword argument
-            ret_vals.append((token, None, None))
-            continue
         if token == '':
             continue
         # Match literal tokens of the form 0x... 0o... and 0b...
@@ -99,14 +91,10 @@ def tokenparser(fmt: str, keys: Tuple[str, ...] = ()) -> \
             ret_vals.append((m.group('name'), None, m.group('value')))
             continue
         name, length, value = parse_single_token(token)
-        if length is None:
-            stretchy_token = True
         if length is not None:
-            # Try converting length to int, otherwise check it's a key.
             try:
                 length = int(length)
             except ValueError:
-                if not keys or length not in keys:
-                    raise ValueError(f"Don't understand length '{length}' of token.")
+                raise ValueError(f"Don't understand length '{length}' of token.")
         ret_vals.append((name, length, value))
-    return stretchy_token, ret_vals
+    return ret_vals

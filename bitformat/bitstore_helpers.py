@@ -23,7 +23,7 @@ def tidy_input_string(s: str) -> str:
 
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
-    _, tokens = bitformat.utils.tokenparser(s)
+    tokens = bitformat.utils.tokenparser(s)
     bs = BitStore()
     for token in tokens:
         bs += bitstore_from_token(*token)
