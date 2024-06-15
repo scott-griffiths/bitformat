@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import bitarray
+import bitarray.util
 import copy
 import struct
 from typing import Union, Iterable, Iterator, Any
