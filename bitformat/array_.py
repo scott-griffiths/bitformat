@@ -72,7 +72,7 @@ class Array:
             raise CreationError(e)
 
         if isinstance(initializer, numbers.Integral):
-            self._data = BitStore.from_int(initializer * self._dtype.bitlength)
+            self._data = BitStore.from_zeros(initializer * self._dtype.bitlength)
         elif isinstance(initializer, Bits):
             self._data = initializer._bitstore._copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):

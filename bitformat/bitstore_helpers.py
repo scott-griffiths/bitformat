@@ -61,15 +61,6 @@ def tokenparser(fmt: str) -> \
     return ret_vals
 
 
-def tidy_input_string(s: str) -> str:
-    """Return string made lowercase and with all whitespace and underscores removed."""
-    try:
-        t = s.split()
-    except (AttributeError, TypeError):
-        raise ValueError(f"Expected str object but received a {type(s)} with value {s}.")
-    return ''.join(t).lower().replace('_', '')
-
-
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
     tokens = tokenparser(s)
@@ -79,76 +70,13 @@ def str_to_bitstore(s: str) -> BitStore:
     return bs
 
 
-def bin2bitstore(binstring: str) -> BitStore:
-    binstring = tidy_input_string(binstring)
-    binstring = binstring.replace('0b', '')
-    try:
-        return BitStore.from_binstr(binstring)
-    except ValueError:
-        raise ValueError(f"Invalid character in bin initialiser {binstring}.")
-
-
-def bin2bitstore_unsafe(binstring: str) -> BitStore:
-    return BitStore.from_binstr(binstring)
-
-
-def hex2bitstore(hexstring: str) -> BitStore:
-    hexstring = tidy_input_string(hexstring)
-    hexstring = hexstring.replace('0x', '')
-    try:
-        ba = bitarray.util.hex2ba(hexstring)
-    except ValueError:
-        raise ValueError("Invalid symbol in hex initialiser.")
-    return BitStore.from_bitarray(ba)
-
-
-def oct2bitstore(octstring: str) -> BitStore:
-    octstring = tidy_input_string(octstring)
-    octstring = octstring.replace('0o', '')
-    try:
-        ba = bitarray.util.base2ba(8, octstring)
-    except ValueError:
-        raise ValueError("Invalid symbol in oct initialiser.")
-    return BitStore.from_bitarray(ba)
-
-
-def int2bitstore(i: int, length: int, signed: bool) -> BitStore:
-    i = int(i)
-    try:
-        x = BitStore.from_bitarray(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
-    except OverflowError as e:
-        if signed:
-            if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
-        else:
-            if i >= (1 << length):
-                raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
-                                 f"The allowed range is [0, {(1 << length) - 1}].")
-            if i < 0:
-                raise ValueError("uint cannot be initialised with a negative number.")
-        raise e
-    return x
-
-
-def float2bitstore(f: Union[str, float], length: int) -> BitStore:
-    f = float(f)
-    fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
-    try:
-        b = struct.pack(fmt, f)
-    except OverflowError:
-        # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-        b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
-    return BitStore.from_bytes(b)
-
-
 literal_bit_funcs: Dict[str, Callable[..., BitStore]] = {
-    '0x': hex2bitstore,
-    '0X': hex2bitstore,
-    '0b': bin2bitstore,
-    '0B': bin2bitstore,
-    '0o': oct2bitstore,
-    '0O': oct2bitstore,
+    '0x': BitStore.from_hex,
+    '0X': BitStore.from_hex,
+    '0b': BitStore.from_bin,
+    '0B': BitStore.from_bin,
+    '0o': BitStore.from_oct,
+    '0O': BitStore.from_oct,
 }
 
 

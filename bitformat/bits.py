@@ -90,7 +90,7 @@ class Bits:
     @classmethod
     def zeros(cls, length: int, /) -> TBits:
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_int(length)
+        x._bitstore = BitStore.from_zeros(length)
         return x
 
     @classmethod
@@ -440,7 +440,7 @@ class Bits:
             length = len(self)
         if length is None or length == 0:
             raise bitformat.CreationError("A non-zero length must be specified with a uint initialiser.")
-        self._bitstore = bitstore_helpers.int2bitstore(uint, length, False)
+        self._bitstore = BitStore.from_int(uint, length, False)
 
     def _getuint(self) -> int:
         """Return data as an unsigned int."""
@@ -455,7 +455,7 @@ class Bits:
             length = len(self)
         if length is None or length == 0:
             raise bitformat.CreationError("A non-zero length must be specified with an int initialiser.")
-        self._bitstore = bitstore_helpers.int2bitstore(int_, length, True)
+        self._bitstore = BitStore.from_int(int_, length, True)
 
     def _getint(self) -> int:
         """Return data as a two's complement signed int."""
@@ -468,7 +468,7 @@ class Bits:
             length = len(self)
         if length is None or length not in [16, 32, 64]:
             raise bitformat.CreationError("A length of 16, 32, or 64 must be specified with a float initialiser.")
-        self._bitstore = bitstore_helpers.float2bitstore(f, length)
+        self._bitstore = BitStore.from_float(f, length)
 
     def _getfloat(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
@@ -492,15 +492,15 @@ class Bits:
         return None
 
     def _setpad(self, value: None, length: int) -> None:
-        self._bitstore = BitStore.from_int(length)
+        self._bitstore = BitStore.from_zeros(length)
 
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
-        self._bitstore = bitstore_helpers.bin2bitstore(binstring)
+        self._bitstore = BitStore.from_bin(binstring)
 
     def _setbin_unsafe(self, binstring: str, length: None = None) -> None:
         """Same as _setbin_safe, but input isn't sanity checked. binstring mustn't start with '0b'."""
-        self._bitstore = bitstore_helpers.bin2bitstore_unsafe(binstring)
+        self._bitstore = BitStore.from_binstr(binstring)
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
@@ -508,7 +508,7 @@ class Bits:
 
     def _setoct(self, octstring: str, length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
-        self._bitstore = bitstore_helpers.oct2bitstore(octstring)
+        self._bitstore = BitStore.from_oct(octstring)
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
@@ -516,7 +516,7 @@ class Bits:
 
     def _sethex(self, hexstring: str, length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
-        self._bitstore = bitstore_helpers.hex2bitstore(hexstring)
+        self._bitstore = BitStore.from_hex(hexstring)
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string.
@@ -1018,7 +1018,7 @@ class Bits:
         if pos is None:
             # Set all bits to either 1 or 0
             v = -1 if value else 0
-            s._bitstore = bitstore_helpers.int2bitstore(v, len(self), True)
+            s._bitstore = BitStore.from_int(v, len(self), True)
             return s
         if not isinstance(pos, abc.Iterable):
             pos = (pos,)
