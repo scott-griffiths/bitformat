@@ -930,7 +930,7 @@ class Bits:
         """
         if fmt is None:
             fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
-        token_list = utils.preprocess_tokens(fmt)
+        token_list = [token.strip() for token in fmt.split(',')]
         dtype1, dtype2, bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(token_list, fmt)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]

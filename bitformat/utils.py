@@ -43,13 +43,6 @@ def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
 
 
 @functools.lru_cache(CACHE_SIZE)
-def preprocess_tokens(fmt: str) -> list[str]:
-    # Remove whitespace
-    fmt = ''.join(fmt.split())
-    return [token for token in fmt.split(',') if token]
-
-
-@functools.lru_cache(CACHE_SIZE)
 def tokenparser(fmt: str) -> \
         list[tuple[str, int | str | None, str | None]]:
     """Divide the format string into tokens and parse them.

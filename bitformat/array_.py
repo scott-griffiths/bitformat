@@ -333,7 +333,7 @@ class Array:
             dtype1 = self.dtype
             tidy_fmt = "dtype='" + colour.purple + str(self.dtype) + "'" + colour.off
         else:
-            token_list = utils.preprocess_tokens(fmt)
+            token_list = [token.strip() for token in fmt.split(',')]
             if len(token_list) not in [1, 2]:
                 raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
             name1, length1 = utils.parse_name_length_token(token_list[0])
