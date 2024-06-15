@@ -3,11 +3,6 @@
 API Reference
 =============
 
-.. autosummary::
-   :toctree: generated
-
-   bitformat
-
 .. autoclass:: Bits
     :members:
     :undoc-members:
