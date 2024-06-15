@@ -29,14 +29,14 @@ class TestCreation:
     def test_creation_from_bits(self):
         b = Bits('0xf, 0b1')
         f1 = Field.from_bits(b)
-        assert f1.tobits() == b
-        assert f1.const == True
+        assert f1.to_bits() == b
+        assert f1.const is True
         with pytest.raises(ValueError):
             _ = Field(Bits())
         f2 = Field.from_bits(b'123')
         assert f2.value == b'123'
         b = f2.build()
-        assert b.tobytes() == b'123'
+        assert b.to_bytes() == b'123'
 
     @given(name=st.text())
     def test_creation_with_names(self, name):
@@ -61,7 +61,7 @@ class TestCreation:
         assert f.dtype.name == 'u'
         assert f.value == 3
         assert f.name == ''
-        assert f.tobits() == '0b011'
+        assert f.to_bits() == '0b011'
 
     @given(st.binary())
     def test_creation_from_bytes(self, b):

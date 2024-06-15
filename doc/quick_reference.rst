@@ -68,8 +68,8 @@ Methods
 * :meth:`~FieldType.build`: Given positional and keyword values, fill in the any empty field(s) and build a `Bits` object.
 * :meth:`~FieldType.parse`: Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
 * :meth:`~FieldType.flatten`: Removes any nesting of fields and returns a flat list of FieldsTypes.
-* :meth:`~FieldType.tobits`: Converts the contents to a `Bits` bit literal.
-* :meth:`~FieldType.tobytes`: Converts the contents to a `bytes` object.
+* :meth:`~FieldType.to_bits`: Converts the contents to a `Bits` bit literal.
+* :meth:`~FieldType.to_bytes`: Converts the contents to a `bytes` object.
 * :meth:`~FieldType.vars`: Returns the positional and keyword values that are contained in the field.
 * :meth:`~FieldType.clear`: Sets the `value` of everything that is not a marked as const to `None`.
 

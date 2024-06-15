@@ -460,14 +460,14 @@ class TestArrayMethods:
 #         a = Array('bfloat', [-3, 1, 2])
 #         s = io.StringIO()
 #         a.pp('hex', stream=s)
-#         assert remove_unprintable(s.getvalue()) ==  "<Array fmt='hex', length=3, itemsize=16 bits, total data size=6 bytes> [\n" \
+#         assert remove_unprintable(s.getvalue()) ==  "<Array fmt='hex', length=3, item_size=16 bits, total data size=6 bytes> [\n" \
 #                                         " 0: c040 3f80 4000\n" \
 #                                         "]\n"
 #         a.data += '0b110'
 #         a.dtype='hex16'
 #         s = io.StringIO()
 #         a.pp(stream=s)
-#         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex16', length=3, itemsize=16 bits, total data size=7 bytes> [
+#         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex16', length=3, item_size=16 bits, total data size=7 bytes> [
 #  0: c040 3f80 4000
 # ] + trailing_bits = 0b110\n"""
 
@@ -475,7 +475,7 @@ class TestArrayMethods:
         a = Array('uint32', [12, 100, 99])
         s = io.StringIO()
         a.pp(stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Array dtype='u32', length=3, itemsize=32 bits, total data size=12 bytes> [
+        assert remove_unprintable(s.getvalue()) == """<Array dtype='u32', length=3, item_size=32 bits, total data size=12 bytes> [
  0:         12        100         99
 ]\n"""
 
@@ -483,7 +483,7 @@ class TestArrayMethods:
 #         a = Array('bits2', b'89')
 #         s = io.StringIO()
 #         a.pp(stream=s, width=0, show_offset=True)
-#         assert remove_unprintable(s.getvalue()) == """<Array dtype='bits2', length=8, itemsize=2 bits, total data size=2 bytes> [
+#         assert remove_unprintable(s.getvalue()) == """<Array dtype='bits2', length=8, item_size=2 bits, total data size=2 bytes> [
 #  0: 0b00
 #  1: 0b11
 #  2: 0b10
@@ -498,7 +498,7 @@ class TestArrayMethods:
 #         a = Array('float16', bytearray(20))
 #         s = io.StringIO()
 #         a.pp(stream=s, fmt='p3binary, bin', show_offset=False)
-#         assert remove_unprintable(s.getvalue()) == """<Array fmt='p3binary, bin', length=20, itemsize=8 bits, total data size=20 bytes> [
+#         assert remove_unprintable(s.getvalue()) == """<Array fmt='p3binary, bin', length=20, item_size=8 bits, total data size=20 bytes> [
 #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
 #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
 #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
@@ -510,7 +510,7 @@ class TestArrayMethods:
         a = Array('float16', bytearray(range(50, 56)))
         s = io.StringIO()
         a.pp(stream=s, fmt='u, bin')
-        assert remove_unprintable(s.getvalue()) == """<Array fmt='u, bin', length=3, itemsize=16 bits, total data size=6 bytes> [
+        assert remove_unprintable(s.getvalue()) == """<Array fmt='u, bin', length=3, item_size=16 bits, total data size=6 bytes> [
  0: 12851 13365 13879 : 0011001000110011 0011010000110101 0011011000110111
 ]\n"""
 

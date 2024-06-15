@@ -44,7 +44,7 @@ class Array:
     pop() -- Remove and return an item.
     pp() -- Pretty print the Array.
     reverse() -- Reverse the order of all items.
-    tobytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
+    to_bytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
     to_list() -- Return Array items as a list.
 
     Special methods:
@@ -56,7 +56,7 @@ class Array:
 
     data -- The Bits binary data of the Array. Can be freely modified.
     dtype -- The format string or typecode. Can be freely modified.
-    itemsize -- The length *in bits* of a single item. Read only.
+    item_size -- The length *in bits* of a single item. Read only.
     trailing_bits -- If the data length is not a multiple of the fmt length, this Bits
                      gives the leftovers at the end of the data.
 
@@ -96,7 +96,7 @@ class Array:
         self._data = value._bitstore
 
     @property
-    def itemsize(self) -> int:
+    def item_size(self) -> int:
         return self._dtype.length
 
     @property
@@ -284,7 +284,7 @@ class Array:
         if self._dtype.length % 8 != 0:
             raise ValueError(
                 f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
-        self.data.byteswap(self.itemsize // 8)
+        self.data.byteswap(self.item_size // 8)
 
     def count(self, value: ElementType) -> int:
         """Return count of Array items that equal value.
@@ -299,13 +299,13 @@ class Array:
         else:
             return sum(i == value for i in self)
 
-    def tobytes(self) -> bytes:
+    def to_bytes(self) -> bytes:
         """Return the Array data as a bytes object, padding with zero bits if needed.
 
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self.data.tobytes()
+        return self.data.to_bytes()
 
     def reverse(self) -> None:
         trailing_bit_length = len(self.data) % self._dtype.length
@@ -350,7 +350,7 @@ class Array:
             if token_length is None:
                 token_length = dtype2.bitlength
         if token_length is None:
-            token_length = self.itemsize
+            token_length = self.item_size
 
         trailing_bit_length = len(self.data) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
@@ -362,7 +362,7 @@ class Array:
         data = self.data if trailing_bit_length == 0 else self.data[0: -trailing_bit_length]
         length = len(self.data) // token_length
         len_str = colour.green + str(length) + colour.off
-        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, itemsize={token_length} bits, total data size={(len(self.data) + 7) // 8} bytes> [\n")
+        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, item_size={token_length} bits, total data size={(len(self.data) + 7) // 8} bytes> [\n")
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
         stream.write("]")
         if trailing_bit_length != 0:

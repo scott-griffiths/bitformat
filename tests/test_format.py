@@ -26,7 +26,7 @@ class TestCreation:
     def test_create_from_bits_string(self):
         f = Format([Field('float16', 'foo', 12.5)], 'x')
         g = Format(['foo: float16=12.5'], 'y')
-        assert f.tobits() == g.tobits()
+        assert f.to_bits() == g.to_bits()
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
@@ -94,7 +94,7 @@ class TestAddition:
     def test_adding_bits(self):
         f = Format()
         f += Field.from_bits('0xff')
-        assert f.tobytes() == b'\xff'
+        assert f.to_bytes() == b'\xff'
         f += Field.from_string('penguin:i9 =-8')
         x = f['penguin']
         assert x.value == -8
@@ -114,7 +114,7 @@ class TestArray:
         assert f2.fieldtypes[0].items == 20
         assert f2.fieldtypes[0].value is None
         f2['new_array'] = a
-        assert a == f2.tobits()
+        assert a == f2.to_bits()
 
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
@@ -216,7 +216,7 @@ def test_find_field():
     f.clear()
     assert f['width'].value is None
     f.build([352, 288])
-    assert f.tobits() == '0x000001b3160120'
+    assert f.to_bits() == '0x000001b3160120'
 
 @pytest.mark.skip
 def test_format_repr_and_str():
@@ -255,7 +255,7 @@ def test_repeat_with_const_expression():
                     'const bin3=111'
                 ])])
     f.build([3])
-    assert f.tobits() == 'i9=3, 3*0x07'
+    assert f.to_bits() == 'i9=3, 3*0x07'
 
 def test_repeat_with_bits():
     f = Repeat(3, '0xab')

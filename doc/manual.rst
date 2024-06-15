@@ -220,11 +220,11 @@ Methods
 
         Removes any nesting of fields and returns a flat list of FieldsTypes.
 
-      .. method:: FieldType.tobits() -> Bits
+      .. method:: FieldType.to_bits() -> Bits
 
         Converts the contents to a `Bits` bit literal.
 
-      .. method:: FieldType.tobytes() -> bytes
+      .. method:: FieldType.to_bytes() -> bytes
 
         Converts the contents to a `bytes` object.
         Between 0 and 7 zero bits will be added at the end to make it a whole number of bytes long.

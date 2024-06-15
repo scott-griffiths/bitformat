@@ -177,7 +177,7 @@ class Bits:
         return len(self._bitstore)
 
     def __bytes__(self) -> bytes:
-        return self.tobytes()
+        return self.to_bytes()
 
     def __str__(self) -> str:
         """Return string representations of Bits for printing.
@@ -399,11 +399,11 @@ class Bits:
         # bit position inside the Bits as that does not feature in the __eq__ operation.
         if len(self) <= 2000:
             # Use the whole Bits.
-            return hash((self.tobytes(), len(self)))
+            return hash((self.to_bytes(), len(self)))
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            return hash(((self[:800] + self[-800:]).tobytes(), len(self)))
+            return hash(((self[:800] + self[-800:]).to_bytes(), len(self)))
 
     def __bool__(self) -> bool:
         """Return False if Bits is empty, otherwise return True."""
@@ -421,7 +421,7 @@ class Bits:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
             raise bitformat.InterpretError("Cannot interpret as bytes unambiguously - not multiple of 8 bits.")
-        return self._bitstore.tobytes()
+        return self._bitstore.to_bytes()
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7f, 0xff))  # DEL char + non-ASCII
@@ -473,7 +473,7 @@ class Bits:
     def _getfloat(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
         fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
-        return struct.unpack(fmt, self._bitstore.tobytes())[0]
+        return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _setbool(self, value: Union[bool, str]) -> None:
         # We deliberately don't want to have implicit conversions to bool here.
@@ -546,7 +546,7 @@ class Bits:
     def _reversebytes(self, start: int, end: int) -> None:
         """Reverse bytes in-place."""
         assert (end - start) % 8 == 0
-        reversed_bytes = BitStore.from_bytes(self._bitstore.getslice(start, end).tobytes()[::-1])
+        reversed_bytes = BitStore.from_bytes(self._bitstore.getslice(start, end).to_bytes()[::-1])
         self._bitstore = self._bitstore.getslice(0, start) + reversed_bytes + self._bitstore.getslice(end, None)
 
     def _invert(self, pos: int, /) -> None:
@@ -700,13 +700,13 @@ class Bits:
             start_ += bits
         return
 
-    def tobytes(self) -> bytes:
+    def to_bytes(self) -> bytes:
         """Return the Bits as bytes, padding with zero bits if needed.
 
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self._bitstore.tobytes()
+        return self._bitstore.to_bytes()
 
     def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current Bits starts with prefix.

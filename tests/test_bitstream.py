@@ -833,7 +833,7 @@ class TestManyDifferentThings:
         b = Bits('0b00')
         a += b
         assert a == '0b1111100'
-        assert a.tobytes() == b'\xf8'
+        assert a.to_bytes() == b'\xf8'
         with pytest.raises(ValueError):
             _ = a.bytes
 

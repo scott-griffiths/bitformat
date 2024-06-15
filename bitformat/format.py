@@ -33,7 +33,7 @@ class Format(FieldType):
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
             values_used += v
-        return self.tobits(), values_used
+        return self.to_bits(), values_used
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         pos = 0
@@ -54,8 +54,8 @@ class Format(FieldType):
         for fieldtype, v in zip(self.fieldtypes, val):
             fieldtype._setvalue(v)
 
-    def tobits(self) -> Bits:
-        return Bits().join(fieldtype.tobits() for fieldtype in self.fieldtypes)
+    def to_bits(self) -> Bits:
+        return Bits().join(fieldtype.to_bits() for fieldtype in self.fieldtypes)
 
     def flatten(self) -> list[FieldType]:
         # Just return a flat list of fields
@@ -208,7 +208,7 @@ class Repeat(FieldType):
             flattened_fields.extend(self.fieldtype.flatten())
         return flattened_fields
 
-    def tobits(self) -> Bits:
+    def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:

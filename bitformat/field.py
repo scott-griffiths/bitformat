@@ -52,14 +52,14 @@ class FieldType(abc.ABC):
         return bits
 
     @abc.abstractmethod
-    def tobits(self) -> Bits:
+    def to_bits(self) -> Bits:
         """Return the bits that represent the field."""
         ...
 
-    def tobytes(self) -> bytes:
+    def to_bytes(self) -> bytes:
         """Return the bytes that represent the field. Pads with up to 7 zero bits if necessary."""
-        b = self.tobits()
-        return b.tobytes()
+        b = self.to_bits()
+        return b.to_bytes()
 
     @abc.abstractmethod
     def clear(self) -> None:
@@ -131,7 +131,7 @@ class SingleDtypeField(FieldType):
             raise ValueError(f"Can't set a field to be constant if it has no value.")
         self.const = const
 
-    def tobits(self) -> Bits:
+    def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
@@ -395,7 +395,7 @@ class Find(FieldType):
     def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
-    def tobits(self) -> Bits:
+    def to_bits(self) -> Bits:
         return Bits()
 
     def clear(self) -> None:

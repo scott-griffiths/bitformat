@@ -41,7 +41,7 @@ class BitStore:
     def setall(self, value: int, /) -> None:
         self._bitarray.setall(value)
 
-    def tobytes(self) -> bytes:
+    def to_bytes(self) -> bytes:
         return self._bitarray.tobytes()
 
     def slice_to_uint(self, start: int | None = None, end: int | None = None) -> int:
@@ -111,7 +111,7 @@ class BitStore:
     def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
         if bytealigned is True and len(bs) % 8 == 0:
             # Special case, looking for whole bytes on whole byte boundaries
-            bytes_ = bs.tobytes()
+            bytes_ = bs.to_bytes()
             # Round up start byte to next byte, and round end byte down.
             # We're only looking for whole bytes, so can ignore bits at either end.
             start_byte = (start + 7) // 8
