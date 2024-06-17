@@ -98,14 +98,19 @@ class Array:
     def data(self, value: Bits) -> None:
         self._bitstore = value._bitstore
 
+    def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
+        x = Bits()
+        x._bitstore = self._bitstore.getslice(start, stop)
+        return x
+
     @property
     def item_size(self) -> int:
         return self._dtype.length
 
     @property
     def trailing_bits(self) -> Bits:
-        trailing_bit_length = len(self.data) % self._dtype.bitlength
-        return Bits() if trailing_bit_length == 0 else self.data[-trailing_bit_length:]
+        trailing_bit_length = len(self._bitstore) % self._dtype.bitlength
+        return Bits() if trailing_bit_length == 0 else self._getbitslice(-trailing_bit_length, None)
 
     @property
     def dtype(self) -> Dtype:
@@ -130,12 +135,12 @@ class Array:
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.build(value)
-        if len(b) != self._dtype.length:
+        if len(b) != self._dtype.bitlength:
             raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
         return b
 
     def __len__(self) -> int:
-        return len(self.data) // self._dtype.length
+        return len(self._bitstore) // self._dtype.length
 
     @overload
     def __getitem__(self, key: slice) -> Array:
@@ -151,20 +156,20 @@ class Array:
             if step != 1:
                 d = Bits()
                 for s in range(start * self._dtype.length, stop * self._dtype.length, step * self._dtype.length):
-                    d += self.data[s: s + self._dtype.length]
+                    d += self._bitstore.getslice(s, s + self._dtype.length)
                 a = self.__class__(self._dtype)
-                a.data = d
+                a._bitstore = d._bitstore
                 return a
             else:
                 a = self.__class__(self._dtype)
-                a.data = self.data[start * self._dtype.length: stop * self._dtype.length]
+                a._bitstore = self._bitstore.getslice(start * self._dtype.length, stop * self._dtype.length)
                 return a
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            return self._dtype.read_fn(self.data, start=self._dtype.length * key)
+            return self._dtype.get_fn(self.data[self._dtype.length * key: self._dtype.length * (key + 1)])
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[ElementType]) -> None:
@@ -224,9 +229,9 @@ class Array:
 
     def __repr__(self) -> str:
         list_str = f"{self.to_list()}"
-        trailing_bit_length = len(self.data) % self._dtype.length
+        trailing_bit_length = len(self._bitstore) % self._dtype.length
         final_str = "" if trailing_bit_length == 0 else ", trailing_bits=" + repr(
-            self.data[-trailing_bit_length:])
+            self._getbitslice(-trailing_bit_length, None))
         return f"Array('{self._dtype}', {list_str}{final_str})"
 
     def astype(self, dtype: Union[str, Dtype]) -> Array:
