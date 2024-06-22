@@ -946,36 +946,14 @@ class TestManyDifferentThings:
         a = a.byteswap()
         assert a == '0x563412'
         b = a + '0b1'
-        b = b.byteswap()
-        assert '0x123456, 0b1' == b
+        with pytest.raises(ValueError):
+            _ = b.byteswap()
         a = Bits('0x54')
         a = a.byteswap()
         assert a == '0x54'
         a = Bits()
         a = a.byteswap()
         assert not a
-
-    def test_reverse_bytes2(self):
-        a = Bits()
-        a = a.byteswap()
-        assert a == Bits()
-        a = Bits('0x00112233')
-        a = a.byteswap(0, 0, 16)
-        assert a == '0x11002233'
-        a = a.byteswap(0, 4, 28)
-        assert a == '0x12302103'
-        a = a.byteswap(start=0, end=18)
-        assert a == '0x30122103'
-        with pytest.raises(ValueError):
-            _ = a.byteswap(0, 10, 2)
-        with pytest.raises(ValueError):
-            _ = a.byteswap(0, -4, 4)
-        with pytest.raises(ValueError):
-            _ = a.byteswap(0, 24, 48)
-        a = a.byteswap(0, 24)
-        assert a == '0x30122103'
-        a = a.byteswap(0, 11, 11)
-        assert a == '0x30122103'
 
     def test_startswith(self):
         a = Bits()
@@ -1372,11 +1350,8 @@ class TestBugs:
         t = t.reverse(-12, -4)
         assert t == '0x778899abc7bf'
 
-        # reversebytes
-        t = t.byteswap(0, -40, -16)
-        assert t == '0x77ab9988c7bf'
-
         # overwrite
+        t = Bits('0x77ab9988c7bf')
         t = t.overwrite('0x666', -20)
         assert t == '0x77ab998666bf'
 
@@ -1445,46 +1420,24 @@ class TestBugs:
 
     def test_byte_swap_int(self):
         s = Bits('0xf234567f')
-        s = s.byteswap(1, start=4)
-        assert s == '0xf234567f'
-        s = s.byteswap(2, start=4)
-        assert s == '0xf452367f'
-        s = s.byteswap(2, start=4, end=-4)
-        assert s == '0xf234567f'
-        s = s.byteswap(3)
-        assert s == '0x5634f27f'
-        s = s.byteswap(2, repeat=False)
-        assert s == '0x3456f27f'
-
-    def test_byte_swap_pack_code(self):
-        s = Bits('0x0011223344556677')
         s = s.byteswap(1)
-        assert s == '0x0011223344556677'
-
-    def test_byte_swap_iterable(self):
-        s = Bits('0x0011223344556677')
-        s = s.byteswap(range(1, 4), repeat=False)
-        assert s == '0x0022115544336677'
-        s = s.byteswap([2], start=8)
-        assert s == '0x0011224455663377'
-        s = s.byteswap([2, 3], start=4)
-        assert s == '0x0120156452463377'
+        assert s == '0xf234567f'
+        s = s.byteswap(2)
+        assert s == '0x34f27f56'
+        s = s.byteswap(2)
+        assert s == '0xf234567f'
+        with pytest.raises(ValueError):
+            _ = s.byteswap(3)
 
     def test_byte_swap_errors(self):
         s = Bits('0x0011223344556677')
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             s.byteswap('z')
         with pytest.raises(ValueError):
             s.byteswap(-1)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             s.byteswap([-1])
         with pytest.raises(ValueError):
-            s.byteswap([1, 'e'])
-        with pytest.raises(ValueError):
-            s.byteswap('!h')
-        with pytest.raises(ValueError):
-            s.byteswap(2, start=-1000)
-        with pytest.raises(TypeError):
             s.byteswap(5.4)
 
     def test_unicode(self):

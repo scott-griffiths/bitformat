@@ -1091,54 +1091,30 @@ class Bits:
         n %= (end - start)
         return self[:start] + self[start + n: end] + self[start: start + n] + self[end:]
 
-    def byteswap(self, fmt: int | Iterable[int] | str = None, start: int | None = None,
-                 end: int | None = None, repeat: bool = True) -> TBits:
-        """Change the endianness in-place. Return number of repeats of fmt done.
+    def byteswap(self, bytelength: int | None = None, /) -> TBits:
+        """Change the byte endianness. Return new Bits.
 
-        fmt -- An integer number of bytes or
-               an iterable of integers. Defaults to 0, which byte reverses the
-               whole Bits.
-        start -- Start bit position, defaults to 0.
-        end -- End bit position, defaults to len(self).
-        repeat -- If True (the default) the byte swapping pattern is repeated
-                  as much as possible.
+        bytelength: An int giving the number of bytes to swap.
+
+        The whole of the Bits will be byte-swapped. It must be a multiple
+        of bytelength long.
 
         """
-        start_v, end_v = self._validate_slice(start, end)
-        if fmt is None or fmt == 0:
-            # reverse all of the whole bytes.
-            bytesizes = [(end_v - start_v) // 8]
-        elif isinstance(fmt, numbers.Integral):
-            if fmt < 0:
-                raise ValueError(f"Improper byte length {fmt}.")
-            bytesizes = [fmt]
-        elif isinstance(fmt, abc.Iterable):
-            bytesizes = fmt
-            for bytesize in bytesizes:
-                if not isinstance(bytesize, numbers.Integral) or bytesize < 0:
-                    raise ValueError(f"Improper byte length {bytesize}.")
-        else:
-            raise TypeError("Format must be an integer, string or iterable.")
-
-        s = self._copy()
-        repeats = 0
-        totalbitsize = 8 * sum(bytesizes)
-        if totalbitsize == 0:
-            return s
-        if repeat:
-            # Try to repeat up to the end of the Bits.
-            finalbit = end_v
-        else:
-            # Just try one (set of) byteswap(s).
-            finalbit = start_v + totalbitsize
-        for patternend in range(start_v + totalbitsize, finalbit + 1, totalbitsize):
-            bytestart = patternend - totalbitsize
-            for bytesize in bytesizes:
-                byteend = bytestart + bytesize * 8
-                s._reversebytes(bytestart, byteend)
-                bytestart += bytesize * 8
-            repeats += 1
-        return s
+        if len(self) % 8 != 0:
+            raise ValueError(f"Bit length must be an multiple of 8 to use byteswap.")
+        if bytelength is None:
+            bytelength = len(self) // 8
+        if bytelength == 0:
+            return Bits()
+        if bytelength < 0:
+            raise ValueError(f"Negative bytelength given: {bytelength}.")
+        if len(self) % (bytelength * 8) != 0:
+            raise ValueError(f"The bits should be a whole number of bytelength bytes long.")
+        chunks = []
+        for startbit in range(0, len(self), bytelength *8):
+            x = self[startbit:startbit + bytelength * 8].to_bytes()
+            chunks.append(Bits.from_bytes(x[::-1]))
+        return Bits.join(chunks)
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, bytealigned: bool | None = None) -> TBits:
