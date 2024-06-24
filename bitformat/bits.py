@@ -23,15 +23,16 @@ MAX_CHARS: int = 80
 
 class Bits:
     """
-    A container of binary data.
+    An immutable container of binary data.
 
-    To construct use a builder method:
+    To construct use a builder method.
+    ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
     * ``Bits.build(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
-    * ``Bits.zeros(n)`` - Initialise with zero bits.
-    * ``Bits.ones(n)`` - Initialise with one bits.
+    * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
+    * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.join(iterable)`` - Concatenate from an iterable such as a list.
     """
 
@@ -70,6 +71,7 @@ class Bits:
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> TBits:
+        """Create a new Bits from a bytes object."""
         x = super().__new__(cls)
         x._bitstore = BitStore.from_bytes(b)
         return x
@@ -89,22 +91,36 @@ class Bits:
 
     @classmethod
     def zeros(cls, length: int, /) -> TBits:
+        """Create a new Bits with all bits set to zero.
+
+        length -- The number of bits.
+
+        """
+        if length == 0:
+            return Bits()
         x = super().__new__(cls)
         x._bitstore = BitStore.from_zeros(length)
         return x
 
     @classmethod
     def ones(cls, length: int, /) -> TBits:
+        """Create a new Bits with all bits set to one.
+
+        length -- The number of bits.
+
+        """
         if length == 0:
-            return Bits.zeros(0)
+            return Bits()
         return Dtype('i', length).build(-1)
 
     def parse(self, dtype: Dtype | str, /) -> Any:
+        """Interpret the Bits as a given data type."""
         d = Dtype(dtype)
         return d.parse(self)
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
+        """Create a new Bits from one of the many things that can be a BitsType."""
         if isinstance(auto, cls):
             return auto
         b = super().__new__(cls)
@@ -122,12 +138,16 @@ class Bits:
         return b
 
     def __iter__(self) -> Iterable[bool]:
+        """Iterate over the bits."""
         return iter(self._bitstore)
 
     def __copy__(self: TBits) -> TBits:
-        """Return a new copy of the Bits for the copy module."""
-        # Note that if you want a new copy (different ID), use _copy instead.
-        # The copy can return self as it's immutable.
+        """Return a new copy of the Bits for the copy module.
+
+        Note that if you want a new copy (different ID), use _copy instead.
+        This copy will return self as it's immutable.
+
+        """
         return self
 
     def __lt__(self, other: Any, /) -> bool:
@@ -135,23 +155,26 @@ class Bits:
         return NotImplemented
 
     def __gt__(self, other: Any, /) -> bool:
+        # Bits can't really be ordered.
         return NotImplemented
 
     def __le__(self, other: Any, /) -> bool:
+        # Bits can't really be ordered.
         return NotImplemented
 
     def __ge__(self, other: Any, /) -> bool:
+        # Bits can't really be ordered.
         return NotImplemented
 
     def __add__(self: TBits, bs: BitsType, /) -> TBits:
-        """Concatenate Bits and return new Bits."""
+        """Concatenate Bits and return a new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         s = self._copy()
         s._addright(bs)
         return s
 
     def __radd__(self: TBits, bs: BitsType, /) -> TBits:
-        """Concatenate Bits and return new Bits."""
+        """Concatenate Bits and return a new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         return bs.__add__(self)
 
