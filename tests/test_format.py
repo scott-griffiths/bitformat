@@ -198,7 +198,7 @@ class TestMethods:
 
 def test_repeating_field():
     f = Repeat(5, 'u8')
-    d = Array('u8', [1, 5, 9, 7, 6]).data
+    d = Array('u8', [1, 5, 9, 7, 6]).delegate
     f.parse(d)
     assert f.value == [1, 5, 9, 7, 6]
 

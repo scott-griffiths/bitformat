@@ -35,8 +35,7 @@ class TestCreation:
         assert a[-1] == 7
 
     def test_creation_from_bytes_explicit(self):
-        a = Array('hex8')
-        a.data = Bits.from_bytes(b'ABCD')
+        a = Array('hex8', Bits.from_bytes(b'ABCD'))
         assert a[0] == '41'
         assert a[1] == '42'
         assert a[2] == '43'
@@ -88,17 +87,17 @@ class TestCreation:
 
     def test_creation_with_trailing_bits(self):
         a = Array('bool', trailing_bits='0xf')
-        assert a.data == '0b1111'
+        assert a.delegate == '0b1111'
         assert len(a) == 4
 
         b = Array('bin3', ['111', '000', '111'])
         assert len(b) == 3
-        assert b.data == '0b111000111'
+        assert b.delegate == '0b111000111'
         b.dtype = 'hex4'
         assert len(b) == 2
         with pytest.raises(ValueError):
             b.append('f')
-        b.data = b.data[1:]
+        b = Array(b.dtype, b.delegate[1:])
         b.append('f')
         assert len(b) == 3
 
@@ -164,14 +163,14 @@ class TestArrayMethods:
     def test_from_bytes(self):
         a = Array('i16')
         assert len(a) == 0
-        a.data += bytearray([0, 0, 0, 55])
+        a = Array(a.dtype, a.to_bits() + bytearray([0, 0, 0, 55]))
         assert len(a) == 2
         assert a[0] == 0
         assert a[1] == 55
-        a.data += b'\x01\x00'
+        a.extend(b'\x01\x00')
         assert len(a) == 3
         assert a[-1] == 256
-        a.data += bytearray()
+        a.extend(bytearray())
         assert len(a) == 3
 
     def test_equals(self):
@@ -192,9 +191,9 @@ class TestArrayMethods:
         assert not b.equals(a)
         b.dtype = 'u20'
         assert a.equals(b)
-        a.data += '0b1'
+        a = Array(a.dtype, a.delegate + '0b1')
         assert not a.equals(b)
-        b.data += '0b1'
+        b = Array(b.dtype, b.delegate + '0b1')
         assert a.equals(b)
 
         c = Array('uint8', [1, 2])
@@ -203,17 +202,15 @@ class TestArrayMethods:
 
     def test_equals_with_trailing_bits(self):
         a = Array('hex4', ['a', 'b', 'c', 'd', 'e', 'f'])
-        c = Array('hex4')
-        c.data = Bits.from_string('0xabcdef, 0b11')
+        c = Array('hex4', Bits.from_string('0xabcdef, 0b11'))
         assert a.to_list() == c.to_list()
         assert a != c
-        a.data += '0b11'
+        a = Array(a.dtype, a.delegate + '0b11')
         assert a.to_list() == c.to_list()
         assert a.equals(c)
 
     def test_setting(self):
-        a = Array('bool')
-        a.data += b'\x00'
+        a = Array('bool', b'\x00')
         a[0] = 1
         assert a[0] is True
 
@@ -232,7 +229,7 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             b[0] = Bits.from_string('0xfff')
         b[0] = 'fff'
-        assert b.data.hex == 'fff345'
+        assert b.delegate.hex == 'fff345'
 
     def test_setting_from_iterable(self):
         a = Array('uint99', range(100))
@@ -255,10 +252,10 @@ class TestArrayMethods:
         b = Array('i3', [0])
         with pytest.raises(TypeError):
             a.extend(b)
-        a.data = a.data[1:]
+        a = Array(a.dtype, a.delegate[1:])
         with pytest.raises(ValueError):
             a.extend([1, 0])
-        a.data = Bits()
+        a = Array(a.dtype)
         with pytest.raises(TypeError):
             a.extend('u3=3')  # Can't extend with a str even though it's iterable
 
@@ -279,13 +276,13 @@ class TestArrayMethods:
 
     def test_insert(self):
         a = Array('hex12', ['abc', 'def'])
-        assert a.data.hex == 'abcdef'
+        assert a.delegate.hex == 'abcdef'
         a.insert(0, '000')
-        assert a.data.hex == '000abcdef'
+        assert a.delegate.hex == '000abcdef'
         a.insert(-1, '111')
         assert a[-1] == 'def'
         assert a[-2] == '111'
-        a.data += '0b1'
+        a = Array(a.dtype, a.delegate + '0b1')
         assert a[-1] == 'def'
         a.insert(1, '111')
         assert a.to_list() == ['000', '111', 'abc', '111', 'def']
@@ -324,7 +321,7 @@ class TestArrayMethods:
         a.append(3)
         a.reverse()
         assert a.to_list() == [3, 2]
-        a.data = Bits()
+        a = Array(a.dtype)
         a.extend(list(range(1000)))
         a.reverse()
         assert a.to_list() == list(range(999, -1, -1))
@@ -332,7 +329,7 @@ class TestArrayMethods:
         assert x == 999
         a.reverse()
         assert a.to_list() == list(range(0, 999))
-        a.data += '0b1'
+        a = Array(a.dtype, a.delegate + '0b1')
         with pytest.raises(ValueError):
             a.reverse()
 
@@ -397,12 +394,12 @@ class TestArrayMethods:
         a = Array('int5')
         b = eval(a.__repr__())
         assert a.equals(b)
-        a.data += '0b11'
+        a = Array(a.dtype, Bits.from_string('0b11'))
 
         b = eval(a.__repr__())
         assert a.equals(b)
 
-        a.data += '0b000'
+        a = Array(a.dtype, a.delegate + '0b000')
         b = eval(a.__repr__())
         assert a.equals(b)
 
@@ -435,11 +432,10 @@ class TestArrayMethods:
         assert not 89 in a
 
     def test__copy__(self):
-        a = Array('i4')
-        a.data += '0x123451234561'
+        a = Array('i4', Bits.from_string('0x123451234561'))
         b = copy.copy(a)
         assert a.equals(b)
-        a.data += '0b1010'
+        a = Array(a.dtype, a.delegate + '0b1010')
         assert not a.equals(b)
 
     def test__iadd__(self):
@@ -521,7 +517,7 @@ class TestArrayOperations:
         a = Array('i7', [-9, 4, 0])
         a += 9
         assert a.to_list() == [0, 13, 9]
-        assert len(a.data) == 21
+        assert len(a.delegate) == 21
 
     def test_add(self):
         a = Array('f64')
@@ -602,7 +598,7 @@ class TestArrayOperations:
         with pytest.raises(ValueError):
             a &= '0b111'
         a &= '0b0000000111'
-        assert a.data == '0b 0000000001 0000000001 0000000001'
+        assert a.delegate == '0b 0000000001 0000000001 0000000001'
 
     # def test_or(self):
     #     a = Array('p4binary', [-4, 2.5, -9, 0.25])
@@ -630,8 +626,7 @@ class TestArrayOperations:
         a ^= '0b00, 0x0f'
 
     def test_rshift(self):
-        a = Array(dtype='u8')
-        a.data = Bits.from_string('0x00010206')
+        a = Array('u8', Bits.from_string('0x00010206'))
         b = a >> 1
         assert a.to_list() == [0, 1, 2, 6]
         assert b.to_list() == [0, 0, 1, 3]
@@ -856,10 +851,10 @@ class TestMisc:
 
     def test_bytes(self):
         a = Array('bytes8', 5)
-        assert a.data == b'\x00'*40
+        assert a.delegate == b'\x00'*40
 
         b = Array('bytes1', 5)
-        assert b.data == b'\x00'*5
+        assert b.delegate == b'\x00'*5
 
     def test_bytes_trailing_bits(self):
         b = Bits.from_string('0x000000, 0b111')
@@ -875,8 +870,35 @@ class TestMisc:
 
 def test_mutability():
     a = Array('u8', [1, 2])
-    b = a.data
+    b = a.to_bits()
     assert b.to_bytes() == b'\x01\x02'
     assert isinstance(b, Bits)
     a[0] += 5
     assert b.to_bytes() == b'\x01\x02'
+
+
+class TestDelegation:
+
+    def test_delegation_methods(self):
+        x = Array('u8', [1, 2, 3])
+        y = x.delegate.starts_with('0x01')
+        assert y is True
+        x.insert(0, 15)
+        y = x.delegate.starts_with('0x01')
+        assert y is False
+        assert len(x.delegate) == 32
+
+    def test_getitem(self):
+        a = Array('i4', [1, 2, 5, -1])
+        assert a.delegate[-4:] == '0xf'
+
+    def test_setitem(self):
+        a = Array('i4', [1, 2, 5, 5])
+        with pytest.raises(TypeError):
+            a.delegate[-4:] = '0xf'
+
+    def test_mutability(self):
+        a = Array('i4', [1, 2, 5, 5])
+        b = a.delegate
+        a[0] = 3
+        assert b[0:4] == '0b0011'

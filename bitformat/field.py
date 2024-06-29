@@ -22,7 +22,11 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
 class FieldType(abc.ABC):
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions. Return the number of bits used."""
+        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
+
+        Return the number of bits used.
+
+        """
         ...
 
     def parse(self, b: Bits | bytes | bytearray) -> int:
@@ -35,7 +39,11 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        """Build the field from the values list, starting at index. Return the bits and the number of values used."""
+        """Build the field from the values list, starting at index.
+
+        Return the bits and the number of values used.
+
+        """
         ...
 
     def build(self, values: Sequence[Any] | None = None, /,  **kwargs) -> Bits:
@@ -346,7 +354,7 @@ class FieldArray(SingleDtypeField):
         a = Array(self.dtype, value)
         if len(a) != self.items:
             raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.items}.")
-        self._bits = a.data
+        self._bits = a.delegate
 
     value = property(_getvalue, _setvalue)
 
