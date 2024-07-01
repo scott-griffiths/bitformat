@@ -30,16 +30,19 @@ class BitsProxy:
         x._bitstore = self._array._bitstore
         return getattr(x, name)
 
+    def __copy__(self):
+        # We can't use the Bits.__copy__ as that assumes immutability
+        x = Bits()
+        x._bitstore = self._array._bitstore
+        return x[:]
+
 
 # List of special methods to delegate
-# TODO: Check this list - delete what's not needed.
+# TODO: Check this list - delete what's not needed, add things that are needed.
 special_methods = [
-    '__len__',
-    '__getitem__', '__eq__', '__ne__', '__copy__',
+    '__len__', '__getitem__', '__eq__', '__ne__', '__str__', '__repr__',
     '__iter__', '__contains__', '__reversed__', '__add__',
-    '__sub__', '__mul__', '__truediv__', '__floordiv__',
-    '__mod__', '__divmod__', '__pow__', '__lshift__',
-    '__rshift__', '__and__', '__xor__', '__or__',
+    '__sub__', '__mul__',
 ]
 
 def method_factory(method_name):
@@ -100,7 +103,7 @@ class Array:
     def __init__(self, dtype: Union[str, Dtype], initializer: Union[int, Array, Iterable, Bits, bytes, bytearray, memoryview] | None = None,
                  trailing_bits: BitsType | None = None) -> None:
         self._bitstore = BitStore()
-        self.delegate = BitsProxy(self)
+        self.data = BitsProxy(self)
         try:
             self._set_dtype(dtype)
         except ValueError as e:
@@ -263,11 +266,11 @@ class Array:
         return new_array
 
     def to_list(self) -> list[ElementType]:
-        return [self._dtype.read_fn(self.delegate, start=start)
-                for start in range(0, len(self.delegate) - self._dtype.length + 1, self._dtype.length)]
+        return [self._dtype.read_fn(self.data, start=start)
+                for start in range(0, len(self.data) - self._dtype.length + 1, self._dtype.length)]
 
     def append(self, x: ElementType) -> None:
-        if len(self.delegate) % self._dtype.length != 0:
+        if len(self.data) % self._dtype.length != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._bitstore += self._create_element(x)._bitstore
 
@@ -279,8 +282,8 @@ class Array:
         if isinstance(iterable, Bits):
             self._bitstore += iterable._bitstore
             return
-        if len(self.delegate) % self._dtype.length != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self.delegate)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
+        if len(self.data) % self._dtype.length != 0:
+            raise ValueError(f"Cannot extend Array as its data length ({len(self.data)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
         if isinstance(iterable, Array):
             if self._dtype.name != iterable._dtype.name or self._dtype.length != iterable._dtype.length:
                 raise TypeError(
@@ -323,7 +326,7 @@ class Array:
             raise ValueError(
                 f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
         # TODO: This can't work - return value not used!
-        self.delegate.byteswap(self.item_size // 8)
+        self.data.byteswap(self.item_size // 8)
 
     def count(self, value: ElementType) -> int:
         """Return count of Array items that equal value.
@@ -344,7 +347,7 @@ class Array:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self.delegate.to_bytes()
+        return self.data.to_bytes()
 
     def to_bits(self) -> Bits:
         x = Bits()
@@ -352,11 +355,11 @@ class Array:
         return x
 
     def reverse(self) -> None:
-        trailing_bit_length = len(self.delegate) % self._dtype.length
+        trailing_bit_length = len(self.data) % self._dtype.length
         if trailing_bit_length != 0:
-            raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self.delegate)} bits) "
+            raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self.data)} bits) "
                              f"is not a multiple of the format length ({self._dtype.length} bits).")
-        self._bitstore = Bits.join([self._getbitslice(s - self._dtype.length, s) for s in range(len(self.delegate), 0, -self._dtype.length)])._bitstore
+        self._bitstore = Bits.join([self._getbitslice(s - self._dtype.length, s) for s in range(len(self.data), 0, -self._dtype.length)])._bitstore
 
     def pp(self, fmt: str | None = None, width: int = 120,
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -397,17 +400,17 @@ class Array:
         if token_length is None:
             token_length = self.item_size
 
-        trailing_bit_length = len(self.delegate) % token_length
+        trailing_bit_length = len(self.data) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
         if tidy_fmt is None:
             tidy_fmt = colour.purple + str(dtype1) + colour.off
             if dtype2 is not None:
                 tidy_fmt += ', ' + colour.blue + str(dtype2) + colour.off
             tidy_fmt = "fmt='" + tidy_fmt + "'"
-        data = self.delegate if trailing_bit_length == 0 else self._getbitslice(0, -trailing_bit_length)
-        length = len(self.delegate) // token_length
+        data = self.data if trailing_bit_length == 0 else self._getbitslice(0, -trailing_bit_length)
+        length = len(self.data) // token_length
         len_str = colour.green + str(length) + colour.off
-        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, item_size={token_length} bits, total data size={(len(self.delegate) + 7) // 8} bytes> [\n")
+        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, item_size={token_length} bits, total data size={(len(self.data) + 7) // 8} bytes> [\n")
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
         stream.write("]")
         if trailing_bit_length != 0:
@@ -421,7 +424,7 @@ class Array:
                 return False
             if self._dtype.name != other._dtype.name:
                 return False
-            if self.delegate != other.delegate:
+            if self.data != other.data:
                 return False
             return True
         return False
@@ -429,7 +432,7 @@ class Array:
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
         for _ in range(len(self)):
-            yield self._dtype.read_fn(self.delegate, start=start)
+            yield self._dtype.read_fn(self.data, start=start)
             start += self._dtype.length
 
     def __copy__(self) -> Array:
@@ -449,7 +452,7 @@ class Array:
             def partial_op(a):
                 return op(a)
         for i in range(len(self)):
-            v = self._dtype.read_fn(self.delegate, start=self._dtype.length * i)
+            v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
             try:
                 new_data += new_array._create_element(partial_op(v))
             except (CreationError, ZeroDivisionError, ValueError) as e:
@@ -470,7 +473,7 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            v = self._dtype.read_fn(self.delegate, start=self._dtype.length * i)
+            v = self._dtype.read_fn(self.data, start=self._dtype.length * i)
             try:
                 new_data += self._create_element(op(v, value))
             except (CreationError, ZeroDivisionError, ValueError) as e:
@@ -516,8 +519,8 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            a = self._dtype.read_fn(self.delegate, start=self._dtype.length * i)
-            b = other._dtype.read_fn(other.delegate, start=other._dtype.length * i)
+            a = self._dtype.read_fn(self.data, start=self._dtype.length * i)
+            b = other._dtype.read_fn(other.data, start=other._dtype.length * i)
             try:
                 new_data += new_array._create_element(op(a, b))
             except (CreationError, ValueError, ZeroDivisionError) as e:

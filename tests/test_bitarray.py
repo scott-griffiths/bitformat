@@ -103,13 +103,6 @@ class TestByteAligned:
         bitformat.options.bytealigned = False
 
 
-def test_copy_method():
-    s = Bits.zeros(9)
-    t = s.copy()
-    assert s == t
-    assert s is t
-
-
 def test_adding():
     a = Bits.from_string('0b0')
     b = Bits.from_string('0b11')

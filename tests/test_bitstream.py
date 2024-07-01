@@ -348,7 +348,7 @@ class TestOverwriting:
 
     def test_overwrite_null(self):
         s = Bits('0x342563fedec')
-        s2 = s.copy()
+        s2 = s[:]
         s = s.overwrite(Bits(), 23)
         assert s.bin == s2.bin
 

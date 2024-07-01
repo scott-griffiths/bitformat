@@ -973,12 +973,6 @@ class Bits:
         stream.write(output_stream.getvalue())
         return
 
-    def copy(self: TBits) -> TBits:
-        """Return a copy of the Bits."""
-        # Note that if you want a new copy (different ID), use _copy instead.
-        # The copy can return self as it's immutable.
-        return self
-
     def append(self, bs: BitsType, /) -> TBits:
         return self + self._create_from_bitstype(bs)
 
