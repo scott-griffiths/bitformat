@@ -354,7 +354,7 @@ class FieldArray(SingleDtypeField):
         a = Array(self.dtype, value)
         if len(a) != self.items:
             raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.items}.")
-        self._bits = a.data
+        self._bits = a._proxy
 
     value = property(_getvalue, _setvalue)
 

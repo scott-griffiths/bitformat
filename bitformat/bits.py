@@ -218,14 +218,14 @@ class Bits:
         if length % 4 == 0:
             t = self.parse('hex')
             with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            hex_str = f'hex == 0x{with_underscores}'
+            hex_str = f'hex == {with_underscores}'
         if length <= 64:
             t = self.parse('bin')
             with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            bin_str = f'bin == 0b{with_underscores}'
+            bin_str = f'bin == {with_underscores}'
             u_str = f'u{length} == {self.parse("u"):_}'
             i_str = f'i{length} == {self.parse("i"):_}'
-        if length in [16, 32, 64]:
+        if length in dtype_register['f'].allowed_lengths:
             f_str = f'f{length} == {self.parse("f")}'
         interpretations = [x for x in [hex_str, bin_str, u_str, i_str, f_str] if x != '']
         if not interpretations:

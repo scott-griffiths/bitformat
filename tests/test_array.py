@@ -918,3 +918,11 @@ class TestDelegation:
         a[0] = 5
         assert a.data != c.data
         assert a.data != d
+
+    def test_setting_data(self):
+        a = Array('u8')
+        a.append(4)
+        assert a[0] == 4
+        a.data = a.data + '0xff'
+        assert a[0] == 4
+        assert a[1] == 255
