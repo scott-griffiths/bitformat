@@ -21,6 +21,17 @@ options = Options()
 
 
 class BitsProxy:
+    """A Proxy object to access the data in the Array as if it were a Bits object.
+
+    This allows the mutable data in the Array to be accessed using the Bits methods without a copy being made.
+    Usage is almost exactly the same, but some special methods such as __copy__ and __hash__ behave differently.
+
+    Note that a BitsProxy is mutable, and its value will change as the Array changes. To copy to an immutable
+    Bits object use the to_bits() method.
+
+    See the Bits class for more information.
+
+    """
     def __init__(self, array: Array) -> None:
         self._array = array
 
@@ -36,20 +47,45 @@ class BitsProxy:
         x._bitstore = self._array._bitstore
         return x[:]
 
+    __hash__ = None
+
 
 # List of special methods to delegate
-# TODO: Check this list - delete what's not needed, add things that are needed.
 special_methods = [
-    '__len__', '__getitem__', '__eq__', '__ne__', '__str__', '__repr__',
-    '__iter__', '__contains__', '__reversed__', '__add__',
-    '__sub__', '__mul__',
+    '__add__',
+    '__and__',
+    '__bool__',
+    '__contains__',
+    '__eq__',
+    '__ge__',
+    '__getitem__',
+    '__gt__',
+    '__invert__',
+    '__iter__',
+    '__le__',
+    '__len__',
+    '__lshift__',
+    '__lt__',
+    '__mul__',
+    '__ne__',
+    '__or__',
+    '__radd__',
+    '__rand__',
+    '__repr__',
+    '__rmul__',
+    '__ror__',
+    '__rshift__',
+    '__rxor__',
+    '__str__',
+    '__xor__'
 ]
 
-def method_factory(method_name):
+
+def method_factory(name):
     def method(self, *args, **kwargs):
         x = Bits()
         x._bitstore = self._array._bitstore
-        return getattr(x, method_name)(*args, **kwargs)
+        return getattr(x, name)(*args, **kwargs)
     return method
 
 # Dynamically create special methods on BitsProxy
@@ -127,6 +163,10 @@ class Array:
     @property
     def data(self) -> BitsProxy:
         return self._proxy
+
+    @data.setter
+    def data(self, value: BitsType) -> None:
+        self._bitstore = Bits._create_from_bitstype(value)._bitstore
 
     def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
         x = Bits()

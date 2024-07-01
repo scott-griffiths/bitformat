@@ -9,6 +9,7 @@ import itertools
 import io
 from bitformat.dtypes import Dtype
 import re
+import collections
 
 sys.path.insert(0, '..')
 
@@ -926,3 +927,9 @@ class TestDelegation:
         a.data = a.data + '0xff'
         assert a[0] == 4
         assert a[1] == 255
+
+    def test_hash(self):
+        a = Array('u8', [1])
+        assert isinstance(a.data, collections.abc.Hashable) is False
+        with pytest.raises(TypeError):
+            _ = set([a.data])
