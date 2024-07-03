@@ -334,18 +334,18 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             a.reverse()
 
-    # def test_byteswap(self):
-    #     a = Array('float16')
-    #     a.byteswap()
-    #     assert a.to_list() == []
-    #     b = Array('uint17')
-    #     with pytest.raises(ValueError):
-    #         b.byteswap()
-    #     a.extend([0.25, 104, -6])
-    #     a.byteswap()
-    #     assert a.data.unpack('3*floatle16') == [0.25, 104, -6]
-    #     a.byteswap()
-    #     assert a.to_list() == [0.25, 104, -6]
+    def test_byteswap(self):
+        a = Array('u16')
+        a.byteswap()
+        assert a.to_list() == []
+        b = Array('uint17')
+        with pytest.raises(ValueError):
+            b.byteswap()
+        a.extend([1, 0, 256])
+        a.byteswap()
+        assert a.to_list() == [256, 0, 1]
+        a.byteswap()
+        assert a.to_list() == [1, 0, 256]
 
     def test_getting(self):
         a = Array('int17')

@@ -27,7 +27,7 @@ class BitsProxy:
     Usage is almost exactly the same, but some special methods such as __copy__ and __hash__ behave differently.
 
     Note that a BitsProxy is mutable, and its value will change as the Array changes. To copy to an immutable
-    Bits object use the to_bits() method.
+    Bits object use the to_bits() method on the Array.
 
     See the Bits class for more information.
 
@@ -162,10 +162,30 @@ class Array:
 
     @property
     def data(self) -> BitsProxy:
+        """
+        Property that provides access to the Array's data through a BitsProxy.
+
+        This property allows for interaction with the Array's underlying data as if it were a Bits object,
+        facilitating operations like slicing, bitwise manipulation, and other Bits methods without directly
+        modifying the Array's internal representation. The returned BitsProxy is mutable, reflecting any changes
+        made to the Array.
+
+        Returns:
+            BitsProxy: A proxy object that provides a Bits-like interface to the Array's data.
+        """
         return self._proxy
 
     @data.setter
     def data(self, value: BitsType) -> None:
+        """
+        Setter for the `data` property of the Array class.
+
+        This setter allows updating the Array's underlying data with a new value.
+
+        Parameters:
+            value (BitsType): The new value to set the Array's data to. This can be any type that can be converted
+                              into a Bits object, including Bits, bytes, bytearray, or a formatted string.
+        """
         self._bitstore = Bits._create_from_bitstype(value)._bitstore
 
     def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
@@ -369,8 +389,7 @@ class Array:
         if self._dtype.length % 8 != 0:
             raise ValueError(
                 f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
-        # TODO: This can't work - return value not used!
-        self._proxy.byteswap(self.item_size // 8)
+        self.data = self._proxy.byteswap(self.item_size // 8)
 
     def count(self, value: ElementType) -> int:
         """Return count of Array items that equal value.
