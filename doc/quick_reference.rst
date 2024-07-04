@@ -87,7 +87,7 @@ Field
 The `Field` is the fundamental building block in `bitformat`.
 It represents a well-defined amount of binary data with a single data type.
 
-``Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None)``
+``Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False)``
 
 Additional methods
 ^^^^^^^^^^^^^^^^^^
@@ -111,7 +111,7 @@ FieldArray
 A `FieldArray` has a single data type like `Field`, but instead holds an array of that type.
 The dtype must have a fixed length to be used in a `FieldArray`.
 
-``FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None)``
+``FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool = False)``
 
 Additional methods
 ^^^^^^^^^^^^^^^^^^

@@ -34,7 +34,7 @@ Dtype
 The `Dtype` (or data type) gives an interpretation to binary data.
 Most dtypes have both a name and a length. The `Dtype` can be created directly using the constructor, but more usually it will be specified as just a string to be used to create the `Dtype`.
 
-For example, the `Dtype` for a 16-bit unsigned integer can be created by either ``Dtype('uint', 16)`` or by using the string ``'uint16'`` when a `Dtype` is required as a parameter.
+For example, the `Dtype` for a 16-bit unsigned integer can be created by either ``Dtype('u', 16)`` or by using the string ``'u16'`` when a `Dtype` is required as a parameter.
 
 A non-exhaustive list of example dtype strings is given below:
 
@@ -235,7 +235,7 @@ Methods
 
       .. method:: FieldType.clear() -> None
 
-        Sets the `value` of everything that is not a marked as const to `None`.
+        Sets the `value` of everything that is not const to `None`.
 
       .. property:: value: Any
 
@@ -260,8 +260,8 @@ It represents a well-defined amount of binary data with a single data type.
     A `Field` has a data type (`dtype`) that describes how to interpret binary data and optionally a `name` and a concrete `value` for the `dtype`.
 
     ``dtype``: The data type can be either:
-        * A `Dtype` object (e.g. ``Dtype('float', 16)``).
-        * A string that can be used to construct a `Dtype` (e.g. ``'float16'``).
+        * A `Dtype` object (e.g. ``Dtype('f', 16)``).
+        * A string that can be used to construct a `Dtype` (e.g. ``'f16'``).
 
     ``name``: An optional string used to identify the `Field`.
     It must either be a valid Python identifier (a string that could be used as a variable name) or the empty string ``''``.
@@ -272,7 +272,7 @@ It represents a well-defined amount of binary data with a single data type.
     ``items``: An array of items of the same dtype can be specified by setting `items` to be greater than one.
 
     ``const``: By default fields do not have a single set value - the value is deduced by parsing a binary input.
-    You can declare that a field is a constant bit literal by setting `const` to `True` - this means that it won't need its value set when building, and will require its value present when parsing.
+    You can declare that a field is a constant bit literal by setting `const` to `True` - this means that it won't need its value set when building, and will require the correct value present when parsing.
     You can only set `const` to `True` when creating a field if you also provide a value.
 
     .. classmethod:: from_bits(bits: Bits | str | bytes | bytearray) -> Field
@@ -289,19 +289,12 @@ It represents a well-defined amount of binary data with a single data type.
 FieldArray
 ----------
 
-An `FieldArray` field contains multiple copies of other fields that have well-defined lengths.
+An `FieldArray` field contains multiple copies of a single dtype that has a well-defined length.
 
-.. class:: FieldArray(count: int | Iterable[int] | str, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
+.. class:: FieldArray(dtype: Dtype | str, items: int | str, name: str = '', value: Any = None, const: bool = False)
 
-The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
-The `name` parameter is used to give the FieldArray a name that can be referenced elsewhere.
-
-The main restriction is that every field in `fieldtypes` must have a well-defined length, so that each element in the `FieldArray` has the same length.
-This means that conditional fields, fields with variable lengths or fields whose length depends on the value of another field are not allowed.
-
-For example::
-
-    f = FieldArray(20, ['u6', 'bool', 'bool'])
+The `items` parameter gives the length of the `FieldArray`.
+The other parameters are the same as for the `Field` class.
 
 This creates an array of 20 fields, each containing a 6-bit unsigned integer followed by two bools.
 
@@ -323,17 +316,29 @@ If you have a choice then choose the `FieldArray` class over the `Repeat` class,
 Field strings
 ^^^^^^^^^^^^^
 
-As a shortcut the a single string can usually be used to specify the whole field.
+As a shortcut a single string can usually be used to specify the whole `Field` or `FieldArray`.
 To do this it should be a string of the format::
 
     "name: dtype = value"
 
-or ::
+for a `Field` or ::
 
     "name: [dtype; items] = value"
 
+for a `FieldArray`.
 
-You can also use the ``const`` keyword after the optional name, which will mean that the `Field` has a set value.
+The ``name:`` and ``= value`` parts are optional, and usually a ``value`` would only be specified for a field if it is a constant.
+
+To specify a ``const`` field use either ::
+
+    "name: const dtype = value"
+
+for a ``Field`` or ::
+
+    "name: const [dtype; items] = value"
+
+for a ``FieldArray``. When ``const`` is used the `value` must be set.
+
 
 For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.from_string('width: u12 = 100')``.
 The whitespace between the elements is optional.
@@ -367,21 +372,19 @@ Repeat
 
 A `Repeat` field simply repeats another field a given number of times.
 
-.. class:: Repeat(count: int | Iterable[int] | str, fieldtype: [FieldType | str] | None = None, name: str = '')
+.. class:: Repeat(count: int | Iterable | str, fieldtype: FieldType | str | Dtype | Bits | Sequence[FieldType | str])
 
 The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
-The `name` parameter is used to give the index a name that can be referenced elsewhere.
 
-If you want to repeat a single field then it is usually better to have one field and use the `items` parameter rather than use the `Repeat` class.
+If you want to repeat a single dtype then it is usually better to a ``FieldArray`` rather than use the `Repeat` class.
 So instead of ::
 
-    r = Repeat(10, 'float64')  # This creates ten fields, each a single float64
+    r = Repeat(10, 'f64')  # This creates ten fields, each a 64 bit float
 
 use ::
 
     r = Field.from_string('float64 * 10')  # Creates a single field with an array of ten float64
 
-For simple repetition of a field of a known length the `FieldArray` class will be more efficient and easier to use.
 
 ..
     Find
