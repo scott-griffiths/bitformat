@@ -5,7 +5,7 @@ User Manual
 
 A bitformat is a specification of a binary format that says both how to build it from supplied values, and how to parse binary data to retrieve those values.
 
-It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, which has been actively maintained since 2006 and provides easy and flexible access to many types of binary data in idiomatic Python.
+It is intended as an update to the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, which has been actively maintained since 2006 and provides easy and flexible access to many types of binary data in idiomatic Python.
 
 A short example could be::
 
@@ -26,8 +26,7 @@ A short example could be::
     f.clear()
     f.parse(b)
 
-The `Dtype <https://bitstring.readthedocs.io/en/latest/dtypes.html#dtypes>`_, `Bits <https://bitstring.readthedocs.io/en/latest/bits.html#bits>`_ and `Array <https://bitstring.readthedocs.io/en/latest/array.html#array>`_ classes of bitstring are used directly as part of bitformat's API.
-Full details of these are given in bitstring's documentation but a short summary is:
+
 
 Dtype
 -----
@@ -44,15 +43,15 @@ A non-exhaustive list of example dtype strings is given below:
 
    * - Dtype string
      - Description
-   * - ``'uint10' / 'u10'``
+   * - ``'u10'``
      - A 10-bit unsigned integer
-   * - ``'int7' / 'i7'``
+   * - ``'i7'``
      - A 7-bit signed two's complement integer
-   * - ``'float32' / 'f32'``
+   * - ``'f32'``
      - A 32-bit IEEE floating point number
-   * - ``'bin4' / 'b4'``
+   * - ``'bin4'``
      - A 4-bit binary string
-   * - ``'hex12' / 'h12'``
+   * - ``'hex12'``
      - A 12-bit hexadecimal string (i.e. 3 hex characters)
    * - ``'bool'``
      - A single bit boolean
@@ -62,14 +61,7 @@ A non-exhaustive list of example dtype strings is given below:
      - 20 bytes of data
    * - ``'pad8'``
      - Pad bits that have no interpretation
-   * - ``'intle64'``
-     - A 64-bit signed integer in little-endian byte order
-   * - ``'uintbe16'``
-     - A 16-bit unsigned integer in big-endian byte order
-   * - ``'p3binary8'``
-     - A specialist 8-bit floating point format
-   * - ``'se'``
-     - A signed exponential Golomb code, whose length is not known in advance
+
 
 Note that there are no unnatural restrictions on the length of a dtype.
 If you want a 3-bit integer or 1001 padding bits then that's as easy to do as any other length.
@@ -79,7 +71,7 @@ Bits
 The `Bits` class represents an immutable sequence of bits.
 
 There are several builder methods used to create ``Bits`` objects.
-The constructor for ``Bits`` itself doesn't take any arguments so you will need to use these methods to create new non-empty ``Bits`` objects.
+The constructor for ``Bits`` is a shortcut for the ``from_string`` method, so ``Bits(s)`` and ``Bits.from_string(s)`` are equivalent.
 
 .. list-table::
    :header-rows: 1
@@ -169,11 +161,11 @@ As a short-cut, for simple dtypes, properties can be used instead of the ``parse
     -31
 
 In places where a ``Bits`` is expected, a formatted string that can be used to more conveniently create the `Bits` object.
-For example, if ``a`` is a ``Bits`` object, instead of
+For example, if ``a`` is a ``Bits`` object, instead of ::
 
     a += Bits.build('u8', 65)
 
-you can equivalently write
+you can equivalently write ::
 
     a += 'u8 = 65'
 
@@ -327,7 +319,7 @@ for a `Field` or ::
 
 for a `FieldArray`.
 
-The ``name:`` and ``= value`` parts are optional, and usually a ``value`` would only be specified for a field if it is a constant.
+The ``'name:'`` and ``'= value'`` parts are optional, and usually a ``'value'`` would only be specified for a field if it is a constant.
 
 To specify a ``const`` field use either ::
 
@@ -447,21 +439,21 @@ The field of 16 bytes will only be present if the 32-bit float is negative, so t
 
 Expressions can be used in several places:
 
-    * To give the length of a dtype. ::
+* To give the length of a dtype. ::
 
-        f = Field('u{x + y}')
+    f = Field('u{x + y}')
 
-    * As the `items` parameter in an array `Field`. ::
+* As the `items` parameter in an array `Field`. ::
 
-        f = Field('bool', items='{flag_count // 2 + 1}')
+    f = Field('bool', items='{flag_count // 2 + 1}')
 
-    * As the `value` parameter in a `Field`. ::
+* As the `value` parameter in a `Field`. ::
 
-        f = Field('float16', value='{(x > 0.0) * x}')
+    f = Field('float16', value='{(x > 0.0) * x}')
 
-    * As the `count` parameter in a `Repeat` field. ::
+* As the `count` parameter in a `Repeat` field. ::
 
-        f = Repeat('{i*2}', [...])
+    f = Repeat('{i*2}', [...])
 
 
 These are often most convenient when used in field-strings, for example::
