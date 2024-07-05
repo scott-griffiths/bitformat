@@ -31,7 +31,7 @@ class Format(FieldType):
     def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
-            _, v = fieldtype._build(values, index + values_used, _vars, kwargs)
+            _, v = fieldtype._build(values[index], index + values_used, _vars, kwargs)
             values_used += v
         return self.to_bits(), values_used
 
@@ -196,7 +196,7 @@ class Repeat(FieldType):
             self.count = range(self.count)
         values_used = 0
         for _ in self.count:
-            bits, v = self.fieldtype._build(values, index + values_used, vars_, kwargs)
+            bits, v = self.fieldtype._build(values[0], index + values_used, vars_, kwargs)
             self._bits += bits
             values_used += v
         return self._bits, values_used

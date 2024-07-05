@@ -46,13 +46,13 @@ class FieldType(abc.ABC):
         """
         ...
 
-    def build(self, values: Sequence[Any] | None = None, /,  **kwargs) -> Bits:
+    def build(self, values: Any | None = None, /,  **kwargs) -> Bits:
         if kwargs is None:
             kwargs = {}
         if values is None:
             return self._build([], 0, {}, kwargs)[0]
         try:
-            bits, values_used = self._build(values, 0, {}, kwargs)
+            bits, values_used = self._build([values], 0, {}, kwargs)
         except TypeError as e:
             if not isinstance(values, Sequence):
                 raise TypeError(f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}.")

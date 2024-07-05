@@ -91,9 +91,9 @@ class TestCreation:
         assert not f1.const
         f1.clear()
         f2.clear()
-        temp = f1.build([0])
+        temp = f1.build(0)
         assert temp == '0b0'
-        assert f2.build([]) == '0b1'
+        assert f2.build() == '0b1'
 
 
 class TestBuilding:
@@ -107,26 +107,26 @@ class TestBuilding:
 
     def test_building_lots_of_types(self):
         f = Field('u4')
-        b = f.build([15])
+        b = f.build(15)
         assert b == '0xf'
         f = Field('i4')
-        b = f.build([-8])
+        b = f.build(-8)
         assert b == '0x8'
         f = Field('bytes3')
-        b = f.build([b'abc'])
+        b = f.build(b'abc')
         assert b == '0x616263'
         f = Field('bits11')
         with pytest.raises(ValueError):
-            _ = f.build([Bits.from_string('0x7ff')])
-        b = f.build([Bits.from_string('0b111, 0xff')])
+            _ = f.build(Bits.from_string('0x7ff'))
+        b = f.build(Bits.from_string('0b111, 0xff'))
         assert b == '0b11111111111'
 
     def test_building_with_const(self):
         f = Field.from_string('  const  u4 =8')
-        b = f.build([])
+        b = f.build()
         assert b == '0x8'
         f.clear()
-        b = f.build([])
+        b = f.build()
         assert b == '0x8'
         f.const = False
         assert f.value == 8
@@ -148,7 +148,7 @@ def test_field_array():
     f = FieldArray.from_string('[u8; 3]')
     assert f.dtype == Dtype('u8')
     assert f.items == 3
-    b = f.build([[1, 2, 3]])
+    b = f.build([1, 2, 3])
     assert b == '0x010203'
     assert type(b) is Bits
     f.clear()
