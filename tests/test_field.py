@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Dtype, Bits, Field
+from bitformat import Dtype, Bits, Field, FieldArray
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
@@ -143,3 +143,16 @@ class TestBuilding:
 #     assert str(f) == 'u8 = 8'
 #     f = Field('u8', value=8, name='x')
 #     assert str(f) == 'x: u8 = 8'
+
+def test_field_array():
+    f = FieldArray.from_string('[u8; 3]')
+    assert f.dtype == Dtype('u8')
+    assert f.items == 3
+    b = f.build([[1, 2, 3]])
+    assert b == '0x010203'
+    assert type(b) is Bits
+    f.clear()
+    assert f.value is None
+    v = f.parse(b)
+    assert f.value == [1, 2, 3]
+    assert v == 24

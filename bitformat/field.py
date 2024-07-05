@@ -324,6 +324,9 @@ class FieldArray(SingleDtypeField):
                 return cls(Dtype('bits'), items, name, bits, const)
         return cls(dtype, items, name, value, const)
 
+    def to_bits(self) -> Bits:
+        return self._bits if self._bits is not None else Bits()
+
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.items_expression is not None:
             self.items = self.items_expression.safe_eval(vars_)
@@ -337,7 +340,7 @@ class FieldArray(SingleDtypeField):
         self._bits = b[:self.dtype.bitlength * self.items]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.bitlength
+        return self.dtype.bitlength * self.items
 
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.items_expression is not None:
@@ -354,7 +357,7 @@ class FieldArray(SingleDtypeField):
         a = Array(self.dtype, value)
         if len(a) != self.items:
             raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.items}.")
-        self._bits = a._proxy
+        self._bits = a.to_bits()
 
     value = property(_getvalue, _setvalue)
 
