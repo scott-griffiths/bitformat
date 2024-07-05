@@ -979,11 +979,11 @@ class Bits:
     def prepend(self, bs: BitsType, /) -> TBits:
         return self._create_from_bitstype(bs) + self
 
-    def insert(self, bs: BitsType, pos: int, /) -> TBits:
+    def insert(self, pos:int, bs: BitsType, /) -> TBits:
         """Insert bs at bit position pos.
 
-        bs -- The Bits to insert.
         pos -- The bit position to insert at.
+        bs -- The Bits to insert.
 
         Raises ValueError if pos < 0 or pos > len(self).
 

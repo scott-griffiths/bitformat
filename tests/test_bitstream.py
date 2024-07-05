@@ -276,10 +276,10 @@ class TestAppend:
 
 def test_insert():
     s = Bits('0x0011')
-    s = s.insert(Bits('0x22'), 8)
+    s = s.insert(8, Bits('0x22'))
     assert s.hex == '002211'
     s = Bits.ones(0)
-    s = s.insert('0b101', 0)
+    s = s.insert(0, '0b101')
     assert s.bin == '101'
 
 
@@ -306,30 +306,30 @@ class TestInsert:
     def test_insert(self):
         s1 = Bits('0x123456')
         s2 = Bits('0xff')
-        s1 = s1.insert(s2, 8)
+        s1 = s1.insert(8, s2)
         assert s1.hex == '12ff3456'
-        s1 = s1.insert('0xee', 24)
+        s1 = s1.insert(24, '0xee')
         assert s1.hex == '12ff34ee56'
         with pytest.raises(ValueError):
-            _ = s1.insert('0b1', -1000)
+            _ = s1.insert(-1000,'0b1')
         with pytest.raises(ValueError):
-            _ = s1.insert('0b1', 1000)
+            _ = s1.insert(1000, '0b1')
 
     def test_insert_null(self):
         s = Bits('0x123')
-        s = s.insert(Bits(), 3)
+        s = s.insert(3, Bits())
         assert s.hex == '123'
 
     def test_insert_bits(self):
         one = Bits('0b1')
         zero = Bits('0b0')
-        s = Bits('0b00').insert(one, 0)
+        s = Bits('0b00').insert(0, one)
         assert s.bin == '100'
-        s = s.insert(zero, 0)
+        s = s.insert(0, zero)
         assert s.bin == '0100'
-        s = s.insert(one, len(s))
+        s = s.insert(len(s), one)
         assert s.bin == '01001'
-        s = s.insert(s, 2)
+        s = s.insert(2, s)
         assert s.bin == '0101001001'
 
 
@@ -495,7 +495,7 @@ class TestAdding:
 
     def test_insert_using_auto(self):
         s = Bits('0xff')
-        s = s.insert('0x00', 4)
+        s = s.insert(4, '0x00')
         assert s.hex == 'f00f'
 
     def test_overwrite_using_auto(self):
@@ -1338,10 +1338,10 @@ class TestBugs:
     def test_function_negative_indices(self):
         # insert
         s = Bits('0b0111')
-        s = s.insert('0b0', -1)
+        s = s.insert(-1, '0b0')
         assert s == '0b01101'
         with pytest.raises(ValueError):
-            _ = s.insert('0b0', -1000)
+            _ = s.insert(-1000, '0b0')
 
         # reverse
         s = s.reverse(-2)

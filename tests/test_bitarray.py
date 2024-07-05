@@ -38,18 +38,18 @@ class TestNoPosAttribute:
 
     def test_insert(self):
         s = Bits.from_string('0b00')
-        s = s.insert('0xf', 1)
+        s = s.insert(1, '0xf')
         assert s == '0b011110'
 
     def test_insert_self(self):
         b = Bits.from_string('0b10')
-        b = b.insert(b, 0)
+        b = b.insert(0, b)
         assert b == '0b1010'
         c = Bits.from_string('0x00ff')
-        c = c.insert(c, 8)
+        c = c.insert(8, c)
         assert c == '0x0000ffff'
         a = Bits.from_string('0b11100')
-        a = a.insert(a, 3)
+        a = a.insert(3, a)
         assert a == '0b1111110000'
 
     def test_overwrite(self):

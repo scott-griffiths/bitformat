@@ -9,9 +9,10 @@ class Options:
 
     def __init__(self):
         self._bytealigned = False
-        self.no_color = False
-        no_color = os.getenv('NO_COLOR')
-        self.no_color = True if no_color else False
+        self.no_color = True
+        # Turning off color for now
+        # no_color = os.getenv('NO_COLOR')
+        # self.no_color = True if no_color else False
 
     def __repr__(self) -> str:
         attributes = {attr: getattr(self, attr) for attr in dir(self) if not attr.startswith('_') and not callable(getattr(self, attr))}
