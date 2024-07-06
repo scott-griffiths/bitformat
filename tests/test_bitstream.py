@@ -609,9 +609,10 @@ class TestAdding:
         assert (~Bits('0b0')).bin == '1'
         assert (~Bits('0b1')).bin == '0'
         assert ~~s == s
+
     def test_invert_special_method_errors(self):
         s = Bits()
-        with pytest.raises(bitformat.Error):
+        with pytest.raises(ValueError):
             _ = ~s
 
     def test_join_with_auto(self):

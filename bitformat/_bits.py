@@ -285,7 +285,7 @@ class Bits:
 
         """
         if len(self) == 0:
-            raise bitformat.Error("Cannot invert empty Bits.")
+            raise ValueError("Cannot invert empty Bits.")
         s = self._copy()
         s._invert_all()
         return s

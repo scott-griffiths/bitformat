@@ -225,7 +225,7 @@ class DtypeDefinition:
         else:
             def read_fn(bs, start: int, length: int):
                 if len(bs) < start + length:
-                    raise bitformat.ReadError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
+                    raise ValueError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
                 return self.get_fn(bs[start:start + length])
         self.read_fn = read_fn
 

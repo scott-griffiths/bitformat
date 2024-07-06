@@ -37,7 +37,6 @@ from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field, FieldArray
 from ._format import Format
 from ._bitformat_options import Options
-from ._exceptions import Error, ReadError, ByteAlignError
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.
@@ -136,6 +135,4 @@ for alias in aliases:
     dtype_register.add_dtype_alias(alias[0], alias[1])
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray',
-           'Error', 'ReadError', 'InterpretError',
-           'ByteAlignError', 'CreationError', 'options']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'options']
