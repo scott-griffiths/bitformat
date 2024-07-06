@@ -3,32 +3,10 @@
 API Reference
 =============
 
-.. autoclass:: Bits
-    :members:
-    :undoc-members:
+.. toctree::
 
-.. autoclass:: Dtype
-    :members:
-    :undoc-members:
+    autoapi/bitformat/index
 
-.. autoclass:: Array
-    :members:
-    :undoc-members:
-
-.. autoclass:: Field
-    :inherited-members:
-    :members:
-    :undoc-members:
-
-.. autoclass:: Format
-    :inherited-members:
-    :special-members: __iadd__, __add__
-    :members:
-    :undoc-members:
-
-.. autoclass:: Repeat
-    :members:
-    :undoc-members:
 
 
 

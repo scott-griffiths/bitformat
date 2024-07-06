@@ -31,8 +31,8 @@ __version__ = "0.1.0"
 __author__ = "Scott Griffiths"
 
 
-from ._array import Array
 from ._bits import Bits
+from ._array import Array, BitsProxy
 from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field, FieldArray
 from ._format import Format
@@ -135,4 +135,4 @@ for alias in aliases:
     dtype_register.add_dtype_alias(alias[0], alias[1])
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'options']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'FieldArray', 'BitsProxy', 'Options', 'options']

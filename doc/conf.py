@@ -16,11 +16,12 @@ copyright = f'2024 - {year}, Scott Griffiths'
 author = 'Scott Griffiths'
 release = '0.1.0'
 
-extensions = []
-extensions.append('autoapi.extension')
+extensions = ['sphinx.ext.autodoc', 'autoapi.extension']
 autoapi_dirs = ['../bitformat']
 autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members', 'imported-members', ]
 autoapi_own_page_level = 'class'
+autoapi_add_toctree_entry = False
+
 add_module_names = False
 
 templates_path = ['_templates']

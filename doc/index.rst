@@ -85,7 +85,7 @@ Documentation
 
     quick_reference
     manual
-
+    api
 
 
 These docs are styled using the `Piccolo theme <https://github.com/piccolo-orm/piccolo_theme>`_.
