@@ -45,7 +45,7 @@ class TestCreation:
 
     @pytest.mark.parametrize("bad_val", ['0xx0', '0xX0', '0Xx0', '-2e'])
     def test_creation_from_hex_errors(self, bad_val: str):
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('hex', bad_val)
 
     def test_creation_from_bin(self):
@@ -88,7 +88,7 @@ class TestCreation:
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, None], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             _ = Bits.build(Dtype('int', length), int_)
 
     def test_creation_from_bool(self):
@@ -100,11 +100,11 @@ class TestCreation:
     def test_creation_from_bool_errors(self):
         with pytest.raises(ValueError):
             _ = Bits.build('bool', 3)
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             _ = Bits.build('bool2', 0)
 
     def test_creation_keyword_error(self):
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             Bits.build('squirrel', 5)
 
     @pytest.mark.skip

@@ -1271,7 +1271,7 @@ class TestMoreMisc:
         assert a == '0b0'
         a = Bits.zeros(1007)
         assert a == Bits.from_string('u1007 = 0')
-        with pytest.raises(bitformat.CreationError):
+        with pytest.raises(ValueError):
             _ = Bits.zeros(-1)
         with pytest.raises(TypeError):
             a += 10

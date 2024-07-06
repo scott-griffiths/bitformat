@@ -18,6 +18,3 @@ InterpretError = ValueError
 class ByteAlignError(Error):
     """Whole-byte position or length needed."""
 
-
-CreationError = ValueError
-"""Inappropriate argument during Bits creation."""

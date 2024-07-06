@@ -37,7 +37,7 @@ from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field, FieldArray
 from ._format import Format
 from ._bitformat_options import Options
-from ._exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
+from ._exceptions import Error, ReadError, InterpretError, ByteAlignError
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.

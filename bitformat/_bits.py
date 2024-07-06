@@ -464,7 +464,7 @@ class Bits:
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
         if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with a uint initialiser.")
+            raise ValueError("A non-zero length must be specified with a uint initialiser.")
         self._bitstore = BitStore.from_int(uint, length, False)
 
     def _getuint(self) -> int:
@@ -479,7 +479,7 @@ class Bits:
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
         if length is None or length == 0:
-            raise bitformat.CreationError("A non-zero length must be specified with an int initialiser.")
+            raise ValueError("A non-zero length must be specified with an int initialiser.")
         self._bitstore = BitStore.from_int(int_, length, True)
 
     def _getint(self) -> int:
@@ -492,7 +492,7 @@ class Bits:
         if length is None and hasattr(self, 'len') and len(self) != 0:
             length = len(self)
         if length is None or length not in [16, 32, 64]:
-            raise bitformat.CreationError("A length of 16, 32, or 64 must be specified with a float initialiser.")
+            raise ValueError("A length of 16, 32, or 64 must be specified with a float initialiser.")
         self._bitstore = BitStore.from_float(f, length)
 
     def _getfloat(self) -> float:
@@ -508,7 +508,7 @@ class Bits:
         elif value in (0, 'False', '0'):
             self._bitstore = BitStore.from_binstr('0')
         else:
-            raise bitformat.CreationError(f"Cannot initialise boolean with {value}.")
+            raise ValueError(f"Cannot initialise boolean with {value}.")
 
     def _getbool(self) -> bool:
         return self[0]

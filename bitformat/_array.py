@@ -3,7 +3,6 @@ from __future__ import annotations
 import math
 import numbers
 from collections.abc import Sized
-from bitformat._exceptions import CreationError
 from typing import Union, Iterable, Any, overload, TextIO
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, dtype_register
@@ -142,10 +141,7 @@ class Array:
                  trailing_bits: BitsType | None = None) -> None:
         self._bitstore = BitStore()
         self._proxy = BitsProxy(self)
-        try:
-            self._set_dtype(dtype)
-        except ValueError as e:
-            raise CreationError(e)
+        self._set_dtype(dtype)
 
         if isinstance(initializer, numbers.Integral):
             self._bitstore = BitStore.from_zeros(initializer * self._dtype.bitlength)
@@ -520,7 +516,7 @@ class Array:
             v = self._dtype.read_fn(self._proxy, start=self._dtype.length * i)
             try:
                 new_data += new_array._create_element(partial_op(v))
-            except (CreationError, ZeroDivisionError, ValueError) as e:
+            except (ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
                     index = i
@@ -541,7 +537,7 @@ class Array:
             v = self._dtype.read_fn(self._proxy, start=self._dtype.length * i)
             try:
                 new_data += self._create_element(op(v, value))
-            except (CreationError, ZeroDivisionError, ValueError) as e:
+            except (ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
                     index = i
@@ -588,7 +584,7 @@ class Array:
             b = other._dtype.read_fn(other._proxy, start=other._dtype.length * i)
             try:
                 new_data += new_array._create_element(op(a, b))
-            except (CreationError, ValueError, ZeroDivisionError) as e:
+            except (ValueError, ZeroDivisionError) as e:
                 if failures == 0:
                     msg = str(e)
                     index = i

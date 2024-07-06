@@ -168,9 +168,9 @@ class TestBFloats:
     def test_creation_errors(self):
         a = BitArray(bfloat=-0.25, length=16)
         assert len(a) == 16
-        with pytest.raises(bitstring.CreationError):
+        with pytest.raises(ValueError):
             _ = BitArray(bfloat=10, length=15)
-        with pytest.raises(bitstring.CreationError):
+        with pytest.raises(ValueError):
             _ = BitArray('bfloat:1=0.5')
 
     @pytest.mark.skip
@@ -187,7 +187,7 @@ class TestBFloats:
         assert b.bfloat == 1000.0
         assert b.bfloatbe == 1000.0
 
-        with pytest.raises(bitstring.CreationError):
+        with pytest.raises(ValueError):
             _ = BitArray(bfloatle=-5, length=15)
         c = BitArray()
         with pytest.raises(bitstring.InterpretError):
