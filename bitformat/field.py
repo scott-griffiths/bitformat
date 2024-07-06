@@ -9,6 +9,8 @@ from .common import colour, Expression, _indent
 from typing import Any, Sequence
 
 
+__all__ = ['Field', 'FieldArray']
+
 def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
     if not isinstance(s, str):
         return s, None

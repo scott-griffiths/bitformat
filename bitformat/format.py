@@ -8,8 +8,11 @@ import copy
 from .common import colour, _indent
 from .field import FieldType, Field, FieldArray, _perhaps_convert_to_expression
 
+__all__ = ['Format']
+
 
 class Format(FieldType):
+    """A sequence of FieldTypes, used to group fields together."""
 
     def __init__(self, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> None:
         self.fieldtypes = []

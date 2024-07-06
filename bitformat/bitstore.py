@@ -6,6 +6,7 @@ import copy
 import struct
 from typing import Union, Iterable, Iterator, Any
 
+
 def tidy_input_string(s: str) -> str:
     """Return string made lowercase and with all whitespace and underscores removed."""
     try:

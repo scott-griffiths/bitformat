@@ -6,6 +6,8 @@ import inspect
 import bitformat
 from bitformat import utils
 
+__all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
+
 CACHE_SIZE = 256
 
 
@@ -182,8 +184,8 @@ class AllowedLengths:
 
 
 class DtypeDefinition:
-    """Represents a class of dtypes, such as uint or float, rather than a concrete dtype such as uint8.
-    Not (yet) part of the public interface."""
+    """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``.
+    """
 
     def __init__(self, name: str, set_fn, get_fn, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_lengths: Tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
@@ -307,5 +309,9 @@ class Register:
         return '\n'.join(s)
 
 
-# Create the Register singleton
 dtype_register = Register()
+"""
+Initializes a singleton instance of the Register class.
+
+This is used to maintain a centralized registry of data type definitions.
+"""

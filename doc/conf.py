@@ -19,6 +19,7 @@ release = '0.1.0'
 extensions = []
 extensions.append('autoapi.extension')
 autoapi_dirs = ['../bitformat']
+autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members', ]
 
 add_module_names = False
 

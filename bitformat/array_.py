@@ -14,6 +14,8 @@ from bitformat.common import Colour
 import operator
 import sys
 
+__all__ = ['Array', 'BitsProxy']
+
 # The possible types stored in each element of the Array
 ElementType = Union[float, str, int, bytes, bool, Bits]
 

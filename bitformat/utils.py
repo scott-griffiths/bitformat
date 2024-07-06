@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Pattern
 
+__all__ = []
 
 # A token name followed by an integer number
 NAME_INT_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$')

@@ -12,6 +12,8 @@ from bitformat import bitstore_helpers, utils
 from bitformat.dtypes import Dtype, dtype_register
 from bitformat.common import colour
 
+__all__ = ['Bits']
+
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
 
