@@ -31,13 +31,13 @@ __version__ = "0.1.0"
 __author__ = "Scott Griffiths"
 
 
-from .field import Field, FieldArray
-from .format import Format, Repeat
-from .bits import Bits
-from .dtypes import DtypeDefinition, dtype_register, Dtype
-from .bitformat_options import Options
-from .array_ import Array
-from .exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
+from ._array import Array
+from ._bits import Bits
+from ._dtypes import DtypeDefinition, dtype_register, Dtype
+from ._field import Field, FieldArray
+from ._format import Format
+from ._bitformat_options import Options
+from ._exceptions import Error, ReadError, InterpretError, ByteAlignError, CreationError
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.

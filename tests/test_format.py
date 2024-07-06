@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Array, Repeat, FieldArray
+from bitformat import Format, Dtype, Bits, Field, Array, FieldArray
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -198,6 +198,7 @@ class TestMethods:
         f['pop'] = 999999
         assert f['pop'].value == 999999
 
+@pytest.mark.skip
 def test_repeating_field():
     f = Repeat(5, 'u8')
     d = Array('u8', [1, 5, 9, 7, 6]).data

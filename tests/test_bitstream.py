@@ -4,7 +4,7 @@ import pytest
 import bitformat
 import copy
 from bitformat import Bits
-from bitformat.bitstore_helpers import tokenparser
+from bitformat._bitstore_helpers import tokenparser
 
 
 class TestFlexibleInitialisation:
@@ -805,7 +805,7 @@ class TestManyDifferentThings:
         assert not '0xfeed' in a
 
     def test_repr(self):
-        max_ = bitformat.bits.MAX_CHARS
+        max_ = bitformat._bits.MAX_CHARS
         bls = ['', '0b1', '0o5', '0x43412424f41', '0b00101001010101']
         for bs in bls:
             a = Bits(bs)

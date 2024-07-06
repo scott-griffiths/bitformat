@@ -4,7 +4,7 @@ import functools
 from typing import Dict, Any, Union, Tuple, Callable
 import inspect
 import bitformat
-from bitformat import utils
+from bitformat import _utils
 
 __all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
 
@@ -91,7 +91,7 @@ class Dtype:
     @functools.lru_cache(CACHE_SIZE)
     def _new_from_token(cls, token: str) -> Dtype:
         token = ''.join(token.split())
-        return dtype_register.get_dtype(*utils.parse_name_length_token(token))
+        return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
 
     def __hash__(self) -> int:
         return hash((self._name, self._length))
@@ -270,7 +270,7 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         cls.names[definition.name] = definition
         if definition.get_fn is not None:
-            setattr(bitformat.bits.Bits, definition.name,
+            setattr(bitformat._bits.Bits, definition.name,
                     property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
 
     @classmethod
@@ -278,7 +278,7 @@ class Register:
         cls.names[alias] = cls.names[name]
         definition = cls.names[alias]
         if definition.get_fn is not None:
-            setattr(bitformat.bits.Bits, alias,
+            setattr(bitformat._bits.Bits, alias,
                     property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
 
     @classmethod

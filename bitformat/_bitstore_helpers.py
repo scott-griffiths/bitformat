@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import functools
 from typing import Dict, Callable
-from bitformat.bitstore import BitStore
-from .dtypes import Dtype
+from bitformat._bitstore import BitStore
+from ._dtypes import Dtype
 import re
 from typing import Pattern
 

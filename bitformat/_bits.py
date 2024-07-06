@@ -7,10 +7,10 @@ import io
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
-from .bitstore import BitStore
-from bitformat import bitstore_helpers, utils
-from bitformat.dtypes import Dtype, dtype_register
-from bitformat.common import colour
+from ._bitstore import BitStore
+from bitformat import _bitstore_helpers, _utils
+from bitformat._dtypes import Dtype, dtype_register
+from bitformat._common import colour
 
 __all__ = ['Bits']
 
@@ -48,7 +48,7 @@ class Bits:
         if s is None:
             x._bitstore = BitStore()
         else:
-            x._bitstore = bitstore_helpers.str_to_bitstore(s)
+            x._bitstore = _bitstore_helpers.str_to_bitstore(s)
         return x
 
     @classmethod
@@ -68,7 +68,7 @@ class Bits:
     def from_string(cls, s: str, /) -> TBits:
         """Create a new Bits from a formatted string."""
         x = super().__new__(cls)
-        x._bitstore = bitstore_helpers.str_to_bitstore(s)
+        x._bitstore = _bitstore_helpers.str_to_bitstore(s)
         return x
 
     @classmethod
@@ -127,7 +127,7 @@ class Bits:
             return auto
         b = super().__new__(cls)
         if isinstance(auto, str):
-            b._bitstore = bitstore_helpers.str_to_bitstore(auto)
+            b._bitstore = _bitstore_helpers.str_to_bitstore(auto)
         elif isinstance(auto, (bytes, bytearray, memoryview)):
             b._bitstore = BitStore.from_bytes(bytes(auto))
         elif isinstance(auto, io.BytesIO):
@@ -906,13 +906,13 @@ class Bits:
             raise ValueError(
                 f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
         has_length_in_fmt = True
-        name1, length1 = utils.parse_name_length_token(token_list[0])
+        name1, length1 = _utils.parse_name_length_token(token_list[0])
         dtype1 = Dtype(name1, length1)
         bits_per_group = dtype1.bitlength
         dtype2 = None
 
         if len(token_list) == 2:
-            name2, length2 = utils.parse_name_length_token(token_list[1])
+            name2, length2 = _utils.parse_name_length_token(token_list[1])
             dtype2 = Dtype(name2, length2)
             if None not in {dtype1.bitlength, dtype2.bitlength} and dtype1.bitlength != dtype2.bitlength:
                 raise ValueError(

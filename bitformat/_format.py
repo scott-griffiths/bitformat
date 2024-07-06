@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from .bits import Bits
-from .dtypes import Dtype
+from ._bits import Bits
+from ._dtypes import Dtype
 from typing import Sequence, Any, Iterable
 import copy
 
-from .common import colour, _indent
-from .field import FieldType, Field, FieldArray, _perhaps_convert_to_expression
+from ._common import colour, _indent
+from ._field import FieldType, Field, FieldArray, _perhaps_convert_to_expression
 
 __all__ = ['Format']
 

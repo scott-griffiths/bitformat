@@ -7,7 +7,7 @@ from bitformat import Array, Bits
 import copy
 import itertools
 import io
-from bitformat.dtypes import Dtype
+from bitformat._dtypes import Dtype
 import re
 import collections
 

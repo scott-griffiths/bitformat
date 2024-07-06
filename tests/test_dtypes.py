@@ -2,7 +2,7 @@
 import pytest
 import sys
 from bitformat import Dtype, Bits
-from bitformat.dtypes import DtypeDefinition, dtype_register
+from bitformat._dtypes import DtypeDefinition, dtype_register
 
 sys.path.insert(0, '..')
 

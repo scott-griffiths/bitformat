@@ -3,14 +3,14 @@ from __future__ import annotations
 import math
 import numbers
 from collections.abc import Sized
-from bitformat.exceptions import CreationError
+from bitformat._exceptions import CreationError
 from typing import Union, Iterable, Any, overload, TextIO
-from bitformat.bits import Bits, BitsType
-from bitformat.dtypes import Dtype, dtype_register
-from bitformat import utils
-from .bitstore import BitStore
-from bitformat.bitformat_options import Options
-from bitformat.common import Colour
+from bitformat._bits import Bits, BitsType
+from bitformat._dtypes import Dtype, dtype_register
+from bitformat import _utils
+from ._bitstore import BitStore
+from bitformat._bitformat_options import Options
+from bitformat._common import Colour
 import operator
 import sys
 
@@ -449,10 +449,10 @@ class Array:
             token_list = [token.strip() for token in fmt.split(',')]
             if len(token_list) not in [1, 2]:
                 raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
-            name1, length1 = utils.parse_name_length_token(token_list[0])
+            name1, length1 = _utils.parse_name_length_token(token_list[0])
             dtype1 = Dtype(name1, length1)
             if len(token_list) == 2:
-                name2, length2 = utils.parse_name_length_token(token_list[1])
+                name2, length2 = _utils.parse_name_length_token(token_list[1])
                 dtype2 = Dtype(name2, length2)
 
         token_length = dtype1.bitlength
