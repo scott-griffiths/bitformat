@@ -248,16 +248,16 @@ class TestSimpleConversions:
     def test_convert_to_hex(self):
         assert Bits.from_bytes(b'\x00\x12\x23\xff').hex == '001223ff'
         s = Bits('0b11111')
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             _ = s.hex
 
 def test_empty_bitstring():
     s = Bits()
     assert s.bin == ''
     assert s.hex == ''
-    with pytest.raises(bitformat.InterpretError):
+    with pytest.raises(ValueError):
         _ = s.int
-    with pytest.raises(bitformat.InterpretError):
+    with pytest.raises(ValueError):
         _ = s.uint
     assert not s
 

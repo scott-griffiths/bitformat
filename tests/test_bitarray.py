@@ -123,10 +123,10 @@ class TestNewProperties:
 
     def test_getter_length_errors(self):
         a = Bits.from_string('0x123')
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             _ = a.f
         b = Bits()
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             _ = b.u
 
     def test_bytes_properties(self):
@@ -190,9 +190,9 @@ class TestBFloats:
         with pytest.raises(ValueError):
             _ = BitArray(bfloatle=-5, length=15)
         c = BitArray()
-        with pytest.raises(bitstring.InterpretError):
+        with pytest.raises(ValueError):
             _ = c.bfloatle
-        with pytest.raises(bitstring.InterpretError):
+        with pytest.raises(ValueError):
             _ = c.bfloatne
 
     @pytest.mark.skip
@@ -203,7 +203,7 @@ class TestBFloats:
 
     def test_interpret_bug(self):
         a = Bits.ones(100)
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             _ = a.float
 
     def test_overflows(self):

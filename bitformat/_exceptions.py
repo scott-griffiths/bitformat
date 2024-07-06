@@ -11,10 +11,6 @@ class ReadError(Error, IndexError):
     """Reading or peeking past the end of a Bits."""
 
 
-InterpretError = ValueError
-"""Inappropriate interpretation of binary data."""
-
-
 class ByteAlignError(Error):
     """Whole-byte position or length needed."""
 

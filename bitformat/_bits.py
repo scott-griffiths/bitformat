@@ -445,7 +445,7 @@ class Bits:
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
-            raise bitformat.InterpretError("Cannot interpret as bytes unambiguously - not multiple of 8 bits.")
+            raise ValueError("Cannot interpret as bytes unambiguously - not multiple of 8 bits.")
         return self._bitstore.to_bytes()
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
@@ -470,7 +470,7 @@ class Bits:
     def _getuint(self) -> int:
         """Return data as an unsigned int."""
         if len(self) == 0:
-            raise bitformat.InterpretError("Cannot interpret a zero length Bits as an integer.")
+            raise ValueError("Cannot interpret a zero length Bits as an integer.")
         return self._bitstore.slice_to_uint()
 
     def _setint(self, int_: int, length: int | None = None) -> None:
@@ -485,7 +485,7 @@ class Bits:
     def _getint(self) -> int:
         """Return data as a two's complement signed int."""
         if len(self) == 0:
-            raise bitformat.InterpretError("Cannot interpret Bits without a length as an integer.")
+            raise ValueError("Cannot interpret Bits without a length as an integer.")
         return self._bitstore.slice_to_int()
 
     def _setfloat(self, f: float, length: int | None) -> None:

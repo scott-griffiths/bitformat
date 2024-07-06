@@ -461,11 +461,11 @@ class TestPrettyPrintingErrors:
 
     def test_interpret_problems(self):
         a = Bits.zeros(7)
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             a.pp('oct')
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             a.pp('hex')
-        with pytest.raises(bitformat.InterpretError):
+        with pytest.raises(ValueError):
             a.pp('bin, bytes')
 
 
