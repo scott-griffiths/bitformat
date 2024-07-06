@@ -8,7 +8,7 @@ from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat import _utils
 from ._bitstore import BitStore
-from bitformat._bitformat_options import Options
+from bitformat._options import Options
 from bitformat._common import Colour
 import operator
 import sys

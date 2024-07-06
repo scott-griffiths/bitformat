@@ -36,7 +36,7 @@ from ._array import Array, BitsProxy
 from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field, FieldArray
 from ._format import Format
-from ._bitformat_options import Options
+from ._options import Options
 from typing import List, Tuple, Literal
 
 # The Options class returns a singleton.
