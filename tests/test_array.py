@@ -125,7 +125,7 @@ class TestCreation:
         assert a.to_list() == [ord('3'), ord('4'), ord('5')]
 
     def test_creation_from_bits(self):
-        a = Bits.join([Bits.build('i19', x) for x in range(-10, 10)])
+        a = Bits.join([Bits.pack('i19', x) for x in range(-10, 10)])
         b = Array('i19', a)
         assert b.to_list() == list(range(-10, 10))
 

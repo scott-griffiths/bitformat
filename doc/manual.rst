@@ -78,7 +78,7 @@ The constructor for ``Bits`` is a shortcut for the ``from_string`` method, so ``
 
    * - Method name
      - Description
-   * - ``Bits.build(dtype, value)``
+   * - ``Bits.pack(dtype, value)``
      - Combine a data type with a value.
    * - ``Bits.from_string(s)``
      - Use a formatted string.
@@ -91,17 +91,17 @@ The constructor for ``Bits`` is a shortcut for the ``from_string`` method, so ``
    * - ``Bits.join(iterable)``
      - Concatenate from an iterable such as a list.
 
-Instances can be built by pairing a ``Dtype`` with a value using the ``build`` class method.
+Instances can be built by pairing a ``Dtype`` with a value using the ``pack`` class method.
 
 For example::
 
-    a = Bits.build('bin', '110')
-    b = Bits.build('hex', 'abcde')
-    c = Bits.build('bytes', b'hello')
-    d = Bits.build('f32', 13.81)       # IEEE 32-bit float
-    e = Bits.build('i7', -31)          # 7-bit signed integer
+    a = Bits.pack('bin', '110')
+    b = Bits.pack('hex', 'abcde')
+    c = Bits.pack('bytes', b'hello')
+    d = Bits.pack('f32', 13.81)       # IEEE 32-bit float
+    e = Bits.pack('i7', -31)          # 7-bit signed integer
 
-The first parameter of ``build`` is the data type, which can be either a ``Dtype`` or a string that can be used to create one.
+The first parameter of ``pack`` is the data type, which can be either a ``Dtype`` or a string that can be used to create one.
 The second parameter is a value that makes sense for that data type, which could be a binary string, a floating point number, an integer etc. depending on the ``Dtype``.
 
 Another way to create a ``Bits`` instance is to use the ``from_string`` class method.
@@ -120,7 +120,7 @@ You can also initialise directly from a ``bytes`` object with the ``from_bytes``
     c = Bits.from_bytes(b'hello!!!')
 
 
-The companion to the ``Bits.build`` class method is the ``unpack`` method.
+The companion to the ``Bits.pack`` class method is the ``unpack`` method.
 This takes a ``Bits`` and interprets it according to a data-type to create a new value. ::
 
     >>> a.unpack('bin')
@@ -163,7 +163,7 @@ As a short-cut, for simple dtypes, properties can be used instead of the ``unpac
 In places where a ``Bits`` is expected, a formatted string that can be used to more conveniently create the `Bits` object.
 For example, if ``a`` is a ``Bits`` object, instead of ::
 
-    a += Bits.build('u8', 65)
+    a += Bits.pack('u8', 65)
 
 you can equivalently write ::
 

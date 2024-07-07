@@ -39,7 +39,7 @@ def test_find_all(benchmark):
     def finding():
         random.seed(999)
         i = random.randrange(0, 2 ** 20000000)
-        s = bitformat.Bits.build('u20000000', i)
+        s = bitformat.Bits.pack('u20000000', i)
         for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
             x = len(list(s.find_all(ss)))
         return x

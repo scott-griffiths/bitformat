@@ -11,12 +11,12 @@ class TestFlexibleInitialisation:
     def test_flexible_initialisation(self):
         a = Bits('uint 8=12')
         c = Bits(' uint  8 =  12')
-        assert a == c == Bits.build('uint8', 12)
+        assert a == c == Bits.pack('uint8', 12)
         assert a.uint == 12
         a = Bits('     int2=  -1')
         b = Bits('int 2   = -1')
         c = Bits(' int  2  =-1  ')
-        assert a == b == c == Bits.build('i2', -1)
+        assert a == b == c == Bits.pack('i2', -1)
 
     def test_flexible_initialisation2(self):
         h = Bits('hex=12')
@@ -64,7 +64,7 @@ class TestFind:
         assert s.find(Bits('0xffff')) is None
 
     def test_find_byte_aligned(self):
-        s = Bits.build('hex', '0x12345678')
+        s = Bits.pack('hex', '0x12345678')
         assert s.find(Bits('0x56'), bytealigned=True) == 16
         assert not s.find(Bits('0x45'), start=16, bytealigned=True)
         s = Bits('0x1234')
@@ -264,7 +264,7 @@ def test_empty_bitstring():
 class TestAppend:
     def test_append(self):
         s1 = Bits('0b00000')
-        s1 = s1.append(Bits.build('bool', True))
+        s1 = s1.append(Bits.pack('bool', True))
         assert s1.bin == '000001'
         assert (Bits('0x0102') + Bits('0x0304')).hex == '01020304'
 
@@ -340,7 +340,7 @@ class TestOverwriting:
         assert s.bin == '1'
 
     def test_overwrite_limits(self):
-        s = Bits.build('bin', '0b11111')
+        s = Bits.pack('bin', '0b11111')
         s = s.overwrite('0b000', 0)
         assert s.bin == '00011'
         s = s.overwrite('0b000', 2)
@@ -378,7 +378,7 @@ class TestAdding:
         assert s3.hex == '010203040102'
         assert s2[9:16].bin == '0000100'
         assert s1[0:9].bin == '000000010'
-        s4 = Bits.build('bin', '000000010') + Bits('0b0000100')
+        s4 = Bits.pack('bin', '000000010') + Bits('0b0000100')
         assert s4.bin == '0000000100000100'
         s5 = s1[0:9] + s2[9:16]
         assert s5.bin == '0000000100000100'
@@ -467,7 +467,7 @@ class TestAdding:
         s = Bits.join(bsl)
         assert s.hex == '00112233010c30c3'
 
-        bsl = [Bits.build('uint12', j) for j in range(10) for _ in range(10)]
+        bsl = [Bits.pack('uint12', j) for j in range(10) for _ in range(10)]
         s = Bits.join(bsl)
         assert len(s) == 1200
 
@@ -616,7 +616,7 @@ class TestAdding:
             _ = ~s
 
     def test_join_with_auto(self):
-        s = Bits.join(['0xf', '0b00', Bits.build('bin', '11')])
+        s = Bits.join(['0xf', '0b00', Bits.pack('bin', '11')])
         assert s == '0b11110011'
 
 
@@ -827,7 +827,7 @@ class TestManyDifferentThings:
         a = Bits('0b001010')
         b = Bits()
         for bit in a:
-            b = b.append(Bits.build('bool', bit))
+            b = b.append(Bits.pack('bool', bit))
         assert a == b
 
     def test_non_zero_bits_at_end(self):
@@ -999,7 +999,7 @@ class TestManyDifferentThings:
         assert not s.ends_with('0x34', 8, 15)
 
     def test_const_bit_stream_set_creation(self):
-        sl = [Bits.build('u7', i) for i in range(15)]
+        sl = [Bits.pack('u7', i) for i in range(15)]
         s = set(sl)
         assert len(s) == 15
         s.add(Bits('0b0000011'))
@@ -1014,9 +1014,9 @@ class TestManyDifferentThings:
         assert hash(a) == hash(c)
 
     def test_const_hashability_again(self):
-        a = Bits.build('u10000', 1 << 300)
-        b = Bits.build('u10000', 2 << 300)
-        c = Bits.build('u10000', 3 << 300)
+        a = Bits.pack('u10000', 1 << 300)
+        b = Bits.pack('u10000', 2 << 300)
+        c = Bits.pack('u10000', 3 << 300)
         s = {a, b, c}
         assert len(s) == 3
 
@@ -1219,7 +1219,7 @@ class TestMoreMisc:
             a = Bits.from_string(f'float64={s}')
             assert a.float == float(s)
         for s in ('5', '+0.5', '-1e2', '4.', '.25', '-.75'):
-            a = Bits.build('f16', s)
+            a = Bits.pack('f16', s)
             assert a.f == float(s)
     def test_ror(self):
         a = Bits('0b11001')

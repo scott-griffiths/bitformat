@@ -30,7 +30,7 @@ class Bits:
     To construct use a builder method.
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
-    * ``Bits.build(dtype, value)`` - Combine a data type with a value.
+    * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
     * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
@@ -52,9 +52,9 @@ class Bits:
         return x
 
     @classmethod
-    def build(cls, dtype: Dtype | str, value: Any, /) -> TBits:
+    def pack(cls, dtype: Dtype | str, value: Any, /) -> TBits:
         """
-        :param dtype: The data type to build.
+        :param dtype: The data type to pack.
         :type dtype: Dtype | str
         :param value: A value appropriate for the data type.
         :type value: Any

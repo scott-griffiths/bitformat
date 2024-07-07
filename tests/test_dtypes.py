@@ -94,7 +94,7 @@ class TestCreatingNewDtypes:
         dtype_register.add_dtype_alias('bin', 'cat')
         a = Bits.from_string('0b110110')
         assert a.cat == '110110'
-        a = Bits.build('cat', '11110000')
+        a = Bits.pack('cat', '11110000')
         assert a.cat == '11110000'
 
     def test_new_type(self):
@@ -102,7 +102,7 @@ class TestCreatingNewDtypes:
         dtype_register.add_dtype(md)
         a = Bits.from_string('0xf')
         assert a.uint_r == 15
-        a = Bits.build('uint_r4',  1)
+        a = Bits.pack('uint_r4',  1)
         assert a == '0x1'
         a += 'uint_r100=0'
         assert a == '0x1, 0b' + '0'*100

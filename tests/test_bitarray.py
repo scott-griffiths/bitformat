@@ -10,15 +10,15 @@ sys.path.insert(0, '..')
 
 class TestAll:
     def test_creation_from_uint(self):
-        s = Bits.build('uint6', 15)
+        s = Bits.pack('uint6', 15)
         assert s.bin == '001111'
-        s = Bits.build('u1', 0)
+        s = Bits.pack('u1', 0)
         assert s.bin == '0'
         s = Bits.zeros(8)
         assert s.uint == 0
 
     def test_creation_from_oct(self):
-        s = Bits.build(Dtype('oct'), '7')
+        s = Bits.pack(Dtype('oct'), '7')
         assert s.oct == '7'
         assert s.bin == '111'
         s += '0o1'
@@ -207,7 +207,7 @@ class TestBFloats:
             _ = a.float
 
     def test_overflows(self):
-        inf16 = Bits.build('f16', float('inf'))
+        inf16 = Bits.pack('f16', float('inf'))
         inf32 = Bits.from_string('f32 = inf')
         inf64 = Dtype('f64').build(float('inf'))
 
@@ -251,7 +251,7 @@ class TestNumpy:
 
 
 def test_bytes_from_list():
-    s = Bits.build('bytes', [1, 2])
+    s = Bits.pack('bytes', [1, 2])
     assert s == '0x0102'
     s = Bits.from_bytes(bytearray([1, 2]))
     assert s == '0x0102'

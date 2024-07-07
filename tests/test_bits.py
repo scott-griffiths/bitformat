@@ -9,12 +9,12 @@ from bitformat import Dtype, Bits
 
 
 def test_build():
-    a = Bits.build('u12', 104)
+    a = Bits.pack('u12', 104)
     assert a == 'u12 = 104'
-    b = Bits.build('bool', False)
+    b = Bits.pack('bool', False)
     assert len(b) == 1
     assert b[0] == 0
-    c = Bits.build(Dtype('float', 64), 13.75)
+    c = Bits.pack(Dtype('float', 64), 13.75)
     assert len(c) == 64
     assert c.unpack('f64') == 13.75
 
@@ -30,13 +30,13 @@ class TestCreation:
 
     @given(st.binary())
     def test_creation_from_bytes_roundtrip(self, data):
-        s = Bits.build('bytes', data)
+        s = Bits.pack('bytes', data)
         assert s.bytes == data
 
     def test_creation_from_hex(self):
-        s = Bits.build('hex', '0xA0ff')
+        s = Bits.pack('hex', '0xA0ff')
         assert (len(s), s.unpack('hex')) == (16, 'a0ff')
-        s = Bits.build('hex', '0x0x0X')
+        s = Bits.pack('hex', '0x0x0X')
         assert (len(s), s.hex) == (0, '')
 
     def test_creation_from_hex_with_whitespace(self):
@@ -46,72 +46,72 @@ class TestCreation:
     @pytest.mark.parametrize("bad_val", ['0xx0', '0xX0', '0Xx0', '-2e'])
     def test_creation_from_hex_errors(self, bad_val: str):
         with pytest.raises(ValueError):
-            Bits.build('hex', bad_val)
+            Bits.pack('hex', bad_val)
 
     def test_creation_from_bin(self):
-        s = Bits.build('bin', '1010000011111111')
+        s = Bits.pack('bin', '1010000011111111')
         assert (len(s), s.unpack('hex')) == (16, 'a0ff')
         s = Bits.from_string('0b00')[:1]
         assert s.unpack('bin') == '0'
-        s = Bits.build('bin', ' 0000 \n 0001\r ')
+        s = Bits.pack('bin', ' 0000 \n 0001\r ')
         assert s.unpack('bin') == '00000001'
 
     def test_creation_from_uint_errors(self):
-        # test = Bits.build('u10', -1)
+        # test = Bits.pack('u10', -1)
 
         with pytest.raises(ValueError):
-            Bits.build('u10', -1)
+            Bits.pack('u10', -1)
         with pytest.raises(ValueError):
-            Bits.build('uint', 12)
+            Bits.pack('uint', 12)
         with pytest.raises(ValueError):
-            Bits.build('uint2', 4)
+            Bits.pack('uint2', 4)
         with pytest.raises(ValueError):
-            Bits.build('u0', 1)
+            Bits.pack('u0', 1)
         with pytest.raises(ValueError):
-            Bits.build('u2', 12)
+            Bits.pack('u2', 12)
 
     def test_creation_from_int(self):
-        s = Bits.build('int4', 0)
+        s = Bits.pack('int4', 0)
         assert s.unpack('bin') == '0000'
-        s = Bits.build(Dtype('i2'), 1)
+        s = Bits.pack(Dtype('i2'), 1)
         assert s.unpack('bin') == '01'
-        s = Bits.build('i11', -1)
+        s = Bits.pack('i11', -1)
         assert s.bin == '11111111111'
         s = Bits.from_string('i12=7')
         assert s.int == 7
-        s = Bits.build(Dtype('i108'), -243)
+        s = Bits.pack(Dtype('i108'), -243)
         assert (s.unpack('i'), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.build(Dtype('int', length), value)
+                s = Bits.pack(Dtype('int', length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, None], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.build(Dtype('int', length), int_)
+            _ = Bits.pack(Dtype('int', length), int_)
 
     def test_creation_from_bool(self):
-        a = Bits.build('bool', 1)
+        a = Bits.pack('bool', 1)
         assert a == 'bool=1'
         b = Bits.from_string('bool1=0')
         assert b == [0]
 
     def test_creation_from_bool_errors(self):
         with pytest.raises(ValueError):
-            _ = Bits.build('bool', 3)
+            _ = Bits.pack('bool', 3)
         with pytest.raises(ValueError):
-            _ = Bits.build('bool2', 0)
+            _ = Bits.pack('bool2', 0)
 
     def test_creation_keyword_error(self):
         with pytest.raises(ValueError):
-            Bits.build('squirrel', 5)
+            Bits.pack('squirrel', 5)
 
     @pytest.mark.skip
     def test_creation_from_memoryview(self):
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
-        b = Bits.build('bytes', m)
+        b = Bits.pack('bytes', m)
         assert b.unpack('[u8; 5]') == [10, 11, 12, 13, 14]
 
 
@@ -164,7 +164,7 @@ class TestPadToken:
 
     def test_creation(self):
         a = Bits.from_string('pad10')
-        assert a == Bits.build('bin','0b0000000000')
+        assert a == Bits.pack('bin','0b0000000000')
         b = Bits.from_string('pad0')
         assert b == Bits()
         c = Bits.from_string('0b11, pad1, 0b111')
@@ -203,22 +203,22 @@ class TestContainsBug:
 
 class TestUnderscoresInLiterals:
     def test_hex_creation(self):
-        a = Bits.build('hex', 'ab_cd__ef')
+        a = Bits.pack('hex', 'ab_cd__ef')
         assert a.unpack('hex') == 'abcdef'
         b = Bits.from_string('0x0102_0304')
         assert b.unpack('u') == 0x0102_0304
 
     def test_binary_creation(self):
-        a = Bits.build('bin', '0000_0001_0010')
+        a = Bits.pack('bin', '0000_0001_0010')
         assert a.unpack('bin') == '000000010010'
         b = Bits('0b0011_1100_1111_0000')
         assert b.unpack('bin') == '0011110011110000'
         v = 0b1010_0000
-        c = Bits.build('uint8', 0b1010_0000)
+        c = Bits.pack('uint8', 0b1010_0000)
         assert c.unpack('u') == v
 
     def test_octal_creation(self):
-        a = Bits.build('oct', '0011_2233_4455_6677')
+        a = Bits.pack('oct', '0011_2233_4455_6677')
         assert a.unpack('uint') == 0o001122334455_6677
         b = Bits.from_string('0o123_321_123_321')
         assert b.unpack('u') == 0o123_321_123321
@@ -250,7 +250,7 @@ class TestPrettyPrinting:
 """
 
     def test_small_width(self):
-        a = Bits.build('u20', 0)
+        a = Bits.pack('u20', 0)
         s = io.StringIO()
         a.pp(fmt='bin', stream=s, width=5)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin', length=20 bits> [
@@ -320,7 +320,7 @@ class TestPrettyPrinting:
 """
 
         a = bytearray(range(0, 256))
-        b = Bits.build('bytes', a)
+        b = Bits.pack('bytes', a)
         s = io.StringIO()
         b.pp(stream=s, fmt='bytes')
         assert remove_unprintable(s.getvalue()) == r"""<Bits, fmt='bytes', length=2048 bits> [
@@ -487,7 +487,7 @@ class TestPrettyPrinting_NewFormats:
 """
 
     def test_uint(self):
-        a = Bits().join([Bits.build('u12', x) for x in range(40, 105)])
+        a = Bits().join([Bits.pack('u12', x) for x in range(40, 105)])
         s = io.StringIO()
         a.pp('uint, hex12', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='u, hex12', length=780 bits> [
@@ -501,7 +501,7 @@ class TestPrettyPrinting_NewFormats:
 """
 
     def test_float(self):
-        a = Bits.build('f64', 76.25) + '0b11111'
+        a = Bits.pack('f64', 76.25) + '0b11111'
         s = io.StringIO()
         a.pp('i64, float', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='i64, f', length=69 bits> [
