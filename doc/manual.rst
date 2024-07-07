@@ -120,34 +120,34 @@ You can also initialise directly from a ``bytes`` object with the ``from_bytes``
     c = Bits.from_bytes(b'hello!!!')
 
 
-The companion to the ``Bits.build`` class method is the ``parse`` method.
+The companion to the ``Bits.build`` class method is the ``unpack`` method.
 This takes a ``Bits`` and interprets it according to a data-type to create a new value. ::
 
-    >>> a.parse('bin')
+    >>> a.unpack('bin')
     '110'
-    >>> b.parse('hex')
+    >>> b.unpack('hex')
     'abcde'
-    >>> c.parse('bytes')
+    >>> c.unpack('bytes')
     b'hello!!!'
-    >>> d.parse('f32')
+    >>> d.unpack('f32')
     13.5
-    >>> e.parse('i7')
+    >>> e.unpack('i7')
     -31
 
 Of course the ``Bits`` object is just a collection of bits and doesn't know how it was created, so any interpretation that makes sense is allowed ::
 
-    >>> a.parse('oct')
+    >>> a.unpack('oct')
     '6'
-    >>> b.parse('u')  # unsigned int
+    >>> b.unpack('u')  # unsigned int
     TODO
-    >>> c.parse('f64')
+    >>> c.unpack('f64')
     TODO
-    >>> d.parse('hex')
+    >>> d.unpack('hex')
     TODO
-    >>> e.parse('bin')
+    >>> e.unpack('bin')
     TODO
 
-As a short-cut, for simple dtypes, properties can be used instead of the ``parse`` method to get different interpretations of the ``Bits`` ::
+As a short-cut, for simple dtypes, properties can be used instead of the ``unpack`` method to get different interpretations of the ``Bits`` ::
 
     >>> a.bin
     '110'
