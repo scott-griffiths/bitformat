@@ -121,23 +121,23 @@ You can also initialise directly from a ``bytes`` object with the ``from_bytes``
 
 
 The companion to the ``Bits.pack`` class method is the ``unpack`` method.
-This takes a ``Bits`` and interprets it according to a data-type to create a new value. ::
+This takes a ``Bits`` and interprets it according to a format or data-type to create new values. ::
 
     >>> a.unpack('bin')
-    '110'
+    ['110']
     >>> b.unpack('hex')
-    'abcde'
+    ['abcde']
     >>> c.unpack('bytes')
-    b'hello!!!'
+    [b'hello!!!']
     >>> d.unpack('f32')
-    13.5
+    [13.5]
     >>> e.unpack('i7')
-    -31
+    [-31]
 
 Of course the ``Bits`` object is just a collection of bits and doesn't know how it was created, so any interpretation that makes sense is allowed ::
 
     >>> a.unpack('oct')
-    '6'
+    ['6']
     >>> b.unpack('u')  # unsigned int
     TODO
     >>> c.unpack('f64')
@@ -147,7 +147,8 @@ Of course the ``Bits`` object is just a collection of bits and doesn't know how 
     >>> e.unpack('bin')
     TODO
 
-As a short-cut, for simple dtypes, properties can be used instead of the ``unpack`` method to get different interpretations of the ``Bits`` ::
+As a short-cut, for simple dtypes, properties can be used instead of the ``unpack`` method to get different interpretations of the ``Bits``.
+So for example you can use just ``b.hex`` instead of ``b.unpack('hex')[0]``. ::
 
     >>> a.bin
     '110'

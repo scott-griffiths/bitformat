@@ -115,10 +115,10 @@ class Bits:
             return Bits()
         return Dtype('i', length).build(-1)
 
-    def unpack(self, dtype: Dtype | str, /) -> Any:
+    def unpack(self, dtype: Dtype | str, /) -> list[Any]:
         """Interpret the Bits as a given data type."""
         d = Dtype(dtype)
-        return d.parse(self)
+        return [d.parse(self)]
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
@@ -215,28 +215,28 @@ class Bits:
             return ''
         if length > MAX_CHARS * 4:
             # Too long for hex. Truncate...
-            return '0x' + self[0:MAX_CHARS*4].unpack('hex') + f'...  # {length} bits'
+            return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
         hex_str = bin_str = f_str = u_str = i_str = ''
         if length % 4 == 0:
-            t = self.unpack('hex')
+            t = self.hex
             with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
             hex_str = f'hex == {with_underscores}'
         if length <= 64:
-            t = self.unpack('bin')
+            t = self.bin
             with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
             bin_str = f'bin == {with_underscores}'
-            u_str = f'u{length} == {self.unpack("u"):_}'
-            i_str = f'i{length} == {self.unpack("i"):_}'
+            u_str = f'u{length} == {self.u:_}'
+            i_str = f'i{length} == {self.i:_}'
         if length in dtype_register['f'].allowed_lengths:
-            f_str = f'f{length} == {self.unpack("f")}'
+            f_str = f'f{length} == {self.f}'
         interpretations = [x for x in [hex_str, bin_str, u_str, i_str, f_str] if x != '']
         if not interpretations:
             # First we do as much as we can in hex
             # then add on 1, 2 or 3 bits on at the end
             bits_at_end = length % 4
-            t = self[0:length - bits_at_end].unpack('hex')
+            t = self[0:length - bits_at_end].hex
             hex_with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            bin_at_end = self[length - bits_at_end:].unpack('bin')
+            bin_at_end = self[length - bits_at_end:].bin
             return f'0x{hex_with_underscores}, 0b{bin_at_end}'
         return '\n'.join(interpretations)
 
@@ -244,9 +244,9 @@ class Bits:
         if length == 0:
             s = ''
         elif length % 4 == 0:
-            s = '0x' + self.unpack('hex')
+            s = '0x' + self.hex
         else:
-            s = '0b' + self.unpack('bin')
+            s = '0b' + self.bin
         return f"{classname}('{s}')"
 
     def __repr__(self) -> str:
@@ -970,7 +970,7 @@ class Bits:
                  output_stream, 1)
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = 0b" + self[-trailing_bit_length:].unpack('bin'))
+            output_stream.write(" + trailing_bits = 0b" + self[-trailing_bit_length:].bin)
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return
