@@ -22,33 +22,37 @@ options = Options()
 
 
 class BitsProxy:
-    """A Proxy object to access the data in the Array as if it were a Bits object.
+    """A Proxy object to access the data in an ``Array`` as if it were a ``Bits`` object.
 
-    This allows the mutable data in the Array to be accessed using the Bits methods without a copy being made.
-    Usage is almost exactly the same, but some special methods such as __copy__ and __hash__ behave differently.
+    This allows the mutable data in the ``Array`` to be accessed using the ``Bits`` methods without a copy being made,
+    facilitating operations like slicing, bitwise manipulation, and other Bits methods on the ``Array``'s data.
+    Usage is almost exactly the same as for ``Bits``, but some special methods such as ``__copy__`` and ``__hash__``
+    behave differently.
 
-    Note that a BitsProxy is mutable, and its value will change as the Array changes. To copy to an immutable
-    Bits object use the to_bits() method on the Array.
+    Note that a ``BitsProxy`` is mutable, and its value will change as the ``Array`` changes. To copy to an immutable
+    ``Bits`` object use the ``to_bits()`` method on the ``Array``.
 
-    See the Bits class for more information.
+    See the ``Bits`` class for more information on the available methods.
 
     """
     def __init__(self, array: Array) -> None:
+        """Initialise the with an ``Array`` object to make a proxy to its bit data."""
         self._array = array
 
     def __getattr__(self, name):
-        """Delegate attribute access to the internal BitStore."""
+        """Delegate attribute access to the internal bit storage."""
         x = Bits()
         x._bitstore = self._array._bitstore
         return getattr(x, name)
 
     def __copy__(self):
-        # We can't use the Bits.__copy__ as that assumes immutability
+        """Creates a copy of the ``BitsProxy`` object as a real immutable ``Bits`` object."""
         x = Bits()
         x._bitstore = self._array._bitstore
         return x[:]
 
     __hash__ = None
+    """The hash method is disabled for a ``BitsProxy`` object as it is mutable."""
 
 
 # List of special methods to delegate
@@ -95,46 +99,41 @@ for method_name in special_methods:
 
 
 class Array:
-    """Return an Array whose elements are initialised according to the fmt string.
-    The dtype string can be typecode as used in the struct module or any fixed-length Bits
-    format.
+    """
+    An Array whose elements are all a single data type.
 
-    b = Array('int5', [-9, 0, 4])
+    The ``Array`` data is stored compactly as a ``Bits`` object and the ``Array`` behaves very like
+    a list of items of the given format.
 
-    The Array data is stored compactly as a Bits object and the Array behaves very like
-    a list of items of the given format. The Array dtype can be freely
-    modified after creation. If the data length is not a multiple of the dtype length then the
-    Array will have 'trailing_bits' which will prevent some methods from appending to the
-    Array.
+    If the data length is not a multiple of the dtype length then the ``Array`` will have ``trailing_bits``
+    which will prevent some methods from appending to the ``Array``.
 
-    Methods:
+    **Methods:**
 
-    append() -- Append a single item to the end of the Array.
-    byteswap() -- Change byte endianness of all items.
-    count() -- Count the number of occurences of a value.
-    extend() -- Append new items to the end of the Array from an iterable.
-    insert() -- Insert an item at a given position.
-    pop() -- Remove and return an item.
-    pp() -- Pretty print the Array.
-    reverse() -- Reverse the order of all items.
-    to_bits() -- Return the Array data as a Bits object.
-    to_bytes() -- Return Array data as bytes object, padding with zero bits at the end if needed.
-    to_list() -- Return Array items as a list.
+    - ``append(item)``: Append a single item to the end of the Array.
+    - ``byteswap()``: Change byte endianness of all items.
+    - ``count(value)``: Count the number of occurrences of a value.
+    - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
+    - ``insert(index, item)``: Insert an item at a given position.
+    - ``pop([index])``: Remove and return an item. Default is the last item.
+    - ``pp([fmt, width, show_offset, stream])``: Pretty print the Array.
+    - ``reverse()``: Reverse the order of all items.
+    - ``to_bits()``: Return the Array data as a Bits object.
+    - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
+    - ``to_list()``: Return Array items as a list.
 
-    Special methods:
+    **Special methods:**
 
-    Also available are the operators [], ==, !=, +, *, <<, >>, &, |, ^,
-    plus the mutating operators [], +=, *=, <<=, >>=, &=, |=, ^=.
+    Also available are the operators ``[]``, ``==``, ``!=``, ``+``, ``*``, ``<<``, ``>>``, ``&``, ``|``, ``^``,
+    plus the mutating operators ``[]=``, ``+=``, ``*=``, ``<<=``, ``>>=``, ``&=``, ``|=``, ``^=``.
 
-    Properties:
+    **Properties:**
 
-    data -- The Bits binary data of the Array.
-    dtype -- The format string or typecode. Can be freely modified.
-    item_size -- The length *in bits* of a single item. Read only.
-    trailing_bits -- If the data length is not a multiple of the fmt length, this Bits
-                     gives the leftovers at the end of the data.
-
-
+    - ``data``: The binary data of the ``Array`` as a ``BitsProxy`` object.
+    - ``dtype``: The data type of the elements in the ``Array``.
+    - ``item_size``: The length *in bits* of a single item. Read only.
+    - ``trailing_bits``: If the data length is not a multiple of the dtype length, this ``Bits``
+      gives the leftovers at the end of the data.
     """
 
     def __init__(self, dtype: Union[str, Dtype], initializer: Union[int, Array, Iterable, Bits, bytes, bytearray, memoryview] | None = None,
@@ -160,30 +159,11 @@ class Array:
 
     @property
     def data(self) -> BitsProxy:
-        """
-        Property that provides access to the Array's data through a BitsProxy.
-
-        This property allows for interaction with the Array's underlying data as if it were a Bits object,
-        facilitating operations like slicing, bitwise manipulation, and other Bits methods without directly
-        modifying the Array's internal representation. The returned BitsProxy is mutable, reflecting any changes
-        made to the Array.
-
-        Returns:
-            BitsProxy: A proxy object that provides a Bits-like interface to the Array's data.
-        """
+        """Property that provides access to the ``Array`` data through a ``BitsProxy``."""
         return self._proxy
 
     @data.setter
     def data(self, value: BitsType) -> None:
-        """
-        Setter for the `data` property of the Array class.
-
-        This setter allows updating the Array's underlying data with a new value.
-
-        Parameters:
-            value (BitsType): The new value to set the Array's data to. This can be any type that can be converted
-                              into a Bits object, including Bits, bytes, bytearray, or a formatted string.
-        """
         self._bitstore = Bits._create_from_bitstype(value)._bitstore
 
     def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
@@ -193,15 +173,18 @@ class Array:
 
     @property
     def item_size(self) -> int:
-        return self._dtype.length
+        """The length of a single item in bits. Read only."""
+        return self._dtype.bitlength
 
     @property
     def trailing_bits(self) -> Bits:
+        """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
         trailing_bit_length = len(self._bitstore) % self._dtype.bitlength
         return Bits() if trailing_bit_length == 0 else self._getbitslice(-trailing_bit_length, None)
 
     @property
     def dtype(self) -> Dtype:
+        """The data type of the elements in the Array."""
         return self._dtype
 
     @dtype.setter
@@ -228,6 +211,7 @@ class Array:
         return b
 
     def __len__(self) -> int:
+        """The number of complete elements in the ``Array``."""
         return len(self._bitstore) // self._dtype.length
 
     @overload
@@ -323,7 +307,29 @@ class Array:
         return f"Array('{self._dtype}', {list_str}{final_str})"
 
     def astype(self, dtype: Union[str, Dtype]) -> Array:
-        """Return Array with elements of new dtype, initialised from current Array."""
+        """
+        Creates and returns a new ``Array`` instance with a specified data type, initialized with the current Array's elements.
+
+        This method allows for the conversion of the Array's elements to a different data type, specified by the `dtype` parameter.
+        The conversion process respects the original values of the elements, adapting them to the new data type format.
+        This can be useful for changing the representation of data within the Array, for example, from integers to floating-point numbers or vice versa.
+
+        Parameters:
+        - `dtype` (Union[str, Dtype]): The target data type for the new Array. This can be specified as a string or as a `Dtype` instance. The string format should match one of the predefined data type codes in the library.
+
+        Returns:
+        - `Array`: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
+
+        Raises:
+        - `ValueError`: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
+
+        Example:
+        ```python
+        original_array = Array('int', [1, 2, 3])
+        float_array = original_array.astype('float')
+        print(float_array.dtype)  # Output: Dtype('float')
+        ```
+        """
         new_array = self.__class__(dtype, self.to_list())
         return new_array
 
