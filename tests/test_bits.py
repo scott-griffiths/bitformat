@@ -16,7 +16,7 @@ def test_build():
     assert b[0] == 0
     c = Bits.pack(Dtype('float', 64), 13.75)
     assert len(c) == 64
-    assert c.unpack('f64') == [13.75]
+    assert c.unpack(['f64']) == [13.75]
 
 
 def remove_unprintable(s: str) -> str:
@@ -170,13 +170,12 @@ class TestPadToken:
         c = Bits.from_string('0b11, pad1, 0b111')
         assert c == '0b110111'
 
-    @pytest.mark.skip
     def test_unpack(self):
         s = Bits.from_string('0b111000111')
         x, y = s.unpack(['bits3, pad3, bits3'])
         assert (x, y.unpack('u')[0]) == ('0b111', 7)
         x, y = s.unpack(['bits2', 'pad2', 'bin5'])
-        assert (x.unpack('u2')[0], y) == (3, '00111')
+        assert (x.unpack(['u2'])[0], y) == (3, '00111')
         x = s.unpack(['pad1, pad2, pad3'])
         assert x == []
 

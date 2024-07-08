@@ -117,8 +117,24 @@ class Bits:
 
     def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
-        d = Dtype(fmt[0])
-        return [d.parse(self)]
+        dtypes = []
+        for i in fmt:
+            if isinstance(i, str):
+                dtypes.extend(Dtype(x) for x in i.split(','))
+            else:
+                dtypes.append(i)
+        if len(dtypes) == 1:
+            if dtypes[0].name == 'pad':
+                return []
+            else:
+                return [dtypes[0].parse(self)]
+        pos = 0
+        ret_val = []
+        for dtype in dtypes:
+            if dtype.name != 'pad':
+                ret_val.append(dtype.parse(self[pos:pos + dtype.length]))
+            pos += dtype.length
+        return ret_val
 
     @classmethod
     def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
