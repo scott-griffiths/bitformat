@@ -21,11 +21,10 @@ div#top_nav nav h1 img{
 
 div.document {
     margin-bottom: 1rem;
-    margin-right: 1rem;
 }
 
 div.document div.documentwrapper {
-    max-width: 60rem;
+    max-width: 55rem;
 }
 
 div.document div.highlight {
@@ -78,11 +77,3 @@ div.document hr {
     height: 0.25rem;
     background-color: #d03434;
 }
-
-/*div#show_right_sidebar {*/
-/*    display: none;*/
-/*}*/
-
-/*div#right_sidebar {*/
-/*    display: none;*/
-/*}*/
