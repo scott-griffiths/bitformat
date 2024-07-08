@@ -115,9 +115,9 @@ class Bits:
             return Bits()
         return Dtype('i', length).build(-1)
 
-    def unpack(self, dtype: Dtype | str, /) -> list[Any]:
+    def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
-        d = Dtype(dtype)
+        d = Dtype(fmt[0])
         return [d.parse(self)]
 
     @classmethod

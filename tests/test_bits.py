@@ -26,7 +26,7 @@ def remove_unprintable(s: str) -> str:
 class TestCreation:
     def test_creation_from_bytes(self):
         s = Bits.from_bytes(b'\xa0\xff')
-        assert (len(s), s.unpack('hex')[0]) == (16, 'a0ff')
+        assert (len(s), s.unpack(['hex'])[0]) == (16, 'a0ff')
 
     @given(st.binary())
     def test_creation_from_bytes_roundtrip(self, data):
@@ -35,13 +35,13 @@ class TestCreation:
 
     def test_creation_from_hex(self):
         s = Bits.pack('hex', '0xA0ff')
-        assert (len(s), s.unpack('hex')[0]) == (16, 'a0ff')
+        assert (len(s), s.unpack(['hex'])[0]) == (16, 'a0ff')
         s = Bits.pack('hex', '0x0x0X')
         assert (len(s), s.hex) == (0, '')
 
     def test_creation_from_hex_with_whitespace(self):
         s = Bits('  \n0 X a  4e       \r3  \n')
-        assert s.unpack('hex') == ['a4e3']
+        assert s.hex == 'a4e3'
 
     @pytest.mark.parametrize("bad_val", ['0xx0', '0xX0', '0Xx0', '-2e'])
     def test_creation_from_hex_errors(self, bad_val: str):
@@ -50,11 +50,11 @@ class TestCreation:
 
     def test_creation_from_bin(self):
         s = Bits.pack('bin', '1010000011111111')
-        assert (len(s), s.unpack('hex')[0]) == (16, 'a0ff')
+        assert (len(s), s.hex) == (16, 'a0ff')
         s = Bits.from_string('0b00')[:1]
-        assert s.unpack('bin') == ['0']
+        assert s.unpack(['bin']) == ['0']
         s = Bits.pack('bin', ' 0000 \n 0001\r ')
-        assert s.unpack('bin') == ['00000001']
+        assert s.bin == '00000001'
 
     def test_creation_from_uint_errors(self):
         # test = Bits.pack('u10', -1)
@@ -72,15 +72,15 @@ class TestCreation:
 
     def test_creation_from_int(self):
         s = Bits.pack('int4', 0)
-        assert s.unpack('bin')[0] == '0000'
+        assert s.unpack([Dtype('bin')])[0] == '0000'
         s = Bits.pack(Dtype('i2'), 1)
-        assert s.unpack('bin')[0] == '01'
+        assert s.bin == '01'
         s = Bits.pack('i11', -1)
         assert s.bin == '11111111111'
         s = Bits.from_string('i12=7')
         assert s.int == 7
         s = Bits.pack(Dtype('i108'), -243)
-        assert (s.unpack('i')[0], len(s)) == (-243, 108)
+        assert (s.unpack([Dtype('i')])[0], len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
                 s = Bits.pack(Dtype('int', length), value)
@@ -112,7 +112,7 @@ class TestCreation:
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
         b = Bits.pack('bytes', m)
-        assert b.unpack('[u8; 5]') == [[10, 11, 12, 13, 14]]
+        assert b.unpack(['[u8; 5]']) == [[10, 11, 12, 13, 14]]
 
 
 class TestInitialisation:
@@ -173,11 +173,11 @@ class TestPadToken:
     @pytest.mark.skip
     def test_unpack(self):
         s = Bits.from_string('0b111000111')
-        x, y = s.unpack('bits3, pad3, bits3')
+        x, y = s.unpack(['bits3, pad3, bits3'])
         assert (x, y.unpack('u')[0]) == ('0b111', 7)
-        x, y = s.unpack('bits2, pad2, bin5')
+        x, y = s.unpack(['bits2', 'pad2', 'bin5'])
         assert (x.unpack('u2')[0], y) == (3, '00111')
-        x = s.unpack('pad1, pad2, pad3')
+        x = s.unpack(['pad1, pad2, pad3'])
         assert x == []
 
 
