@@ -7,6 +7,7 @@ Quick Reference
 
 This section gives a summary of the `bitformat` module's classes, functions and attributes.
 
+
 Class Overview
 --------------
 

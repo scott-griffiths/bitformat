@@ -3,39 +3,162 @@
 User Manual
 ===========
 
-A bitformat is a specification of a binary format that says both how to build it from supplied values, and how to parse binary data to retrieve those values.
+The ``bitformat`` Python package is designed to make working with binary data and formats easier and more intuitive.
+It allows arbitrary length binary data to be created and parsed using a simple and flexible syntax.
 
-It is intended as an update to the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, which has been actively maintained since 2006 and provides easy and flexible access to many types of binary data in idiomatic Python.
+bitformat vs. bitstring
+-----------------------
 
-A short example could be::
+bitformat is from the same author as the `bitstring <https://github.com/scott-griffiths/bitstring>`_ package, which is widely used and has been actively maintained since 2006.
+It covers much of the same ground, but is designed to have a stronger emphasis on performance, a simpler API and a more expressive syntax for binary formats.
 
-    from bitformat import Format, Repeat
+``bitstring``
 
-    f = Format(['sync_byte: const hex8 = ff',
-                'items: u6',
-                'flags: [bool; {items + 1}]',
-                Repeat('{items + 1}', [
-                       'byte_cluster_size: u4',
-                       'bytes{byte_cluster_size}'
-                       ])
-                ])
-
-    b = f.build([3, [True, False, True], [(2, b'ab'), (3, b'cde'), (4, b'fghi')]])
-    if f['items'] > 0 and f['flags'][0]:
-        ...
-    f.clear()
-    f.parse(b)
+* Simple and flexible syntax for binary data manipulation.
+* Reasonable performance, but difficult to improve further.
+* Very mature and stable - maintained since 2006.
+* Hundreds of dependant projects and millions of downloads per month.
 
 
+``bitformat``
+
+* Expressive syntax for complex binary formats.
+* Emphasis on performance.
+* Several major features still to be added.
+* In pre-alpha stage - still quite unstable.
+
+When deciding which one to use the TLDR; for most people is that you should use ``bitstring`` for anything at all serious, at least for now.
+I am hoping that ``bitformat`` will become a worthy successor, and I'd be very happy for you to try it out and give feedback.
+Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely - at the time of writing their respective download counts are 88 million for bitstring and 882 for bitformat!
+
+.. warning::
+
+    While there are many similarities between bitformat and bitstring, there has been no attempt to make them compatible.
+    Much of the reason for making a new package was to revisit many of the design decisions that were made almost two
+    decades ago when George W. Bush was president, the Nintendo Wii was the latest must-have tech, and Python 2.4 was the latest version.
+
+    While both packages have classes such as ``Bits``, ``Dtype`` and ``Array`` and many similar methods,
+    they do have many differences in their behaviour and API.
+
+
+A Tour of bitformat
+===================
+
+A number of classes are available in bitformat to store and manipulate binary data.
+
+* ``Bits`` - An immutable container of binary data.
+* ``Dtype`` - A data type that gives an interpretation to binary data.
+* ``Array`` - A container for contiguously allocated `Bits` objects with the same `Dtype`.
+
+These are the building blocks for more complex fields that can be used to make a binary format.
+
+* ``Field`` - A single data type, with an optional name and value.
+* ``FieldArray`` - An array of a single fixed-length data type, with an optional name and value.
+* ``Format`` - A sequence of other FieldTypes, with an optional name.
+
+For this quick tour we'll assume that `bitformat` has been installed (``pip install bitformat``) and these classes have all been imported::
+
+    from bitformat import Bits, Dtype, Array, Field, FieldArray, Format
+
+Bits
+^^^^
+
+The ``Bits`` class represents an immutable sequence of bits, similar to how the built-in ``bytes`` is an immutable sequence of bytes,
+and a ``str`` is an immutable sequence of characters.
+
+There are several builder class methods used to create ``Bits`` objects. ::
+
+.. list-table::
+   :header-rows: 1
+
+   * - Method name
+     - Description
+   * - ``Bits.pack(dtype, value)``
+     - Combine a data type with a value.
+   * - ``Bits.from_string(s)``
+     - Use a formatted string.
+   * - ``Bits.from_bytes(b)``
+     - Directly from a ``bytes`` object.
+   * - ``Bits.zeros(n)``
+     - Initialise with zero bits.
+   * - ``Bits.ones(n)``
+     - Initialise with one bits.
+   * - ``Bits.join(iterable)``
+     - Concatenate from an iterable such as a list.
+
+The ``Bits`` constructor can be used as a shortcut for the ``from_string`` method, so ``Bits(s)`` and ``Bits.from_string(s)`` are equivalent.
+
+Creating from a string is often convenient and quite powerful.
+The string can be a binary, octal or hexadecimal literal by starting with ``'0b'``, ``'0o'`` or ``'0x'`` respectively.
+It can be a string that uses various data types of integer or floating point values, and it can be a sequence of tokens separated by commas. ::
+
+    a = Bits('0b110')  # A 3-bit binary string
+    b = Bits('0xabcde')  # A 20-bit hexadecimal string
+    d = Bits('f32=13.5')  # A 32-bit IEEE floating point number
+    e = Bits('i7=-31')  # A 7-bit signed integer
+    f = Bits('0b001, u32=90, 0x5e')  # Three Bits objects concatenated together
+
+Finally a data type can be used to create a `Bits` object by using the `pack` class method. ::
+
+    g = Bits.pack('u8', 65)  # An 8-bit unsigned integer with the value 65
+    h = Bits.pack('hex', 'abcde')  # A 20-bit hexadecimal string
+    i = Bits.pack('bytes', b'hello')  # A 40-bit binary string
+    j = Bits.pack('f16', -13.81)  # A 16-bit IEEE floating point number
+
+The first parameter of ``pack`` is the data-type, which can be either a ``Dtype`` or a string that can be used to create one.
+The second parameter is a value that makes sense for that data type, which could be a binary string, a floating point number, an integer etc. depending on the ``Dtype``.
+
+Once you've created your ``Bits`` object there is a rich API for manipulating and interpreting the data.
+One fundamental thing to do is to interpret the binary data according to a format or data-type; essentially the opposite to how the ``pack`` method works. ::
+
+    g.unpack(['u8'])  # Returns [65]
+    h.unpack(['hex'])  # Returns ['abcde']
+
+The ``unpack`` method is quite powerful and is a bit of a sledgehammer for these simple cases, so as a shortcut you can use properties that are available for simple dtypes. ::
+
+    g.u8  # Returns 65
+    h.hex  # Returns 'abcde'
+
+Of course the ``Bits`` object is just a collection of bits and doesn't know how it was created, so any interpretation that makes sense is allowed ::
+
+    >>> a.unpack('oct')
+    ['6']
+    >>> b.unpack('u')  # unsigned int
+    TODO
+    >>> c.unpack('f64')
+    TODO
+    >>> d.unpack('hex')
+    TODO
+    >>> e.unpack('bin')
+    TODO
+
+
+In places where a ``Bits`` is expected, a formatted string that can be used to more conveniently create the `Bits` object.
+For example, if ``a`` is a ``Bits`` object, instead of ::
+
+    a += Bits.pack('u8', 65)
+
+you can equivalently write ::
+
+    a += 'u8 = 65'
+
+Some examples of strings that can be converted to `Bits` objects:
+
+* ``'0b00110'``: A binary string.
+* ``'0x3fff0001'``: A hexadecimal string.
+* ``'i15=-401'``: A 15 bit signed integer representing the number -401.
+* ``'f64=1.3e5'``: A 64 bit floating point number representing 130000.
+* ``'0b001, u32=90, 0x5e'``: A sequence of bits that represent a 3-bit binary number, a 32-bit unsigned integer and a 8-bit hexadecimal number.
 
 Dtype
------
-The `Dtype` (or data type) gives an interpretation to binary data.
-Most dtypes have both a name and a length. The `Dtype` can be created directly using the constructor, but more usually it will be specified as just a string to be used to create the `Dtype`.
+^^^^^
 
-For example, the `Dtype` for a 16-bit unsigned integer can be created by either ``Dtype('u', 16)`` or by using the string ``'u16'`` when a `Dtype` is required as a parameter.
+The dtype (or data type) gives an interpretation to binary data.
+Most of these have a type and a bit-length, and are usually created when needed from a string as in the previous section.
 
-A non-exhaustive list of example dtype strings is given below:
+For example the data-type representing an unsigned integer of length 4 bits can be created by either ``Dtype('u', 4)`` or by using the string ``'u4'`` when a `Dtype` is required as a parameter.
+
+Some examples of the data-types names available are:
 
 .. list-table::
    :widths: 10 30
@@ -62,130 +185,51 @@ A non-exhaustive list of example dtype strings is given below:
    * - ``'pad8'``
      - Pad bits that have no interpretation
 
-
 Note that there are no unnatural restrictions on the length of a dtype.
 If you want a 3-bit integer or 1001 padding bits then that's as easy to do as any other length.
 
-Bits
-----
-The `Bits` class represents an immutable sequence of bits.
-
-There are several builder methods used to create ``Bits`` objects.
-The constructor for ``Bits`` is a shortcut for the ``from_string`` method, so ``Bits(s)`` and ``Bits.from_string(s)`` are equivalent.
-
-.. list-table::
-   :header-rows: 1
-
-   * - Method name
-     - Description
-   * - ``Bits.pack(dtype, value)``
-     - Combine a data type with a value.
-   * - ``Bits.from_string(s)``
-     - Use a formatted string.
-   * - ``Bits.from_bytes(b)``
-     - Directly from a ``bytes`` object.
-   * - ``Bits.zeros(n)``
-     - Initialise with zero bits.
-   * - ``Bits.ones(n)``
-     - Initialise with one bits.
-   * - ``Bits.join(iterable)``
-     - Concatenate from an iterable such as a list.
-
-Instances can be built by pairing a ``Dtype`` with a value using the ``pack`` class method.
-
-For example::
-
-    a = Bits.pack('bin', '110')
-    b = Bits.pack('hex', 'abcde')
-    c = Bits.pack('bytes', b'hello')
-    d = Bits.pack('f32', 13.81)       # IEEE 32-bit float
-    e = Bits.pack('i7', -31)          # 7-bit signed integer
-
-The first parameter of ``pack`` is the data type, which can be either a ``Dtype`` or a string that can be used to create one.
-The second parameter is a value that makes sense for that data type, which could be a binary string, a floating point number, an integer etc. depending on the ``Dtype``.
-
-Another way to create a ``Bits`` instance is to use the ``from_string`` class method.
-This lets you give both the data type and value in a single string. ::
-
-    a = Bits.from_string('0b110')
-    b = Bits.from_string('0xabcde')
-    c = Bits.from_string('bytes=hello!!!')
-    d = Bits.from_string('f32=13.5')
-    e = Bits.from_string('i7=-31')
-
-Note that the binary and hexadecimal examples have missed out the `'bin='` or `'hex='` parts, but as the strings start with `'0b'` for binary and `'0x'` for hexadecimal the string parser can work out what is meant.
-
-You can also initialise directly from a ``bytes`` object with the ``from_bytes`` class method::
-
-    c = Bits.from_bytes(b'hello!!!')
-
-
-The companion to the ``Bits.pack`` class method is the ``unpack`` method.
-This takes a ``Bits`` and interprets it according to a format or data-type to create new values. ::
-
-    >>> a.unpack('bin')
-    ['110']
-    >>> b.unpack('hex')
-    ['abcde']
-    >>> c.unpack('bytes')
-    [b'hello!!!']
-    >>> d.unpack('f32')
-    [13.5]
-    >>> e.unpack('i7')
-    [-31]
-
-Of course the ``Bits`` object is just a collection of bits and doesn't know how it was created, so any interpretation that makes sense is allowed ::
-
-    >>> a.unpack('oct')
-    ['6']
-    >>> b.unpack('u')  # unsigned int
-    TODO
-    >>> c.unpack('f64')
-    TODO
-    >>> d.unpack('hex')
-    TODO
-    >>> e.unpack('bin')
-    TODO
-
-As a short-cut, for simple dtypes, properties can be used instead of the ``unpack`` method to get different interpretations of the ``Bits``.
-So for example you can use just ``b.hex`` instead of ``b.unpack('hex')[0]``. ::
-
-    >>> a.bin
-    '110'
-    >>> b.hex
-    'abcde'
-    >>> c.bytes
-    b'hello!!!'
-    >>> d.f
-    13.5
-    >>> e.i
-    -31
-
-In places where a ``Bits`` is expected, a formatted string that can be used to more conveniently create the `Bits` object.
-For example, if ``a`` is a ``Bits`` object, instead of ::
-
-    a += Bits.pack('u8', 65)
-
-you can equivalently write ::
-
-    a += 'u8 = 65'
-
-Some examples of strings that can be converted to `Bits` objects:
-
-* ``'0b00110'``: A binary string.
-* ``'0x3fff0001'``: A hexadecimal string.
-* ``'i15=-401'``: A 15 bit signed integer representing the number -401.
-* ``'f64=1.3e5'``: A 64 bit floating point number representing 130000.
-* ``'0b001, u32=90, 0x5e'``: A sequence of bits that represent a 3-bit binary number, a 32-bit unsigned integer and a 8-bit hexadecimal number.
-
-
-
 
 Array
------
+^^^^^
+
 The `Array` class is used as a container for contiguously allocated `Bits` objects with the same `Dtype`.
 
 `Array` instances act very like an ordinary Python array, but with each element being any permissible fixed-length dtype.
+
+Field
+^^^^^
+
+FieldArray
+^^^^^^^^^^
+
+Format
+^^^^^^
+
+----
+
+A bitformat is a specification of a binary format that says both how to build it from supplied values, and how to parse binary data to retrieve those values.
+
+
+
+A short example could be::
+
+    from bitformat import Format, Repeat
+
+    f = Format(['sync_byte: const hex8 = ff',
+                'items: u6',
+                'flags: [bool; {items + 1}]',
+                Repeat('{items + 1}', [
+                       'byte_cluster_size: u4',
+                       'bytes{byte_cluster_size}'
+                       ])
+                ])
+
+    b = f.build([3, [True, False, True], [(2, b'ab'), (3, b'cde'), (4, b'fghi')]])
+    if f['items'] > 0 and f['flags'][0]:
+        ...
+    f.clear()
+    f.parse(b)
+
 
 
 FieldType
@@ -249,6 +293,7 @@ A `Field` is the fundamental building block in `bitformat`.
 It represents a well-defined amount of binary data with a single data type.
 
 .. class:: Field(dtype: Dtype | str, name: str = '', value: Any = None, items: int | str = 1, const: bool | None = None)
+    :no-index:
 
     A `Field` has a data type (`dtype`) that describes how to interpret binary data and optionally a `name` and a concrete `value` for the `dtype`.
 
@@ -269,12 +314,14 @@ It represents a well-defined amount of binary data with a single data type.
     You can only set `const` to `True` when creating a field if you also provide a value.
 
     .. classmethod:: from_bits(bits: Bits | str | bytes | bytearray) -> Field
+        :no-index:
 
         For convenience you can also construct either a `Bits` object, a ``bytes`` or ``bytearray``, or a string that can be used to construct a `Bits` object (e.g. ``'0x47'``).
         This will will cause the `dtype` to be set to ``Dtype('bits')`` and the `value` to be set to the `Bits` object.
         Setting a bit literal in this way will cause the `const` parameter to default to `True`.
 
     .. classmethod:: from_string(s: str, /)
+        :no-index:
 
         Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value` and `const` parameters - see :ref:`Field strings` below.
 
@@ -285,6 +332,7 @@ FieldArray
 An `FieldArray` field contains multiple copies of a single dtype that has a well-defined length.
 
 .. class:: FieldArray(dtype: Dtype | str, items: int | str, name: str = '', value: Any = None, const: bool = False)
+    :no-index:
 
 The `items` parameter gives the length of the `FieldArray`.
 The other parameters are the same as for the `Field` class.
@@ -358,6 +406,7 @@ A `Format` can be considered as a list of `FieldType` objects.
 In its simplest form is could just be a flat list of ``Field`` objects, but it can also contain other ``Format`` objects and the other types described in this section.
 
 .. class:: Format(fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
+    :no-index:
 
 
 Repeat
