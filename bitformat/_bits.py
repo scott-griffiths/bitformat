@@ -62,7 +62,7 @@ class Bits:
         :rtype: Bits
         """
         d = Dtype(dtype)
-        return d.build(value)
+        return d.pack(value)
 
     @classmethod
     def from_string(cls, s: str, /) -> TBits:
@@ -113,7 +113,7 @@ class Bits:
         """
         if length == 0:
             return Bits()
-        return Dtype('i', length).build(-1)
+        return Dtype('i', length).pack(-1)
 
     def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
@@ -127,12 +127,12 @@ class Bits:
             if dtypes[0].name == 'pad':
                 return []
             else:
-                return [dtypes[0].parse(self)]
+                return [dtypes[0].unpack(self)]
         pos = 0
         ret_val = []
         for dtype in dtypes:
             if dtype.name != 'pad':
-                ret_val.append(dtype.parse(self[pos:pos + dtype.length]))
+                ret_val.append(dtype.unpack(self[pos:pos + dtype.length]))
             pos += dtype.length
         return ret_val
 

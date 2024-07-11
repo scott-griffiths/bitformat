@@ -187,7 +187,7 @@ class Repeat(FieldType):
         if isinstance(self.count, int):
             self.count = range(self.count)
         for _ in self.count:
-            index += self.fieldtype.parse(b[index:])
+            index += self.fieldtype.unpack(b[index:])
             self._values.append(self.fieldtype.value)
         return index
 

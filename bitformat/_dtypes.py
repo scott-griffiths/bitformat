@@ -122,7 +122,7 @@ class Dtype:
         x._is_signed = definition.is_signed
         return x
 
-    def build(self, value: Any, /) -> bitformat.Bits:
+    def pack(self, value: Any, /) -> bitformat.Bits:
         """Create and return a new Bits from a value.
 
         The value parameter should be of a type appropriate to the dtype.
@@ -133,8 +133,8 @@ class Dtype:
             raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
         return b
 
-    def parse(self, b: BitsType, /) -> Any:
-        """Parse a Bits to find its value.
+    def unpack(self, b: BitsType, /) -> Any:
+        """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits."""
         b = bitformat.Bits._create_from_bitstype(b)

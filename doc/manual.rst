@@ -61,7 +61,7 @@ For this quick tour we'll assume that `bitformat` has been installed (``pip inst
     from bitformat import Bits, Dtype, Array, Field, FieldArray, Format
 
 Bits
-^^^^
+----
 
 The ``Bits`` class represents an immutable sequence of bits, similar to how the built-in ``bytes`` is an immutable sequence of bytes,
 and a ``str`` is an immutable sequence of characters.
@@ -151,7 +151,7 @@ Some examples of strings that can be converted to `Bits` objects:
 * ``'0b001, u32=90, 0x5e'``: A sequence of bits that represent a 3-bit binary number, a 32-bit unsigned integer and a 8-bit hexadecimal number.
 
 Dtype
-^^^^^
+-----
 
 The dtype (or data type) gives an interpretation to binary data.
 Most of these have a type and a bit-length, and are usually created when needed from a string as in the previous section.
@@ -190,46 +190,17 @@ If you want a 3-bit integer or 1001 padding bits then that's as easy to do as an
 
 
 Array
-^^^^^
+-----
 
 The `Array` class is used as a container for contiguously allocated `Bits` objects with the same `Dtype`.
 
-`Array` instances act very like an ordinary Python array, but with each element being any permissible fixed-length dtype.
+`Array` instances act very like an ordinary Python array, but with each element being a fixed-length dtype.
 
-Field
-^^^^^
 
-FieldArray
-^^^^^^^^^^
-
-Format
-^^^^^^
 
 ----
 
 A bitformat is a specification of a binary format that says both how to build it from supplied values, and how to parse binary data to retrieve those values.
-
-
-
-A short example could be::
-
-    from bitformat import Format, Repeat
-
-    f = Format(['sync_byte: const hex8 = ff',
-                'items: u6',
-                'flags: [bool; {items + 1}]',
-                Repeat('{items + 1}', [
-                       'byte_cluster_size: u4',
-                       'bytes{byte_cluster_size}'
-                       ])
-                ])
-
-    b = f.build([3, [True, False, True], [(2, b'ab'), (3, b'cde'), (4, b'fghi')]])
-    if f['items'] > 0 and f['flags'][0]:
-        ...
-    f.clear()
-    f.parse(b)
-
 
 
 FieldType

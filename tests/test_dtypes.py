@@ -29,16 +29,16 @@ class TestBasicFunctionality:
         dtype = Dtype('uint8')
         value = 'not_an_integer'
         with pytest.raises(ValueError):
-            dtype.build(value)
+            dtype.pack(value)
 
     def test_build(self):
         dtype = Dtype('i88')
-        x = dtype.build(10001)
+        x = dtype.pack(10001)
         assert x.i == 10001
 
     def test_parse(self):
         dtype = Dtype('u12')
-        x = dtype.parse('0x3ff')
+        x = dtype.unpack('0x3ff')
         assert x == 1023
 
     def test_immutability(self):
@@ -50,24 +50,24 @@ class TestBasicFunctionality:
 
     def test_building_bits(self):
         d = Dtype('bits3')
-        a = d.build('0b101')
+        a = d.pack('0b101')
         assert a == '0b101'
         with pytest.raises(ValueError):
-            d.build('0b1010')
+            d.pack('0b1010')
 
     def test_building_bin(self):
         d = Dtype('bin9')
-        a = d.build('0b000111000')
+        a = d.pack('0b000111000')
         assert a == '0b000111000'
         with pytest.raises(ValueError):
-            d.build('0b0001110000')
+            d.pack('0b0001110000')
 
     def test_building_ints(self):
         d = Dtype('i3')
-        a = d.build(-3)
+        a = d.pack(-3)
         assert a == '0b101'
         with pytest.raises(ValueError):
-            d.build(4)
+            d.pack(4)
 
 
 class TestChangingTheRegister:

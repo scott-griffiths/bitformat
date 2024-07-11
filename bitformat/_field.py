@@ -271,14 +271,14 @@ class Field(SingleDtypeField):
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-        return self.dtype.parse(self._bits) if self._bits is not None else None
+        return self.dtype.unpack(self._bits) if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
         try:
-            self._bits = self.dtype.build(value)
+            self._bits = self.dtype.pack(value)
         except ValueError as e:
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 

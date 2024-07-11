@@ -205,7 +205,7 @@ class Array:
 
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
-        b = self._dtype.build(value)
+        b = self._dtype.pack(value)
         if len(b) != self._dtype.bitlength:
             raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
         return b

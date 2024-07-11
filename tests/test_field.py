@@ -35,7 +35,7 @@ class TestCreation:
             _ = Field(Bits())
         f2 = Field.from_bits(b'123')
         assert f2.value == b'123'
-        b = f2.build()
+        b = f2.pack()
         assert b.to_bytes() == b'123'
 
     @given(name=st.text())

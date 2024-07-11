@@ -83,5 +83,5 @@ def bitstore_from_token(name: str, token_length: int | None, value: str | None) 
     else:
         return f(value)
     d = Dtype(name, token_length)
-    bs = d.build(value)._bitstore
+    bs = d.pack(value)._bitstore
     return bs

@@ -202,7 +202,7 @@ class TestMethods:
 def test_repeating_field():
     f = Repeat(5, 'u8')
     d = Array('u8', [1, 5, 9, 7, 6]).data
-    f.parse(d)
+    f.unpack(d)
     assert f.value == [1, 5, 9, 7, 6]
 
 @pytest.mark.skip
@@ -268,22 +268,22 @@ def test_repeat_with_const_expression():
 
 def test_repeat_with_bits():
     f = Repeat(3, '0xab')
-    b = f.build()
+    b = f.pack()
     assert b == '0xababab'
     f2 = Repeat(2, b)
-    b2 = f2.build()
+    b2 = f2.pack()
     assert b2 == '0xabababababab'
 
 @pytest.mark.skip
 def test_repeat_with_dtype():
     f = Repeat(4, Dtype('i4'))
-    b = f.build([1, 2, 3, 4])
-    f.parse(b)
+    b = f.pack([1, 2, 3, 4])
+    f.unpack(b)
     assert f.value == [1, 2, 3, 4]
 
     f = Repeat(4, Dtype('i40'))
-    b = f.build([-400, 200, -200, 400])
-    f.parse(b)
+    b = f.pack([-400, 200, -200, 400])
+    f.unpack(b)
     assert f.value == [-400, 200, -200, 400]
 
 def test_field_array_str():
