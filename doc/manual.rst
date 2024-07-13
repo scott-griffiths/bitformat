@@ -42,7 +42,7 @@ Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely
 
 
 A Tour of bitformat
-===================
+-------------------
 
 A number of classes are available in bitformat to store and manipulate binary data.
 
@@ -66,7 +66,7 @@ Bits
 The ``Bits`` class represents an immutable sequence of bits, similar to how the built-in ``bytes`` is an immutable sequence of bytes,
 and a ``str`` is an immutable sequence of characters.
 
-There are several builder class methods used to create ``Bits`` objects. ::
+There are several builder class methods used to create ``Bits`` objects.
 
 .. list-table::
    :header-rows: 1
