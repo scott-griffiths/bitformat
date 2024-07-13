@@ -204,7 +204,7 @@ class Bits:
     def __getitem__(self, key: int, /) -> bool:
         ...
 
-    def __getitem__(self: TBits, key: Union[slice, int], /) -> Union[TBits, bool]:
+    def __getitem__(self: TBits, key: slice | int, /) -> TBits | bool:
         """Return a new Bits representing a slice of the current Bits.
         """
         if isinstance(key, numbers.Integral):
@@ -220,18 +220,10 @@ class Bits:
     def __bytes__(self) -> bytes:
         return self.to_bytes()
 
-    def __str__(self) -> str:
-        """Return string representations of Bits for printing.
-
-        Very long strings will be truncated with '...'.
-
-        """
+    def _str_interpretations(self) -> list[str]:
         length = len(self)
         if length == 0:
-            return ''
-        if length > MAX_CHARS * 4:
-            # Too long for hex. Truncate...
-            return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
+            return []
         hex_str = bin_str = f_str = u_str = i_str = ''
         if length % 4 == 0:
             t = self.hex
@@ -245,7 +237,21 @@ class Bits:
             i_str = f'i{length} == {self.i:_}'
         if length in dtype_register['f'].allowed_lengths:
             f_str = f'f{length} == {self.f}'
-        interpretations = [x for x in [hex_str, bin_str, u_str, i_str, f_str] if x != '']
+        return [hex_str, bin_str, u_str, i_str, f_str]
+
+    def __str__(self) -> str:
+        """Return string representations of Bits for printing.
+
+        Very long strings will be truncated with '...'.
+
+        """
+        length = len(self)
+        if length == 0:
+            return ''
+        if length > MAX_CHARS * 4:
+            # Too long for hex. Truncate...
+            return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
+        interpretations = [x for x in self._str_interpretations() if x != '']
         if not interpretations:
             # First we do as much as we can in hex
             # then add on 1, 2 or 3 bits on at the end
@@ -270,7 +276,9 @@ class Bits:
         """Return representation that could be used to recreate the Bits..
 
         """
-        return f"{self.__class__.__name__}('{self._simple_str()}')"
+        interpretations = '\n'.join('# ' + x for x in self._str_interpretations() if x != '')
+        repr = f"{self.__class__.__name__}('{self._simple_str()}')"
+        return f"{repr}\n{interpretations}" if interpretations else repr
 
     def __eq__(self, bs: Any, /) -> bool:
         """Return True if two Bits have the same binary representation.
@@ -453,7 +461,7 @@ class Bits:
         bs = Bits._create_from_bitstype(bs)
         self._bitstore = bs._bitstore
 
-    def _setbytes(self, data: Union[bytearray, bytes, list], length: None = None) -> None:
+    def _setbytes(self, data: bytearray | bytes | list, length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.from_bytes(bytes(data))
 
@@ -515,7 +523,7 @@ class Bits:
         fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
-    def _setbool(self, value: Union[bool, str]) -> None:
+    def _setbool(self, value: bool | str) -> None:
         # We deliberately don't want to have implicit conversions to bool here.
         # If we did then it would be difficult to deal with the 'False' string.
         if value in (1, 'True', '1'):

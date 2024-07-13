@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Dict, Callable
+from typing import Callable
 from bitformat._bitstore import BitStore
 from ._dtypes import Dtype
 import re
@@ -65,7 +65,7 @@ def str_to_bitstore(s: str) -> BitStore:
     return bs
 
 
-literal_bit_funcs: Dict[str, Callable[..., BitStore]] = {
+literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
     '0x': BitStore.from_hex,
     '0X': BitStore.from_hex,
     '0b': BitStore.from_bin,

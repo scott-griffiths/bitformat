@@ -37,7 +37,7 @@ from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field, FieldArray
 from ._format import Format
 from ._options import Options
-from typing import List, Tuple, Literal
+from typing import Literal
 
 # The Options class returns a singleton.
 options = Options()
@@ -122,7 +122,7 @@ dtype_definitions = [
     ]
 
 
-aliases: List[Tuple[str, str]] = [
+aliases: list[tuple[str, str]] = [
     # Longer aliases for some popular types
     ('i', 'int'),
     ('u', 'uint'),

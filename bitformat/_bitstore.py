@@ -4,7 +4,7 @@ import bitarray
 import bitarray.util
 import copy
 import struct
-from typing import Union, Iterable, Iterator, Any
+from typing import Iterable, Iterator, Any
 
 
 def tidy_input_string(s: str) -> str:
@@ -43,7 +43,7 @@ class BitStore:
         return x
 
     @classmethod
-    def from_bytes(cls, b: Union[bytes, bytearray, memoryview], /) -> BitStore:
+    def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray()
         x._bitarray.frombytes(b)
@@ -56,7 +56,7 @@ class BitStore:
         try:
             ba = bitarray.util.hex2ba(hexstring)
         except ValueError:
-            raise ValueError(f"Invalid symbol in hex initialiser: '{hexstring}'")
+            raise ValueError(f"Invalid symbol in hex initialiser '{hexstring}'")
         return BitStore.from_bitarray(ba)
 
     @classmethod
@@ -66,7 +66,7 @@ class BitStore:
         try:
             ba = bitarray.util.base2ba(8, octstring)
         except ValueError:
-            raise ValueError("Invalid symbol in oct initialiser.")
+            raise ValueError(f"Invalid symbol in oct initialiser '{octstring}'.")
         return BitStore.from_bitarray(ba)
 
     @classmethod
@@ -76,7 +76,7 @@ class BitStore:
         try:
             return BitStore.from_binstr(binstring)
         except ValueError:
-            raise ValueError(f"Invalid character in bin initialiser {binstring}.")
+            raise ValueError(f"Invalid character in bin initialiser '{binstring}'.")
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
@@ -93,11 +93,11 @@ class BitStore:
                     raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
                                      f"The allowed range is [0, {(1 << length) - 1}].")
                 if i < 0:
-                    raise ValueError("uint cannot be initialised with a negative number.")
+                    raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
             raise e
 
     @classmethod
-    def from_float(cls, f: Union[str, float], length: int) -> BitStore:
+    def from_float(cls, f: str | float, length: int) -> BitStore:
         f = float(f)
         fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
         try:
@@ -234,7 +234,7 @@ class BitStore:
         s_copy._bitarray = copy.copy(self._bitarray)
         return s_copy
 
-    def __getitem__(self, item: Union[int, slice], /) -> Union[int, BitStore]:
+    def __getitem__(self, item: int | slice, /) -> int | BitStore:
         # Use getindex or getslice instead
         raise NotImplementedError
 

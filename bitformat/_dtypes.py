@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Dict, Any, Union, Tuple, Callable
+from typing import Any, Callable
 import inspect
 import bitformat
 from bitformat import _utils
@@ -32,7 +32,7 @@ class Dtype:
     _bits_per_item: int
     _length: int | None
 
-    def __new__(cls, token: Union[str, Dtype], /, length: int | None = None) -> Dtype:
+    def __new__(cls, token: str | Dtype, /, length: int | None = None) -> Dtype:
         if isinstance(token, cls):
             return token
         if length is None:
@@ -73,7 +73,7 @@ class Dtype:
         return self._is_signed
 
     @property
-    def set_fn(self) -> Union[Callable, None]:
+    def set_fn(self) -> Callable | None:
         """A function to set the value of the data type."""
         return self._set_fn
 
@@ -157,7 +157,7 @@ class Dtype:
 
 
 class AllowedLengths:
-    def __init__(self, value: Tuple[int, ...] = tuple()) -> None:
+    def __init__(self, value: tuple[int, ...] = tuple()) -> None:
         if len(value) >= 3 and value[-1] is Ellipsis:
             step = value[1] - value[0]
             for i in range(1, len(value) - 1):
@@ -188,7 +188,7 @@ class DtypeDefinition:
     """
 
     def __init__(self, name: str, set_fn, get_fn, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: Tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
+                 allowed_lengths: tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
 
         # Consistency checks
         if int(multiplier) != multiplier or multiplier <= 0:
@@ -258,7 +258,7 @@ class Register:
     """A singleton class that holds all the DtypeDefinitions. Not (yet) part of the public interface."""
 
     _instance: Register | None = None
-    names: Dict[str, DtypeDefinition] = {}
+    names: dict[str, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
         # Singleton. Only one Register instance can ever exist.

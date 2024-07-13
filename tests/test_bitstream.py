@@ -813,13 +813,13 @@ class TestManyDifferentThings:
             b = eval(a.__repr__())
             assert a == b
         a = Bits('0b1')
-        assert repr(a) == "Bits('0b1')"
+        assert repr(a).splitlines()[0] == "Bits('0b1')"
         a += '0b11'
-        assert repr(a) == "Bits('0b111')"
+        assert repr(a).splitlines()[0] == "Bits('0b111')"
         a += '0b1'
-        assert repr(a) == "Bits('0xf')"
+        assert repr(a).splitlines()[0] == "Bits('0xf')"
         a *= max_
-        assert repr(a) == "Bits('0x" + "f" * max_ + "')"
+        assert repr(a).splitlines()[0] == "Bits('0x" + "f" * max_ + "')"
         # a += '0xf'
         # assert repr(a) == "Bits('0x" + "f" * max_ + "...')  # length=%d" % (max_ * 4 + 4)
 
