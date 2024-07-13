@@ -31,6 +31,7 @@ def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
     else:
         raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]'.")
 
+
 @functools.lru_cache(CACHE_SIZE)
 def tokenparser(fmt: str) -> \
         list[tuple[str, int | str | None, str | None]]:

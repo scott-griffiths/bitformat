@@ -39,6 +39,9 @@ class BitsProxy:
         """Initialise the with an ``Array`` object to make a proxy to its bit data."""
         self._array = array
 
+    def __len__(self) -> int:
+        return len(self._array._bitstore)
+
     def __getattr__(self, name):
         """Delegate attribute access to the internal bit storage."""
         x = Bits()
@@ -68,7 +71,6 @@ special_methods = [
     '__invert__',
     '__iter__',
     '__le__',
-    '__len__',
     '__lshift__',
     '__lt__',
     '__mul__',

@@ -526,12 +526,13 @@ class Bits:
     def _setbool(self, value: bool | str) -> None:
         # We deliberately don't want to have implicit conversions to bool here.
         # If we did then it would be difficult to deal with the 'False' string.
-        if value in (1, 'True', '1'):
-            self._bitstore = BitStore.from_binstr('1')
-        elif value in (0, 'False', '0'):
-            self._bitstore = BitStore.from_binstr('0')
-        else:
-            raise ValueError(f"Cannot initialise boolean with {value}.")
+        match value:
+            case 1 | 'True' | '1':
+                self._bitstore = BitStore.from_binstr('1')
+            case 0 | 'False' | '0':
+                self._bitstore = BitStore.from_binstr('0')
+            case _:
+                raise ValueError(f"Cannot initialise boolean with {value}.")
 
     def _getbool(self) -> bool:
         return self[0]
