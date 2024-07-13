@@ -476,20 +476,20 @@ class TestArrayMethods:
  0:         12        100         99
 ]\n"""
 
-#     def test_pp_bits(self):
-#         a = Array('bits2', b'89')
-#         s = io.StringIO()
-#         a.pp(stream=s, width=0, show_offset=True)
-#         assert remove_unprintable(s.getvalue()) == """<Array dtype='bits2', length=8, item_size=2 bits, total data size=2 bytes> [
-#  0: 0b00
-#  1: 0b11
-#  2: 0b10
-#  3: 0b00
-#  4: 0b00
-#  5: 0b11
-#  6: 0b10
-#  7: 0b01
-# ]\n"""
+    def test_pp_bits(self):
+        a = Array('bits2', b'89')
+        s = io.StringIO()
+        a.pp(stream=s, width=0, show_offset=True)
+        assert remove_unprintable(s.getvalue()) == """<Array dtype='bits2', length=8, item_size=2 bits, total data size=2 bytes> [
+ 0: 0b00
+ 1: 0b11
+ 2: 0b10
+ 3: 0b00
+ 4: 0b00
+ 5: 0b11
+ 6: 0b10
+ 7: 0b01
+]\n"""
 
 #     def test_pp_two_formats(self):
 #         a = Array('float16', bytearray(20))

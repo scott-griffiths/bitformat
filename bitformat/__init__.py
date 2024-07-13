@@ -85,7 +85,7 @@ def float_bits2chars(bitlength: Literal[16, 32, 64]):
 def bits_bits2chars(bitlength: int):
     # For bits type we can see how long it needs to be printed by trying any value
     temp = Bits.zeros(bitlength)
-    return len(str(temp))
+    return len(temp._simple_str())
 
 
 def bool_bits2chars(_: Literal[1]):

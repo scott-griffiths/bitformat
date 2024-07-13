@@ -507,3 +507,12 @@ class TestPrettyPrinting_NewFormats:
  0:  4635066033680416768 :                    76.25
 ] + trailing_bits = 0b11111
 """
+
+
+def test_unpack_array():
+    a = Bits.from_string('0b1010101010101010')
+    assert a.unpack(['u8', 'u4', 'u4']) == [170, 10, 10]
+    assert a.unpack(['u4', 'u4', 'u8']) == [10, 10, 170]
+    assert a.unpack(['u4', 'u4', 'u4', 'u4']) == [10, 10, 10, 10]
+
+    # assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]

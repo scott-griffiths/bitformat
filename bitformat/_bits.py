@@ -256,22 +256,21 @@ class Bits:
             return f'0x{hex_with_underscores}, 0b{bin_at_end}'
         return '\n'.join(interpretations)
 
-    def _repr(self, classname: str, length: int):
+    def _simple_str(self) -> str:
+        length = len(self)
         if length == 0:
             s = ''
         elif length % 4 == 0:
             s = '0x' + self.hex
         else:
             s = '0b' + self.bin
-        return f"{classname}('{s}')"
+        return s
 
     def __repr__(self) -> str:
         """Return representation that could be used to recreate the Bits..
 
-        If the returned string is too long it will be truncated. See __str__().
-
         """
-        return self._repr(self.__class__.__name__, len(self))
+        return f"{self.__class__.__name__}('{self._simple_str()}')"
 
     def __eq__(self, bs: Any, /) -> bool:
         """Return True if two Bits have the same binary representation.
@@ -830,13 +829,19 @@ class Bits:
         if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
             get_fn = dtype_register.get_dtype('uint', bits_per_group).get_fn
         if bits_per_group == 0:
-            x = str(get_fn(bits))
+            if dtype.name == 'bits':
+                x = get_fn(bits)._simple_str()
+            else:
+                x = str(get_fn(bits))
         else:
             align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
             chars_per_group = 0
             if dtype_register[dtype.name].bitlength2chars_fn is not None:
                 chars_per_group = dtype_register[dtype.name].bitlength2chars_fn(bits_per_group)
-            x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
+            if dtype.name == 'bits':
+                x = sep.join(f"{get_fn(b)._simple_str(): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
+            else:
+                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
 
         chars_used = len(x)
         padding_spaces = 0 if width is None else max(width - len(x), 0)
