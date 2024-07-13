@@ -830,7 +830,7 @@ class Bits:
             get_fn = dtype_register.get_dtype('uint', bits_per_group).get_fn
         if bits_per_group == 0:
             if dtype.name == 'bits':
-                x = get_fn(bits)._simple_str()
+                x = bits._simple_str()
             else:
                 x = str(get_fn(bits))
         else:
@@ -839,7 +839,7 @@ class Bits:
             if dtype_register[dtype.name].bitlength2chars_fn is not None:
                 chars_per_group = dtype_register[dtype.name].bitlength2chars_fn(bits_per_group)
             if dtype.name == 'bits':
-                x = sep.join(f"{get_fn(b)._simple_str(): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
+                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
             else:
                 x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
 
