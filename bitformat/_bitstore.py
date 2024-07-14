@@ -107,6 +107,14 @@ class BitStore:
             b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
         return BitStore.from_bytes(b)
 
+    @classmethod
+    def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
+        x = super().__new__(cls)
+        x._bitarray = bitarray.bitarray()
+        for i in iterable:
+            x._bitarray += i._bitarray
+        return x
+
     def setall(self, value: int, /) -> None:
         self._bitarray.setall(value)
 

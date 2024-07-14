@@ -52,14 +52,14 @@ def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
 
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
-    bs = BitStore()
+    bsl = []
     for token in (t for t in s.split(',') if t):
         if token.startswith(('0x', '0X', '0b', '0B', '0o', '0O')):
-            bs += literal_bit_funcs[token[1]](token[2:])
+            bsl.append(literal_bit_funcs[token[1]](token[2:]))
         else:
             name, length, value = parse_single_token(token)
-            bs += Dtype(name, length).pack(value)._bitstore
-    return bs
+            bsl.append(Dtype(name, length).pack(value)._bitstore)
+    return BitStore.join(bsl)
 
 
 class Bits:
