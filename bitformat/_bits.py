@@ -7,7 +7,7 @@ import io
 import re
 import functools
 from collections import abc
-from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, TypeVar
+from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 import bitformat
 from ._bitstore import BitStore
 from bitformat import _utils
@@ -19,8 +19,6 @@ __all__ = ['Bits']
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
-
-TBits = TypeVar("TBits", bound='Bits')
 
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS: int = 80
@@ -115,10 +113,7 @@ class Bits:
 
     __slots__ = ('_bitstore',)
 
-    def __init__(self, s: str | None = None, /) -> None:
-        pass
-
-    def __new__(cls, s: str | None = None, /) -> TBits:
+    def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
             x._bitstore = BitStore()
@@ -127,7 +122,7 @@ class Bits:
         return x
 
     @classmethod
-    def pack(cls, dtype: Dtype | str, value: Any, /) -> TBits:
+    def pack(cls, dtype: Dtype | str, value: Any, /) -> Bits:
         """
         :param dtype: The data type to pack.
         :type dtype: Dtype | str
@@ -140,21 +135,21 @@ class Bits:
         return d.pack(value)
 
     @classmethod
-    def from_string(cls, s: str, /) -> TBits:
+    def from_string(cls, s: str, /) -> Bits:
         """Create a new Bits from a formatted string."""
         x = super().__new__(cls)
         x._bitstore = str_to_bitstore(s)
         return x
 
     @classmethod
-    def from_bytes(cls, b: bytes, /) -> TBits:
+    def from_bytes(cls, b: bytes, /) -> Bits:
         """Create a new Bits from a bytes object."""
         x = super().__new__(cls)
         x._bitstore = BitStore.from_bytes(b)
         return x
 
     @classmethod
-    def join(cls, sequence: Iterable[Any], /) -> TBits:
+    def join(cls, sequence: Iterable[Any], /) -> Bits:
         """Return concatenation of Bits.
 
         sequence -- A sequence of Bits.
@@ -167,7 +162,7 @@ class Bits:
         return x
 
     @classmethod
-    def zeros(cls, length: int, /) -> TBits:
+    def zeros(cls, length: int, /) -> Bits:
         """Create a new Bits with all bits set to zero.
 
         length -- The number of bits.
@@ -180,7 +175,7 @@ class Bits:
         return x
 
     @classmethod
-    def ones(cls, length: int, /) -> TBits:
+    def ones(cls, length: int, /) -> Bits:
         """Create a new Bits with all bits set to one.
 
         length -- The number of bits.
@@ -212,7 +207,7 @@ class Bits:
         return ret_val
 
     @classmethod
-    def _create_from_bitstype(cls: Type[TBits], auto: BitsType, /) -> TBits:
+    def _create_from_bitstype(cls: Type[Bits], auto: BitsType, /) -> Bits:
         """Create a new Bits from one of the many things that can be a BitsType."""
         if isinstance(auto, cls):
             return auto
@@ -234,7 +229,7 @@ class Bits:
         """Iterate over the bits."""
         return iter(self._bitstore)
 
-    def __copy__(self: TBits) -> TBits:
+    def __copy__(self: Bits) -> Bits:
         """Return a new copy of the Bits for the copy module.
 
         Note that if you want a new copy (different ID), use _copy instead.
@@ -259,27 +254,27 @@ class Bits:
         # Bits can't really be ordered.
         return NotImplemented
 
-    def __add__(self: TBits, bs: BitsType, /) -> TBits:
+    def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         s = self._copy()
         s._addright(bs)
         return s
 
-    def __radd__(self: TBits, bs: BitsType, /) -> TBits:
+    def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = self.__class__._create_from_bitstype(bs)
         return bs.__add__(self)
 
     @overload
-    def __getitem__(self: TBits, key: slice, /) -> TBits:
+    def __getitem__(self: Bits, key: slice, /) -> Bits:
         ...
 
     @overload
     def __getitem__(self, key: int, /) -> bool:
         ...
 
-    def __getitem__(self: TBits, key: slice | int, /) -> TBits | bool:
+    def __getitem__(self: Bits, key: slice | int, /) -> Bits | bool:
         """Return a new Bits representing a slice of the current Bits.
         """
         if isinstance(key, numbers.Integral):
@@ -377,7 +372,7 @@ class Bits:
         """
         return not self.__eq__(bs)
 
-    def __invert__(self: TBits) -> TBits:
+    def __invert__(self: Bits) -> Bits:
         """Return the Bits with every bit inverted.
 
         Raises Error if the Bits is empty.
@@ -389,7 +384,7 @@ class Bits:
         s._invert_all()
         return s
 
-    def __lshift__(self: TBits, n: int, /) -> TBits:
+    def __lshift__(self: Bits, n: int, /) -> Bits:
         """Return Bits shifted by n to the left.
 
         n -- the number of bits to shift. Must be >= 0.
@@ -404,7 +399,7 @@ class Bits:
         s._addright(Bits.zeros(n))
         return s
 
-    def __rshift__(self: TBits, n: int, /) -> TBits:
+    def __rshift__(self: Bits, n: int, /) -> Bits:
         """Return Bits shifted by n to the right.
 
         n -- the number of bits to shift. Must be >= 0.
@@ -421,7 +416,7 @@ class Bits:
         s._addright(self._slice(0, len(self) - n))
         return s
 
-    def __mul__(self: TBits, n: int, /) -> TBits:
+    def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
 
         Called for expression of the form 'a = b*3'.
@@ -436,7 +431,7 @@ class Bits:
         s._imul(n)
         return s
 
-    def __rmul__(self: TBits, n: int, /) -> TBits:
+    def __rmul__(self: Bits, n: int, /) -> Bits:
         """Return Bits consisting of n concatenations of self.
 
         Called for expressions of the form 'a = 3*b'.
@@ -445,7 +440,7 @@ class Bits:
         """
         return self.__mul__(n)
 
-    def __and__(self: TBits, bs: BitsType, /) -> TBits:
+    def __and__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'and' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -458,7 +453,7 @@ class Bits:
         s._bitstore = self._bitstore & bs._bitstore
         return s
 
-    def __rand__(self: TBits, bs: BitsType, /) -> TBits:
+    def __rand__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'and' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -466,7 +461,7 @@ class Bits:
         """
         return self.__and__(bs)
 
-    def __or__(self: TBits, bs: BitsType, /) -> TBits:
+    def __or__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -479,7 +474,7 @@ class Bits:
         s._bitstore = self._bitstore | bs._bitstore
         return s
 
-    def __ror__(self: TBits, bs: BitsType, /) -> TBits:
+    def __ror__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -487,7 +482,7 @@ class Bits:
         """
         return self.__or__(bs)
 
-    def __xor__(self: TBits, bs: BitsType, /) -> TBits:
+    def __xor__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -498,7 +493,7 @@ class Bits:
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
 
-    def __rxor__(self: TBits, bs: BitsType, /) -> TBits:
+    def __rxor__(self: Bits, bs: BitsType, /) -> Bits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -647,14 +642,14 @@ class Bits:
         """
         return self._bitstore.slice_to_hex()
 
-    def _copy(self: TBits) -> TBits:
+    def _copy(self: Bits) -> Bits:
         """Create and return a new copy of the Bits (always in memory)."""
         # Note that __copy__ may choose to return self if it's immutable. This method always makes a copy.
         s_copy = self.__class__()
         s_copy._bitstore = self._bitstore._copy()
         return s_copy
 
-    def _slice(self: TBits, start: int, end: int) -> TBits:
+    def _slice(self: Bits, start: int, end: int) -> Bits:
         """Used internally to get a slice, without error checking."""
         bs = self.__class__()
         bs._bitstore = self._bitstore.getslice(start, end)
@@ -679,7 +674,7 @@ class Bits:
         """Invert every bit."""
         self._bitstore.invert()
 
-    def _imul(self: TBits, n: int, /) -> TBits:
+    def _imul(self: Bits, n: int, /) -> Bits:
         """Concatenate n copies of self in place. Return self."""
         assert n >= 0
         if n == 0:
@@ -693,7 +688,7 @@ class Bits:
             self._addright(self[0:(n - m) * old_len])
         return self
 
-    def _getbits(self: TBits):
+    def _getbits(self: Bits):
         return self._copy()
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
@@ -1077,13 +1072,13 @@ class Bits:
         stream.write(output_stream.getvalue())
         return
 
-    def append(self, bs: BitsType, /) -> TBits:
+    def append(self, bs: BitsType, /) -> Bits:
         return self + self._create_from_bitstype(bs)
 
-    def prepend(self, bs: BitsType, /) -> TBits:
+    def prepend(self, bs: BitsType, /) -> Bits:
         return self._create_from_bitstype(bs) + self
 
-    def insert(self, pos:int, bs: BitsType, /) -> TBits:
+    def insert(self, pos:int, bs: BitsType, /) -> Bits:
         """Insert bs at bit position pos.
 
         pos -- The bit position to insert at.
@@ -1099,7 +1094,7 @@ class Bits:
             raise ValueError("Overwrite starts outside boundary of Bits.")
         return self[:pos] + bs + self[pos:]
 
-    def overwrite(self, bs: BitsType, pos: int, /) -> TBits:
+    def overwrite(self, bs: BitsType, pos: int, /) -> Bits:
         bs = self._create_from_bitstype(bs)
         if pos < 0:
             pos += len(self)
@@ -1107,7 +1102,7 @@ class Bits:
             raise ValueError("Overwrite starts outside boundary of Bits.")
         return self[:pos] + bs + self[pos + len(bs):]
 
-    def reverse(self, start: int | None = None, end: int | None = None) -> TBits:
+    def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
         """Reverse bits.
 
         start -- Position of first bit to reverse. Defaults to 0.
@@ -1124,7 +1119,7 @@ class Bits:
         s._bitstore.reverse()
         return self[:start] + s + self[end:]
 
-    def set(self, value: Any, pos: int | Iterable[int] | None = None) -> TBits:
+    def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
         """Set one or many bits to 1 or 0.
 
         value -- If bool(value) is True bits are set to 1, otherwise they are set to 0.
@@ -1151,7 +1146,7 @@ class Bits:
             s._bitstore.setitem(p, v)
         return s
 
-    def invert(self, pos: Iterable[int] | int | None = None) -> TBits:
+    def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
         """Invert one or many bits from 0 to 1 or vice versa.
 
         pos -- Either a single bit position or an iterable of bit positions.
@@ -1176,7 +1171,7 @@ class Bits:
             s._invert(p)
         return s
 
-    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> TBits:
+    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Rotate bits to the right in-place.
 
         n -- The number of bits to rotate by.
@@ -1194,7 +1189,7 @@ class Bits:
         n %= (end - start)
         return self[:start] + self[end - n: end] + self[start: end - n] + self[end:]
 
-    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> TBits:
+    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Rotate bits to the left in-place.
 
         n -- The number of bits to rotate by.
@@ -1212,7 +1207,7 @@ class Bits:
         n %= (end - start)
         return self[:start] + self[start + n: end] + self[start: start + n] + self[end:]
 
-    def byteswap(self, bytelength: int | None = None, /) -> TBits:
+    def byteswap(self, bytelength: int | None = None, /) -> Bits:
         """Change the byte endianness. Return new Bits.
 
         bytelength: An int giving the number of bytes to swap.
@@ -1238,7 +1233,7 @@ class Bits:
         return Bits.join(chunks)
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
-                count: int | None = None, bytealigned: bool | None = None) -> TBits:
+                count: int | None = None, bytealigned: bool | None = None) -> Bits:
         """Replace all occurrences of old with new in place.
 
         Returns number of replacements made.
