@@ -4,7 +4,6 @@ import pytest
 import bitformat
 import copy
 from bitformat import Bits
-from bitformat._bits import tokenparser
 
 
 class TestFlexibleInitialisation:
@@ -932,15 +931,6 @@ class TestManyDifferentThings:
         for i in range(10):
             b = b.prepend(a)
         assert b == a * 10
-
-    def test_token_parser(self):
-        tp = tokenparser
-        assert tp('hex') == [('hex', None, None)]
-        assert tp('hex=14') == [('hex', None, '14')]
-        assert tp('0xef') == [('0x', None, 'ef')]
-        assert tp('uint12') == [('uint', 12, None)]
-        assert tp('i30=-1') == [('i', 30, '-1')]
-        assert tp('bits10') == [('bits', 10, None)]
 
     def test_reverse_bytes(self):
         a = Bits('0x123456')
