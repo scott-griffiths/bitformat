@@ -201,7 +201,7 @@ class Array:
                 dtype = Dtype(new_dtype)
             except ValueError:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}'.")
-            if dtype.length is None:
+            if dtype.length == 0:
                 raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
             self._dtype = dtype
 
@@ -464,9 +464,9 @@ class Array:
             # For two types we're OK as long as they don't have different lengths given.
             if dtype1.bitlength is not None and dtype2.bitlength is not None and dtype1.bitlength != dtype2.bitlength:
                 raise ValueError(f"Two different format lengths specified ('{fmt}'). Either specify just one, or two the same length.")
-            if token_length is None:
+            if token_length == 0:
                 token_length = dtype2.bitlength
-        if token_length is None:
+        if token_length == 0:
             token_length = self.item_size
 
         trailing_bit_length = len(self._proxy) % token_length

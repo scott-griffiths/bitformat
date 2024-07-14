@@ -21,7 +21,7 @@ __all__ = ['Bits']
 BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
 
 # Maximum number of digits to use in __str__ and __repr__.
-MAX_CHARS: int = 80
+MAX_CHARS: int = 256
 
 # name[length][=value]
 NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))?$')
@@ -40,12 +40,12 @@ literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
 
 
 @functools.lru_cache(CACHE_SIZE)
-def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
+def parse_single_token(token: str) -> tuple[str, int, str | None]:
     match = NAME_INT_VALUE_RE.match(token)
     if not match:
         raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]'.")
     name, length_str, value = match.groups()
-    length = int(length_str) if length_str else None
+    length = int(length_str) if length_str else 0
     value = None if value == '' else value
     return name, length, value
 
@@ -977,17 +977,17 @@ class Bits:
         if len(token_list) == 2:
             name2, length2 = _utils.parse_name_length_token(token_list[1])
             dtype2 = Dtype(name2, length2)
-            if None not in {dtype1.bitlength, dtype2.bitlength} and dtype1.bitlength != dtype2.bitlength:
+            if 0 not in {dtype1.bitlength, dtype2.bitlength} and dtype1.bitlength != dtype2.bitlength:
                 raise ValueError(
                     f"Differing bit lengths of {dtype1.bitlength} and {dtype2.bitlength} in format string '{fmt}'.")
-            if bits_per_group is None:
+            if bits_per_group == 0:
                 bits_per_group = dtype2.bitlength
 
-        if bits_per_group is None:
+        if bits_per_group == 0:
             has_length_in_fmt = False
             if len(token_list) == 1:
                 bits_per_group = {'bin': 8, 'hex': 8, 'oct': 12, 'bytes': 32}.get(dtype1.name)
-                if bits_per_group is None:
+                if bits_per_group == 0:
                     raise ValueError(f"No length or default length available for pp() format '{fmt}'.")
             else:
                 try:

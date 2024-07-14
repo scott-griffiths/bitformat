@@ -135,8 +135,6 @@ class SingleDtypeField(FieldType):
                     raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
 
-        if self.dtype_length_expression is None and self.dtype.length == 0:
-            raise ValueError(f"A field's dtype cannot have a length of zero (dtype = {self.dtype}).")
         if const is True and value is None:
             raise ValueError(f"Can't set a field to be constant if it has no value.")
         self.const = const

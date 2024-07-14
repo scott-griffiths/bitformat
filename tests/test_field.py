@@ -16,7 +16,7 @@ class TestCreation:
         without_length = [Dtype('bytes'), Dtype('int')]
         for b in without_length:
             f = Field(b)
-            assert f.dtype.length is None
+            assert f.dtype.length == 0
 
     @given(st.integers(0, 255))
     def test_creation_from_dtype_with_value(self, x):

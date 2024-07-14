@@ -28,14 +28,14 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _set_fn_needs_length: bool
-    _bitlength: int | None
+    _bitlength: int
     _bits_per_item: int
-    _length: int | None
+    _length: int
 
-    def __new__(cls, token: str | Dtype, /, length: int | None = None) -> Dtype:
+    def __new__(cls, token: str | Dtype, /, length: int = 0) -> Dtype:
         if isinstance(token, cls):
             return token
-        if length is None:
+        if length == 0:
             x = cls._new_from_token(token)
             return x
         else:
@@ -103,8 +103,7 @@ class Dtype:
         x._name = definition.name
         x._bitlength = x._length = length
         x._bits_per_item = definition.multiplier
-        if x._bitlength is not None:
-            x._bitlength *= x._bits_per_item
+        x._bitlength *= x._bits_per_item
         x._set_fn_needs_length = definition.set_fn_needs_length
         if dtype_register.names[x._name].allowed_lengths.only_one_value():
             x._read_fn = definition.read_fn
@@ -129,24 +128,26 @@ class Dtype:
         """
         b = bitformat.Bits()
         self._set_fn(b, value)
-        if self.bitlength is not None and len(b) != self.bitlength:
+        if self.bitlength != 0 and len(b) != self.bitlength:
             raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
         return b
 
     def unpack(self, b: BitsType, /) -> Any:
         """Unpack a Bits to find its value.
 
-        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits."""
+        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+
+        """
         b = bitformat.Bits._create_from_bitstype(b)
         return self._get_fn(b)
 
     def __str__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
         length_str = '' if hide_length else str(self._length)
         return f"{self._name}{length_str}"
 
     def __repr__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length is None
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
         length_str = '' if hide_length else ', ' + str(self._length)
         return f"{self.__class__.__name__}('{self._name}'{length_str})"
 
@@ -231,9 +232,9 @@ class DtypeDefinition:
 
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, length: int | None = None) -> Dtype:
+    def get_dtype(self, length: int = 0) -> Dtype:
         if self.allowed_lengths:
-            if length is None:
+            if length == 0:
                 if self.allowed_lengths.only_one_value():
                     length = self.allowed_lengths.values[0]
             else:
