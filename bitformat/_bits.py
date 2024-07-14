@@ -29,54 +29,36 @@ NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
-# Hex, oct or binary literals
-LITERAL_RE: Pattern[str] = re.compile(r'^(?P<name>0([xob]))(?P<value>.+)', re.IGNORECASE)
-
 literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
-    '0x': BitStore.from_hex,
-    '0X': BitStore.from_hex,
-    '0b': BitStore.from_bin,
-    '0B': BitStore.from_bin,
-    '0o': BitStore.from_oct,
-    '0O': BitStore.from_oct,
+    'x': BitStore.from_hex,
+    'X': BitStore.from_hex,
+    'b': BitStore.from_bin,
+    'B': BitStore.from_bin,
+    'o': BitStore.from_oct,
+    'O': BitStore.from_oct,
 }
 
 
 @functools.lru_cache(CACHE_SIZE)
 def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
-    if m := NAME_INT_VALUE_RE.match(token):
-        name = m.group(1)
-        length_str = m.group(2)
-        value = m.group(3)
-        if value == '':
-            value = None
-        if length_str == '':
-            return name, None, value
-        return name, int(length_str), value
-    else:
+    match = NAME_INT_VALUE_RE.match(token)
+    if not match:
         raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]'.")
+    name, length_str, value = match.groups()
+    length = int(length_str) if length_str else None
+    value = None if value == '' else value
+    return name, length, value
 
 
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
-    tokens: list[tuple[str, str | int | None, str | None]] = []
-    for token in s.split(','):
-        if not token:
-            continue
-        # Match literal tokens of the form 0x... 0o... and 0b...
-        if m := LITERAL_RE.match(token):
-            tokens.append((m.group('name'), None, m.group('value')))
-            continue
-        tokens.append(parse_single_token(token))
-
     bs = BitStore()
-    for (name, token_length, value) in tokens:
-        try:
-            f = literal_bit_funcs[name]
-        except KeyError:
-            bs += Dtype(name, token_length).pack(value)._bitstore
+    for token in (t for t in s.split(',') if t):
+        if token.startswith(('0x', '0X', '0b', '0B', '0o', '0O')):
+            bs += literal_bit_funcs[token[1]](token[2:])
         else:
-            bs += f(value)
+            name, length, value = parse_single_token(token)
+            bs += Dtype(name, length).pack(value)._bitstore
     return bs
 
 
