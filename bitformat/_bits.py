@@ -225,7 +225,7 @@ class Bits:
             b._bitstore = BitStore.from_bytes(auto.getvalue())
         elif isinstance(auto, abc.Iterable):
             # Evaluate each item as True or False and set bits to 1 or 0.
-            b._setbin_unsafe(''.join(str(int(bool(x))) for x in auto))
+            b._bitstore = BitStore.from_binstr(''.join('1' if x else '0' for x in auto))
         else:
             raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
         return b
@@ -622,10 +622,6 @@ class Bits:
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
         self._bitstore = BitStore.from_bin(binstring)
-
-    def _setbin_unsafe(self, binstring: str, length: None = None) -> None:
-        """Same as _setbin_safe, but input isn't sanity checked. binstring mustn't start with '0b'."""
-        self._bitstore = BitStore.from_binstr(binstring)
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
