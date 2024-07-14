@@ -566,7 +566,7 @@ class Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
         value = Bits._create_from_bitstype(value)
         if len(value) != self._dtype.length:
-            raise ValueError(f"Bitwise op needs a Bits of length {self._dtype.length} to match format {self._dtype}.")
+            raise ValueError(f"Bitwise op {op} needs a Bits of length {self._dtype.length} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self._dtype.length, self._dtype.length):
             self._bitstore.setitem(slice(start, start + self._dtype.length), op(self._bitstore.getslice(start, start + self._dtype.length), value._bitstore))
         return self

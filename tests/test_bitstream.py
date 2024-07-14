@@ -4,7 +4,7 @@ import pytest
 import bitformat
 import copy
 from bitformat import Bits
-from bitformat._bitstore_helpers import tokenparser
+from bitformat._bits import tokenparser
 
 
 class TestFlexibleInitialisation:

@@ -4,13 +4,16 @@ import numbers
 import sys
 import struct
 import io
+import re
+import functools
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, TypeVar
 import bitformat
 from ._bitstore import BitStore
-from bitformat import _bitstore_helpers, _utils
+from bitformat import _utils
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat._common import colour
+from typing import Pattern, Callable
 
 __all__ = ['Bits']
 
@@ -21,6 +24,78 @@ TBits = TypeVar("TBits", bound='Bits')
 
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS: int = 80
+
+# name[length][=value]
+NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))?$')
+
+# The size of various caches used to improve performance
+CACHE_SIZE = 256
+
+# Hex, oct or binary literals
+LITERAL_RE: Pattern[str] = re.compile(r'^(?P<name>0([xob]))(?P<value>.+)', re.IGNORECASE)
+
+literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
+    '0x': BitStore.from_hex,
+    '0X': BitStore.from_hex,
+    '0b': BitStore.from_bin,
+    '0B': BitStore.from_bin,
+    '0o': BitStore.from_oct,
+    '0O': BitStore.from_oct,
+}
+
+
+@functools.lru_cache(CACHE_SIZE)
+def parse_single_token(token: str) -> tuple[str, int | None, str | None]:
+    if m := NAME_INT_VALUE_RE.match(token):
+        name = m.group(1)
+        length_str = m.group(2)
+        value = m.group(3)
+        if value == '':
+            value = None
+        if length_str == '':
+            return name, None, value
+        return name, int(length_str), value
+    else:
+        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]'.")
+
+
+@functools.lru_cache(CACHE_SIZE)
+def tokenparser(fmt: str) -> \
+        list[tuple[str, int | str | None, str | None]]:
+    """Divide the format string into tokens and parse them.
+
+    Return list of [initialiser, length, value]
+    initialiser is one of: hex, oct, bin, uint, int, 0x, 0o, 0b etc.
+    length is None if not known, as is value.
+
+    tokens must be of the form: [initialiser][length][=value]
+
+    """
+    fmt = ''.join(fmt.split())  # Remove whitespace
+    ret_vals: list[tuple[str, str | int | None, str | None]] = []
+    for token in fmt.split(','):
+        if not token:
+            continue
+        # Match literal tokens of the form 0x... 0o... and 0b...
+        if m := LITERAL_RE.match(token):
+            ret_vals.append((m.group('name'), None, m.group('value')))
+            continue
+        ret_vals.append(parse_single_token(token))
+    return ret_vals
+
+
+@functools.lru_cache(CACHE_SIZE)
+def str_to_bitstore(s: str) -> BitStore:
+    tokens = tokenparser(s)
+    bs = BitStore()
+    for (name, token_length, value) in tokens:
+        try:
+            f = literal_bit_funcs[name]
+        except KeyError:
+            bs += Dtype(name, token_length).pack(value)._bitstore
+        else:
+            bs += f(value)
+    return bs
 
 
 class Bits:
@@ -48,7 +123,7 @@ class Bits:
         if s is None:
             x._bitstore = BitStore()
         else:
-            x._bitstore = _bitstore_helpers.str_to_bitstore(s)
+            x._bitstore = str_to_bitstore(s)
         return x
 
     @classmethod
@@ -68,7 +143,7 @@ class Bits:
     def from_string(cls, s: str, /) -> TBits:
         """Create a new Bits from a formatted string."""
         x = super().__new__(cls)
-        x._bitstore = _bitstore_helpers.str_to_bitstore(s)
+        x._bitstore = str_to_bitstore(s)
         return x
 
     @classmethod
@@ -143,7 +218,7 @@ class Bits:
             return auto
         b = super().__new__(cls)
         if isinstance(auto, str):
-            b._bitstore = _bitstore_helpers.str_to_bitstore(auto)
+            b._bitstore = str_to_bitstore(auto)
         elif isinstance(auto, (bytes, bytearray, memoryview)):
             b._bitstore = BitStore.from_bytes(bytes(auto))
         elif isinstance(auto, io.BytesIO):
@@ -251,16 +326,17 @@ class Bits:
         if length > MAX_CHARS * 4:
             # Too long for hex. Truncate...
             return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
-        interpretations = [x for x in self._str_interpretations() if x != '']
-        if not interpretations:
-            # First we do as much as we can in hex
-            # then add on 1, 2 or 3 bits on at the end
-            bits_at_end = length % 4
-            t = self[0:length - bits_at_end].hex
-            hex_with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            bin_at_end = self[length - bits_at_end:].bin
-            return f'0x{hex_with_underscores}, 0b{bin_at_end}'
-        return '\n'.join(interpretations)
+        return self._simple_str()
+        # interpretations = [x for x in self._str_interpretations() if x != '']
+        # if not interpretations:
+        #     # First we do as much as we can in hex
+        #     # then add on 1, 2 or 3 bits on at the end
+        #     bits_at_end = length % 4
+        #     t = self[0:length - bits_at_end].hex
+        #     hex_with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
+        #     bin_at_end = self[length - bits_at_end:].bin
+        #     return f'0x{hex_with_underscores}, 0b{bin_at_end}'
+        # return '\n'.join(interpretations)
 
     def _simple_str(self) -> str:
         length = len(self)
