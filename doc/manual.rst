@@ -79,6 +79,8 @@ There are several builder class methods used to create ``Bits`` objects.
      - Use a formatted string.
    * - ``Bits.from_bytes(b)``
      - Directly from a ``bytes`` object.
+   * - ``Bits.from_iterable(i)``
+     - Converts each element to a single bit.
    * - ``Bits.zeros(n)``
      - Initialise with zero bits.
    * - ``Bits.ones(n)``

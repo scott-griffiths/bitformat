@@ -18,7 +18,7 @@ from typing import Pattern, Callable
 __all__ = ['Bits']
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bool, bytearray, bytes, memoryview, io.BytesIO]
+BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview, io.BytesIO]
 
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS: int = 256
@@ -50,6 +50,7 @@ def parse_single_token(token: str) -> tuple[str, int, str | None]:
     return name, length, value
 
 
+@functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
     bsl = []
@@ -72,6 +73,7 @@ class Bits:
     * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
+    * ``Bits.from_iterable(i)`` - Convert each element to a bool.
     * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.join(iterable)`` - Concatenate from an iterable such as a list.
@@ -112,6 +114,13 @@ class Bits:
         """Create a new Bits from a bytes object."""
         x = super().__new__(cls)
         x._bitstore = BitStore.from_bytes(b)
+        return x
+
+    @classmethod
+    def from_iterable(cls, i: Iterable[Any], /) -> Bits:
+        """Create a new Bits from an iterable by converting each element to a bool."""
+        x = super().__new__(cls)
+        x._bitstore = BitStore.from_binstr(''.join('1' if x else '0' for x in i))
         return x
 
     @classmethod

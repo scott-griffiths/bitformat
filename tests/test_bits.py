@@ -518,3 +518,13 @@ def test_unpack_array():
     assert a.unpack(['u4', 'u4', 'u4', 'u4']) == [10, 10, 10, 10]
 
     # assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]
+
+def test_from_iterable():
+    with pytest.raises(TypeError):
+       _ = Bits.from_iterable()
+    a = Bits.from_iterable([])
+    assert a == Bits()
+    a = Bits.from_iterable([1, 0, 1, 1])
+    assert a == '0b1011'
+    a = Bits.from_iterable((True,))
+    assert a == 'bool=1'

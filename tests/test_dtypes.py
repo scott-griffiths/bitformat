@@ -31,12 +31,12 @@ class TestBasicFunctionality:
         with pytest.raises(ValueError):
             dtype.pack(value)
 
-    def test_build(self):
+    def test_pack(self):
         dtype = Dtype('i88')
         x = dtype.pack(10001)
         assert x.i == 10001
 
-    def test_parse(self):
+    def test_unpack(self):
         dtype = Dtype('u12')
         x = dtype.unpack('0x3ff')
         assert x == 1023
