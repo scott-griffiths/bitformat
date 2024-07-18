@@ -528,3 +528,12 @@ def test_from_iterable():
     assert a == '0b1011'
     a = Bits.from_iterable((True,))
     assert a == 'bool=1'
+
+def test_mul_by_zero():
+    a = Bits.from_string('0b1010')
+    b = a * 0
+    assert b == Bits()
+    b = a * 1
+    assert b == a
+    b = a * 2
+    assert b == a + a

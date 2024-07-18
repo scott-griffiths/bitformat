@@ -177,7 +177,7 @@ class Bits:
         ret_val = []
         for dtype in dtypes:
             if dtype.name != 'pad':
-                ret_val.append(dtype.unpack(self[pos:pos + dtype.length]))
+                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.length)))
             pos += dtype.length
         return ret_val
 
@@ -291,16 +291,6 @@ class Bits:
             # Too long for hex. Truncate...
             return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
         return self._simple_str()
-        # interpretations = [x for x in self._str_interpretations() if x != '']
-        # if not interpretations:
-        #     # First we do as much as we can in hex
-        #     # then add on 1, 2 or 3 bits on at the end
-        #     bits_at_end = length % 4
-        #     t = self[0:length - bits_at_end].hex
-        #     hex_with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-        #     bin_at_end = self[length - bits_at_end:].bin
-        #     return f'0x{hex_with_underscores}, 0b{bin_at_end}'
-        # return '\n'.join(interpretations)
 
     def _simple_str(self) -> str:
         length = len(self)
@@ -364,7 +354,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        s = self._slice(n, len(self))
+        s = self._slice_copy(n, len(self))
         s._addright(Bits.zeros(n))
         return s
 
@@ -382,7 +372,7 @@ class Bits:
             return self._copy()
         s = self.__class__.zeros(min(n, len(self)))
         n = min(n, len(self))
-        s._addright(self._slice(0, len(self) - n))
+        s._addright(self._slice_copy(0, len(self) - n))
         return s
 
     def __mul__(self: Bits, n: int, /) -> Bits:
@@ -491,7 +481,7 @@ class Bits:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            return hash(((self[:800] + self[-800:]).to_bytes(), len(self)))
+            return hash(((self._slice_copy(0, 800) + self._slice_copy(len(self) - 800, len(self))).to_bytes(), len(self)))
 
     def __bool__(self) -> bool:
         """Return False if Bits is empty, otherwise return True."""
@@ -618,8 +608,8 @@ class Bits:
         s_copy._bitstore = self._bitstore._copy()
         return s_copy
 
-    def _slice(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a slice, without error checking."""
+    def _slice_copy(self: Bits, start: int, end: int) -> Bits:
+        """Used internally to get a copy of a slice, without error checking."""
         bs = self.__class__()
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
@@ -643,18 +633,17 @@ class Bits:
         """Invert every bit."""
         self._bitstore.invert()
 
-    def _imul(self: Bits, n: int, /) -> Bits:
+    def _imul(self, n: int, /) -> Bits:
         """Concatenate n copies of self in place. Return self."""
-        assert n >= 0
-        if n == 0:
-            self._clear()
-        else:
-            m = 1
-            old_len = len(self)
-            while m * 2 < n:
-                self._addright(self)
-                m *= 2
-            self._addright(self[0:(n - m) * old_len])
+        assert n > 0
+        m = 1
+        old_len = len(self)
+        # Keep doubling the length for as long as we can
+        while m * 2 < n:
+            self._addright(self)
+            m *= 2
+        # Then finish off with the remaining copies
+        self._addright(self[0:(n - m) * old_len])
         return self
 
     def _getbits(self: Bits):
@@ -776,7 +765,7 @@ class Bits:
         c = 0
         while count is None or c < count:
             c += 1
-            nextchunk = self._slice(start_, min(start_ + bits, end_))
+            nextchunk = self._slice_copy(start_, min(start_ + bits, end_))
             if len(nextchunk) == 0:
                 return
             yield nextchunk
@@ -803,7 +792,7 @@ class Bits:
         """
         prefix = self._create_from_bitstype(prefix)
         start, end = self._validate_slice(start, end)
-        return self._slice(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
+        return self._slice_copy(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
     def ends_with(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current Bits ends with suffix.
@@ -815,7 +804,7 @@ class Bits:
         """
         suffix = self._create_from_bitstype(suffix)
         start, end = self._validate_slice(start, end)
-        return self._slice(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
+        return self._slice_copy(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
 
     def all(self, value: Any, pos: Iterable[int] | None = None) -> bool:
         """Return True if one or many bits are all set to bool(value).
@@ -1041,14 +1030,8 @@ class Bits:
         stream.write(output_stream.getvalue())
         return
 
-    def append(self, bs: BitsType, /) -> Bits:
-        return self + self._create_from_bitstype(bs)
-
-    def prepend(self, bs: BitsType, /) -> Bits:
-        return self._create_from_bitstype(bs) + self
-
     def insert(self, pos:int, bs: BitsType, /) -> Bits:
-        """Insert bs at bit position pos.
+        """Return new Bits with bs inserted at bit position pos.
 
         pos -- The bit position to insert at.
         bs -- The Bits to insert.
@@ -1061,15 +1044,23 @@ class Bits:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        return self[:pos] + bs + self[pos:]
+        return Bits.join([self._slice_copy(0, pos), bs, self._slice_copy(pos, len(self))])
 
     def overwrite(self, bs: BitsType, pos: int, /) -> Bits:
+        """Return new Bits with bs overwritten at bit position pos.
+
+        pos -- The bit position to start overwriting at.
+        bs -- The Bits to overwrite.
+
+        Raises ValueError if pos < 0 or pos > len(self).
+
+        """
         bs = self._create_from_bitstype(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        return self[:pos] + bs + self[pos + len(bs):]
+        return Bits.join([self._slice_copy(0, pos), bs, self._slice_copy(pos + len(bs), len(self))])
 
     def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
         """Reverse bits.
@@ -1084,12 +1075,12 @@ class Bits:
 
         """
         start, end = self._validate_slice(start, end)
-        s = self._slice(start, end)
+        s = self._slice_copy(start, end)
         s._bitstore.reverse()
-        return self[:start] + s + self[end:]
+        return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
 
     def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
-        """Set one or many bits to 1 or 0.
+        """Return new Bits with one or many bits set to 1 or 0.
 
         value -- If bool(value) is True bits are set to 1, otherwise they are set to 0.
         pos -- Either a single bit position or an iterable of bit positions.
@@ -1116,7 +1107,7 @@ class Bits:
         return s
 
     def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
-        """Invert one or many bits from 0 to 1 or vice versa.
+        """Return new Bits with one or many bits inverted between 0 and 1.
 
         pos -- Either a single bit position or an iterable of bit positions.
                Negative numbers are treated in the same way as slice indices.
@@ -1141,7 +1132,7 @@ class Bits:
         return s
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Rotate bits to the right in-place.
+        """Return new Bits with bit pattern rotated to the right.
 
         n -- The number of bits to rotate by.
         start -- Start of slice to rotate. Defaults to 0.
@@ -1156,10 +1147,11 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= (end - start)
-        return self[:start] + self[end - n: end] + self[start: end - n] + self[end:]
+        return Bits.join([self._slice_copy(0, start), self._slice_copy(end - n, end),
+                          self._slice_copy(start, end - n), self._slice_copy(end, len(self))])
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Rotate bits to the left in-place.
+        """Return new Bits with bit pattern rotated to the left.
 
         n -- The number of bits to rotate by.
         start -- Start of slice to rotate. Defaults to 0.
@@ -1174,7 +1166,8 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= (end - start)
-        return self[:start] + self[start + n: end] + self[start: start + n] + self[end:]
+        return Bits.join([self._slice_copy(0, start), self._slice_copy(start + n, end),
+                          self._slice_copy(start, start + n), self._slice_copy(end, len(self))])
 
     def byteswap(self, bytelength: int | None = None, /) -> Bits:
         """Change the byte endianness. Return new Bits.
@@ -1197,7 +1190,7 @@ class Bits:
             raise ValueError(f"The bits should be a whole number of bytelength bytes long.")
         chunks = []
         for startbit in range(0, len(self), bytelength *8):
-            x = self[startbit:startbit + bytelength * 8].to_bytes()
+            x = self._slice_copy(startbit, startbit + bytelength * 8).to_bytes()
             chunks.append(Bits.from_bytes(x[::-1]))
         return Bits.join(chunks)
 

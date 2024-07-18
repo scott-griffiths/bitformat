@@ -59,7 +59,7 @@ class TestNoPosAttribute:
 
     def test_prepend(self):
         s = Bits.zeros(1)
-        t = s.prepend([1])
+        t = [1] + s
         assert s == [0]
         assert t == [1, 0]
 

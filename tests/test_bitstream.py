@@ -263,13 +263,13 @@ def test_empty_bitstring():
 class TestAppend:
     def test_append(self):
         s1 = Bits('0b00000')
-        s1 = s1.append(Bits.pack('bool', True))
+        s1 = s1 + Bits.pack('bool', True)
         assert s1.bin == '000001'
         assert (Bits('0x0102') + Bits('0x0304')).hex == '01020304'
 
     def test_append_same_bitstring(self):
         s1 = Bits('0xf0')[:6]
-        s1 = s1.append(s1)
+        s1 = s1 + s1
         assert s1.bin == '111100111100'
 
 
@@ -447,7 +447,7 @@ class TestAdding:
     def test_len(self):
         s = Bits()
         assert len(s) == 0
-        s = s.append('0b001')
+        s = s + '0b001'
         assert len(s) == 3
 
     def test_join(self):
@@ -514,17 +514,18 @@ class TestAdding:
 
     def test_append_using_auto(self):
         s = Bits('0b000')
-        s = s.append('0b111')
+        s = s + '0b111'
         assert s.bin == '000111'
-        s = s.append('0b0')
+        s = s + '0b0'
         assert s.bin == '0001110'
+
     def test_prepend(self):
         s = Bits('0b000')
-        s = s.prepend('0b11')
+        s = '0b11' + s
         assert s.bin == '11000'
-        s = s.prepend(s)
+        s = s + s
         assert s.bin == '1100011000'
-        s = s.prepend('')
+        s = '' + s
         assert s.bin == '1100011000'
 
     def test_null_slice(self):
@@ -534,11 +535,11 @@ class TestAdding:
 
     def test_multiple_autos(self):
         s = Bits('0xa')
-        s = s.prepend('0xf')
-        s = s.append('0xb')
+        s = '0xf' + s
+        s = s + '0xb'
         assert s == '0xfab'
-        s = s.prepend(s)
-        s = s.append('0x100')
+        s = s + s
+        s = s + '0x100'
         s = s.overwrite('0x5', 4)
         assert s == '0xf5bfab100'
 
@@ -826,7 +827,7 @@ class TestManyDifferentThings:
         a = Bits('0b001010')
         b = Bits()
         for bit in a:
-            b = b.append(Bits.pack('bool', bit))
+            b = b + Bits.pack('bool', bit)
         assert a == b
 
     def test_non_zero_bits_at_end(self):
@@ -918,7 +919,7 @@ class TestManyDifferentThings:
     def test_cut_problem(self):
         s = Bits('0x1234')
         for n in list(s.cut(4)):
-            s = s.prepend(n)
+            s = n + s
         assert s == '0x43211234'
 
     def test_join_functions(self):
@@ -929,7 +930,7 @@ class TestManyDifferentThings:
         a = Bits('0b1101011')
         b = Bits()
         for i in range(10):
-            b = b.prepend(a)
+            b = a + b
         assert b == a * 10
 
     def test_reverse_bytes(self):
