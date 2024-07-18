@@ -18,7 +18,7 @@ from typing import Pattern, Callable
 __all__ = ['Bits']
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview, io.BytesIO]
+BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS: int = 256
@@ -70,13 +70,13 @@ class Bits:
     To construct use a builder method.
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
-    * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
     * ``Bits.from_iterable(i)`` - Convert each element to a bool.
     * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
-    * ``Bits.join(iterable)`` - Concatenate from an iterable such as a list.
+    * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
+    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
     """
 
     __slots__ = ('_bitstore',)
@@ -137,28 +137,28 @@ class Bits:
         return x
 
     @classmethod
-    def zeros(cls, length: int, /) -> Bits:
+    def zeros(cls, n: int, /) -> Bits:
         """Create a new Bits with all bits set to zero.
 
-        length -- The number of bits.
+        n -- The number of bits.
 
         """
-        if length == 0:
+        if n == 0:
             return Bits()
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_zeros(length)
+        x._bitstore = BitStore.from_zeros(n)
         return x
 
     @classmethod
-    def ones(cls, length: int, /) -> Bits:
+    def ones(cls, n: int, /) -> Bits:
         """Create a new Bits with all bits set to one.
 
-        length -- The number of bits.
+        n -- The number of bits.
 
         """
-        if length == 0:
+        if n == 0:
             return Bits()
-        return Dtype('i', length).pack(-1)
+        return Dtype('i', n).pack(-1)
 
     def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
@@ -186,19 +186,13 @@ class Bits:
         """Create a new Bits from one of the many things that can be a BitsType."""
         if isinstance(auto, cls):
             return auto
-        b = super().__new__(cls)
         if isinstance(auto, str):
-            b._bitstore = str_to_bitstore(auto)
+            return cls.from_string(auto)
         elif isinstance(auto, (bytes, bytearray, memoryview)):
-            b._bitstore = BitStore.from_bytes(bytes(auto))
-        elif isinstance(auto, io.BytesIO):
-            b._bitstore = BitStore.from_bytes(auto.getvalue())
+            return cls.from_bytes(auto)
         elif isinstance(auto, abc.Iterable):
-            # Evaluate each item as True or False and set bits to 1 or 0.
-            b._bitstore = BitStore.from_binstr(''.join('1' if x else '0' for x in auto))
-        else:
-            raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
-        return b
+            return cls.from_iterable(auto)
+        raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
 
     def __iter__(self) -> Iterable[bool]:
         """Iterate over the bits."""
@@ -1209,9 +1203,7 @@ class Bits:
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, bytealigned: bool | None = None) -> Bits:
-        """Replace all occurrences of old with new in place.
-
-        Returns number of replacements made.
+        """Return new Bits with all occurrences of old replaced with new.
 
         old -- The Bits to replace.
         new -- The replacement Bits.
