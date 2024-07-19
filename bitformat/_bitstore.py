@@ -37,6 +37,13 @@ class BitStore:
         return x
 
     @classmethod
+    def from_ones(cls, i: int) -> BitStore:
+        x = super().__new__(cls)
+        x._bitarray = bitarray.bitarray(i)
+        x._bitarray.setall(True)
+        return x
+
+    @classmethod
     def from_binstr(cls, s: str) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray(s)
@@ -114,9 +121,6 @@ class BitStore:
         for i in iterable:
             x._bitarray += i._bitarray
         return x
-
-    def setall(self, value: int, /) -> None:
-        self._bitarray.setall(value)
 
     def to_bytes(self) -> bytes:
         return self._bitarray.tobytes()

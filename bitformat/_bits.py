@@ -134,7 +134,9 @@ class Bits:
         """
         if n == 0:
             return Bits()
-        return Dtype('i', n).pack(-1)
+        x = super().__new__(cls)
+        x._bitstore = BitStore.from_ones(n)
+        return x
 
     @classmethod
     def pack(cls, dtype: Dtype | str, value: Any, /) -> Bits:
