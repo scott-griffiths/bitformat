@@ -1080,9 +1080,9 @@ class TestSet:
     def test_set_whole_bit_stream(self):
         a = Bits.zeros(10000)
         a = a.set(1)
-        assert a.all(1)
+        assert a.all()
         a = a.set(0)
-        assert a.all(0)
+        assert not a.any()
 
 
 class TestInvert:
@@ -1146,59 +1146,36 @@ class TestInvert:
 
 class TestAllAndAny:
     def test_all(self):
-        a = Bits('0b0111')
-        assert a.all(True, (1, 3))
-        assert not a.all(True, (0, 1, 2))
-        assert a.all(True, [-1])
-        assert not a.all(True, [0])
+        a = Bits('0b111')
+        assert a.all()
 
     def test_any(self):
         a = Bits('0b10011011')
-        assert a.any(True, (1, 2, 3, 5))
-        assert not a.any(True, (1, 2, 5))
-        assert a.any(True, (-1,))
-        assert not a.any(True, (1,))
+        assert a.any()
 
     def test_all_false(self):
         a = Bits('0b0010011101')
-        assert a.all(False, (0, 1, 3, 4))
-        assert not a.all(False, (0, 1, 2, 3, 4))
+        assert not a.all()
 
     def test_any_false(self):
-        a = Bits('0b01001110110111111111111111111')
-        assert a.any(False, (4, 5, 6, 2))
-        assert not a.any(False, (1, 15, 20))
+        a = Bits('0b0000')
+        assert not a.any()
 
     def test_any_empty_bitstring(self):
         a = Bits()
-        assert not a.any(True)
-        assert not a.any(False)
+        assert not a.any()  # Python any function returns False for empty iterables.
 
     def test_all_empty_bit_stream(self):
         a = Bits()
-        assert a.all(True)
-        assert a.all(False)
+        assert a.all()  # Python all function returns True for empty iterables.
 
     def test_any_whole_bitstring(self):
         a = Bits('0xfff')
-        assert a.any(True)
-        assert not a.any(False)
+        assert a.any()
 
     def test_all_whole_bitstring(self):
         a = Bits('0xfff')
-        assert a.all(True)
-        assert not a.all(False)
-
-    def test_errors(self):
-        a = Bits('0xf')
-        with pytest.raises(IndexError):
-            a.all(True, [5])
-        with pytest.raises(IndexError):
-            a.all(True, [-5])
-        with pytest.raises(IndexError):
-            a.any(True, [5])
-        with pytest.raises(IndexError):
-            a.any(True, [-5])
+        assert a.all()
 
     ###################
 

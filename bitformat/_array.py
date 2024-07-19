@@ -217,14 +217,14 @@ class Array:
         return len(self._bitstore) // self._dtype.length
 
     @overload
-    def __getitem__(self, key: slice) -> Array:
+    def __getitem__(self, key: slice, /) -> Array:
         ...
 
     @overload
-    def __getitem__(self, key: int) -> ElementType:
+    def __getitem__(self, key: int, /) -> ElementType:
         ...
 
-    def __getitem__(self, key: slice | int) -> Array | ElementType:
+    def __getitem__(self, key: slice | int, /) -> Array | ElementType:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step != 1:
@@ -246,14 +246,14 @@ class Array:
             return self._dtype.get_fn(self._getbitslice(self._dtype.length * key, self._dtype.length * (key + 1)))
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[ElementType]) -> None:
+    def __setitem__(self, key: slice, value: Iterable[ElementType], /) -> None:
         ...
 
     @overload
-    def __setitem__(self, key: int, value: ElementType) -> None:
+    def __setitem__(self, key: int, value: ElementType, /) -> None:
         ...
 
-    def __setitem__(self, key: slice | int, value: Iterable[ElementType] | ElementType) -> None:
+    def __setitem__(self, key: slice | int, value: Iterable[ElementType] | ElementType, /) -> None:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if not isinstance(value, Iterable):
@@ -283,7 +283,7 @@ class Array:
             self._bitstore.setitem(slice(start, start + len(x)), x._bitstore)
             return
 
-    def __delitem__(self, key: slice | int) -> None:
+    def __delitem__(self, key: slice | int, /) -> None:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
@@ -308,7 +308,7 @@ class Array:
             self._getbitslice(-trailing_bit_length, None)).splitlines()[0]
         return f"Array('{self._dtype}', {list_str}{final_str})"
 
-    def astype(self, dtype: str | Dtype) -> Array:
+    def astype(self, dtype: str | Dtype, /) -> Array:
         """
         Creates and returns a new ``Array`` instance with a specified data type, initialized with the current Array's elements.
 
@@ -339,12 +339,12 @@ class Array:
         return [self._dtype.read_fn(self._proxy, start=start)
                 for start in range(0, len(self._proxy) - self._dtype.length + 1, self._dtype.length)]
 
-    def append(self, x: ElementType) -> None:
+    def append(self, x: ElementType, /) -> None:
         if len(self._proxy) % self._dtype.length != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._bitstore += self._create_element(x)._bitstore
 
-    def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any]) -> None:
+    def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> None:
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
             self._bitstore += Bits.from_bytes(iterable)._bitstore
@@ -366,15 +366,16 @@ class Array:
             for item in iterable:
                 self._bitstore += self._create_element(item)._bitstore
 
-    def insert(self, i: int, x: ElementType) -> None:
-        """Insert a new element into the Array at position i.
+    def insert(self, pos: int, x: ElementType, /) -> None:
+        """Insert a new element into the Array at position pos.
 
         """
-        i = min(i, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
+        pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = self._bitstore.getslice(0, i * self._dtype.length) + v._bitstore + self._bitstore.getslice(i * self._dtype.length, None)
+        self._bitstore = (self._bitstore.getslice(0, pos * self._dtype.length) + v._bitstore +
+                          self._bitstore.getslice(pos * self._dtype.length, None))
 
-    def pop(self, i: int = -1) -> ElementType:
+    def pop(self, pos: int = -1, /) -> ElementType:
         """Return and remove an element of the Array.
 
         Default is to return and remove the final element.
@@ -382,8 +383,8 @@ class Array:
         """
         if len(self) == 0:
             raise IndexError("Can't pop from an empty Array.")
-        x = self[i]
-        del self[i]
+        x = self[pos]
+        del self[pos]
         return x
 
     def byteswap(self) -> None:
@@ -397,7 +398,7 @@ class Array:
                 f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
         self.data = self._proxy.byteswap(self.item_size // 8)
 
-    def count(self, value: ElementType) -> int:
+    def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
 
         value -- The quantity to compare each Array element to. Type should be appropriate for the Array format.
@@ -486,7 +487,7 @@ class Array:
             stream.write(" + trailing_bits = 0b" + self._getbitslice(-trailing_bit_length, None).parse('bin'))
         stream.write("\n")
 
-    def equals(self, other: Any) -> bool:
+    def equals(self, other: Any, /) -> bool:
         """Return True if format and all Array items are equal."""
         if isinstance(other, Array):
             if self._dtype.length != other._dtype.length:

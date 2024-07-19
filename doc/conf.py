@@ -18,9 +18,29 @@ release = '0.1.0'
 
 extensions = ['sphinx.ext.autodoc', 'autoapi.extension']
 autoapi_dirs = ['../bitformat']
-autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'special-members', 'imported-members', ]
+autoapi_options = ['members',
+                   'undoc-members',
+                   # 'show-inheritance',
+                   'show-module-summary',
+                   'special-members',
+                   'imported-members',
+                   ]
 autoapi_own_page_level = 'class'
 autoapi_add_toctree_entry = False
+
+skipped = ['Bits.__gt__', 'Bits.__lt__', 'Bits.__ge__', 'Bits.__le__',
+           '__slots__']
+
+def skip_things(app, what, name, obj, skip, options):
+    if 'slot' in name:
+        print(name)
+    if name in skipped:
+        skip = True
+    return skip
+
+def setup(sphinx):
+    sphinx.connect("autoapi-skip-member", skip_things)
+
 
 add_module_names = False
 
