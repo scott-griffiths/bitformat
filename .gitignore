@@ -9,3 +9,6 @@ manifest
 doc/_build
 /.vscode/
 /.venv/
+/.hypothesis/
+/html
+/doc/html

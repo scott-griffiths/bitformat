@@ -257,7 +257,7 @@ class Bits:
             start_ += bits
         return
 
-    def ends_with(self, suffix: BitsType, start: int | None = None, end: int | None = None) -> bool:
+    def ends_with(self, suffix: BitsType, /, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current Bits ends with suffix.
 
         suffix -- The Bits to search for.
@@ -363,7 +363,7 @@ class Bits:
             s._invert(p)
         return s
 
-    def overwrite(self, bs: BitsType, pos: int, /) -> Bits:
+    def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs overwritten at bit position pos.
 
         pos -- The bit position to start overwriting at.
@@ -682,9 +682,6 @@ class Bits:
 
     def _setuint(self, uint: int, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
-        # If no length given, and we've previously been given a length, use it.
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with a uint initialiser.")
         self._bitstore = BitStore.from_int(uint, length, False)
@@ -697,9 +694,6 @@ class Bits:
 
     def _setint(self, int_: int, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
-        # If no length given, and we've previously been given a length, use it.
-        if length is None and hasattr(self, 'len') and len(self) != 0:
-            length = len(self)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with an int initialiser.")
         self._bitstore = BitStore.from_int(int_, length, True)
@@ -782,12 +776,6 @@ class Bits:
     def _addright(self, bs: Bits, /) -> None:
         """Add a Bits to the RHS of the current Bits."""
         self._bitstore += bs._bitstore
-
-    def _reversebytes(self, start: int, end: int) -> None:
-        """Reverse bytes in-place."""
-        assert (end - start) % 8 == 0
-        reversed_bytes = BitStore.from_bytes(self._bitstore.getslice(start, end).to_bytes()[::-1])
-        self._bitstore = self._bitstore.getslice(0, start) + reversed_bytes + self._bitstore.getslice(end, None)
 
     def _invert(self, pos: int, /) -> None:
         """Flip bit at pos 1<->0."""

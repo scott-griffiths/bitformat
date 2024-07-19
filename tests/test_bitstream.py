@@ -335,33 +335,33 @@ class TestInsert:
 class TestOverwriting:
     def test_overwrite_bit(self):
         s = Bits('0b0')
-        s = s.overwrite('0b1', 0)
+        s = s.overwrite(0, '0b1')
         assert s.bin == '1'
 
     def test_overwrite_limits(self):
         s = Bits.pack('bin', '0b11111')
-        s = s.overwrite('0b000', 0)
+        s = s.overwrite(0, '0b000')
         assert s.bin == '00011'
-        s = s.overwrite('0b000', 2)
+        s = s.overwrite(2, '0b000')
         assert s.bin == '00000'
 
     def test_overwrite_null(self):
         s = Bits('0x342563fedec')
         s2 = s[:]
-        s = s.overwrite(Bits(), 23)
+        s = s.overwrite(23, Bits())
         assert s.bin == s2.bin
 
     def test_overwrite_position(self):
         s1 = Bits('0x0123456')
         s2 = Bits('0xff')
-        s1 = s1.overwrite(s2, 8)
+        s1 = s1.overwrite(8, s2)
         assert s1.hex == '01ff456'
-        s1 = s1.overwrite('0xff', 0)
+        s1 = s1.overwrite(0, '0xff')
         assert s1.hex == 'ffff456'
 
     def test_overwrite_with_self(self):
         s = Bits('0x123')
-        s = s.overwrite(s, 0)
+        s = s.overwrite(0, s)
         assert s == '0x123'
 
 
@@ -403,12 +403,12 @@ class TestAdding:
     def test_overwrite_errors(self):
         s = Bits('0b11111')
         with pytest.raises(ValueError):
-            _ = s.overwrite(Bits('0b1'), -10)
+            _ = s.overwrite(-10, Bits('0b1'))
         with pytest.raises(ValueError):
-            _ = s.overwrite(Bits('0b1'), 6)
-        s = s.overwrite('bin=0', 5)
+            _ = s.overwrite(6, Bits('0b1'))
+        s = s.overwrite(5, 'bin=0')
         assert s.bin == '111110'
-        s = s.overwrite(Bits('0x00'), 1)
+        s = s.overwrite(1, Bits('0x00'))
         assert s.bin == '100000000'
 
     def test_get_item_with_positive_position(self):
@@ -499,9 +499,9 @@ class TestAdding:
 
     def test_overwrite_using_auto(self):
         s = Bits('0x0110')
-        s = s.overwrite('0b1', 0)
+        s = s.overwrite(0, '0b1')
         assert s.hex == '8110'
-        s = s.overwrite('', 0)
+        s = s.overwrite(0, '')
         assert s.hex == '8110'
 
     def test_find_using_auto(self):
@@ -540,7 +540,7 @@ class TestAdding:
         assert s == '0xfab'
         s = s + s
         s = s + '0x100'
-        s = s.overwrite('0x5', 4)
+        s = s.overwrite(4,'0x5')
         assert s == '0xf5bfab100'
 
     def test_reverse(self):
@@ -864,13 +864,13 @@ class TestManyDifferentThings:
 
     def test_overwrite_order_and_bitpos(self):
         a = Bits('0xff')
-        a = a.overwrite('0xa', 0)
+        a = a.overwrite(0, '0xa')
         assert a == '0xaf'
-        a = a.overwrite('0xb', 4)
+        a = a.overwrite(4, '0xb')
         assert a == '0xab'
-        a = a.overwrite('0xa', 4)
+        a = a.overwrite(4, '0xa')
         assert a == '0xaa'
-        a = a.overwrite(a, 0)
+        a = a.overwrite(0, a)
         assert a == '0xaa'
 
     def test_reverse_with_slice(self):
@@ -1321,7 +1321,7 @@ class TestBugs:
 
         # overwrite
         t = Bits('0x77ab9988c7bf')
-        t = t.overwrite('0x666', -20)
+        t = t.overwrite(-20, '0x666')
         assert t == '0x77ab998666bf'
 
         # find
@@ -1440,7 +1440,7 @@ def test_count():
 
 def test_overwrite_with_self():
     s = Bits('0b1101')
-    s = s.overwrite(s, 0)
+    s = s.overwrite(0, s)
     assert s == '0b1101'
 
 
