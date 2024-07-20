@@ -170,7 +170,10 @@ class Dtype:
         """
         b = bitformat.Bits._create_from_bitstype(b)
         if self._items is None:
-            return self._get_fn(b)
+            if self._bitlength == 0:
+                return self._get_fn(b)
+            else:
+                return self._get_fn(b[0:self._bitlength])
         return [self._get_fn(b[i * self._bitlength:(i + 1) * self._bitlength]) for i in range(self.items)]
 
     def __str__(self) -> str:

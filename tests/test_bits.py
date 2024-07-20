@@ -172,7 +172,7 @@ class TestPadToken:
     def test_unpack(self):
         s = Bits.from_string('0b111000111')
         x, y = s.unpack(['bits3, pad3, bits3'])
-        assert (x, y.unpack('u')[0]) == ('0b111', 7)
+        assert (x, y.unpack('u')) == ('0b111', 7)
         x, y = s.unpack(['bits2', 'pad2', 'bin5'])
         assert (x.unpack(['u2'])[0], y) == (3, '00111')
         x = s.unpack(['pad1, pad2, pad3'])
@@ -516,7 +516,12 @@ def test_unpack_array():
     assert a.unpack(['u4', 'u4', 'u4', 'u4']) == [10, 10, 10, 10]
 
     assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]
-    assert a.unpack(['[u4; 3]']) == [[10, 10, 10]]
+    assert a.unpack('[u4; 3]') == [10, 10, 10]
+
+def test_unpack_single():
+    a = Bits('0x12345')
+    assert a.unpack('[u4; 5]') == [1, 2, 3, 4, 5]
+    assert a.unpack('u8') == 0x12
 
 def test_pack_array():
     d = Dtype('u', 33, 5)

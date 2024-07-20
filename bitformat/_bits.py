@@ -605,9 +605,16 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-# TODO: Allow the fmt to be a single array-like Dtype. Or I guess any single type.
-    def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
+    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
+        single_dtype = None
+        if isinstance(fmt, Dtype):
+            single_dtype = fmt
+        if isinstance(fmt, str):
+            single_dtype = Dtype.from_string(fmt)
+        if single_dtype is not None:
+            return single_dtype.unpack(self)
+
         dtypes = []
         for i in fmt:
             if isinstance(i, str):
