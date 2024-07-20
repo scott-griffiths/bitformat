@@ -16,7 +16,7 @@ class TestCreation:
         assert f.name == ''
 
     def test_create_from_dtype(self):
-        d = Dtype('u12')
+        d = Dtype.from_string('u12')
         f = Format([Field(d)], 'x')
         x = f.build([1000])
         assert f.name == 'x'
@@ -276,12 +276,12 @@ def test_repeat_with_bits():
 
 @pytest.mark.skip
 def test_repeat_with_dtype():
-    f = Repeat(4, Dtype('i4'))
+    f = Repeat(4, Dtype.from_string('i4'))
     b = f.pack([1, 2, 3, 4])
     f.unpack(b)
     assert f.value == [1, 2, 3, 4]
 
-    f = Repeat(4, Dtype('i40'))
+    f = Repeat(4, Dtype.from_string('i40'))
     b = f.pack([-400, 200, -200, 400])
     f.unpack(b)
     assert f.value == [-400, 200, -200, 400]

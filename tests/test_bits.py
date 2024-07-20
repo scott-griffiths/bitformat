@@ -73,13 +73,13 @@ class TestCreation:
     def test_creation_from_int(self):
         s = Bits.pack('int4', 0)
         assert s.unpack([Dtype('bin')])[0] == '0000'
-        s = Bits.pack(Dtype('i2'), 1)
+        s = Bits.pack(Dtype.from_string('i2'), 1)
         assert s.bin == '01'
         s = Bits.pack('i11', -1)
         assert s.bin == '11111111111'
         s = Bits.from_string('i12=7')
         assert s.int == 7
-        s = Bits.pack(Dtype('i108'), -243)
+        s = Bits.pack(Dtype.from_string('i108'), -243)
         assert (s.unpack([Dtype('i')])[0], len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
@@ -107,7 +107,6 @@ class TestCreation:
         with pytest.raises(ValueError):
             Bits.pack('squirrel', 5)
 
-    @pytest.mark.skip
     def test_creation_from_memoryview(self):
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
@@ -517,7 +516,7 @@ def test_unpack_array():
     assert a.unpack(['u4', 'u4', 'u8']) == [10, 10, 170]
     assert a.unpack(['u4', 'u4', 'u4', 'u4']) == [10, 10, 10, 10]
 
-    # assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]
+    assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]
 
 def test_from_iterable():
     with pytest.raises(TypeError):

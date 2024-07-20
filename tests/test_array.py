@@ -75,7 +75,7 @@ class TestCreation:
         with pytest.raises(ValueError):
             a.dtype = 'se'
         assert a[-1] == 1.0
-        assert a.dtype == Dtype('float64')
+        assert a.dtype == Dtype.from_string('float64')
 
     def test_changing_format_with_trailing_bits(self):
         a = Array('bool', 803)
@@ -584,7 +584,7 @@ class TestArrayOperations:
         b = a & '0x0001'
         assert b.to_list() == [1, 0, 1]
         b = a & '0xffff'
-        assert b.dtype == Dtype('int16')
+        assert b.dtype == Dtype.from_string('int16')
         assert b.to_list() == [-1, 100, 9]
 
     def test_in_place_and(self):
@@ -701,21 +701,21 @@ class TestSameSizeArrayOperations:
         b = Array('u8', [5, 5, 5, 4])
         c = a + b
         assert c.to_list() == [6, 7, 8, 8]
-        assert c.dtype == Dtype('uint8')
+        assert c.dtype == Dtype.from_string('uint8')
 
     def test_adding_different_types(self):
         a = Array('u8', [1, 2, 3, 4])
         b = Array('i6', [5, 5, 5, 4])
         c = a + b
         assert c.to_list() == [6, 7, 8, 8]
-        assert c.dtype == Dtype('int6')
+        assert c.dtype == Dtype.from_string('int6')
         d = Array('float16', [-10, 0, 5, 2])
         e = d + a
         assert e.to_list() == [-9.0, 2.0, 8.0, 6.0]
-        assert e.dtype == Dtype('float16')
+        assert e.dtype == Dtype.from_string('float16')
         e = a + d
         assert e.to_list() == [-9.0, 2.0, 8.0, 6.0]
-        assert e.dtype == Dtype('float16')
+        assert e.dtype == Dtype.from_string('float16')
         x1 = a[:]
         x2 = a[:]
         # x1.dtype = 'p3binary'
@@ -772,13 +772,13 @@ class TestAsType:
         a = Array('u8', [15, 42, 1])
         b = a.astype('i8')
         assert a.to_list() == b.to_list()
-        assert b.dtype == Dtype('i8')
+        assert b.dtype == Dtype.from_string('i8')
 
     def test_switching_float_types(self):
         a = Array('float64', [-990, 34, 1, 0.25])
         b = a.astype('float16')
         assert a.to_list() == b.to_list()
-        assert b.dtype == Dtype('f16')
+        assert b.dtype == Dtype.from_string('f16')
 
 
 class TestReverseMethods:

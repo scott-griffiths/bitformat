@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        ds = [Dtype('u9'), Dtype('i', 4), Dtype('f32'), Dtype('bytes3'), Dtype('bits11')]
+        ds = [Dtype.from_string(x) for x in ['u9', 'i4', 'f32', 'bytes3', 'bits11']]
         for d in ds:
             f = Field(d)
             assert f.dtype == d
@@ -20,7 +20,7 @@ class TestCreation:
 
     @given(st.integers(0, 255))
     def test_creation_from_dtype_with_value(self, x):
-        f = Field(Dtype('u8'), value=x)
+        f = Field(Dtype.from_string('u8'), value=x)
         assert f.value == x
         f2 = Field.from_string(f'const u8 = {x}')
         assert f2.value == x
@@ -146,7 +146,7 @@ class TestBuilding:
 
 def test_field_array():
     f = FieldArray.from_string('[u8; 3]')
-    assert f.dtype == Dtype('u8')
+    assert f.dtype == Dtype.from_string('u8')
     assert f.items == 3
     b = f.build([1, 2, 3])
     assert b == '0x010203'

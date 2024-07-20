@@ -127,10 +127,10 @@ class SingleDtypeField(FieldType):
             p = self.dtype.find('{')
             if p != -1:
                 self.dtype_length_expression = Expression(self.dtype[p:])
-                self.dtype = Dtype(self.dtype[:p])
+                self.dtype = Dtype.from_string(self.dtype[:p])
             else:
                 try:
-                    self.dtype = Dtype(dtype)
+                    self.dtype = Dtype.from_string(dtype)
                 except ValueError:
                     raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
@@ -245,7 +245,7 @@ class Field(SingleDtypeField):
         p = dtype.find('{')
         if p == -1:
             try:
-                dtype = Dtype(dtype)
+                dtype = Dtype.from_string(dtype)
             except ValueError:
                 bits = Bits.from_string(dtype)
                 const = True  # If it's a bit literal, then set it to const.
@@ -318,7 +318,7 @@ class FieldArray(SingleDtypeField):
         p = dtype.find('{')
         if p == -1:
             try:
-                dtype = Dtype(dtype)
+                dtype = Dtype.from_string(dtype)
             except ValueError:
                 bits = Bits.from_string(dtype)
                 return cls(Dtype('bits'), items, name, bits, const)

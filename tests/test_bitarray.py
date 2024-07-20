@@ -209,7 +209,7 @@ class TestBFloats:
     def test_overflows(self):
         inf16 = Bits.pack('f16', float('inf'))
         inf32 = Bits.from_string('f32 = inf')
-        inf64 = Dtype('f64').pack(float('inf'))
+        inf64 = Dtype.from_string('f64').pack(float('inf'))
 
         s = Bits.from_string('f64 = 1e400')
         assert s == inf64
@@ -218,9 +218,9 @@ class TestBFloats:
         s = Bits.from_string('f16 = 100000')
         assert s == inf16
 
-        ninf16 = Dtype('f16').pack(float('-inf'))
-        ninf32 = Dtype('f32').pack(float('-inf'))
-        ninf64 = Dtype('f64').pack(float('-inf'))
+        ninf16 = Dtype.from_string('f16').pack(float('-inf'))
+        ninf32 = Dtype.from_string('f32').pack(float('-inf'))
+        ninf64 = Dtype.from_string('f64').pack(float('-inf'))
 
         assert ninf64 == Bits.from_string('f64 = -1e400')
         assert ninf32 == Bits.from_string('f32 = -1e60')

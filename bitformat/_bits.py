@@ -148,8 +148,9 @@ class Bits:
         :returns: A newly constructed ``Bits``.
         :rtype: Bits
         """
-        d = Dtype(dtype)
-        return d.pack(value)
+        if isinstance(dtype, str):
+            dtype = Dtype.from_string(dtype)
+        return dtype.pack(value)
 
     @classmethod
     def join(cls, sequence: Iterable[Any], /) -> Bits:
@@ -609,7 +610,24 @@ class Bits:
         dtypes = []
         for i in fmt:
             if isinstance(i, str):
-                dtypes.extend(Dtype(x) for x in i.split(','))
+                for x in i.split(','):
+                    try:
+                        d = Dtype.from_string(x)
+                    except ValueError:
+                        x = x.strip()
+                        if x[0] == '[' and x[-1] == ']':
+                            p = x.find(';')
+                            if p == -1:
+                                raise ValueError(f"Invalid unpack string '{x}'.")
+                            items = x[p + 1:-1].strip()
+                            dtype = x[1:p].strip()
+                            d = Dtype.from_string(dtype)
+                            for _ in range(int(items)):
+                                dtypes.append(d)
+                        else:
+                            raise ValueError(f"Invalid unpack string '{x}'.")
+                    else:
+                        dtypes.append(d)
             else:
                 dtypes.append(i)
         if len(dtypes) == 1:

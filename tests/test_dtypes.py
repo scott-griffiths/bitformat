@@ -15,7 +15,7 @@ class TestBasicFunctionality:
         assert b.name == 'bool'
         assert b.length == 1
 
-        b2 = Dtype('bool1')
+        b2 = Dtype.from_string('bool1')
         assert b == b2
         # self.assertTrue(b is b2)
 
@@ -26,44 +26,44 @@ class TestBasicFunctionality:
         assert d.name == 'u'
 
     def test_build_errors(self):
-        dtype = Dtype('uint8')
+        dtype = Dtype.from_string('uint8')
         value = 'not_an_integer'
         with pytest.raises(ValueError):
             dtype.pack(value)
 
     def test_pack(self):
-        dtype = Dtype('i88')
+        dtype = Dtype.from_string('i88')
         x = dtype.pack(10001)
         assert x.i == 10001
 
     def test_unpack(self):
-        dtype = Dtype('u12')
+        dtype = Dtype.from_string('u12')
         x = dtype.unpack('0x3ff')
         assert x == 1023
 
     def test_immutability(self):
-        d = Dtype('f32')
+        d = Dtype.from_string('f32')
         with pytest.raises(AttributeError):
             d.length = 8
         with pytest.raises(AttributeError):
             d.name = 'uint8'
 
     def test_building_bits(self):
-        d = Dtype('bits3')
+        d = Dtype.from_string('bits3')
         a = d.pack('0b101')
         assert a == '0b101'
         with pytest.raises(ValueError):
             d.pack('0b1010')
 
     def test_building_bin(self):
-        d = Dtype('bin9')
+        d = Dtype.from_string('bin9')
         a = d.pack('0b000111000')
         assert a == '0b000111000'
         with pytest.raises(ValueError):
             d.pack('0b0001110000')
 
     def test_building_ints(self):
-        d = Dtype('i3')
+        d = Dtype.from_string('i3')
         a = d.pack(-3)
         assert a == '0b101'
         with pytest.raises(ValueError):

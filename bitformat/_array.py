@@ -198,7 +198,7 @@ class Array:
             self._dtype = new_dtype
         else:
             try:
-                dtype = Dtype(new_dtype)
+                dtype = Dtype.from_string(new_dtype)
             except ValueError:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}'.")
             if dtype.length == 0:

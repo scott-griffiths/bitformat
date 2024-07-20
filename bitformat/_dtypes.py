@@ -31,15 +31,20 @@ class Dtype:
     _bitlength: int
     _bits_per_item: int
     _length: int
+    _items: int | None
 
-    def __new__(cls, token: str | Dtype, /, length: int = 0) -> Dtype:
-        if isinstance(token, cls):
-            return token
-        if length == 0:
-            x = cls._new_from_token(token)
+    def __new__(cls, name: str, /, length: int = 0, items: int | None = None) -> Dtype:
+        x = dtype_register.get_dtype(name, length, items)
+        return x
+
+    @classmethod
+    def from_string(cls, token: str, /) -> Dtype:
+        token = ''.join(token.split())  # Remove whitespace
+        if token and token[0] == '[':
+            x = cls._new_from_array_token(token)
             return x
         else:
-            x = dtype_register.get_dtype(token, length)
+            x = cls._new_from_token(token)
             return x
 
     @property
@@ -56,6 +61,11 @@ class Dtype:
     def bitlength(self) -> int:
         """The number of bits needed to represent a single instance of the data type."""
         return self._bitlength
+
+    @property
+    def items(self) -> int | None:
+        """The number of items in the data type. Will be None unless it's an array."""
+        return self._items
 
     @property
     def bits_per_item(self) -> int:
@@ -90,17 +100,28 @@ class Dtype:
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _new_from_token(cls, token: str) -> Dtype:
-        token = ''.join(token.split())
-        return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+        d = dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+        return d
+
+    @classmethod
+    def _new_from_array_token(cls, token: str) -> Dtype:
+        if token[-1] == ']':
+            p = token.find(';')
+            if p != -1:
+                items = int(token[p + 1:-1])
+                d = dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
+                return d
+        raise ValueError(f"Array tokens should be of the form '[dtype; items]'. Got '{token}'.")
 
     def __hash__(self) -> int:
         return hash((self._name, self._length))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, length: int | None) -> Dtype:
+    def _create(cls, definition: DtypeDefinition, length: int | None, items: int | None) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
+        x._items = items
         x._bitlength = x._length = length
         x._bits_per_item = definition.multiplier
         x._bitlength *= x._bits_per_item
@@ -139,21 +160,27 @@ class Dtype:
 
         """
         b = bitformat.Bits._create_from_bitstype(b)
-        return self._get_fn(b)
+        if self._items is None:
+            return self._get_fn(b)
+        return [self._get_fn(b[i:i + self._bitlength]) for i in range(0, len(b), self._bitlength)]
 
     def __str__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
         length_str = '' if hide_length else str(self._length)
-        return f"{self._name}{length_str}"
+        if self._items is None:
+            return f"{self._name}{length_str}"
+        return f"[{self._name}{length_str}; {self._items}]"
 
     def __repr__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
         length_str = '' if hide_length else ', ' + str(self._length)
-        return f"{self.__class__.__name__}('{self._name}'{length_str})"
+        if self._items is None:
+            return f"{self.__class__.__name__}('{self._name}'{length_str})"
+        return f"{self.__class__.__name__}('[{self._name}{self._length}; {self._items}]')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
-            return self._name == other._name and self._length == other._length
+            return self._name == other._name and self._length == other._length and self._items == other._items
         return False
 
 
@@ -232,7 +259,7 @@ class DtypeDefinition:
 
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, length: int = 0) -> Dtype:
+    def get_dtype(self, length: int = 0, items: int | None = None) -> Dtype:
         if self.allowed_lengths:
             if length == 0:
                 if self.allowed_lengths.only_one_value():
@@ -243,10 +270,12 @@ class DtypeDefinition:
                         raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype, but its only allowed length is {self.allowed_lengths.values[0]}.")
                     else:
                         raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which is not one of its possible lengths (must be one of {self.allowed_lengths}).")
-        if length is None:
-            d = Dtype._create(self, None)
-            return d
-        d = Dtype._create(self, length)
+        d = Dtype._create(self, length, items)
+        return d
+
+    def get_array_dtype(self, length: int = 0, items: int = 0) -> Dtype:
+        d = self.get_dtype(length)
+        d = Dtype(d.name, d.length, items)
         return d
 
     def __repr__(self) -> str:
@@ -283,13 +312,23 @@ class Register:
                     property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
 
     @classmethod
-    def get_dtype(cls, name: str, length: int | None) -> Dtype:
+    def get_dtype(cls, name: str, length: int | None, items: int | None = None) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            return definition.get_dtype(length)
+            return definition.get_dtype(length, items)
+
+    @classmethod
+    def get_array_dtype(cls, name: str, length: int | None, items: int) -> Dtype:
+        try:
+            definition = cls.names[name]
+        except KeyError:
+            raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
+        else:
+            d = definition.get_array_dtype(length, items)
+            return d
 
     @classmethod
     def __getitem__(cls, name: str) -> DtypeDefinition:
