@@ -148,9 +148,18 @@ class Dtype:
         The value parameter should be of a type appropriate to the dtype.
         """
         b = bitformat.Bits()
-        self._set_fn(b, value)
-        if self.bitlength != 0 and len(b) != self.bitlength:
-            raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
+        if self._items is None:
+            # Single item to pack
+            self._set_fn(b, value)
+            if self.bitlength != 0 and len(b) != self.bitlength:
+                raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
+            return b
+        if len(value) != self._items:
+            raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
+        for v in value:
+            item = bitformat.Bits()
+            self._set_fn(item, v)
+            b += item  # TODO: Horrible performance.
         return b
 
     def unpack(self, b: BitsType, /) -> Any:
@@ -162,7 +171,7 @@ class Dtype:
         b = bitformat.Bits._create_from_bitstype(b)
         if self._items is None:
             return self._get_fn(b)
-        return [self._get_fn(b[i:i + self._bitlength]) for i in range(0, len(b), self._bitlength)]
+        return [self._get_fn(b[i * self._bitlength:(i + 1) * self._bitlength]) for i in range(self.items)]
 
     def __str__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
@@ -176,7 +185,7 @@ class Dtype:
         length_str = '' if hide_length else ', ' + str(self._length)
         if self._items is None:
             return f"{self.__class__.__name__}('{self._name}'{length_str})"
-        return f"{self.__class__.__name__}('[{self._name}{self._length}; {self._items}]')"
+        return f"{self.__class__.__name__}('{self._name}'{length_str}, {self._items})"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):

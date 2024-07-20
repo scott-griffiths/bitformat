@@ -478,6 +478,23 @@ class Bits:
             s._bitstore += r
         return s
 
+    def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
+        """Reverse bits.
+
+        start -- Position of first bit to reverse. Defaults to 0.
+        end -- One past the position of the last bit to reverse.
+               Defaults to len(self).
+
+        Using on an empty Bits will have no effect.
+
+        Raises ValueError if start < 0, end > len(self) or end < start.
+
+        """
+        start, end = self._validate_slice(start, end)
+        s = self._slice_copy(start, end)
+        s._bitstore.reverse()
+        return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
+
     def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
               bytealigned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.
@@ -580,23 +597,6 @@ class Bits:
         start, end = self._validate_slice(start, end)
         return self._slice_copy(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
-    def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
-        """Reverse bits.
-
-        start -- Position of first bit to reverse. Defaults to 0.
-        end -- One past the position of the last bit to reverse.
-               Defaults to len(self).
-
-        Using on an empty Bits will have no effect.
-
-        Raises ValueError if start < 0, end > len(self) or end < start.
-
-        """
-        start, end = self._validate_slice(start, end)
-        s = self._slice_copy(start, end)
-        s._bitstore.reverse()
-        return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
-
     def to_bytes(self) -> bytes:
         """Return the Bits as bytes, padding with zero bits if needed.
 
@@ -605,29 +605,15 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
+# TODO: Allow the fmt to be a single array-like Dtype. Or I guess any single type.
     def unpack(self, fmt: list[Dtype | str], /) -> list[Any]:
         """Interpret the Bits as a given data type."""
         dtypes = []
         for i in fmt:
             if isinstance(i, str):
                 for x in i.split(','):
-                    try:
-                        d = Dtype.from_string(x)
-                    except ValueError:
-                        x = x.strip()
-                        if x[0] == '[' and x[-1] == ']':
-                            p = x.find(';')
-                            if p == -1:
-                                raise ValueError(f"Invalid unpack string '{x}'.")
-                            items = x[p + 1:-1].strip()
-                            dtype = x[1:p].strip()
-                            d = Dtype.from_string(dtype)
-                            for _ in range(int(items)):
-                                dtypes.append(d)
-                        else:
-                            raise ValueError(f"Invalid unpack string '{x}'.")
-                    else:
-                        dtypes.append(d)
+                    d = Dtype.from_string(x)
+                    dtypes.append(d)
             else:
                 dtypes.append(i)
         if len(dtypes) == 1:
