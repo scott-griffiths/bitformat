@@ -334,7 +334,7 @@ class Array:
         return new_array
 
     def to_list(self) -> list[ElementType]:
-        return [self._dtype.read_fn(self._proxy, start=start)
+        return [self._dtype.unpack(self._proxy[start:start + self._dtype.total_bitlength])
                 for start in range(0, len(self._proxy) - self._dtype.length + 1, self._dtype.length)]
 
     def append(self, x: ElementType, /) -> None:
@@ -500,7 +500,7 @@ class Array:
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
         for _ in range(len(self)):
-            yield self._dtype.read_fn(self._proxy, start=start)
+            yield self._dtype.unpack(self._proxy[start:start + self._dtype.total_bitlength])
             start += self._dtype.length
 
     def __copy__(self) -> Array:
@@ -520,7 +520,7 @@ class Array:
             def partial_op(a):
                 return op(a)
         for i in range(len(self)):
-            v = self._dtype.read_fn(self._proxy, start=self._dtype.length * i)
+            v = self._dtype.unpack(self._proxy[self._dtype.total_bitlength * i: self._dtype.total_bitlength * (i + 1)])
             try:
                 new_data += new_array._create_element(partial_op(v))
             except (ZeroDivisionError, ValueError) as e:
@@ -541,7 +541,7 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            v = self._dtype.read_fn(self._proxy, start=self._dtype.length * i)
+            v = self._dtype.unpack(self._proxy[self._dtype.total_bitlength * i: self._dtype.total_bitlength * (i + 1)])
             try:
                 new_data += self._create_element(op(v, value))
             except (ZeroDivisionError, ValueError) as e:
@@ -564,9 +564,9 @@ class Array:
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
         value = Bits._create_from_bitstype(value)
-        if len(value) != self._dtype.length:
-            raise ValueError(f"Bitwise op {op} needs a Bits of length {self._dtype.length} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
-        for start in range(0, len(self) * self._dtype.length, self._dtype.length):
+        if len(value) != self._dtype.total_bitlength:
+            raise ValueError(f"Bitwise op {op} needs a Bits of length {self._dtype.total_bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
+        for start in range(0, len(self) * self._dtype.total_bitlength, self._dtype.total_bitlength):
             self._bitstore.setitem(slice(start, start + self._dtype.length), op(self._bitstore.getslice(start, start + self._dtype.length), value._bitstore))
         return self
 
@@ -587,8 +587,8 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            a = self._dtype.read_fn(self._proxy, start=self._dtype.length * i)
-            b = other._dtype.read_fn(other._proxy, start=other._dtype.length * i)
+            a = self._dtype.unpack(self._proxy[self._dtype.total_bitlength * i: self._dtype.total_bitlength * (i + 1)])
+            b = other._dtype.unpack(other._proxy[other._dtype.total_bitlength * i: other._dtype.total_bitlength * (i + 1)])
             try:
                 new_data += new_array._create_element(op(a, b))
             except (ValueError, ZeroDivisionError) as e:

@@ -87,11 +87,6 @@ class Dtype:
         """If True then the data type represents a signed quantity."""
         return self._is_signed
 
-    @property
-    def read_fn(self) -> Callable:
-        """A function to read the value of the data type."""
-        return self._read_fn
-
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _new_from_token(cls, token: str) -> Dtype:
