@@ -26,7 +26,7 @@ def remove_unprintable(s: str) -> str:
 class TestCreation:
     def test_creation_from_bytes(self):
         s = Bits.from_bytes(b'\xa0\xff')
-        assert (len(s), s.unpack(['hex'])[0]) == (16, 'a0ff')
+        assert (len(s), s.unpack('hex')) == (16, 'a0ff')
 
     @given(st.binary())
     def test_creation_from_bytes_roundtrip(self, data):
@@ -35,7 +35,7 @@ class TestCreation:
 
     def test_creation_from_hex(self):
         s = Bits.pack('hex', '0xA0ff')
-        assert (len(s), s.unpack(['hex'])[0]) == (16, 'a0ff')
+        assert (len(s), s.unpack('hex')) == (16, 'a0ff')
         s = Bits.pack('hex', '0x0x0X')
         assert (len(s), s.hex) == (0, '')
 
@@ -52,7 +52,7 @@ class TestCreation:
         s = Bits.pack('bin', '1010000011111111')
         assert (len(s), s.hex) == (16, 'a0ff')
         s = Bits.from_string('0b00')[:1]
-        assert s.unpack(['bin']) == ['0']
+        assert s.unpack('bin') == '0'
         s = Bits.pack('bin', ' 0000 \n 0001\r ')
         assert s.bin == '00000001'
 
@@ -72,7 +72,7 @@ class TestCreation:
 
     def test_creation_from_int(self):
         s = Bits.pack('int4', 0)
-        assert s.unpack([Dtype('bin')])[0] == '0000'
+        assert s.unpack([Dtype.from_string('bin4')])[0] == '0000'
         s = Bits.pack(Dtype.from_string('i2'), 1)
         assert s.bin == '01'
         s = Bits.pack('i11', -1)
@@ -80,7 +80,7 @@ class TestCreation:
         s = Bits.from_string('i12=7')
         assert s.int == 7
         s = Bits.pack(Dtype.from_string('i108'), -243)
-        assert (s.unpack([Dtype('i')])[0], len(s)) == (-243, 108)
+        assert (s.unpack(Dtype('i')), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
                 s = Bits.pack(Dtype('int', length), value)
@@ -171,11 +171,11 @@ class TestPadToken:
 
     def test_unpack(self):
         s = Bits.from_string('0b111000111')
-        x, y = s.unpack(['bits3, pad3, bits3'])
+        x, y = s.unpack(['bits3', 'pad3', 'bits3'])
         assert (x, y.unpack('u')) == ('0b111', 7)
         x, y = s.unpack(['bits2', 'pad2', 'bin5'])
         assert (x.unpack(['u2'])[0], y) == (3, '00111')
-        x = s.unpack(['pad1, pad2, pad3'])
+        x = s.unpack(['pad1', 'pad2', 'pad3'])
         assert x == []
 
 

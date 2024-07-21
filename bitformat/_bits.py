@@ -606,33 +606,26 @@ class Bits:
         return self._bitstore.to_bytes()
 
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> list[Any]:
-        """Interpret the Bits as a given data type."""
-        single_dtype = None
-        if isinstance(fmt, Dtype):
-            single_dtype = fmt
-        if isinstance(fmt, str):
-            single_dtype = Dtype.from_string(fmt)
-        if single_dtype is not None:
-            return single_dtype.unpack(self)
+        """Interpret the Bits as a given data type or list of data types."""
 
-        dtypes = []
-        for i in fmt:
-            if isinstance(i, str):
-                for x in i.split(','):
-                    d = Dtype.from_string(x)
-                    dtypes.append(d)
-            else:
-                dtypes.append(i)
-        if len(dtypes) == 1:
-            if dtypes[0].name == 'pad':
-                return []
-            else:
-                return [dtypes[0].unpack(self)]
+        # First do the cases where there's only one data type.
+        # For dtypes like hex, bin etc. there's no need to specify a length.
+        if isinstance(fmt, Dtype):
+            return fmt.unpack(self)
+        if isinstance(fmt, str):
+            return Dtype.from_string(fmt).unpack(self)
+
+        dtypes = [Dtype.from_string(f) if isinstance(f, str) else f for f in fmt]
+
+        # For multiple dtypes lengths need to be given even for hex, bin etc.
         pos = 0
         ret_val = []
         for dtype in dtypes:
             if dtype.name != 'pad':
-                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.length)))
+                if dtype.length == 0:
+                    raise ValueError(f"No length given for dtype '{dtype}'. A length must be specified for each dtype"
+                                     " when a list of dtypes is being unpacked.")
+                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.total_bitlength)))
             pos += dtype.length
         return ret_val
 

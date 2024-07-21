@@ -73,6 +73,12 @@ class Dtype:
         return self._bits_per_item
 
     @property
+    def total_bitlength(self) -> int:
+        if self._items is None:
+            return self._bitlength
+        return self._bitlength * self._items
+
+    @property
     def return_type(self) -> Any:
         """The type of the value returned by the parse method, such as int, float or str."""
         return self._return_type
