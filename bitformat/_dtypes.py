@@ -53,7 +53,7 @@ class Dtype:
 
     @property
     def length(self) -> int:
-        """The length of the data type in units of bits_per_item."""
+        """The length of the data type in units of the multiplier."""
         return self._item_size // self._multiplier
 
     @property

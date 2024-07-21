@@ -157,8 +157,6 @@ class Array:
             x = Bits._create_from_bitstype(trailing_bits)
             self._bitstore += x._bitstore
 
-    _largest_values = None
-
     @property
     def data(self) -> BitsProxy:
         """Property that provides access to the ``Array`` data through a ``BitsProxy``."""
@@ -208,13 +206,13 @@ class Array:
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
-        if len(b) != self._dtype.item_size:
+        if len(b) != self._dtype.total_bitlength:
             raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
         return b
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
-        return len(self._bitstore) // self._dtype.length
+        return len(self._bitstore) // self._dtype.total_bitlength
 
     @overload
     def __getitem__(self, key: slice, /) -> Array:
@@ -229,21 +227,21 @@ class Array:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 d = Bits()
-                for s in range(start * self._dtype.length, stop * self._dtype.length, step * self._dtype.length):
-                    d += self._bitstore.getslice(s, s + self._dtype.length)
+                for s in range(start * self._dtype.total_bitlength, stop * self._dtype.total_bitlength, step * self._dtype.total_bitlength):
+                    d += self._bitstore.getslice(s, s + self._dtype.total_bitlength)
                 a = self.__class__(self._dtype)
                 a._bitstore = d._bitstore
                 return a
             else:
                 a = self.__class__(self._dtype)
-                a._bitstore = self._bitstore.getslice(start * self._dtype.length, stop * self._dtype.length)
+                a._bitstore = self._bitstore.getslice(start * self._dtype.total_bitlength, stop * self._dtype.total_bitlength)
                 return a
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            return self._dtype.get_fn(self._getbitslice(self._dtype.length * key, self._dtype.length * (key + 1)))
+            return self._dtype.unpack(self._getbitslice(self._dtype.total_bitlength * key, self._dtype.total_bitlength * (key + 1)))
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[ElementType], /) -> None:
