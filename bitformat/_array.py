@@ -145,7 +145,7 @@ class Array:
         self._set_dtype(dtype)
 
         if isinstance(initializer, numbers.Integral):
-            self._bitstore = BitStore.from_zeros(initializer * self._dtype.bitlength)
+            self._bitstore = BitStore.from_zeros(initializer * self._dtype.item_size)
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
             self._bitstore = initializer._bitstore._copy()
@@ -176,12 +176,12 @@ class Array:
     @property
     def item_size(self) -> int:
         """The length of a single item in bits. Read only."""
-        return self._dtype.bitlength
+        return self._dtype.item_size
 
     @property
     def trailing_bits(self) -> Bits:
         """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
-        trailing_bit_length = len(self._bitstore) % self._dtype.bitlength
+        trailing_bit_length = len(self._bitstore) % self._dtype.item_size
         return Bits() if trailing_bit_length == 0 else self._getbitslice(-trailing_bit_length, None)
 
     @property
@@ -208,7 +208,7 @@ class Array:
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
-        if len(b) != self._dtype.bitlength:
+        if len(b) != self._dtype.item_size:
             raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
         return b
 
@@ -460,13 +460,13 @@ class Array:
                 name2, length2 = _utils.parse_name_length_token(token_list[1])
                 dtype2 = Dtype(name2, length2)
 
-        token_length = dtype1.bitlength
+        token_length = dtype1.item_size
         if dtype2 is not None:
             # For two types we're OK as long as they don't have different lengths given.
-            if dtype1.bitlength is not None and dtype2.bitlength is not None and dtype1.bitlength != dtype2.bitlength:
+            if dtype1.item_size is not None and dtype2.item_size is not None and dtype1.item_size != dtype2.item_size:
                 raise ValueError(f"Two different format lengths specified ('{fmt}'). Either specify just one, or two the same length.")
             if token_length == 0:
-                token_length = dtype2.bitlength
+                token_length = dtype2.item_size
         if token_length == 0:
             token_length = self.item_size
 

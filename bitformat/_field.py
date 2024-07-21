@@ -209,10 +209,10 @@ class SingleDtypeField(FieldType):
             return len(self._bits)
         if self.dtype_length_expression is not None:
             self.dtype = Dtype(self.dtype.name, self.dtype_length_expression.safe_eval(vars_))
-        self._bits = b[:self.dtype.bitlength]
+        self._bits = b[:self.dtype.item_size]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.bitlength
+        return self.dtype.item_size
 
     def _build_common(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -337,10 +337,10 @@ class FieldArray(SingleDtypeField):
             return len(self._bits)
         if self.dtype_length_expression is not None:
             self.dtype = Dtype(self.dtype, self.dtype_length_expression.safe_eval(vars_))
-        self._bits = b[:self.dtype.bitlength * self.items]
+        self._bits = b[:self.dtype.item_size * self.items]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.bitlength * self.items
+        return self.dtype.item_size * self.items
 
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.items_expression is not None:

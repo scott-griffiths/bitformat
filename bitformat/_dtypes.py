@@ -28,8 +28,8 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _set_fn_needs_length: bool
-    _bitlength: int
-    _bits_per_item: int
+    _item_size: int
+    _multiplier: int
     _items: int | None
 
     def __new__(cls, name: str, /, length: int = 0, items: int | None = None) -> Dtype:
@@ -54,12 +54,12 @@ class Dtype:
     @property
     def length(self) -> int:
         """The length of the data type in units of bits_per_item."""
-        return self._bitlength // self._bits_per_item
+        return self._item_size // self._multiplier
 
     @property
-    def bitlength(self) -> int:
-        """The number of bits needed to represent a single instance of the data type."""
-        return self._bitlength
+    def item_size(self) -> int:
+        """The number of bits needed to represent a single element of the data type."""
+        return self._item_size
 
     @property
     def items(self) -> int | None:
@@ -67,15 +67,15 @@ class Dtype:
         return self._items
 
     @property
-    def bits_per_item(self) -> int:
+    def multiplier(self) -> int:
         """The number of bits for each unit of length. Usually 1, but equals 8 for bytes type."""
-        return self._bits_per_item
+        return self._multiplier
 
     @property
     def total_bitlength(self) -> int:
         if self._items is None:
-            return self._bitlength
-        return self._bitlength * self._items
+            return self._item_size
+        return self._item_size * self._items
 
     @property
     def return_type(self) -> Any:
@@ -119,7 +119,7 @@ class Dtype:
         raise ValueError(f"Array tokens should be of the form '[dtype; items]'. Got '{token}'.")
 
     def __hash__(self) -> int:
-        return hash((self._name, self._bitlength))
+        return hash((self._name, self._item_size))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -127,18 +127,18 @@ class Dtype:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
-        x._bits_per_item = definition.multiplier
-        x._bitlength = length * x._bits_per_item
+        x._multiplier = definition.multiplier
+        x._item_size = length * x._multiplier
         x._set_fn_needs_length = definition.set_fn_needs_length
         if dtype_register.names[x._name].allowed_lengths.only_one_value():
             x._read_fn = definition.read_fn
         else:
-            x._read_fn = functools.partial(definition.read_fn, length=x._bitlength)
+            x._read_fn = functools.partial(definition.read_fn, length=x._item_size)
         if definition.set_fn is None:
             x._set_fn = None
         else:
             if x._set_fn_needs_length:
-                x._set_fn = functools.partial(definition.set_fn, length=x._bitlength)
+                x._set_fn = functools.partial(definition.set_fn, length=x._item_size)
             else:
                 x._set_fn = definition.set_fn
         x._get_fn = definition.get_fn
@@ -155,8 +155,8 @@ class Dtype:
         if self._items is None:
             # Single item to pack
             self._set_fn(b, value)
-            if self.bitlength != 0 and len(b) != self.bitlength:
-                raise ValueError(f"Dtype has a length of {self.bitlength} bits, but value '{value}' has {len(b)} bits.")
+            if self.item_size != 0 and len(b) != self.item_size:
+                raise ValueError(f"Dtype has a length of {self.item_size} bits, but value '{value}' has {len(b)} bits.")
             return b
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
@@ -174,11 +174,11 @@ class Dtype:
         """
         b = bitformat.Bits._create_from_bitstype(b)
         if self._items is None:
-            if self._bitlength == 0:
+            if self._item_size == 0:
                 return self._get_fn(b)
             else:
-                return self._get_fn(b[0:self._bitlength])
-        return [self._get_fn(b[i * self._bitlength:(i + 1) * self._bitlength]) for i in range(self.items)]
+                return self._get_fn(b[0:self._item_size])
+        return [self._get_fn(b[i * self._item_size:(i + 1) * self._item_size]) for i in range(self.items)]
 
     def __str__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
@@ -196,7 +196,7 @@ class Dtype:
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
-            return self._name == other._name and self._bitlength == other._bitlength and self._items == other._items
+            return self._name == other._name and self._item_size == other._item_size and self._items == other._items
         return False
 
 

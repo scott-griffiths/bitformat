@@ -933,17 +933,17 @@ class Bits:
         has_length_in_fmt = True
         name1, length1 = _utils.parse_name_length_token(token_list[0])
         dtype1 = Dtype(name1, length1)
-        bits_per_group = dtype1.bitlength
+        bits_per_group = dtype1.item_size
         dtype2 = None
 
         if len(token_list) == 2:
             name2, length2 = _utils.parse_name_length_token(token_list[1])
             dtype2 = Dtype(name2, length2)
-            if 0 not in {dtype1.bitlength, dtype2.bitlength} and dtype1.bitlength != dtype2.bitlength:
+            if 0 not in {dtype1.item_size, dtype2.item_size} and dtype1.item_size != dtype2.item_size:
                 raise ValueError(
-                    f"Differing bit lengths of {dtype1.bitlength} and {dtype2.bitlength} in format string '{fmt}'.")
+                    f"Differing bit lengths of {dtype1.item_size} and {dtype2.item_size} in format string '{fmt}'.")
             if bits_per_group == 0:
-                bits_per_group = dtype2.bitlength
+                bits_per_group = dtype2.item_size
 
         if bits_per_group == 0:
             has_length_in_fmt = False
