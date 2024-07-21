@@ -827,11 +827,11 @@ class Bits:
     @staticmethod
     def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype,
                      colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
-        get_fn = dtype.get_fn
+        get_fn = dtype.unpack
         if dtype.name == 'bytes':  # Special case for bytes to print one character each.
             get_fn = Bits._getbytes_printable
         if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-            get_fn = dtype_register.get_dtype('uint', bits_per_group).get_fn
+            get_fn = dtype_register.get_dtype('uint', bits_per_group).unpack
         if bits_per_group == 0:
             if dtype.name == 'bits':
                 x = bits._simple_str()
