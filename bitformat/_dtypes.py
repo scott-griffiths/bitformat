@@ -30,7 +30,6 @@ class Dtype:
     _set_fn_needs_length: bool
     _bitlength: int
     _bits_per_item: int
-    _length: int
     _items: int | None
 
     def __new__(cls, name: str, /, length: int = 0, items: int | None = None) -> Dtype:
@@ -55,7 +54,7 @@ class Dtype:
     @property
     def length(self) -> int:
         """The length of the data type in units of bits_per_item."""
-        return self._length
+        return self._bitlength // self._bits_per_item
 
     @property
     def bitlength(self) -> int:
@@ -120,7 +119,7 @@ class Dtype:
         raise ValueError(f"Array tokens should be of the form '[dtype; items]'. Got '{token}'.")
 
     def __hash__(self) -> int:
-        return hash((self._name, self._length))
+        return hash((self._name, self._bitlength))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -128,9 +127,8 @@ class Dtype:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
-        x._bitlength = x._length = length
         x._bits_per_item = definition.multiplier
-        x._bitlength *= x._bits_per_item
+        x._bitlength = length * x._bits_per_item
         x._set_fn_needs_length = definition.set_fn_needs_length
         if dtype_register.names[x._name].allowed_lengths.only_one_value():
             x._read_fn = definition.read_fn
@@ -183,22 +181,22 @@ class Dtype:
         return [self._get_fn(b[i * self._bitlength:(i + 1) * self._bitlength]) for i in range(self.items)]
 
     def __str__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
-        length_str = '' if hide_length else str(self._length)
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
+        length_str = '' if hide_length else str(self.length)
         if self._items is None:
             return f"{self._name}{length_str}"
         return f"[{self._name}{length_str}; {self._items}]"
 
     def __repr__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self._length == 0
-        length_str = '' if hide_length else ', ' + str(self._length)
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
+        length_str = '' if hide_length else ', ' + str(self.length)
         if self._items is None:
             return f"{self.__class__.__name__}('{self._name}'{length_str})"
         return f"{self.__class__.__name__}('{self._name}'{length_str}, {self._items})"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
-            return self._name == other._name and self._length == other._length and self._items == other._items
+            return self._name == other._name and self._bitlength == other._bitlength and self._items == other._items
         return False
 
 
