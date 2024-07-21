@@ -938,11 +938,11 @@ class TestDelegation:
 def test_array_of_array():
     a = Array('[u8;3]', [[1, 2, 3], [4, 5, 6]])
     assert len(a) == 2
-    assert a[0] == [1, 2, 3]
-    assert a[1] == [4, 5, 6]
+    assert a[0] == (1, 2, 3)
+    assert a[1] == (4, 5, 6)
     with pytest.raises(ValueError):
-        a[0] = [10, 5]
+        a[0] = (10, 5)
     with pytest.raises(ValueError):
         a[1] = [1, 2, 3, 4]
     a[0] = [9, 9, 0]
-    assert a[0] == [9, 9, 0]
+    assert a[0] == (9, 9, 0)

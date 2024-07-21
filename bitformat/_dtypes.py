@@ -22,7 +22,6 @@ class Dtype:
     """
 
     _name: str
-    _read_fn: Callable
     _set_fn: Callable
     _get_fn: Callable
     _return_type: Any
@@ -115,10 +114,6 @@ class Dtype:
         x._multiplier = definition.multiplier
         x._item_size = length * x._multiplier
         x._set_fn_needs_length = definition.set_fn_needs_length
-        if dtype_register.names[x._name].allowed_lengths.only_one_value():
-            x._read_fn = definition.read_fn
-        else:
-            x._read_fn = functools.partial(definition.read_fn, length=x._item_size)
         if definition.set_fn is None:
             x._set_fn = None
         else:
@@ -127,7 +122,7 @@ class Dtype:
             else:
                 x._set_fn = definition.set_fn
         x._get_fn = definition.get_fn
-        x._return_type = definition.return_type
+        x._return_type = definition.return_type if items is None else tuple
         x._is_signed = definition.is_signed
         return x
 
@@ -151,7 +146,7 @@ class Dtype:
             b += item  # TODO: Horrible performance.
         return b
 
-    def unpack(self, b: BitsType, /) -> Any:
+    def unpack(self, b: BitsType, /) -> Any | tuple(Any):
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
@@ -163,7 +158,7 @@ class Dtype:
                 return self._get_fn(b)
             else:
                 return self._get_fn(b[0:self._item_size])
-        return [self._get_fn(b[i * self._item_size:(i + 1) * self._item_size]) for i in range(self.items)]
+        return tuple(self._get_fn(b[i * self._item_size:(i + 1) * self._item_size]) for i in range(self.items))
 
     def __str__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0

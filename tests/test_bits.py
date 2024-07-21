@@ -111,7 +111,7 @@ class TestCreation:
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
         b = Bits.pack('bytes', m)
-        assert b.unpack(['[u8; 5]']) == [[10, 11, 12, 13, 14]]
+        assert b.unpack(['[u8; 5]']) == [(10, 11, 12, 13, 14)]
 
 
 class TestInitialisation:
@@ -515,18 +515,19 @@ def test_unpack_array():
     assert a.unpack(['u4', 'u4', 'u8']) == [10, 10, 170]
     assert a.unpack(['u4', 'u4', 'u4', 'u4']) == [10, 10, 10, 10]
 
-    assert a.unpack(['[u4; 4]']) == [[10, 10, 10, 10]]
-    assert a.unpack('[u4; 3]') == [10, 10, 10]
+    assert a.unpack(['[u4; 4]']) == [(10, 10, 10, 10)]
+    assert a.unpack('[u4; 3]') == (10, 10, 10)
 
 def test_unpack_single():
     a = Bits('0x12345')
-    assert a.unpack('[u4; 5]') == [1, 2, 3, 4, 5]
+    assert a.unpack('[u4; 5]') == (1, 2, 3, 4, 5)
     assert a.unpack('u8') == 0x12
 
 def test_pack_array():
     d = Dtype('u', 33, 5)
     a = Bits.pack(d, [10, 100, 1000, 32, 1])
-    assert a.unpack([d]) == [[10, 100, 1000, 32, 1]]
+    assert a.unpack(d) == (10, 100, 1000, 32, 1)
+    assert d.return_type == tuple
 
 def test_from_iterable():
     with pytest.raises(TypeError):
