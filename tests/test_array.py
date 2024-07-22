@@ -955,3 +955,6 @@ def test_rgb_array():
     assert a.to_list() == [(0, 0, 0)]*8
     a[5] = (5, 4, 3)
     assert a[5] == (5, 4, 3)
+
+    with pytest.raises(ValueError):
+        a.pp()

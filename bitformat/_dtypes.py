@@ -169,13 +169,13 @@ class Dtype:
             b += item  # TODO: Horrible performance.
         return b
 
-    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple(Any):
+    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple[Any]:
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
 
         """
-        b = bitformat.Bits._create_from_bitstype(b)
+        b = bitformat.Bits.from_auto(b)
         if self._items is None:
             if self._item_size == 0:
                 return self._get_fn(b)
@@ -192,10 +192,10 @@ class Dtype:
 
     def __repr__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
-        length_str = '' if hide_length else ', ' + str(self.length)
+        length_str = '' if hide_length else str(self.length)
         if self._items is None:
-            return f"{self.__class__.__name__}('{self._name}'{length_str})"
-        return f"{self.__class__.__name__}('{self._name}'{length_str}, {self._items})"
+            return f"{self.__class__.__name__}('{self._name}{length_str}')"
+        return f"{self.__class__.__name__}('[{self._name}{length_str}; {self._items}]')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):

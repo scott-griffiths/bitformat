@@ -154,7 +154,7 @@ class Array:
         elif initializer is not None:
             self.extend(initializer)
         if trailing_bits is not None:
-            x = Bits._create_from_bitstype(trailing_bits)
+            x = Bits.from_auto(trailing_bits)
             self._bitstore += x._bitstore
 
     @property
@@ -164,7 +164,7 @@ class Array:
 
     @data.setter
     def data(self, value: BitsType) -> None:
-        self._bitstore = Bits._create_from_bitstype(value)._bitstore
+        self._bitstore = Bits.from_auto(value)._bitstore
 
     def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
         x = Bits()
@@ -468,6 +468,9 @@ class Array:
         if token_length == 0:
             token_length = self.item_size
 
+        if dtype1.items is not None or (dtype2 is not None and dtype2.items is not None):
+            raise ValueError(f"Array.pp() only supports simple Dtypes, not ones which represent arrays.")
+
         trailing_bit_length = len(self._proxy) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
         if tidy_fmt is None:
@@ -563,7 +566,7 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = Bits._create_from_bitstype(value)
+        value = Bits.from_auto(value)
         if len(value) != self._dtype.total_bitlength:
             raise ValueError(f"Bitwise op {op} needs a Bits of length {self._dtype.total_bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self._dtype.total_bitlength, self._dtype.total_bitlength):

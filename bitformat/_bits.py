@@ -69,13 +69,14 @@ class Bits:
 
     To construct use a builder method:
 
-    * ``Bits.from_string(s)`` - Use a formatted string.
-    * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
+    * ``Bits.from_auto(auto)`` - Delegates to ``from_bytes``, ``from_iterable`` or ``from_string``.
+    * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
     * ``Bits.from_iterable(i)`` - Convert each element to a bool.
-    * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
+    * ``Bits.from_string(s)`` - Use a formatted string.
+    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
     * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
-    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
+    * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
 
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
@@ -94,11 +95,26 @@ class Bits:
     # ----- Class Methods -----
 
     @classmethod
-    def from_string(cls, s: str, /) -> Bits:
-        """Create a new Bits from a formatted string."""
-        x = super().__new__(cls)
-        x._bitstore = str_to_bitstore(s)
-        return x
+    def from_auto(cls: Type[Bits], auto: BitsType, /) -> Bits:
+        """Create a new Bits from one of the many things that can be used to build it.
+
+        auto -- The object to convert to a ``Bits``.
+
+        This method will be implicitly called whenever an object needs to be promoted to a Bits.
+        The builder delegates to ``from_bytes``, ``from_iterable`` or ``from_string`` as appropriate.
+
+        If no builder can be found it raises a ``TypeError``.
+
+        """
+        if isinstance(auto, cls):
+            return auto
+        if isinstance(auto, str):
+            return cls.from_string(auto)
+        elif isinstance(auto, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(auto)
+        elif isinstance(auto, abc.Iterable):
+            return cls.from_iterable(auto)
+        raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -115,16 +131,23 @@ class Bits:
         return x
 
     @classmethod
-    def zeros(cls, n: int, /) -> Bits:
-        """Create a new Bits with all bits set to zero.
+    def from_string(cls, s: str, /) -> Bits:
+        """Create a new Bits from a formatted string."""
+        x = super().__new__(cls)
+        x._bitstore = str_to_bitstore(s)
+        return x
 
-        n -- The number of bits.
+    @classmethod
+    def join(cls, sequence: Iterable[Any], /) -> Bits:
+        """Return concatenation of Bits.
+
+        sequence -- A sequence of Bits.
 
         """
-        if n == 0:
-            return Bits()
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_zeros(n)
+        x._bitstore = BitStore()
+        for item in sequence:
+            x._addright(Bits.from_auto(item))
         return x
 
     @classmethod
@@ -155,32 +178,17 @@ class Bits:
         return dtype.pack(value)
 
     @classmethod
-    def join(cls, sequence: Iterable[Any], /) -> Bits:
-        """Return concatenation of Bits.
+    def zeros(cls, n: int, /) -> Bits:
+        """Create a new Bits with all bits set to zero.
 
-        sequence -- A sequence of Bits.
+        n -- The number of bits.
 
         """
+        if n == 0:
+            return Bits()
         x = super().__new__(cls)
-        x._bitstore = BitStore()
-        for item in sequence:
-            x._addright(Bits._create_from_bitstype(item))
+        x._bitstore = BitStore.from_zeros(n)
         return x
-
-    # ----- Private Class Methods -----
-
-    @classmethod
-    def _create_from_bitstype(cls: Type[Bits], auto: BitsType, /) -> Bits:
-        """Create a new Bits from one of the many things that can be a BitsType."""
-        if isinstance(auto, cls):
-            return auto
-        if isinstance(auto, str):
-            return cls.from_string(auto)
-        elif isinstance(auto, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(auto)
-        elif isinstance(auto, abc.Iterable):
-            return cls.from_iterable(auto)
-        raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
 
     # ----- Instance Methods -----
 
@@ -268,7 +276,7 @@ class Bits:
         end -- The bit position to end at. Defaults to len(self).
 
         """
-        suffix = self._create_from_bitstype(suffix)
+        suffix = self.from_auto(suffix)
         start, end = self._validate_slice(start, end)
         return self._slice_copy(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
 
@@ -292,7 +300,7 @@ class Bits:
         6
 
         """
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         start, end = self._validate_slice(start, end)
@@ -320,7 +328,7 @@ class Bits:
         """
         if count is not None and count < 0:
             raise ValueError("In findall, count must be >= 0.")
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         start, end = self._validate_slice(start, end)
         ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
         return self._findall(bs, start, end, count, ba)
@@ -334,7 +342,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._create_from_bitstype(bs)
+        bs = self.from_auto(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -375,7 +383,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._create_from_bitstype(bs)
+        bs = self.from_auto(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -444,8 +452,8 @@ class Bits:
         s = self._copy()
         if count == 0:
             return s
-        old = self._create_from_bitstype(old)
-        new = self._create_from_bitstype(new)
+        old = self.from_auto(old)
+        new = self.from_auto(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -514,7 +522,7 @@ class Bits:
         if end < start.
 
         """
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         start, end = self._validate_slice(start, end)
         ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
@@ -595,7 +603,7 @@ class Bits:
         end -- The bit position to end at. Defaults to len(self).
 
         """
-        prefix = self._create_from_bitstype(prefix)
+        prefix = self.from_auto(prefix)
         start, end = self._validate_slice(start, end)
         return self._slice_copy(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
 
@@ -663,7 +671,7 @@ class Bits:
         return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _setbits(self, bs: BitsType, length: None = None) -> None:
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         self._bitstore = bs._bitstore
 
     def _setbytes(self, data: bytearray | bytes | list, length: None = None) -> None:
@@ -973,7 +981,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
         return s
@@ -986,7 +994,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore
         return s
@@ -997,7 +1005,7 @@ class Bits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = Bits._create_from_bitstype(bs)
+        bs = Bits.from_auto(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
@@ -1069,7 +1077,7 @@ class Bits:
 
         """
         try:
-            return self._bitstore == Bits._create_from_bitstype(bs)._bitstore
+            return self._bitstore == Bits.from_auto(bs)._bitstore
         except TypeError:
             return False
 
@@ -1102,7 +1110,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__._create_from_bitstype(bs)
+        bs = self.__class__.from_auto(bs)
         s = self._copy()
         s._addright(bs)
         return s
@@ -1168,7 +1176,7 @@ class Bits:
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__._create_from_bitstype(bs)
+        bs = self.__class__.from_auto(bs)
         return bs.__add__(self)
 
     def __rmul__(self: Bits, n: int, /) -> Bits:
