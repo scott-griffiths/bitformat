@@ -260,7 +260,7 @@ class Array:
                 new_data = Bits()
                 for x in value:
                     new_data += self._create_element(x)
-                self._bitstore.setitem(slice(start * self._dtype.length, stop * self._dtype.length), new_data._bitstore)
+                self._bitstore.setitem(slice(start * self._dtype.total_bitlength, stop * self._dtype.total_bitlength), new_data._bitstore)
                 return
             items_in_slice = len(range(start, stop, step))
             if not isinstance(value, Sized):
@@ -268,7 +268,7 @@ class Array:
             if len(value) == items_in_slice:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
-                    self._bitstore.setitem(slice(s * self._dtype.length, s * self._dtype.length + len(x)), x._bitstore)
+                    self._bitstore.setitem(slice(s * self._dtype.total_bitlength, s * self._dtype.total_bitlength + len(x)), x._bitstore)
             else:
                 raise ValueError(f"Can't assign {len(value)} values to an extended slice of length {items_in_slice}.")
         else:
@@ -276,7 +276,7 @@ class Array:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            start = self._dtype.length * key
+            start = self._dtype.total_bitlength * key
             x = self._create_element(value)
             self._bitstore.setitem(slice(start, start + len(x)), x._bitstore)
             return
@@ -335,7 +335,7 @@ class Array:
 
     def to_list(self) -> list[ElementType]:
         return [self._dtype.unpack(self._proxy[start:start + self._dtype.total_bitlength])
-                for start in range(0, len(self._proxy) - self._dtype.length + 1, self._dtype.length)]
+                for start in range(0, len(self._proxy) - self._dtype.total_bitlength + 1, self._dtype.total_bitlength)]
 
     def append(self, x: ElementType, /) -> None:
         if len(self._proxy) % self._dtype.length != 0:

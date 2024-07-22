@@ -946,3 +946,12 @@ def test_array_of_array():
         a[1] = [1, 2, 3, 4]
     a[0] = [9, 9, 0]
     assert a[0] == (9, 9, 0)
+
+def test_rgb_array():
+    a = Array('[u10; 3]', bytearray(30))
+    assert len(a) == 8
+    assert a[0] == (0, 0, 0)
+    assert a[1] == (0, 0, 0)
+    assert a.to_list() == [(0, 0, 0)]*8
+    a[5] = (5, 4, 3)
+    assert a[5] == (5, 4, 3)
