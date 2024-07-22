@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 import inspect
 import bitformat
 from bitformat import _utils
@@ -169,7 +169,7 @@ class Dtype:
             b += item  # TODO: Horrible performance.
         return b
 
-    def unpack(self, b: BitsType, /) -> Any | tuple(Any):
+    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple(Any):
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
@@ -286,20 +286,24 @@ class DtypeDefinition:
             else:
                 if length not in self.allowed_lengths:
                     if self.allowed_lengths.only_one_value():
-                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype, but its only allowed length is {self.allowed_lengths.values[0]}.")
+                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype, but its "
+                                         f"only allowed length is {self.allowed_lengths.values[0]}.")
                     else:
-                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which is not one of its possible lengths (must be one of {self.allowed_lengths}).")
+                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which "
+                                         f"is not one of its possible lengths (must be one of {self.allowed_lengths}).")
         d = Dtype._create(self, length, items)
         return d
 
-    def get_array_dtype(self, length: int = 0, items: int = 0) -> Dtype:
+    def get_array_dtype(self, length: int, items: int) -> Dtype:
         d = self.get_dtype(length)
         d = Dtype.from_parameters(d.name, d.length, items)
         return d
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(name='{self.name}', description='{self.description}', return_type={self.return_type.__name__}, "
-        s += f"is_signed={self.is_signed}, set_fn_needs_length={self.set_fn_needs_length}, allowed_lengths={self.allowed_lengths!s}, multiplier={self.multiplier})"
+        s = (f"{self.__class__.__name__}(name='{self.name}', description='{self.description}',"
+             f"return_type={self.return_type.__name__}, ")
+        s += (f"is_signed={self.is_signed}, set_fn_needs_length={self.set_fn_needs_length}, "
+              f"allowed_lengths={self.allowed_lengths!s}, multiplier={self.multiplier})")
         return s
 
 
@@ -340,7 +344,7 @@ class Register:
             return definition.get_dtype(length, items)
 
     @classmethod
-    def get_array_dtype(cls, name: str, length: int | None, items: int) -> Dtype:
+    def get_array_dtype(cls, name: str, length: int, items: int) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:

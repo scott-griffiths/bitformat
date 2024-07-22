@@ -1053,8 +1053,10 @@ class Bits:
         """Return representation that could be used to recreate the Bits..
 
         """
-        interpretations = '\n'.join('# ' + x for x in self._str_interpretations() if x != '')
         repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
+        interpretations = ''
+        if bitformat.options.verbose_bits_repr:
+            interpretations = '\n'.join('# ' + x for x in self._str_interpretations() if x != '')
         return f"{repr_}\n{interpretations}" if interpretations else repr_
 
     # ----- Comparisons
