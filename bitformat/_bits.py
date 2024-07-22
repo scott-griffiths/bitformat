@@ -59,7 +59,7 @@ def str_to_bitstore(s: str) -> BitStore:
             bsl.append(literal_bit_funcs[token[1]](token[2:]))
         else:
             name, length, value = parse_single_token(token)
-            bsl.append(Dtype(name, length).pack(value)._bitstore)
+            bsl.append(Dtype.from_parameters(name, length).pack(value)._bitstore)
     return BitStore.join(bsl)
 
 
@@ -67,8 +67,7 @@ class Bits:
     """
     An immutable container of binary data.
 
-    To construct use a builder method.
-    ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
+    To construct use a builder method:
 
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.from_bytes(b)`` - Directly from a ``bytes`` object.
@@ -77,6 +76,9 @@ class Bits:
     * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
     * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
+
+    ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
+
     """
 
     __slots__ = ('_bitstore',)
@@ -932,13 +934,13 @@ class Bits:
                 f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
         has_length_in_fmt = True
         name1, length1 = _utils.parse_name_length_token(token_list[0])
-        dtype1 = Dtype(name1, length1)
+        dtype1 = Dtype.from_parameters(name1, length1)
         bits_per_group = dtype1.item_size
         dtype2 = None
 
         if len(token_list) == 2:
             name2, length2 = _utils.parse_name_length_token(token_list[1])
-            dtype2 = Dtype(name2, length2)
+            dtype2 = Dtype.from_parameters(name2, length2)
             if 0 not in {dtype1.item_size, dtype2.item_size} and dtype1.item_size != dtype2.item_size:
                 raise ValueError(
                     f"Differing bit lengths of {dtype1.item_size} and {dtype2.item_size} in format string '{fmt}'.")

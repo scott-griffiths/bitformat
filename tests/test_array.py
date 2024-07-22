@@ -61,10 +61,10 @@ class TestCreation:
             _ = Array('2*float16')
 
     def test_changing_fmt(self):
-        d = Dtype('u', 8)
+        d = Dtype.from_parameters('u', 8)
         a = Array(d, [255]*100)
         assert len(a) == 100
-        a.dtype = Dtype('int', 4)
+        a.dtype = Dtype('i4')
         assert len(a) == 200
         assert a.count(-1) == 200
         a.append(5)
@@ -842,7 +842,7 @@ class TestMisc:
             a[0:5:2] = [1, 0]
 
     def test_set_out_of_range_element(self):
-        a = Array(Dtype('float', 16), [1, 2, 3, 4.5])
+        a = Array(Dtype.from_parameters('float', 16), [1, 2, 3, 4.5])
         a[3] = 100.0
         a[-4] = 100.0
         with pytest.raises(IndexError):

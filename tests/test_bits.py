@@ -14,7 +14,7 @@ def test_build():
     b = Bits.pack('bool', False)
     assert len(b) == 1
     assert b[0] == 0
-    c = Bits.pack(Dtype('float', 64), 13.75)
+    c = Bits.pack(Dtype('f64'), 13.75)
     assert len(c) == 64
     assert c.unpack(['f64']) == [13.75]
 
@@ -83,13 +83,13 @@ class TestCreation:
         assert (s.unpack(Dtype('i')), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.pack(Dtype('int', length), value)
+                s = Bits.pack(Dtype.from_parameters('int', length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.pack(Dtype('int', length), int_)
+            _ = Bits.pack(Dtype.from_parameters('int', length), int_)
 
     def test_creation_from_bool(self):
         a = Bits.pack('bool', 1)
@@ -524,7 +524,7 @@ def test_unpack_single():
     assert a.unpack('u8') == 0x12
 
 def test_pack_array():
-    d = Dtype('u', 33, 5)
+    d = Dtype.from_parameters('u', 33, 5)
     a = Bits.pack(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
     assert d.return_type == tuple

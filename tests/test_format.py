@@ -32,7 +32,7 @@ class TestCreation:
     def test_create_from_dtype_string(self):
         f = Format(['float16'], 'x')
         assert f.fieldtypes[0].name == ''
-        assert f.fieldtypes[0].dtype == Dtype('float', 16)
+        assert f.fieldtypes[0].dtype == Dtype.from_parameters('float', 16)
 
     @given(name=st.sampled_from(['float16', 'u12', 'bool', 'float64']))
     def test_building_field(self, name):

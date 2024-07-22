@@ -453,10 +453,10 @@ class Array:
             if len(token_list) not in [1, 2]:
                 raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
             name1, length1 = _utils.parse_name_length_token(token_list[0])
-            dtype1 = Dtype(name1, length1)
+            dtype1 = Dtype.from_parameters(name1, length1)
             if len(token_list) == 2:
                 name2, length2 = _utils.parse_name_length_token(token_list[1])
-                dtype2 = Dtype(name2, length2)
+                dtype2 = Dtype.from_parameters(name2, length2)
 
         token_length = dtype1.item_size
         if dtype2 is not None:

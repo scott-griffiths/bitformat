@@ -16,7 +16,7 @@ class Dtype:
 
     Dtype instances are immutable. They are often created implicitly elsewhere via a token string.
 
-    >>> u12 = Dtype('uint', 12)
+    >>> u12 = Dtype('u12')
     >>> float16 = Dtype('float16')
 
     """
@@ -31,12 +31,35 @@ class Dtype:
     _multiplier: int
     _items: int | None
 
-    def __new__(cls, name: str, /, length: int = 0, items: int | None = None) -> Dtype:
+    def __new__(cls, token: str, /) -> Dtype:
+        return cls.from_string(token)
+
+    @classmethod
+    def from_parameters(cls, name: str, length: int = 0, items: int | None = None) -> Dtype:
+        """Create a new Dtype from its name, length and items.
+
+        It's usually clearer to use the Dtype constructor directly with a dtype str, but
+        this builder will be more efficient and is used internally to avoid str parsing.
+
+        """
         x = dtype_register.get_dtype(name, length, items)
         return x
 
     @classmethod
     def from_string(cls, token: str, /) -> Dtype:
+        """Create a new Dtype from a token string.
+
+        The token string examples:
+
+        ``'u12'``: An unsigned 12-bit integer.
+        ``'bytes'``: A ``bytes`` object with no explicit length.
+        ``'[i6; 5]'``: An array of length 5 containing signed 6-bit integers.
+
+        As a shortcut the ``Dtype`` constructor can be used directly with a token string.
+
+        ``Dtype(s)`` is equivalent to ``Dtype.from_string(s)``.
+
+        """
         token = ''.join(token.split())  # Remove whitespace
         if token and token[0] == '[':
             x = cls._new_from_array_token(token)
@@ -271,7 +294,7 @@ class DtypeDefinition:
 
     def get_array_dtype(self, length: int = 0, items: int = 0) -> Dtype:
         d = self.get_dtype(length)
-        d = Dtype(d.name, d.length, items)
+        d = Dtype.from_parameters(d.name, d.length, items)
         return d
 
     def __repr__(self) -> str:

@@ -208,7 +208,7 @@ class SingleDtypeField(FieldType):
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
         if self.dtype_length_expression is not None:
-            self.dtype = Dtype(self.dtype.name, self.dtype_length_expression.safe_eval(vars_))
+            self.dtype = Dtype.from_parameters(self.dtype.name, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.item_size]
         if self.name != '':
             vars_[self.name] = self.value
@@ -249,18 +249,18 @@ class Field(SingleDtypeField):
             except ValueError:
                 bits = Bits.from_string(dtype)
                 const = True  # If it's a bit literal, then set it to const.
-                return cls(Dtype('bits'), name, bits, const)
+                return cls(Dtype.from_parameters('bits'), name, bits, const)
         else:
-            _ = Dtype(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
+            _ = Dtype.from_parameters(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
         return cls(dtype, name, value, const)
 
     @classmethod
     def from_bits(cls, b: Bits, /, name: str = ''):
-        return cls(Dtype('bits'), name, b, const=True)
+        return cls(Dtype.from_parameters('bits'), name, b, const=True)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
-        return cls(Dtype('bytes'), name, b, const=True)
+        return cls(Dtype.from_parameters('bytes'), name, b, const=True)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         return self._parse_common(b, vars_)
@@ -321,7 +321,7 @@ class FieldArray(SingleDtypeField):
                 dtype = Dtype.from_string(dtype)
             except ValueError:
                 bits = Bits.from_string(dtype)
-                return cls(Dtype('bits'), items, name, bits, const)
+                return cls(Dtype.from_parameters('bits'), items, name, bits, const)
         return cls(dtype, items, name, value, const)
 
     def to_bits(self) -> Bits:
@@ -336,7 +336,7 @@ class FieldArray(SingleDtypeField):
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
         if self.dtype_length_expression is not None:
-            self.dtype = Dtype(self.dtype, self.dtype_length_expression.safe_eval(vars_))
+            self.dtype = Dtype.from_parameters(self.dtype, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.item_size * self.items]
         if self.name != '':
             vars_[self.name] = self.value

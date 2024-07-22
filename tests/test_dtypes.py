@@ -20,7 +20,7 @@ class TestBasicFunctionality:
         # self.assertTrue(b is b2)
 
     def test_setting_with_length(self):
-        d = Dtype('uint', 12)
+        d = Dtype.from_parameters('uint', 12)
         assert str(d) == 'u12'
         assert d.length == 12
         assert d.name == 'u'
@@ -32,24 +32,24 @@ class TestBasicFunctionality:
             dtype.pack(value)
 
     def test_pack(self):
-        dtype = Dtype.from_string('i88')
+        dtype = Dtype('i88')
         x = dtype.pack(10001)
         assert x.i == 10001
 
     def test_unpack(self):
-        dtype = Dtype.from_string('u12')
+        dtype = Dtype('u12')
         x = dtype.unpack('0x3ff')
         assert x == 1023
 
     def test_immutability(self):
-        d = Dtype.from_string('f32')
+        d = Dtype('f32')
         with pytest.raises(AttributeError):
             d.length = 8
         with pytest.raises(AttributeError):
             d.name = 'uint8'
 
     def test_building_bits(self):
-        d = Dtype.from_string('bits3')
+        d = Dtype('bits3')
         a = d.pack('0b101')
         assert a == '0b101'
         with pytest.raises(ValueError):
@@ -63,7 +63,7 @@ class TestBasicFunctionality:
             d.pack('0b0001110000')
 
     def test_building_ints(self):
-        d = Dtype.from_string('i3')
+        d = Dtype('i3')
         a = d.pack(-3)
         assert a == '0b101'
         with pytest.raises(ValueError):
@@ -100,7 +100,7 @@ class TestCreatingNewDtypes:
     def test_new_type(self):
         md = DtypeDefinition('uint_r', Bits._setuint, Bits._getuint)
         dtype_register.add_dtype(md)
-        a = Bits.from_string('0xf')
+        a = Bits('0xf')
         assert a.uint_r == 15
         a = Bits.pack('uint_r4',  1)
         assert a == '0x1'
