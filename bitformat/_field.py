@@ -122,17 +122,11 @@ class SingleDtypeField(FieldType):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> None:
         self._bits = None
         self.dtype = dtype
-        self.dtype_length_expression = None
         if isinstance(self.dtype, str):
-            p = self.dtype.find('{')
-            if p != -1:
-                self.dtype_length_expression = Expression(self.dtype[p:])
-                self.dtype = Dtype.from_string(self.dtype[:p])
-            else:
-                try:
-                    self.dtype = Dtype.from_string(dtype)
-                except ValueError:
-                    raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
+            try:
+                self.dtype = Dtype.from_string(dtype)
+            except ValueError:
+                raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
         self.name = name
 
         if const is True and value is None:
@@ -207,8 +201,6 @@ class SingleDtypeField(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        if self.dtype_length_expression is not None:
-            self.dtype = Dtype.from_parameters(self.dtype.name, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.item_size]
         if self.name != '':
             vars_[self.name] = self.value
@@ -219,9 +211,7 @@ class SingleDtypeField(FieldType):
             if self.name != '':
                 vars_[self.name] = self.value
             return self._bits, 0
-        if self.value_expression is not None:
-            self._setvalue(self.value_expression.safe_eval(vars_))
-        elif self.name in kwargs.keys():
+        if self.name in kwargs.keys():
             self._setvalue(kwargs[self.name])
             vars_[self.name] = self.value
             return self._bits, 0
@@ -235,23 +225,19 @@ class SingleDtypeField(FieldType):
 class Field(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         super().__init__(dtype, name, value, const)
-        self.value, self.value_expression = _perhaps_convert_to_expression(value)
+        self.value = value
 
     @classmethod
     def from_string(cls, s: str, /):
         dtype, name, value, items, const = cls._parse_field_str(s)
         if items is not None:
             raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
-        p = dtype.find('{')
-        if p == -1:
-            try:
-                dtype = Dtype.from_string(dtype)
-            except ValueError:
-                bits = Bits.from_string(dtype)
-                const = True  # If it's a bit literal, then set it to const.
-                return cls(Dtype.from_parameters('bits'), name, bits, const)
-        else:
-            _ = Dtype.from_parameters(dtype[:p])  # Check that the dtype is valid even though we don't yet know its length.
+        try:
+            dtype = Dtype.from_string(dtype)
+        except ValueError:
+            bits = Bits.from_string(dtype)
+            const = True  # If it's a bit literal, then set it to const.
+            return cls(Dtype.from_parameters('bits'), name, bits, const)
         return cls(dtype, name, value, const)
 
     @classmethod
@@ -304,47 +290,35 @@ class Field(SingleDtypeField):
 class FieldArray(SingleDtypeField):
     def __init__(self, dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None) -> None:
         super().__init__(dtype, name, value, const)
-        try:
-            self.items, self.items_expression = int(items), None
-        except ValueError:
-            self.items, self.items_expression = _perhaps_convert_to_expression(items)
-        self.value, self.value_expression = _perhaps_convert_to_expression(value)
+        self.items = int(items)
 
     @classmethod
     def from_string(cls, s: str, /):
         dtype, name, value, items, const = cls._parse_field_str(s)
         if items is None:
             raise ValueError(f"Field string '{s}' is not a FieldArray, but a Field.")
-        p = dtype.find('{')
-        if p == -1:
-            try:
-                dtype = Dtype.from_string(dtype)
-            except ValueError:
-                bits = Bits.from_string(dtype)
-                return cls(Dtype.from_parameters('bits'), items, name, bits, const)
+        try:
+            dtype = Dtype.from_string(dtype)
+        except ValueError:
+            bits = Bits.from_string(dtype)
+            return cls(Dtype.from_parameters('bits'), items, name, bits, const)
         return cls(dtype, items, name, value, const)
 
     def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        if self.items_expression is not None:
-            self.items = self.items_expression.safe_eval(vars_)
         if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        if self.dtype_length_expression is not None:
-            self.dtype = Dtype.from_parameters(self.dtype, self.dtype_length_expression.safe_eval(vars_))
         self._bits = b[:self.dtype.item_size * self.items]
         if self.name != '':
             vars_[self.name] = self.value
         return self.dtype.item_size * self.items
 
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        if self.items_expression is not None:
-            self.items = self.items_expression.safe_eval(vars_)
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
@@ -362,17 +336,11 @@ class FieldArray(SingleDtypeField):
     value = property(_getvalue, _setvalue)
 
     def _str(self, indent: int) -> str:
-        if self.items_expression is not None:
-            item_str = self.items_expression
-        else:
-            item_str = str(self.items)
+        item_str = str(self.items)
         return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     def _repr(self, indent: int) -> str:
-        if self.items_expression is not None:
-            item_str = self.items_expression
-        else:
-            item_str = str(self.items)
+        item_str = str(self.items)
         return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     # This repr is used when the field is the top level object

@@ -118,6 +118,7 @@ class TestArray:
         f2['new_array'] = a
         assert a == f2.to_bits()
 
+    @pytest.mark.skip
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
         f = Format([
@@ -153,13 +154,13 @@ def test_example_from_docs():
                 ])
     f.build([1, b'1', 2, b'22', 3, b'333', 12], items=2, flags=[True, False, True])
 
-
+@pytest.mark.skip
 def test_creating_with_keyword_value():
     f = Format(['x: u10', 'u10={2*x}'])
     b = f.build([6])
     assert b == 'u10=6, u10=12'
 
-
+@pytest.mark.skip
 def test_items():
     f = Format(['q:i5', '[u3; {q + 1}]'])
     b = Bits.from_string('i5=1, u3=2, u3=0')

@@ -147,7 +147,7 @@ class Repeat(FieldType):
     def __init__(self, count: int | str | Iterable, fieldtype: FieldType | str | Dtype | Bits | Sequence[FieldType | str]):
         super().__init__()
         self._bits = None
-        self.count, self.count_expression = _perhaps_convert_to_expression(count)
+        self.count = count
         if isinstance(fieldtype, str):
             self.fieldtype = Field.from_string(fieldtype)
         elif isinstance(fieldtype, Bits):
@@ -163,10 +163,7 @@ class Repeat(FieldType):
         self._values = []
 
     def _str(self, indent: int) -> str:
-        if self.count_expression is not None:
-            count_str = self.count_expression
-        else:
-            count_str = str(self.count)
+        count_str = str(self.count)
         count_str = f'({count_str})'
 
         s = f"{_indent(indent)}{self.__class__.__name__}{count_str}\n"
