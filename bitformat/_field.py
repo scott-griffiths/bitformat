@@ -144,35 +144,23 @@ class SingleDtypeField(FieldType):
         return [self]
 
     @staticmethod
-    def _parse_field_str(dtype_str: str) -> tuple[str, str, str, int | None, bool | None]:
+    def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
         pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
-        match = re.match(pattern, dtype_str)
+        match = re.match(pattern, field_str)
         if match:
             name = match.group('name')
             const = match.group('const') is not None
-            dtype = match.group('dtype').strip()
+            dtype_str = match.group('dtype').strip()
             value = match.group('value')
         else:
-            raise ValueError(f"Invalid field string '{dtype_str}'.")
+            raise ValueError(f"Invalid field string '{field_str}'.")
         name = '' if name is None else name.strip()
-        # Now check if the dtype is actually a FieldArray
-        if dtype[0] == '[' and dtype[-1] == ']':
-            p = dtype.find(';')
-            if p == -1:
-                raise ValueError(f"Invalid field string '{dtype_str}'.")
-            items = dtype[p+1:-1].strip()
-            dtype = dtype[1:p].strip()
-        else:
-            items = None
-        return dtype, name, value, items, const
+        return dtype_str, name, value, const
 
     @staticmethod
     def _str_common(dtype, name, value, const, item_str='') -> str:
         const_str = 'const ' if const else ''
-        if item_str == '':
-            d = f"{colour.purple}{const_str}{dtype}{colour.off}"
-        else:
-            d = f"{colour.purple}{const_str}[{dtype}; {item_str}]{colour.off}"
+        d = f"{colour.purple}{const_str}{dtype}{colour.off}"
         n = '' if name == '' else f"{colour.green}{name}{colour.off}: "
         if isinstance(value, Array):
             v = f" = {colour.cyan}{value.to_list()}{colour.off}"
@@ -185,10 +173,7 @@ class SingleDtypeField(FieldType):
         const_str = 'const ' if const else ''
         if name != '':
             name = f"{name}: "
-        if item_str == '':
-            dtype = f"{const_str}{dtype}"
-        else:
-            dtype = f"{const_str}[{dtype}; {item_str}]"
+        dtype = f"{const_str}{dtype}"
         if isinstance(value, Array):
             v = f" = {value.to_list()}"
         else:
@@ -229,15 +214,16 @@ class Field(SingleDtypeField):
 
     @classmethod
     def from_string(cls, s: str, /):
-        dtype, name, value, items, const = cls._parse_field_str(s)
-        if items is not None:
-            raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
+        dtype_str, name, value, const = cls._parse_field_str(s)
         try:
-            dtype = Dtype.from_string(dtype)
+            dtype = Dtype.from_string(dtype_str)
         except ValueError:
-            bits = Bits.from_string(dtype)
+            bits = Bits.from_string(dtype_str)
             const = True  # If it's a bit literal, then set it to const.
             return cls(Dtype.from_parameters('bits'), name, bits, const)
+        else:
+            if dtype.items is not None:
+                raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
         return cls(dtype, name, value, const)
 
     @classmethod
@@ -288,21 +274,16 @@ class Field(SingleDtypeField):
 
 
 class FieldArray(SingleDtypeField):
-    def __init__(self, dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool | None = None) -> None:
+    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
         super().__init__(dtype, name, value, const)
-        self.items = int(items)
 
     @classmethod
     def from_string(cls, s: str, /):
-        dtype, name, value, items, const = cls._parse_field_str(s)
-        if items is None:
+        dtype_str, name, value, const = cls._parse_field_str(s)
+        dtype = Dtype.from_string(dtype_str)
+        if dtype.items is None:
             raise ValueError(f"Field string '{s}' is not a FieldArray, but a Field.")
-        try:
-            dtype = Dtype.from_string(dtype)
-        except ValueError:
-            bits = Bits.from_string(dtype)
-            return cls(Dtype.from_parameters('bits'), items, name, bits, const)
-        return cls(dtype, items, name, value, const)
+        return cls(dtype, name, value, const)
 
     def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -313,34 +294,35 @@ class FieldArray(SingleDtypeField):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        self._bits = b[:self.dtype.item_size * self.items]
+        self._bits = b[:self.dtype.item_size * self.dtype.items]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.item_size * self.items
+        return self.dtype.item_size * self.dtype.items
 
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-        return Array(self.dtype, self._bits).to_list() if self._bits is not None else None
+        return Array(Dtype.from_parameters(self.dtype.name, self.dtype.length), self._bits).to_list() if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
-        a = Array(self.dtype, value)
-        if len(a) != self.items:
-            raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.items}.")
+        # The internal Array has a single element Dtype, so need to convert.
+        a = Array(Dtype.from_parameters(self.dtype.name, self.dtype.length), value)
+        if len(a) != self.dtype.items:
+            raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.dtype.items}.")
         self._bits = a.to_bits()
 
     value = property(_getvalue, _setvalue)
 
     def _str(self, indent: int) -> str:
-        item_str = str(self.items)
+        item_str = str(self.dtype.items)
         return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     def _repr(self, indent: int) -> str:
-        item_str = str(self.items)
+        item_str = str(self.dtype.items)
         return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const, item_str)}"
 
     # This repr is used when the field is the top level object

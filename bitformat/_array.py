@@ -199,9 +199,10 @@ class Array:
                 dtype = Dtype.from_string(new_dtype)
             except ValueError:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}'.")
-            if dtype.length == 0:
-                raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
             self._dtype = dtype
+        if self._dtype.length <= 0:
+            raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
+
 
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""

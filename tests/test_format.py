@@ -107,13 +107,13 @@ class TestAddition:
 class TestArray:
 
     def test_simple_array(self):
-        array_field = FieldArray('u8', 20, 'my_array')
+        array_field = FieldArray('[u8; 20]', 'my_array')
         f = Format([array_field], 'a')
-        assert f.fieldtypes[0].items == 20
+        assert f.fieldtypes[0].dtype.items == 20
         a = f.build([list(range(20))])
 
         f2 = Format(['new_array: [u8;20]'], 'b')
-        assert f2.fieldtypes[0].items == 20
+        assert f2.fieldtypes[0].dtype.items == 20
         assert f2.fieldtypes[0].value is None
         f2['new_array'] = a
         assert a == f2.to_bits()

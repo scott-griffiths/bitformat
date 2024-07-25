@@ -146,8 +146,8 @@ def test_field_str():
 
 def test_field_array():
     f = FieldArray.from_string('[u8; 3]')
-    assert f.dtype == Dtype.from_string('u8')
-    assert f.items == 3
+    assert f.dtype == Dtype.from_string('[u8; 3]')
+    assert f.dtype.items == 3
     b = f.build([1, 2, 3])
     assert b == '0x010203'
     assert type(b) is Bits
