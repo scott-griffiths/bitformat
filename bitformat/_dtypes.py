@@ -264,18 +264,6 @@ class DtypeDefinition:
             self.get_fn = allowed_length_checked_get_fn  # Interpret everything and check the length
         else:
             self.get_fn = get_fn  # Interpret everything
-
-        # Create a reading function from the get_fn.
-        if self.allowed_lengths.only_one_value():
-            def read_fn(bs, start: int):
-                return self.get_fn(bs[start:start + self.allowed_lengths.values[0]])
-        else:
-            def read_fn(bs, start: int, length: int):
-                if len(bs) < start + length:
-                    raise ValueError(f"Needed a length of at least {length} bits, but only {len(bs) - start} bits were available.")
-                return self.get_fn(bs[start:start + length])
-        self.read_fn = read_fn
-
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def get_dtype(self, length: int = 0, items: int | None = None) -> Dtype:
