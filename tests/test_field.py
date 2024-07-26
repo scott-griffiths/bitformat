@@ -13,11 +13,6 @@ class TestCreation:
             f2 = Field(str(d))
             assert f2.dtype == f.dtype
 
-        without_length = [Dtype('bytes'), Dtype('int')]
-        for b in without_length:
-            f = Field(b)
-            assert f.dtype.length == 0
-
     @given(st.integers(0, 255))
     def test_creation_from_dtype_with_value(self, x):
         f = Field(Dtype.from_string('u8'), value=x)
@@ -156,3 +151,12 @@ def test_field_array():
     v = f.parse(b)
     assert f.value == (1, 2, 3)
     assert v == 24
+
+def test_field_array_issues():
+    with pytest.raises(ValueError):
+        _ = Field.from_string('[u; 3]')
+    with pytest.raises(ValueError):
+        _ = Field(Dtype('f'))
+    f = Field.from_string('[bool; 10]')
+    assert len(f) == 10
+

@@ -27,6 +27,9 @@ class Format(FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
 
+    def __len__(self):
+        return sum(len(f) for f in self.fieldtypes)
+
     def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:

@@ -27,13 +27,13 @@ Some of these types will usually be used as part of a larger structure, where th
    * - :ref:`fieldtype_quick_reference`
      - n/a
      - The abstract base class for the other classes listed here.
-   * - :ref:`field_quick_reference`
+   * - :ref:`field_quick_reference` (Single)
      - ✓
      - A single data type, with optional name and value.
    * -
      -
      - ``'name: dtype = value'``
-   * - :ref:`fieldarray_quick_reference`
+   * - :ref:`field_quick_reference` (Array)
      - ✓
      - An array of a single fixed-length data type, with optional name and value.
    * -
@@ -103,28 +103,6 @@ Additional properties
 * :attr:`~Field.dtype`: The data type of the field.
 * :attr:`~Field.const`: Whether the field is a constant bit literal.
 
-
-.. _fieldarray_quick_reference:
-
-FieldArray
-----------
-
-A `FieldArray` has a single data type like `Field`, but instead holds an array of that type.
-The dtype must have a fixed length to be used in a `FieldArray`.
-
-``FieldArray(dtype: Dtype | str, items: str | int, name: str = '', value: Any = None, const: bool = False)``
-
-Additional methods
-^^^^^^^^^^^^^^^^^^
-
-* :meth:`~Field.from_string`: Construct from a formatted string to set the `dtype`, `items`, `name`, `value` and `const` parameters.
-
-Additional properties
-^^^^^^^^^^^^^^^^^^^^^
-
-* :attr:`~Field.const`: Whether the field is a constant bit literal.
-* :attr:`~Field.dtype`: The data type of the field.
-* :attr:`~Field.items`: The number of items in the array.
 
 .. _format_quick_reference:
 

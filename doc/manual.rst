@@ -52,13 +52,12 @@ A number of classes are available in bitformat to store and manipulate binary da
 
 These are the building blocks for more complex fields that can be used to make a binary format.
 
-* ``Field`` - A single data type, with an optional name and value.
-* ``FieldArray`` - An array of a single fixed-length data type, with an optional name and value.
+* ``Field`` - Either one value or an array, with a single data type, with an optional name and value.
 * ``Format`` - A sequence of other FieldTypes, with an optional name.
 
 For this quick tour we'll assume that `bitformat` has been installed (``pip install bitformat``) and these classes have all been imported::
 
-    from bitformat import Bits, Dtype, Array, Field, FieldArray, Format
+    from bitformat import Bits, Dtype, Array, Field, Format
 
 Bits
 ----

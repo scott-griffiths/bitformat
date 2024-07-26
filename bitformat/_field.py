@@ -93,6 +93,10 @@ class FieldType(abc.ABC):
     def _getvalue(self) -> Any:
         ...
 
+    @abc.abstractmethod
+    def __len__(self) -> int:
+        ...
+
     def __str__(self) -> str:
         return self._str(0)
 
@@ -124,14 +128,40 @@ class Field(FieldType):
         if isinstance(self.dtype, str):
             try:
                 self.dtype = Dtype.from_string(dtype)
-            except ValueError:
-                raise ValueError(f"Can't convert '{dtype}' string to a Dtype.")
+            except ValueError as e:
+                raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         self.name = name
-
         if const is True and value is None:
             raise ValueError(f"Can't set a field to be constant if it has no value.")
         self.const = const
         self.value = value
+        if self.dtype.length == 0:
+            if self.value is not None:
+                self.dtype.length == len(self.value)
+            else:
+                raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
+
+    def __len__(self) -> int:
+        return self.dtype.total_bitlength
+
+    @classmethod
+    def from_string(cls, s: str, /):
+        dtype_str, name, value, const = cls._parse_field_str(s)
+        try:
+            dtype = Dtype.from_string(dtype_str)
+        except ValueError:
+            bits = Bits.from_string(dtype_str)
+            const = True  # If it's a bit literal, then set it to const.
+            return cls(Dtype.from_parameters('bits'), name, bits, const)
+        return cls(dtype, name, value, const)
+
+    @classmethod
+    def from_bits(cls, b: Bits, /, name: str = ''):
+        return cls(Dtype.from_parameters('bits'), name, b, const=True)
+
+    @classmethod
+    def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
+        return cls(Dtype.from_parameters('bytes'), name, b, const=True)
 
     def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -205,27 +235,6 @@ class Field(FieldType):
         if self.name != '':
             vars_[self.name] = self.value
         return self._bits, 1
-
-
-
-    @classmethod
-    def from_string(cls, s: str, /):
-        dtype_str, name, value, const = cls._parse_field_str(s)
-        try:
-            dtype = Dtype.from_string(dtype_str)
-        except ValueError:
-            bits = Bits.from_string(dtype_str)
-            const = True  # If it's a bit literal, then set it to const.
-            return cls(Dtype.from_parameters('bits'), name, bits, const)
-        return cls(dtype, name, value, const)
-
-    @classmethod
-    def from_bits(cls, b: Bits, /, name: str = ''):
-        return cls(Dtype.from_parameters('bits'), name, b, const=True)
-
-    @classmethod
-    def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
-        return cls(Dtype.from_parameters('bytes'), name, b, const=True)
 
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         return self._parse_common(b, vars_)
