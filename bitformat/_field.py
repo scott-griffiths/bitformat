@@ -164,7 +164,9 @@ class Field(FieldType):
         return cls(Dtype.from_parameters('bytes'), name, b, const=True)
 
     def to_bits(self) -> Bits:
-        return self._bits if self._bits is not None else Bits()
+        if self._bits is None:
+            raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
+        return self._bits
 
     def clear(self) -> None:
         if not self.const:

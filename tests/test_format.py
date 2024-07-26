@@ -297,3 +297,19 @@ def test_format_repr_string():
     f = Format(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
     assert r == "Format([\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n], 'dave')"
+
+def test_to_bits():
+    f = Format(['u8', 'u8', 'u8'])
+    f.build([1, 2, 3])
+    b = f.to_bits()
+    assert b == 'u8=1, u8=2, u8=3'
+    f[1].clear()
+    assert f[0].value == 1
+    assert f[1].value is None
+    assert f[2].value == 3
+    assert f.value == [1, None, 3]
+    assert f[0].to_bits() == 'u8=1'
+    with pytest.raises(ValueError):
+        _ = f[1].to_bits()
+    with pytest.raises(ValueError):
+        _ = f.to_bits()
