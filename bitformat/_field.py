@@ -9,7 +9,7 @@ from ._common import colour, Expression, _indent
 from typing import Any, Sequence
 
 
-__all__ = ['Field', 'FieldArray']
+__all__ = ['Field']
 
 def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
     if not isinstance(s, str):
@@ -186,10 +186,10 @@ class SingleDtypeField(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        self._bits = b[:self.dtype.item_size]
+        self._bits = b[:self.dtype.total_bitlength]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.item_size
+        return self.dtype.total_bitlength
 
     def _build_common(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -221,9 +221,6 @@ class Field(SingleDtypeField):
             bits = Bits.from_string(dtype_str)
             const = True  # If it's a bit literal, then set it to const.
             return cls(Dtype.from_parameters('bits'), name, bits, const)
-        else:
-            if dtype.items is not None:
-                raise ValueError(f"Field string '{s}' is not a Field, but a FieldArray.")
         return cls(dtype, name, value, const)
 
     @classmethod
@@ -269,77 +266,6 @@ class Field(SingleDtypeField):
         if self.dtype != other.dtype:
             return False
         if self._bits != other._bits:
-            return False
-        return True
-
-
-class FieldArray(SingleDtypeField):
-    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
-        super().__init__(dtype, name, value, const)
-
-    @classmethod
-    def from_string(cls, s: str, /):
-        dtype_str, name, value, const = cls._parse_field_str(s)
-        dtype = Dtype.from_string(dtype_str)
-        if dtype.items is None:
-            raise ValueError(f"Field string '{s}' is not a FieldArray, but a Field.")
-        return cls(dtype, name, value, const)
-
-    def to_bits(self) -> Bits:
-        return self._bits if self._bits is not None else Bits()
-
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        if self.const:
-            value = b[:len(self._bits)]
-            if value != self._bits:
-                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
-            return len(self._bits)
-        self._bits = b[:self.dtype.item_size * self.dtype.items]
-        if self.name != '':
-            vars_[self.name] = self.value
-        return self.dtype.item_size * self.dtype.items
-
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        return self._build_common(values, index, vars_, kwargs)
-
-    def _getvalue(self) -> Any:
-        return Array(Dtype.from_parameters(self.dtype.name, self.dtype.length), self._bits).to_list() if self._bits is not None else None
-
-    def _setvalue(self, value: Any) -> None:
-        if value is None:
-            self._bits = None
-            return
-        # The internal Array has a single element Dtype, so need to convert.
-        a = Array(Dtype.from_parameters(self.dtype.name, self.dtype.length), value)
-        if len(a) != self.dtype.items:
-            raise ValueError(f"For FieldArray {self}, {len(a)} values were provided, but expected {self.dtype.items}.")
-        self._bits = a.to_bits()
-
-    value = property(_getvalue, _setvalue)
-
-    def _str(self, indent: int) -> str:
-        item_str = str(self.dtype.items)
-        return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const, item_str)}"
-
-    def _repr(self, indent: int) -> str:
-        item_str = str(self.dtype.items)
-        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const, item_str)}"
-
-    # This repr is used when the field is the top level object
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.from_string('{self.__str__()}')"
-
-    def __eq__(self, other: Any) -> bool:
-        if self.dtype != other.dtype:
-            return False
-        x = self.value
-        y = other.value
-        if isinstance(x, Array):
-            if not isinstance(y, Array):
-                return False
-            if not x.equals(y):
-                return False
-        elif x != y:
             return False
         return True
 

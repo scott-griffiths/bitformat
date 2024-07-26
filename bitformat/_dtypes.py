@@ -161,6 +161,10 @@ class Dtype:
             if self.item_size != 0 and len(b) != self.item_size:
                 raise ValueError(f"Dtype has a length of {self.item_size} bits, but value '{value}' has {len(b)} bits.")
             return b
+        if isinstance(value, bitformat.Bits):
+            if len(value) != self.total_bitlength:
+                raise ValueError(f"Expected {self.total_bitlength} bits, but got {len(value)} bits.")
+            return value
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         for v in value:

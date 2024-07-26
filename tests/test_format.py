@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Array, FieldArray
+from bitformat import Format, Dtype, Bits, Field, Array
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -107,7 +107,7 @@ class TestAddition:
 class TestArray:
 
     def test_simple_array(self):
-        array_field = FieldArray('[u8; 20]', 'my_array')
+        array_field = Field('[u8; 20]', 'my_array')
         f = Format([array_field], 'a')
         assert f.fieldtypes[0].dtype.items == 20
         a = f.build([list(range(20))])
@@ -288,9 +288,9 @@ def test_repeat_with_dtype():
     assert f.value == [-400, 200, -200, 400]
 
 def test_field_array_str():
-    with pytest.raises(ValueError):
-        _ = FieldArray.from_string('test   :  f32 = 0.25  ')
-    f = FieldArray.from_string('test: [f32 ; 3]')
+    f = Field.from_string('test   :  f32 = 0.25  ')
+    assert str(f) == 'test: f32 = 0.25'
+    f = Field.from_string('test: [f32 ; 3]')
     assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():

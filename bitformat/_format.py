@@ -6,7 +6,7 @@ from typing import Sequence, Any, Iterable
 import copy
 
 from ._common import colour, _indent
-from ._field import FieldType, Field, FieldArray, _perhaps_convert_to_expression
+from ._field import FieldType, Field, _perhaps_convert_to_expression
 
 __all__ = ['Format']
 
@@ -22,11 +22,7 @@ class Format(FieldType):
         self.vars = {}
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
-                # TODO: This is inefficient, parsing the string twice.
-                try:
-                    fieldtype = FieldArray.from_string(fieldtype)
-                except ValueError:
-                    fieldtype = Field.from_string(fieldtype)
+                fieldtype = Field.from_string(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
