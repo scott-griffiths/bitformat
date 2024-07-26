@@ -115,11 +115,10 @@ class FieldType(abc.ABC):
     name = property(_get_name, _set_name)
 
 
-class SingleDtypeField(FieldType):
-    """Holds the common code for other Field classes with a single Dtype.
-    This class should not be used directly."""
+class Field(FieldType):
 
-    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> None:
+    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
+        super().__init__()
         self._bits = None
         self.dtype = dtype
         if isinstance(self.dtype, str):
@@ -132,6 +131,7 @@ class SingleDtypeField(FieldType):
         if const is True and value is None:
             raise ValueError(f"Can't set a field to be constant if it has no value.")
         self.const = const
+        self.value = value
 
     def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
@@ -207,10 +207,6 @@ class SingleDtypeField(FieldType):
         return self._bits, 1
 
 
-class Field(SingleDtypeField):
-    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
-        super().__init__(dtype, name, value, const)
-        self.value = value
 
     @classmethod
     def from_string(cls, s: str, /):
@@ -263,9 +259,12 @@ class Field(SingleDtypeField):
         return f"{self.__class__.__name__}.from_string('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
-        if self.dtype != other.dtype:
-            return False
-        if self._bits != other._bits:
+        try:
+            if self.dtype != other.dtype:
+                return False
+            if self._bits != other._bits:
+                return False
+        except AttributeError:
             return False
         return True
 
