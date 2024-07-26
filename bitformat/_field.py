@@ -218,6 +218,8 @@ class Field(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
+        if len(b) < self.dtype.total_bitlength:
+            raise ValueError(f"Field '{str(self)}' needs {self.dtype.total_bitlength} bits to parse, but only {len(b)} were available.")
         self._bits = b[:self.dtype.total_bitlength]
         if self.name != '':
             vars_[self.name] = self.value

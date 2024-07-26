@@ -313,3 +313,14 @@ def test_to_bits():
         _ = f[1].to_bits()
     with pytest.raises(ValueError):
         _ = f.to_bits()
+
+def test_partial_parse():
+    f = Format(['bool',
+                '[f16;3]'])
+    b = Bits.from_string('0b1, f16=1.0, f16=2.0, f16=3.0')
+    f.parse(b)
+    assert f[0].value == True
+    assert f[1].value == (1.0, 2.0, 3.0)
+    f.clear()
+    with pytest.raises(ValueError):
+        _ = f.parse(b[:-16])
