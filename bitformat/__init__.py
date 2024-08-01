@@ -135,4 +135,4 @@ for alias in aliases:
     dtype_register.add_dtype_alias(alias[0], alias[1])
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Options', 'options']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'options', 'dtype_register']

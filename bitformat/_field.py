@@ -118,31 +118,47 @@ class FieldType(abc.ABC):
         self._name = val
     name = property(_get_name, _set_name)
 
+    # TODO: This should be the setter of a bits property (?)
+    def set_bits(self, b: Bits) -> None:
+        b = Bits.from_auto(b)
+        if len(b) != len(self):
+            raise ValueError(f"Can't set a field to have {len(b)} bits when it needs {len(self)} bits.")
+        self._bits = b
+
+
 
 class Field(FieldType):
 
-    def __init__(self, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> None:
-        super().__init__()
-        self._bits = None
-        self.dtype = dtype
-        if isinstance(self.dtype, str):
+    def __new__(cls, token: str | None = None) -> Field:
+        if token is None:
+            x = super().__new__(cls)
+            return x
+        return cls.from_string(token)
+
+    @classmethod
+    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> Field:
+        x = super().__new__(cls)
+        x._bits = None
+        x._dtype = dtype
+        if isinstance(x._dtype, str):
             try:
-                self.dtype = Dtype.from_string(dtype)
+                x._dtype = Dtype.from_string(dtype)
             except ValueError as e:
                 raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
-        self.name = name
+        x.name = name
         if const is True and value is None:
             raise ValueError(f"Can't set a field to be constant if it has no value.")
-        self.const = const
-        self.value = value
-        if self.dtype.length == 0:
-            if self.value is not None:
-                self.dtype.length == len(self.value)
+        x.const = const
+        x.value = value
+        if x._dtype.length == 0:
+            if x.value is not None:
+                x._dtype.length == len(x.value)
             else:
                 raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
+        return x
 
     def __len__(self) -> int:
-        return self.dtype.total_bitlength
+        return self._dtype.total_bitlength
 
     @classmethod
     def from_string(cls, s: str, /):
@@ -152,16 +168,16 @@ class Field(FieldType):
         except ValueError:
             bits = Bits.from_string(dtype_str)
             const = True  # If it's a bit literal, then set it to const.
-            return cls(Dtype.from_parameters('bits'), name, bits, const)
-        return cls(dtype, name, value, const)
+            return cls.from_parameters(Dtype.from_parameters('bits'), name, bits, const)
+        return cls.from_parameters(dtype, name, value, const)
 
     @classmethod
     def from_bits(cls, b: Bits, /, name: str = ''):
-        return cls(Dtype.from_parameters('bits'), name, b, const=True)
+        return cls.from_parameters(Dtype.from_parameters('bits'), name, b, const=True)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
-        return cls(Dtype.from_parameters('bytes'), name, b, const=True)
+        return cls.from_parameters(Dtype.from_parameters('bytes'), name, b, const=True)
 
     def to_bits(self) -> Bits:
         if self._bits is None:
@@ -218,12 +234,12 @@ class Field(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
             return len(self._bits)
-        if len(b) < self.dtype.total_bitlength:
-            raise ValueError(f"Field '{str(self)}' needs {self.dtype.total_bitlength} bits to parse, but only {len(b)} were available.")
-        self._bits = b[:self.dtype.total_bitlength]
+        if len(b) < self._dtype.total_bitlength:
+            raise ValueError(f"Field '{str(self)}' needs {self._dtype.total_bitlength} bits to parse, but only {len(b)} were available.")
+        self._bits = b[:self._dtype.total_bitlength]
         if self.name != '':
             vars_[self.name] = self.value
-        return self.dtype.total_bitlength
+        return self._dtype.total_bitlength
 
     def _build_common(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -247,33 +263,43 @@ class Field(FieldType):
         return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
-        return self.dtype.unpack(self._bits) if self._bits is not None else None
+        return self._dtype.unpack(self._bits) if self._bits is not None else None
 
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
         try:
-            self._bits = self.dtype.pack(value)
+            self._bits = self._dtype.pack(value)
         except ValueError as e:
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 
     value = property(_getvalue, _setvalue)
 
+    def _getdtype(self) -> Dtype:
+        return self._dtype
+
+    def _setdtype(self, dtype: Dtype | str) -> None:
+        if isinstance(dtype, str):
+            dtype = Dtype.from_string(dtype)
+        self._dtype = dtype
+
+    dtype = property(_getdtype, _setdtype)
+
     def _str(self, indent: int) -> str:
-        return f"{_indent(indent)}{self._str_common(self.dtype, self.name, self.value, self.const)}"
+        return f"{_indent(indent)}{self._str_common(self._dtype, self.name, self.value, self.const)}"
 
     # This simple repr used when field is part of a larger object
     def _repr(self, indent: int) -> str:
-        return f"{_indent(indent)}{self._repr_common(self.dtype, self.name, self.value, self.const)}"
+        return f"{_indent(indent)}{self._repr_common(self._dtype, self.name, self.value, self.const)}"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}.from_string('{self.__str__()}')"
+        return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         try:
-            if self.dtype != other.dtype:
+            if self._dtype != other._dtype:
                 return False
             if self._bits != other._bits:
                 return False

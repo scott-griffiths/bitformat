@@ -17,14 +17,14 @@ class TestCreation:
 
     def test_create_from_dtype(self):
         d = Dtype.from_string('u12')
-        f = Format([Field(d)], 'x')
+        f = Format([Field.from_parameters(d)], 'x')
         x = f.build([1000])
         assert f.name == 'x'
         assert x == 'u12=1000'
         assert len(x) == 12
 
     def test_create_from_bits_string(self):
-        f = Format([Field('float16', 'foo', 12.5)], 'x')
+        f = Format([Field.from_parameters('float16', 'foo', 12.5)], 'x')
         g = Format(['foo: float16=12.5'], 'y')
         assert f.to_bits() == g.to_bits()
         assert f.name == 'x'
@@ -80,15 +80,49 @@ class TestCreation:
         assert f['header']['width'].value == 100
         assert f['main']['v2'].value == -99
 
-    @pytest.mark.skip
-    def test_format_in_itself(self):
-        f = Format(['x:u8'])
-        g = Format(['y:u8'])
-        f += g
-        b = f.build([10, [20]])
-        f.clear()
-        f.parse(b)
-        assert f.value == [10, [20]]
+    # def test_format_in_itself(self):
+    #     f = Format(['x:u8'])
+    #     g = Format(['y:u8'])
+    #     f += g
+    #     b = f.build([10, 20])
+    #     # b = f.build(Bits('0x1234'))
+    #     f.clear()
+    #     f.parse(b)
+    #     assert f.value == [10, [20]]
+
+@pytest.mark.skip
+def test_building():
+    f1 = Field('u8')
+    f1.build(9)
+    assert f1.value == 9
+
+    f2 = Field('[u8; 3]')
+    f2.build([1, 2, 3])
+    assert f2.value == (1, 2, 3)
+
+    f3 = Format(['u8'])
+    f3.build([4])
+    assert f3.value == [4]
+
+    f4 = Format(['[u8; 3]'])
+    f4.build([[1, 2, 3]])
+    assert f4.value == [(1, 2, 3)]
+
+    f5 = Format(['u8', '[u8; 3]'])
+    f5.build([4, [1, 2, 3]])
+    assert f5.value == [4, (1, 2, 3)]
+
+    f6 = Format(['u8', '[u8; 3]', 'u8'])
+    f6.build([4, [1, 2, 3], 5])
+    assert f6.value == [4, (1, 2, 3), 5]
+
+    f7 = Format([f1, f2])
+    f7.build([6, [4, 5, 6]])
+    assert f7.value == [6, (4, 5, 6)]
+
+    f8 = Format([f1, f7])
+    f8.build([7, [8, [9, 10, 11]]])
+    assert f8.value == [7, (8, (9, 10, 11))]
 
 
 class TestAddition:
@@ -107,7 +141,7 @@ class TestAddition:
 class TestArray:
 
     def test_simple_array(self):
-        array_field = Field('[u8; 20]', 'my_array')
+        array_field = Field.from_parameters('[u8; 20]', 'my_array')
         f = Format([array_field], 'a')
         assert f.fieldtypes[0].dtype.items == 20
         a = f.build([list(range(20))])

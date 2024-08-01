@@ -8,16 +8,16 @@ class TestCreation:
     def test_creation_from_dtype(self):
         ds = [Dtype.from_string(x) for x in ['u9', 'i4', 'f32', 'bytes3', 'bits11']]
         for d in ds:
-            f = Field(d)
+            f = Field.from_parameters(d)
             assert f.dtype == d
             f2 = Field(str(d))
             assert f2.dtype == f.dtype
 
     @given(st.integers(0, 255))
     def test_creation_from_dtype_with_value(self, x):
-        f = Field(Dtype.from_string('u8'), value=x)
+        f = Field.from_parameters(Dtype.from_string('u8'), value=x)
         assert f.value == x
-        f2 = Field.from_string(f'const u8 = {x}')
+        f2 = Field(f'const u8 = {x}')
         assert f2.value == x
 
 
@@ -37,15 +37,15 @@ class TestCreation:
     def test_creation_with_names(self, name):
         assume(name != '')
         if name.isidentifier() and '__' not in name:
-            f = Field('u8', name)
+            f = Field.from_parameters('u8', name)
             assert f.name == name
             f2 = Field.from_string(f'{name}: u8')
             assert f2.name == name
             with pytest.raises(ValueError):
-                _ = Field(f'{name}: u8', name=name)
+                _ = Field.from_parameters(f'{name}: u8', name=name)
         else:
             with pytest.raises(ValueError):
-                _ = Field('u8', name)
+                _ = Field.from_parameters('u8', name)
 
     def test_creation_from_strings(self):
         f = Field.from_string(' flag_12 : bool')
@@ -60,7 +60,7 @@ class TestCreation:
 
     @given(st.binary())
     def test_creation_from_bytes(self, b):
-        f = Field('bytes', name='hello', value=b)
+        f = Field.from_parameters('bytes', name='hello', value=b)
         assert f.value == b
         assert f.name == 'hello'
         assert f.dtype == Dtype('bytes')
@@ -129,13 +129,13 @@ class TestBuilding:
         assert f.value is None
 
 def test_field_str():
-    f = Field('u8', name='x')
+    f = Field.from_parameters('u8', name='x')
     assert str(f) == 'x: u8'
     f = Field('u8')
     assert str(f) == 'u8'
-    f = Field('uint8', value=8)
+    f = Field.from_parameters('uint8', value=8)
     assert str(f) == 'u8 = 8'
-    f = Field('u8', value=8, name='x')
+    f = Field.from_parameters('u8', value=8, name='x')
     assert str(f) == 'x: u8 = 8'
 
 
@@ -152,11 +152,25 @@ def test_field_array():
     assert f.value == (1, 2, 3)
     assert v == 24
 
+
 def test_field_array_issues():
     with pytest.raises(ValueError):
         _ = Field.from_string('[u; 3]')
     with pytest.raises(ValueError):
-        _ = Field(Dtype('f'))
+        _ = Field('f')
     f = Field.from_string('[bool; 10]')
     assert len(f) == 10
 
+
+def test_setting_dtype():
+    f = Field.from_bits('0x0102')
+    f.dtype = '[u8; 2]'
+    assert f.value == (1, 2)
+
+
+def test_creation():
+    f = Field('u8 = 12')
+    assert f.value == 12
+    assert f.const is False
+    f2 = Field('const u8 = 12')
+    assert f2.const is True
