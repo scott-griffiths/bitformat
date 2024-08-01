@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Array, dtype_register
+from bitformat import Format, Dtype, Bits, Field, dtype_register
 from hypothesis import given, settings
-import pytest
 import hypothesis.strategies as st
-import random
 import math
 
-@pytest.mark.skip
+
 @given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
        length=st.integers(1, 100),
        int_value=st.integers(0, 2**800 - 1))
@@ -37,7 +35,10 @@ def test_field_consistency(dtype_name, length, int_value):
         assert f.to_bits() == f2.to_bits()
 
     f3 = eval(repr(f))
-    assert f == f3
+    if isinstance(f.value, float) and math.isnan(f.value):
+        pass  # Can't compare NaN
+    else:
+        assert f == f3
 
 @given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
        length=st.integers(1, 5),
