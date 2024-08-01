@@ -20,9 +20,12 @@ def test_field_consistency(dtype_name, length, int_value):
             length = al.values[1] * length
         else:
             length = al.values[length % len(al.values)]
-    f = Field(Dtype.from_parameters(dtype_name, length))
+    f = Field.from_parameters(Dtype.from_parameters(dtype_name, length))
     f2 = Field.from_string(str(f))
-    assert f == f2
+    if isinstance(f.value, float) and math.isnan(f.value):
+        pass  # Can't compare NaN
+    else:
+        assert f == f2
 
     # Create some bits of the right length
     b = Bits.pack('u800', int_value)[0:length * multiplier]

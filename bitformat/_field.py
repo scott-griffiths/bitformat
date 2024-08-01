@@ -6,7 +6,7 @@ from ._bits import Bits
 from ._dtypes import Dtype
 
 from ._common import colour, Expression, _indent
-from typing import Any, Sequence
+from typing import Any, Sequence, Iterable
 
 
 __all__ = ['Field']
@@ -151,8 +151,8 @@ class Field(FieldType):
         x.const = const
         x.value = value
         if x._dtype.length == 0:
-            if x.value is not None:
-                x._dtype.length == len(x.value)
+            if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
+                x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
             else:
                 raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
         return x
@@ -172,12 +172,13 @@ class Field(FieldType):
         return cls.from_parameters(dtype, name, value, const)
 
     @classmethod
-    def from_bits(cls, b: Bits, /, name: str = ''):
-        return cls.from_parameters(Dtype.from_parameters('bits'), name, b, const=True)
+    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = ''):
+        b = Bits.from_auto(b)
+        return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
-        return cls.from_parameters(Dtype.from_parameters('bytes'), name, b, const=True)
+        return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const=True)
 
     def to_bits(self) -> Bits:
         if self._bits is None:
@@ -295,13 +296,15 @@ class Field(FieldType):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
+        if self._dtype.name == 'bytes':
+            return f"{self.__class__.__name__}.from_bytes({self.value})"
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         try:
             if self._dtype != other._dtype:
                 return False
-            if self._bits != other._bits:
+            if self._dtype.name != 'pad' and self._bits != other._bits:
                 return False
         except AttributeError:
             return False

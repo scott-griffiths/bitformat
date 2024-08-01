@@ -63,20 +63,24 @@ class TestCreation:
         f = Field.from_parameters('bytes', name='hello', value=b)
         assert f.value == b
         assert f.name == 'hello'
-        assert f.dtype == Dtype('bytes')
+        assert f.dtype.name == 'bytes'
+        assert f.dtype.length == len(b)
 
         f = Field.from_bytes(b, name='hello')
         assert f.value == b
         assert f.name == 'hello'
-        assert f.dtype == Dtype('bytes')
+        assert f.dtype.name == 'bytes'
+        assert f.dtype.length == len(b)
 
 
     @given(st.binary())
     def test_creation_from_bits(self, b):
+        b = Bits.from_bytes(b)
         f = Field.from_bits(b, 'hello')
         assert f.value == b
         assert f.name == 'hello'
-        assert f.dtype == Dtype('bits')
+        assert f.dtype.name == 'bits'
+        assert f.dtype.length == len(b)
 
     def test_string_creation_with_const(self):
         f1 = Field.from_string('f1: u1 = 1')
