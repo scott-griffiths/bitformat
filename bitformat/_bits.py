@@ -40,17 +40,6 @@ literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
 
 
 @functools.lru_cache(CACHE_SIZE)
-def parse_single_token(token: str) -> tuple[str, int, str | None]:
-    match = NAME_INT_VALUE_RE.match(token)
-    if not match:
-        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]'.")
-    name, length_str, value = match.groups()
-    length = int(length_str) if length_str else 0
-    value = None if value == '' else value
-    return name, length, value
-
-
-@functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
     bsl = []
@@ -58,7 +47,13 @@ def str_to_bitstore(s: str) -> BitStore:
         if token.startswith(('0x', '0X', '0b', '0B', '0o', '0O')):
             bsl.append(literal_bit_funcs[token[1]](token[2:]))
         else:
-            name, length, value = parse_single_token(token)
+            match = NAME_INT_VALUE_RE.match(token)
+            if not match:
+                raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]' (e.g. "
+                                 "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
+            name, length_str, value = match.groups()
+            length = int(length_str) if length_str else 0
+            value = None if value == '' else value
             bsl.append(Dtype.from_parameters(name, length).pack(value)._bitstore)
     return BitStore.join(bsl)
 
@@ -114,7 +109,7 @@ class Bits:
             return cls.from_bytes(auto)
         elif isinstance(auto, abc.Iterable):
             return cls.from_iterable(auto)
-        raise TypeError(f"Cannot initialise Bits from type '{type(auto)}'.")
+        raise TypeError(f"Cannot convert '{auto}' of type {type(auto)} to a Bits object.")
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -744,7 +739,7 @@ class Bits:
         return None
 
     def _setpad(self, value: None, length: int) -> None:
-        self._bitstore = BitStore.from_zeros(length)
+        raise ValueError("It's not possible to set a 'pad' value.")
 
     def _setbin_safe(self, binstring: str, length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""

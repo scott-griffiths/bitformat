@@ -162,12 +162,10 @@ def test_unorderable():
 class TestPadToken:
 
     def test_creation(self):
-        a = Bits.from_string('pad10')
-        assert a == Bits.pack('bin','0b0000000000')
-        b = Bits.from_string('pad0')
-        assert b == Bits()
-        c = Bits.from_string('0b11, pad1, 0b111')
-        assert c == '0b110111'
+        with pytest.raises(ValueError):
+            _ = Bits.from_string('pad10')
+        with pytest.raises(ValueError):
+            _ = Bits.from_string('pad')
 
     def test_unpack(self):
         s = Bits.from_string('0b111000111')
