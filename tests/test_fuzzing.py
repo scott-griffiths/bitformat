@@ -27,7 +27,7 @@ def test_field_consistency(dtype_name, length, int_value):
 
     # Create some bits of the right length
     b = Bits.pack('u800', int_value)[0:length * multiplier]
-    f.set_bits(b)
+    f.parse(b)
     assert f.to_bits() == b
     v = f.value
     f2.value = v
@@ -58,7 +58,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     assert f == f2
     # Create some bits of the right length
     b = Bits.pack('u320', int_value)[0:length * multiplier * items]
-    f.set_bits(b)
+    f.parse(b)
     assert f.to_bits() == b
     if not isinstance(f.value[0], float) and not f.dtype.name == 'pad':  # Can't compare NaN or pad
         f2.build(f.value)

@@ -118,14 +118,6 @@ class FieldType(abc.ABC):
         self._name = val
     name = property(_get_name, _set_name)
 
-    # TODO: This should be the setter of a bits property (?)
-    def set_bits(self, b: Bits) -> None:
-        b = Bits.from_auto(b)
-        if len(b) != len(self):
-            raise ValueError(f"Can't set a field to have {len(b)} bits when it needs {len(self)} bits.")
-        self._bits = b
-
-
 
 class Field(FieldType):
 
