@@ -35,6 +35,7 @@ class Dtype:
         return cls.from_string(token)
 
     @classmethod
+    @functools.lru_cache(CACHE_SIZE)
     def from_parameters(cls, name: str, length: int = 0, items: int | None = None) -> Dtype:
         """Create a new Dtype from its name, length and items.
 
@@ -46,6 +47,7 @@ class Dtype:
         return x
 
     @classmethod
+    @functools.lru_cache(CACHE_SIZE)
     def from_string(cls, token: str, /) -> Dtype:
         """Create a new Dtype from a token string.
 
@@ -327,6 +329,7 @@ class Register:
                     property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
 
     @classmethod
+    @functools.lru_cache(CACHE_SIZE)
     def get_dtype(cls, name: str, length: int | None, items: int | None = None) -> Dtype:
         try:
             definition = cls.names[name]
@@ -336,6 +339,7 @@ class Register:
             return definition.get_dtype(length, items)
 
     @classmethod
+    @functools.lru_cache(CACHE_SIZE)
     def get_array_dtype(cls, name: str, length: int, items: int) -> Dtype:
         try:
             definition = cls.names[name]

@@ -23,39 +23,36 @@ BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 # Maximum number of digits to use in __str__ and __repr__.
 MAX_CHARS: int = 256
 
-# name[length][=value]
-NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))?$')
+# name[length]=value
+NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))$')
 
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
-literal_bit_funcs: dict[str, Callable[..., BitStore]] = {
-    'x': BitStore.from_hex,
-    'X': BitStore.from_hex,
-    'b': BitStore.from_bin,
-    'B': BitStore.from_bin,
-    'o': BitStore.from_oct,
-    'O': BitStore.from_oct,
-}
+
+@functools.lru_cache(CACHE_SIZE)
+def token_to_bitstore(token: str) -> BitStore:
+    if token[0] != '0':
+        match = NAME_INT_VALUE_RE.match(token)
+        if not match:
+            raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
+                             "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
+        name, length_str, value = match.groups()
+        length = int(length_str) if length_str else 0
+        return Dtype.from_parameters(name, length).pack(value)._bitstore
+    if token.startswith(('0x', '0X')):
+        return BitStore.from_hex(token[2:])
+    if token.startswith(('0b', '0B')):
+        return BitStore.from_bin(token[2:])
+    if token.startswith(('0o', '0O')):
+        return BitStore.from_oct(token[2:])
+    raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
 
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
-    bsl = []
-    for token in (t for t in s.split(',') if t):
-        if token.startswith(('0x', '0X', '0b', '0B', '0o', '0O')):
-            bsl.append(literal_bit_funcs[token[1]](token[2:]))
-        else:
-            match = NAME_INT_VALUE_RE.match(token)
-            if not match:
-                raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length][=value]' (e.g. "
-                                 "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-            name, length_str, value = match.groups()
-            length = int(length_str) if length_str else 0
-            value = None if value == '' else value
-            bsl.append(Dtype.from_parameters(name, length).pack(value)._bitstore)
-    return BitStore.join(bsl)
+    return BitStore.join(token_to_bitstore(token) for token in (t for t in s.split(',') if t))
 
 
 class Bits:
