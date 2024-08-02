@@ -54,14 +54,14 @@ class TestCreation:
         assert x, '0xabc'
 
     def test_create_from_list(self):
-        f = Format(['0xabc', 'u5', 'u5'])
+        f = Format(['const bits = 0xabc', 'u5', 'u5'])
         x = f.build([3, 10])
-        assert x == '0xabc, u5=3, u5=10'
+        assert x == 'bits = 0xabc, u5=3, u5=10'
         f.parse(x)
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
-        f = Format(['0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
+        f = Format(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
         assert f.name == 'header'
         b = f.build([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
@@ -70,10 +70,10 @@ class TestCreation:
         assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
-        header = Format(['0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
-        main = Format(['0b1', 'v1:i7', 'v2:i9'], 'main')
-        f = Format([header, main, '0x47'], 'all')
-        b = Bits.from_string('0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47')
+        header = Format(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
+        main = Format(['bits = 0b1', 'v1:i7', 'v2:i9'], 'main')
+        f = Format([header, main, 'bits = 0x47'], 'all')
+        b = Bits.from_string('bits = 0x000001b3, u12=100, u12=200, bits = 0b1, bits = 0b0, bits = 0b1, i7=5, i9=-99, bits = 0x47')
         f.parse(b)
         t = f['header']
         assert t['width'].value == 100
@@ -212,10 +212,10 @@ def test_items():
 class TestMethods:
 
     def test_clear(self):
-        f = Format(['0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
+        f = Format(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format(['0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
+        g = Format(['bits = 0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
         assert f == g
 
     def test_get_item(self):

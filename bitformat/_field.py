@@ -153,23 +153,17 @@ class Field(FieldType):
         return self._dtype.total_bitlength
 
     @classmethod
-    def from_string(cls, s: str, /):
+    def from_string(cls, s: str, /) -> Field:
         dtype_str, name, value, const = cls._parse_field_str(s)
-        try:
-            dtype = Dtype.from_string(dtype_str)
-        except ValueError:
-            bits = Bits.from_string(dtype_str)
-            const = True  # If it's a bit literal, then set it to const.
-            return cls.from_parameters(Dtype.from_parameters('bits'), name, bits, const)
-        return cls.from_parameters(dtype, name, value, const)
+        return cls.from_parameters(dtype_str, name, value, const)
 
     @classmethod
-    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = ''):
+    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
         b = Bits.from_auto(b)
         return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
 
     @classmethod
-    def from_bytes(cls, b: bytes | bytearray, /, name: str = ''):
+    def from_bytes(cls, b: bytes | bytearray, /, name: str = '') -> Field:
         return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const=True)
 
     def to_bits(self) -> Bits:
@@ -305,7 +299,7 @@ class Field(FieldType):
 
 class Find(FieldType):
 
-    def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = ''):
+    def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = '') -> None:
         super().__init__()
         self.bits_to_find = Bits.from_string(bits)
         self.bytealigned = bytealigned
