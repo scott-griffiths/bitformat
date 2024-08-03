@@ -37,6 +37,7 @@ from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field
 from ._format import Format
 from ._options import Options
+from ._common import Expression
 from typing import Literal
 
 # The Options class returns a singleton.
@@ -135,4 +136,4 @@ for alias in aliases:
     dtype_register.add_dtype_alias(alias[0], alias[1])
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'options', 'dtype_register']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'options', 'dtype_register']

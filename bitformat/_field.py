@@ -11,6 +11,7 @@ from typing import Any, Sequence, Iterable
 
 __all__ = ['Field']
 
+
 def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
     if not isinstance(s, str):
         return s, None
@@ -139,7 +140,7 @@ class Field(FieldType):
                 raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         x.name = name
         if const is True and value is None:
-            raise ValueError(f"Can't set a field to be constant if it has no value.")
+            raise ValueError(f"Fields with no value cannot be set to be const.")
         x.const = const
         x.value = value
         if x._dtype.length == 0:

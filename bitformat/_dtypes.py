@@ -112,7 +112,6 @@ class Dtype:
         return self._is_signed
 
     @classmethod
-    @functools.lru_cache(CACHE_SIZE)
     def _new_from_token(cls, token: str) -> Dtype:
         d = dtype_register.get_dtype(*_utils.parse_name_length_token(token))
         return d

@@ -31,46 +31,53 @@ colour = Colour(is_interactive_shell)
 
 
 class Expression:
+    """
+    A compiled expression that can be evaluated with a dictionary of variables.
+
+    Created with a string that starts and ends with braces, e.g. '{x + 1}'.
+    """
     def __init__(self, code_str: str):
         """Create an expression object from a string that starts and ends with braces."""
         code_str = code_str.strip()
-        if code_str[0] != '{' or code_str[-1] != '}':
-            raise ValueError(f"Invalid expression: '{code_str}'. It should start with '{{' and end with '}}'.")
+        if len(code_str) < 2 or code_str[0] != '{' or code_str[-1] != '}':
+            raise ValueError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
         self.code_str = code_str[1:-1].strip()
-        self.code = self.compile_safe_eval()
-        # When the expression is evaluated the value is stored.
-        self.value = None
+        self.code = self._compile_safe_eval()
 
-    def compile_safe_eval(self):
+    node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
+                      'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
+                      'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript'}
+
+    def _compile_safe_eval(self):
         """Compile the expression, but only allow a whitelist of operations."""
-        node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
-                          'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
-                          'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript'}
-        nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
-        bad_nodes = nodes_used - node_whitelist
-        if bad_nodes:
-            raise SyntaxError(f"bitformat.Expression: Disallowed operations used in expression '{self.code_str}'. "
-                              f"Disallowed nodes were: {bad_nodes}. "
-                              f"If you think this operation should be allowed, please raise a bug report.")
         if '__' in self.code_str:
-            raise SyntaxError(f"bitformat.Expression: Invalid expression '{self.code_str}'. Double underscores are not permitted.")
-        code = compile(self.code_str, "<string>", "eval")
+            raise ValueError(f"Invalid Expression '{self}'. "
+                             f"Double underscores are not permitted.")
+        try:
+            nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
+        except SyntaxError as e:
+            raise ValueError(f"Failed to parse '{self}': {e}")
+        bad_nodes = nodes_used - Expression.node_whitelist
+        if bad_nodes:
+            raise ValueError(f"Disallowed operations used in Expression '{self}'. "
+                             f"Disallowed nodes were: {bad_nodes}. "
+                             f"If you think this operation should be allowed, please raise a bug report.")
+        try:
+            code = compile(self.code_str, "<string>", "eval")
+        except SyntaxError as e:
+            raise ValueError(f"Failed to compile Expression '{self}': {e}")
         return code
 
-    def safe_eval(self, vars_: dict[str, Any]) -> Any:
+    def evaluate(self, **vars_) -> Any:
         """Evaluate the expression, disallowing all builtins."""
         try:
-            self.value = eval(self.code, {"__builtins__": {}}, vars_)
+            value = eval(self.code, {"__builtins__": {}}, vars_)
         except NameError as e:
-            raise NameError(f'{e}, when evaluating {self.code_str!r} with vars={vars_}.')
-        return self.value
-
-    def clear(self):
-        self.value = None
+            raise ValueError(f"Failed to evaluate Expression '{self}' with vars={vars_}: {e}")
+        return value
 
     def __str__(self):
-        value_str = '' if self.value is None else f' = {self.value}'
-        return f'{{{self.code_str}{value_str}}}'
+        return f"{{{self.code_str}}}"
 
     def __repr__(self):
-        return f"'{self.__str__()}'"
+        return f"{self.__class__.__name__}('{self.__str__()}')"
