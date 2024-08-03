@@ -1,7 +1,5 @@
 import pytest
-from bitformat import Dtype, Bits, Field, Expression
-from hypothesis import given, assume
-import hypothesis.strategies as st
+from bitformat import Expression
 
 
 def test_expression_creation():
@@ -17,8 +15,8 @@ def test_expression_creation():
     assert d.evaluate(x=4, a=4, b=5) == 16
 
 
-def test_disallowed():
-    with pytest.raises(ValueError):
-        _ = Expression('{a(4)}')
-    with pytest.raises(ValueError):
-        _ = Expression('{1 + f__d}')
+def test_disallowed_expressions():
+    for bad_value in ['{a(4)}', '', '{}', '{{}', '{__a}', '{1 + f__d}', '{a=4;}']:
+        with pytest.raises(ValueError):
+            _ = Expression(bad_value)
+

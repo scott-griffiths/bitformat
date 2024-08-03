@@ -51,12 +51,11 @@ class Expression:
     def _compile_safe_eval(self):
         """Compile the expression, but only allow a whitelist of operations."""
         if '__' in self.code_str:
-            raise ValueError(f"Invalid Expression '{self}'. "
-                             f"Double underscores are not permitted.")
+            raise ValueError(f"Invalid Expression '{self}'. Double underscores are not permitted.")
         try:
             nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
         except SyntaxError as e:
-            raise ValueError(f"Failed to parse '{self}': {e}")
+            raise ValueError(f"Failed to parse Expression '{self}': {e}")
         bad_nodes = nodes_used - Expression.node_whitelist
         if bad_nodes:
             raise ValueError(f"Disallowed operations used in Expression '{self}'. "
@@ -68,12 +67,12 @@ class Expression:
             raise ValueError(f"Failed to compile Expression '{self}': {e}")
         return code
 
-    def evaluate(self, **vars_) -> Any:
+    def evaluate(self, **kwargs) -> Any:
         """Evaluate the expression, disallowing all builtins."""
         try:
-            value = eval(self.code, {"__builtins__": {}}, vars_)
+            value = eval(self.code, {"__builtins__": {}}, kwargs)
         except NameError as e:
-            raise ValueError(f"Failed to evaluate Expression '{self}' with vars={vars_}: {e}")
+            raise ValueError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
         return value
 
     def __str__(self):
