@@ -216,7 +216,7 @@ class Field(FieldType):
             v = '' if value is None else f" = {value}"
         return f"'{name}{dtype}{v}'"
 
-    def _parse_common(self, b: Bits, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
@@ -229,7 +229,7 @@ class Field(FieldType):
             vars_[self.name] = self.value
         return self._dtype.total_bitlength
 
-    def _build_common(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
             if self.name != '':
                 vars_[self.name] = self.value
@@ -243,12 +243,6 @@ class Field(FieldType):
         if self.name != '':
             vars_[self.name] = self.value
         return self._bits, 1
-
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        return self._parse_common(b, vars_)
-
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        return self._build_common(values, index, vars_, kwargs)
 
     def _getvalue(self) -> Any:
         return self._dtype.unpack(self._bits) if self._bits is not None else None
