@@ -1,7 +1,6 @@
 from __future__ import annotations
 import abc
 import re
-from ._array import Array
 from ._bits import Bits
 from ._dtypes import Dtype
 
@@ -96,6 +95,7 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def __len__(self) -> int:
+        """The length of the FieldType in bits."""
         ...
 
     def __str__(self) -> str:
@@ -193,41 +193,18 @@ class Field(FieldType):
         name = '' if name is None else name.strip()
         return dtype_str, name, value, const
 
-    @staticmethod
-    def _str_common(dtype, name, value, const, item_str='') -> str:
-        const_str = 'const ' if const else ''
-        d = f"{colour.purple}{const_str}{dtype}{colour.off}"
-        n = '' if name == '' else f"{colour.green}{name}{colour.off}: "
-        if isinstance(value, Array):
-            v = f" = {colour.cyan}{value.to_list()}{colour.off}"
-        else:
-            v = '' if value is None else f" = {colour.cyan}{value}{colour.off}"
-        return f"{n}{d}{v}"
-
-    @staticmethod
-    def _repr_common(dtype, name, value, const, item_str='') -> str:
-        const_str = 'const ' if const else ''
-        if name != '':
-            name = f"{name}: "
-        dtype = f"{const_str}{dtype}"
-        if isinstance(value, Array):
-            v = f" = {value.to_list()}"
-        else:
-            v = '' if value is None else f" = {value}"
-        return f"'{name}{dtype}{v}'"
-
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
             if value != self._bits:
-                raise ValueError(f"Read value '{value}' when '{self._bits}' was expected.")
+                raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)
-        if len(b) < self._dtype.total_bitlength:
-            raise ValueError(f"Field '{str(self)}' needs {self._dtype.total_bitlength} bits to parse, but only {len(b)} were available.")
-        self._bits = b[:self._dtype.total_bitlength]
+        if len(b) < len(self):
+            raise ValueError(f"Field '{str(self)}' needs {len(self)} bits to parse, but only {len(b)} were available.")
+        self._bits = b[:len(self)]
         if self.name != '':
             vars_[self.name] = self.value
-        return self._dtype.total_bitlength
+        return len(self)
 
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -269,11 +246,19 @@ class Field(FieldType):
     dtype = property(_getdtype, _setdtype)
 
     def _str(self, indent: int) -> str:
-        return f"{_indent(indent)}{self._str_common(self._dtype, self.name, self.value, self.const)}"
+        const_str = 'const ' if self.const else ''
+        d = f"{colour.purple}{const_str}{self._dtype}{colour.off}"
+        n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
+        v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
+        return f"{_indent(indent)}{n}{d}{v}"
 
     # This simple repr used when field is part of a larger object
     def _repr(self, indent: int) -> str:
-        return f"{_indent(indent)}{self._repr_common(self._dtype, self.name, self.value, self.const)}"
+        const_str = 'const ' if self.const else ''
+        n = '' if self.name == '' else f"{self.name}: "
+        dtype = f"{const_str}{self._dtype}"
+        v = '' if self.value is None else f" = {self.value}"
+        return f"{_indent(indent)}'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

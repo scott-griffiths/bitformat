@@ -6,7 +6,7 @@ from typing import Sequence, Any, Iterable
 import copy
 
 from ._common import colour, _indent
-from ._field import FieldType, Field, _perhaps_convert_to_expression
+from ._field import FieldType, Field
 
 __all__ = ['Format']
 
@@ -28,9 +28,11 @@ class Format(FieldType):
             self.fieldtypes.append(fieldtype)
 
     def __len__(self):
+        """Return the total length of the Format in bits."""
         return sum(len(f) for f in self.fieldtypes)
 
-    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None, kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
+               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fieldtypes:
             _, v = fieldtype._build(values[index], index + values_used, _vars, kwargs)
