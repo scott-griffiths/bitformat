@@ -140,6 +140,7 @@ def test_len():
 
 
 def test_len_errors():
-    for x in ['u']:
+    for x in ['u', '[u8;]']:
+        d = Dtype(x)
         with pytest.raises(ValueError):
-            _ = len(Dtype(x))
+            _ = len(d)

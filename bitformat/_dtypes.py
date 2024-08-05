@@ -115,7 +115,8 @@ class Dtype:
         if token[-1] == ']':
             p = token.find(';')
             if p != -1:
-                items = int(token[p + 1:-1])
+                t = token[p + 1: -1]
+                items = int(t) if t else 0
                 d = dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
                 return d
         raise ValueError(f"Array tokens should be of the form '[dtype; items]'. Got '{token}'.")
@@ -128,6 +129,8 @@ class Dtype:
             raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no length set.")
         if self._items is None:
             return self._item_size
+        if self._items == 0:
+            raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no number of items set.")
         return self._item_size * self._items
 
     @classmethod
@@ -194,14 +197,16 @@ class Dtype:
         length_str = '' if hide_length else str(self.length)
         if self._items is None:
             return f"{self._name}{length_str}"
-        return f"[{self._name}{length_str}; {self._items}]"
+        items_str = '' if self._items == 0 else f" {self._items}"
+        return f"[{self._name}{length_str};{items_str}]"
 
     def __repr__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
         length_str = '' if hide_length else str(self.length)
         if self._items is None:
             return f"{self.__class__.__name__}('{self._name}{length_str}')"
-        return f"{self.__class__.__name__}('[{self._name}{length_str}; {self._items}]')"
+        items_str = '' if self._items == 0 else f" {self._items}"
+        return f"{self.__class__.__name__}('[{self._name}{length_str};{items_str}]')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
