@@ -122,3 +122,24 @@ class TestCreatingNewDtypes:
             _ = Dtype()
         with pytest.raises(ValueError):
             _ = Dtype('float17')
+
+
+def test_len():
+    a = Dtype('u8')
+    assert len(a) == 8
+    a = Dtype('bits8')
+    assert len(a) == 8
+    a = Dtype('bool')
+    assert len(a) == 1
+    a = Dtype('bytes4')
+    assert len(a) == 32
+    b = Dtype('[u8; 3]')
+    assert len(b) == 24
+    b = Dtype('[bytes3; 4]')
+    assert len(b) == 96
+
+
+def test_len_errors():
+    for x in ['u']:
+        with pytest.raises(ValueError):
+            _ = len(Dtype(x))

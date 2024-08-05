@@ -96,12 +96,6 @@ class Dtype:
         return self._multiplier
 
     @property
-    def total_bitlength(self) -> int:
-        if self._items is None:
-            return self._item_size
-        return self._item_size * self._items
-
-    @property
     def return_type(self) -> Any:
         """The type of the value returned by the parse method, such as int, float or str."""
         return self._return_type
@@ -128,6 +122,13 @@ class Dtype:
 
     def __hash__(self) -> int:
         return hash((self._name, self._item_size))
+
+    def __len__(self) -> int:
+        if self._item_size == 0:
+            raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no length set.")
+        if self._items is None:
+            return self._item_size
+        return self._item_size * self._items
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -163,8 +164,8 @@ class Dtype:
                 raise ValueError(f"Dtype has a length of {self.item_size} bits, but value '{value}' has {len(b)} bits.")
             return b
         if isinstance(value, bitformat.Bits):
-            if len(value) != self.total_bitlength:
-                raise ValueError(f"Expected {self.total_bitlength} bits, but got {len(value)} bits.")
+            if len(value) != len(self):
+                raise ValueError(f"Expected {len(self)} bits, but got {len(value)} bits.")
             return value
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")

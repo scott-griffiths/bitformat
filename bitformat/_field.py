@@ -20,8 +20,13 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
         return s, None
     return None, e
 
+class DtypeWithExpression(Dtype):
+    """Used internally. A Dtype that can contain an Expression instead of fixed values for length or items."""
+    pass
+
 
 class FieldType(abc.ABC):
+
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
@@ -40,7 +45,8 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {e}")
 
     @abc.abstractmethod
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+               kwargs: dict[str, Any]) -> tuple[Bits, int]:
         """Build the field from the values list, starting at index.
 
         Return the bits and the number of values used.
@@ -91,6 +97,10 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def _getvalue(self) -> Any:
+        ...
+
+    @abc.abstractmethod
+    def _setvalue(self, value: Any) -> None:
         ...
 
     @abc.abstractmethod
@@ -151,7 +161,7 @@ class Field(FieldType):
         return x
 
     def __len__(self) -> int:
-        return self._dtype.total_bitlength
+        return len(self._dtype)
 
     @classmethod
     def from_string(cls, s: str, /) -> Field:
@@ -206,7 +216,8 @@ class Field(FieldType):
             vars_[self.name] = self.value
         return len(self)
 
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+               kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
             if self.name != '':
                 vars_[self.name] = self.value
@@ -286,7 +297,8 @@ class Find(FieldType):
         self.name = name
         self._value = None
 
-    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
+               kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
     def to_bits(self) -> Bits:

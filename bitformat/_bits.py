@@ -627,7 +627,7 @@ class Bits:
                 if dtype.length == 0:
                     raise ValueError(f"No length given for dtype '{dtype}'. A length must be specified for each dtype"
                                      " when a list of dtypes is being unpacked.")
-                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.total_bitlength)))
+                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + len(dtype))))
             pos += dtype.length
         return ret_val
 
