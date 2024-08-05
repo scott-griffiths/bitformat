@@ -63,12 +63,15 @@ class Dtype:
 
         """
         token = ''.join(token.split())  # Remove whitespace
-        if token and token[0] == '[':
-            x = cls._new_from_array_token(token)
-            return x
+        if token.startswith('[') and token.endswith(']'):
+            if (p := token.find(';')) == -1:
+                raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
+            t = token[p + 1: -1]
+            items = int(t) if t else 0
+            return dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
         else:
-            x = cls._new_from_token(token)
-            return x
+            d = dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+            return d
 
     @property
     def name(self) -> str:
@@ -77,7 +80,11 @@ class Dtype:
 
     @property
     def length(self) -> int:
-        """The length of the data type in units of the multiplier."""
+        """The length of the data type in units of the multiplier.
+
+        A length of 0 means the length is currently unset.
+
+        """
         return self._item_size // self._multiplier
 
     @property
@@ -87,7 +94,11 @@ class Dtype:
 
     @property
     def items(self) -> int | None:
-        """The number of items in the data type. Will be None unless it's an array."""
+        """The number of items in the data type. Will be None unless it's an array.
+
+        An items equal to 0 means it's an array data type but with items currently unset.
+
+        """
         return self._items
 
     @property
@@ -105,26 +116,15 @@ class Dtype:
         """If True then the data type represents a signed quantity."""
         return self._is_signed
 
-    @classmethod
-    def _new_from_token(cls, token: str) -> Dtype:
-        d = dtype_register.get_dtype(*_utils.parse_name_length_token(token))
-        return d
-
-    @classmethod
-    def _new_from_array_token(cls, token: str) -> Dtype:
-        if token[-1] == ']':
-            p = token.find(';')
-            if p != -1:
-                t = token[p + 1: -1]
-                items = int(t) if t else 0
-                d = dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
-                return d
-        raise ValueError(f"Array tokens should be of the form '[dtype; items]'. Got '{token}'.")
-
     def __hash__(self) -> int:
         return hash((self._name, self._item_size))
 
     def __len__(self) -> int:
+        """The length of the data type in bits.
+
+        Raises ValueError if either the length of the items is not set (equals 0).
+
+        """
         if self._item_size == 0:
             raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no length set.")
         if self._items is None:
@@ -157,7 +157,8 @@ class Dtype:
     def pack(self, value: Any, /) -> bitformat.Bits:
         """Create and return a new Bits from a value.
 
-        The value parameter should be of a type appropriate to the dtype.
+        The value parameter should be of a type appropriate to the data type.
+
         """
         b = bitformat.Bits()
         if self._items is None:
@@ -215,6 +216,7 @@ class Dtype:
 
 
 class AllowedLengths:
+    """Used to specify either concrete values or ranges of values that are allowed lengths for data types."""
     def __init__(self, value: tuple[int, ...] = tuple()) -> None:
         if len(value) >= 3 and value[-1] is Ellipsis:
             step = value[1] - value[0]
