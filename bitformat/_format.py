@@ -5,7 +5,7 @@ from ._dtypes import Dtype
 from typing import Sequence, Any, Iterable
 import copy
 
-from ._common import colour, _indent
+from ._common import colour, _indent, override
 from ._field import FieldType, Field
 
 __all__ = ['Format']
@@ -27,10 +27,12 @@ class Format(FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
 
+    @override
     def __len__(self):
         """Return the total length of the Format in bits."""
         return sum(len(f) for f in self.fieldtypes)
 
+    @override
     def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
                kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
@@ -39,28 +41,34 @@ class Format(FieldType):
             values_used += v
         return self.to_bits(), values_used
 
+    @override
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         pos = 0
         for fieldtype in self.fieldtypes:
             pos += fieldtype._parse(b[pos:], vars_)
         return pos
 
+    @override
     def clear(self) -> None:
         for fieldtype in self.fieldtypes:
             fieldtype.clear()
 
+    @override
     def _getvalue(self) -> list[Any]:
         return [f.value for f in self.fieldtypes]
 
+    @override
     def _setvalue(self, val: Sequence[Any]) -> None:
         if len(val) != len(self.fieldtypes):
             raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
         for fieldtype, v in zip(self.fieldtypes, val):
             fieldtype._setvalue(v)
 
+    @override
     def to_bits(self) -> Bits:
         return Bits().join(fieldtype.to_bits() for fieldtype in self.fieldtypes)
 
+    @override
     def flatten(self) -> list[FieldType]:
         # Just return a flat list of fields
         flattened_fields = []
@@ -93,6 +101,7 @@ class Format(FieldType):
 
     value = property(_getvalue, _setvalue)
 
+    @override
     def _str(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {colour.green}{self.name!r}{colour.off}"
         s = f"{_indent(indent)}{self.__class__.__name__}([\n"
@@ -104,6 +113,7 @@ class Format(FieldType):
         s += f"{_indent(indent)}]{name_str})"
         return s
 
+    @override
     def _repr(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
         s = f"{_indent(indent)}{self.__class__.__name__}([\n"
@@ -163,6 +173,7 @@ class Repeat(FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
         self._values = []
 
+    @override
     def _str(self, indent: int) -> str:
         count_str = str(self.count)
         count_str = f'({count_str})'
@@ -171,6 +182,7 @@ class Repeat(FieldType):
         s += self.fieldtype._str(indent + 1)
         return s
 
+    @override
     def _repr(self, indent: int) -> str:
         count = self.count if self.count is not None else self.count_expression
         s = f"{_indent(indent)}{self.__class__.__name__}({count!r},\n"
@@ -178,6 +190,7 @@ class Repeat(FieldType):
         s += f"\n{_indent(indent)})"
         return s
 
+    @override
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         index = 0
         if self.count_expression is not None:
@@ -189,6 +202,7 @@ class Repeat(FieldType):
             self._values.append(self.fieldtype.value)
         return index
 
+    @override
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any], kwargs: dict[str, Any]) -> tuple[Bits, int]:
         self._bits = Bits()
         if self.count_expression is not None:
@@ -202,6 +216,7 @@ class Repeat(FieldType):
             values_used += v
         return self._bits, values_used
 
+    @override
     def flatten(self) -> list[FieldType]:
         # TODO: This needs values in it. This won't work.
         flattened_fields = []
@@ -209,12 +224,14 @@ class Repeat(FieldType):
             flattened_fields.extend(self.fieldtype.flatten())
         return flattened_fields
 
+    @override
     def to_bits(self) -> Bits:
         return self._bits if self._bits is not None else Bits()
 
     def clear(self) -> None:
         self._bits = None
 
+    @override
     def _getvalue(self) -> list[Any]:
         return self._values
 

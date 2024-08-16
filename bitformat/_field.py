@@ -4,11 +4,10 @@ import re
 from ._bits import Bits
 from ._dtypes import Dtype
 
-from ._common import colour, Expression, _indent
+from ._common import colour, Expression, _indent, override, final
 from typing import Any, Sequence, Iterable
 
-
-__all__ = ['Field']
+__all__ = ['Field', 'FieldType']
 
 
 def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expression]:
@@ -27,15 +26,7 @@ class DtypeWithExpression(Dtype):
 
 class FieldType(abc.ABC):
 
-    @abc.abstractmethod
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
-
-        Return the number of bits used.
-
-        """
-        ...
-
+    @final
     def parse(self, b: Bits | bytes | bytearray) -> int:
         if isinstance(b, (bytes, bytearray)):
             b = Bits.from_bytes(b)
@@ -44,16 +35,7 @@ class FieldType(abc.ABC):
         except ValueError as e:
             raise ValueError(f"Error parsing field {self}: {e}")
 
-    @abc.abstractmethod
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-               kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        """Build the field from the values list, starting at index.
-
-        Return the bits and the number of values used.
-
-        """
-        ...
-
+    @final
     def build(self, values: Any | None = None, /,  **kwargs) -> Bits:
         if kwargs is None:
             kwargs = {}
@@ -67,11 +49,39 @@ class FieldType(abc.ABC):
             raise e
         return bits
 
+    @final
+    def __str__(self) -> str:
+        return self._str(0)
+
+    @final
+    def __repr__(self) -> str:
+        return self._repr(0)
+
+    @abc.abstractmethod
+    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
+
+        Return the number of bits used.
+
+        """
+        ...
+
+    @abc.abstractmethod
+    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+               kwargs: dict[str, Any]) -> tuple[Bits, int]:
+        """Build the field from the values list, starting at index.
+
+        Return the bits and the number of values used.
+
+        """
+        ...
+
     @abc.abstractmethod
     def to_bits(self) -> Bits:
         """Return the bits that represent the field."""
         ...
 
+    @final
     def to_bytes(self) -> bytes:
         """Return the bytes that represent the field. Pads with up to 7 zero bits if necessary."""
         b = self.to_bits()
@@ -107,12 +117,6 @@ class FieldType(abc.ABC):
     def __len__(self) -> int:
         """The length of the FieldType in bits."""
         ...
-
-    def __str__(self) -> str:
-        return self._str(0)
-
-    def __repr__(self) -> str:
-        return self._repr(0)
 
     def __eq__(self, other) -> bool:
         return self.flatten() == other.flatten()
@@ -160,6 +164,7 @@ class Field(FieldType):
                 raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
         return x
 
+    @override
     def __len__(self) -> int:
         return len(self._dtype)
 
@@ -177,15 +182,18 @@ class Field(FieldType):
     def from_bytes(cls, b: bytes | bytearray, /, name: str = '') -> Field:
         return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const=True)
 
+    @override
     def to_bits(self) -> Bits:
         if self._bits is None:
             raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
         return self._bits
 
+    @override
     def clear(self) -> None:
         if not self.const:
             self._setvalue(None)
 
+    @override
     def flatten(self) -> list[FieldType]:
         return [self]
 
@@ -203,6 +211,7 @@ class Field(FieldType):
         name = '' if name is None else name.strip()
         return dtype_str, name, value, const
 
+    @override
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[:len(self._bits)]
@@ -216,6 +225,7 @@ class Field(FieldType):
             vars_[self.name] = self.value
         return len(self)
 
+    @override
     def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
                kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
@@ -232,9 +242,11 @@ class Field(FieldType):
             vars_[self.name] = self.value
         return self._bits, 1
 
+    @override
     def _getvalue(self) -> Any:
         return self._dtype.unpack(self._bits) if self._bits is not None else None
 
+    @override
     def _setvalue(self, value: Any) -> None:
         if value is None:
             self._bits = None
@@ -256,6 +268,7 @@ class Field(FieldType):
 
     dtype = property(_getdtype, _setdtype)
 
+    @override
     def _str(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
         d = f"{colour.purple}{const_str}{self._dtype}{colour.off}"
@@ -264,6 +277,7 @@ class Field(FieldType):
         return f"{_indent(indent)}{n}{d}{v}"
 
     # This simple repr used when field is part of a larger object
+    @override
     def _repr(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
         n = '' if self.name == '' else f"{self.name}: "
@@ -272,6 +286,7 @@ class Field(FieldType):
         return f"{_indent(indent)}'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
+    @override  # TODO - this shouldn't be here. Should be _repr(0).
     def __repr__(self) -> str:
         if self._dtype.name == 'bytes':
             return f"{self.__class__.__name__}.from_bytes({self.value})"

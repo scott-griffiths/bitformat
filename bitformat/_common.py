@@ -5,6 +5,13 @@ from typing import Any
 
 indent_size = 4
 
+# Python 3.12 has these decorators built-in, but otherwise we mock them here.
+if sys.version_info >= (3, 12):
+    from typing import override, final
+else:
+    def override(f): return f
+    def final(f): return f
+
 
 def _indent(level: int) -> str:
     return ' ' * (level * indent_size)
