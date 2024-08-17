@@ -4,6 +4,7 @@ from ._bits import Bits
 from ._dtypes import Dtype
 from typing import Sequence, Any, Iterable
 import copy
+import re
 
 from ._common import colour, _indent, override
 from ._field import FieldType, Field
@@ -26,6 +27,39 @@ class Format(FieldType):
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
             self.fieldtypes.append(fieldtype)
+
+    @staticmethod
+    def _parse_format_str(format_str: str) -> tuple[str, str]:
+        pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
+        match = re.match(pattern, format_str)
+        if match:
+            name = match.group('name')
+            content = match.group('content')
+        else:
+            raise ValueError(f"Invalid format string '{format_str}'.")
+        name = '' if name is None else name.strip()
+        return name, content
+
+    @classmethod
+    @override
+    def from_string(cls, s: str) -> Format:
+        name, content = cls._parse_format_str(s)
+        fieldtypes = []
+        # split by ',' but ignore any ',' that is inside []
+        start = 0
+        inside_brackets = 0
+        for i, p in enumerate(content):
+            if p == '[':
+                inside_brackets += 1
+            elif p == ']':
+                inside_brackets -= 1
+            elif p == ',':
+                if inside_brackets == 0:
+                    fieldtypes.append(FieldType.from_string(content[start:i]))
+                    start = i + 1
+        if inside_brackets == 0:
+            fieldtypes.append(FieldType.from_string(content[start:]))
+        return Format(fieldtypes, name)
 
     @override
     def __len__(self):
@@ -172,6 +206,11 @@ class Repeat(FieldType):
         if not isinstance(self.fieldtype, FieldType):
             raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
         self._values = []
+
+    @classmethod
+    @override
+    def from_string(cls, s: str) -> Repeat:
+        return Repeat()  # TODO
 
     @override
     def _str(self, indent: int) -> str:

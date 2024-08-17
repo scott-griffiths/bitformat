@@ -358,3 +358,17 @@ def test_partial_parse():
     f.clear()
     with pytest.raises(ValueError):
         _ = f.parse(b[:-16])
+
+
+def test_from_string():
+    f = Format.from_string('header: [u8, u4, bool]')
+    assert f.name == 'header'
+    assert f[0].dtype == Dtype.from_string('u8')
+
+def test_recursive_from_string():
+    s = "header: [u8, u4, bool, body:[u8=23, [u4; 3], bool]]"
+    f = Format.from_string(s)
+    assert f.name == 'header'
+    assert f[3][0].value == 23
+    b = f['body']
+    assert b[0].value == 23

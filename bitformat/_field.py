@@ -57,6 +57,14 @@ class FieldType(abc.ABC):
     def __repr__(self) -> str:
         return self._repr(0)
 
+    @classmethod
+    def from_string(cls, s: str) -> FieldType:
+        try:
+            return Field.from_string(s)
+        except ValueError:
+            from ._format import Format
+            return Format.from_string(s)
+
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
         """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
@@ -169,6 +177,7 @@ class Field(FieldType):
         return len(self._dtype)
 
     @classmethod
+    @override
     def from_string(cls, s: str, /) -> Field:
         dtype_str, name, value, const = cls._parse_field_str(s)
         return cls.from_parameters(dtype_str, name, value, const)
