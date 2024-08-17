@@ -3,7 +3,7 @@ import abc
 import re
 from ._bits import Bits
 from ._dtypes import Dtype
-
+from ast import literal_eval
 from ._common import colour, Expression, _indent, override, final
 from typing import Any, Sequence, Iterable
 
@@ -164,7 +164,10 @@ class Field(FieldType):
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
         x.const = const
-        x.value = value
+        if isinstance(value, str) and x._dtype.return_type in (int, float, bytes):
+            x.value = literal_eval(value)
+        else:
+            x.value = value
         if x._dtype.length == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))

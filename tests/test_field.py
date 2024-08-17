@@ -178,3 +178,10 @@ def test_creation():
     assert f.const is False
     f2 = Field('const u8 = 12')
     assert f2.const is True
+
+def test_creation_with_bytes_string():
+    f = Field.from_string('bytes3 = b"abc"')
+    assert f.value == b'abc'
+    f = Field('const bytes3 = b"abc"')
+    assert f.const is True
+    assert f.value == b'abc'

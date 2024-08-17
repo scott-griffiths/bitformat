@@ -57,7 +57,7 @@ class Format(FieldType):
                 if inside_brackets == 0:
                     fieldtypes.append(FieldType.from_string(content[start:i]))
                     start = i + 1
-        if inside_brackets == 0:
+        if inside_brackets == 0 and start < len(content):
             fieldtypes.append(FieldType.from_string(content[start:]))
         return Format(fieldtypes, name)
 
@@ -137,14 +137,14 @@ class Format(FieldType):
 
     @override
     def _str(self, indent: int) -> str:
-        name_str = '' if self.name == '' else f", {colour.green}{self.name!r}{colour.off}"
-        s = f"{_indent(indent)}{self.__class__.__name__}([\n"
+        name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
+        s = f"{_indent(indent)}{name_str}[\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._str(indent + 1)
             if i != len(self.fieldtypes) - 1:
                 s += ','
             s += '\n'
-        s += f"{_indent(indent)}]{name_str})"
+        s += f"{_indent(indent)}]"
         return s
 
     @override

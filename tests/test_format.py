@@ -360,10 +360,16 @@ def test_partial_parse():
         _ = f.parse(b[:-16])
 
 
+def remove_whitespace(s: str) -> str:
+    return ''.join(s.split())
+
 def test_from_string():
-    f = Format.from_string('header: [u8, u4, bool]')
+    s = 'header: [u8, u4, bool]'
+    f = Format.from_string(s)
     assert f.name == 'header'
     assert f[0].dtype == Dtype.from_string('u8')
+    assert remove_whitespace(str(f)) == remove_whitespace(s)
+
 
 def test_recursive_from_string():
     s = "header: [u8, u4, bool, body:[u8=23, [u4; 3], bool]]"
@@ -372,3 +378,14 @@ def test_recursive_from_string():
     assert f[3][0].value == 23
     b = f['body']
     assert b[0].value == 23
+    assert remove_whitespace(str(f)) == remove_whitespace(s)
+    assert remove_whitespace(str(b)) == remove_whitespace("body:[u8=23, [u4; 3], bool]")
+
+    fp = eval(repr(f))
+    assert fp == f
+
+def test_interesting_types_from_string():
+    s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
+    f = Format.from_string(s)
+    assert f[0].value == -375
+    assert f['_fred'].value == b'abc\x04'
