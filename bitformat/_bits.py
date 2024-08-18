@@ -14,7 +14,7 @@ from ._bitstore import BitStore
 from bitformat import _utils
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat._common import colour
-from typing import Pattern, Callable
+from typing import Pattern
 
 __all__ = ['Bits']
 
@@ -670,11 +670,11 @@ class Bits:
             f_str = f'f{length} == {self.f}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
-    def _setbits(self, bs: BitsType, length: None = None) -> None:
+    def _setbits(self, bs: BitsType, _length: None = None) -> None:
         bs = Bits.from_auto(bs)
         self._bitstore = bs._bitstore
 
-    def _setbytes(self, data: bytearray | bytes | list, length: None = None) -> None:
+    def _setbytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitStore.from_bytes(bytes(data))
 
@@ -739,7 +739,7 @@ class Bits:
     def _setpad(self, value: None, length: int) -> None:
         raise ValueError("It's not possible to set a 'pad' value.")
 
-    def _setbin_safe(self, binstring: str, length: None = None) -> None:
+    def _setbin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
         self._bitstore = BitStore.from_bin(binstring)
 
@@ -747,7 +747,7 @@ class Bits:
         """Return interpretation as a binary string."""
         return self._bitstore.slice_to_bin()
 
-    def _setoct(self, octstring: str, length: None = None) -> None:
+    def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
         self._bitstore = BitStore.from_oct(octstring)
 
@@ -755,7 +755,7 @@ class Bits:
         """Return interpretation as an octal string."""
         return self._bitstore.slice_to_oct()
 
-    def _sethex(self, hexstring: str, length: None = None) -> None:
+    def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         self._bitstore = BitStore.from_hex(hexstring)
 

@@ -53,7 +53,6 @@ class FieldType(abc.ABC):
     def __str__(self) -> str:
         return self._str(0)
 
-    @final
     def __repr__(self) -> str:
         return self._repr(0)
 
@@ -147,6 +146,7 @@ class Field(FieldType):
     def __new__(cls, token: str | None = None) -> Field:
         if token is None:
             x = super().__new__(cls)
+            x.const = False
             return x
         return cls.from_string(token)
 
@@ -165,9 +165,9 @@ class Field(FieldType):
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
         if isinstance(value, str):  # TODO: Refactor this mess.
+            value_str = value
             if x._dtype.return_type is bytes:
                 try:
-                    value_str = value
                     value = literal_eval(value)
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
@@ -175,7 +175,6 @@ class Field(FieldType):
                     raise ValueError()
             if x._dtype.return_type is bool:
                 try:
-                    value_str = value
                     value = literal_eval(value)
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
@@ -322,10 +321,10 @@ class Field(FieldType):
         return f"{_indent(indent)}'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
-    @override  # TODO - this shouldn't be here. Should be _repr(0).
     def __repr__(self) -> str:
         if self._dtype.name == 'bytes':
-            return f"{self.__class__.__name__}.from_bytes({self.value})"
+            const_str = ', const=True' if self.const else ''
+            return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:

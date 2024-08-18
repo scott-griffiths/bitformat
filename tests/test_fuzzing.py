@@ -5,27 +5,33 @@ from hypothesis import given, settings
 import hypothesis.strategies as st
 import math
 
+def get_allowed_length(dtype_name, length):
+    al = dtype_register[dtype_name].allowed_lengths
+    if al and al.values:
+        if al.values[-1] is Ellipsis:
+            return al.values[1] * length
+        else:
+            return al.values[length % len(al.values)]
+    return length
+
+def compare_fields(f, f2):
+    if isinstance(f.value, float) and math.isnan(f.value):
+        assert math.isnan(f2.value)
+    assert f == f2, f"Fields are not equal: {f} != {f2}"
+
 
 @given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
        length=st.integers(1, 100),
+       const=st.booleans(),
        int_value=st.integers(0, 2**800 - 1))
-def test_field_consistency(dtype_name, length, int_value):
-    # Create a length that is allowed for this type.
-    al = dtype_register[dtype_name].allowed_lengths
-    multiplier = dtype_register[dtype_name].multiplier
-    if al and al.values:
-        if al.values[-1] is Ellipsis:
-            length = al.values[1] * length
-        else:
-            length = al.values[length % len(al.values)]
+def test_field_consistency(dtype_name, length, const, int_value):
+    length = get_allowed_length(dtype_name, length)
     f = Field.from_parameters(Dtype.from_parameters(dtype_name, length))
     f2 = Field.from_string(str(f))
-    if isinstance(f.value, float) and math.isnan(f.value):
-        pass  # Can't compare NaN
-    else:
-        assert f == f2
+    compare_fields(f, f2)
 
     # Create some bits of the right length
+    multiplier = dtype_register[dtype_name].multiplier
     b = Bits.pack('u800', int_value)[0:length * multiplier]
     f.parse(b)
     assert f.to_bits() == b
@@ -33,30 +39,25 @@ def test_field_consistency(dtype_name, length, int_value):
     f2.value = v
     if dtype_name != 'pad' and not (isinstance(v, float) and math.isnan(v)):
         assert f.to_bits() == f2.to_bits()
+    if dtype_name != 'pad':
+        f.const = const
+        f3 = eval(repr(f))
+        compare_fields(f, f3)
 
-    f3 = eval(repr(f))
-    if isinstance(f.value, float) and math.isnan(f.value):
-        pass  # Can't compare NaN
-    else:
-        assert f == f3
 
 @given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
        length=st.integers(1, 5),
        int_value=st.integers(0, 2**160 - 1),
        items=st.integers(1, 4))
 def test_field_array_consistency(dtype_name, length, int_value, items):
-    al = dtype_register[dtype_name].allowed_lengths
-    multiplier = dtype_register[dtype_name].multiplier
-    if al and al.values:
-        if al.values[-1] is Ellipsis:
-            length = al.values[1] * length
-        else:
-            length = al.values[length % len(al.values)]
+    length = get_allowed_length(dtype_name, length)
 
     f = Field.from_parameters(Dtype.from_parameters(dtype_name, length, items))
     f2 = Field.from_string(str(f))
     assert f == f2
+
     # Create some bits of the right length
+    multiplier = dtype_register[dtype_name].multiplier
     b = Bits.pack('u320', int_value)[0:length * multiplier * items]
     f.parse(b)
     assert f.to_bits() == b
