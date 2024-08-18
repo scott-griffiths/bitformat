@@ -215,7 +215,7 @@ class TestMethods:
         f = Format(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format(['bits = 0x000001b3', 'u12', 'u12', 'bool'], 'empty_header')
+        g = Format.from_string('empty_header: [const bits = 0x000001b3, u12, u12, bool]')
         assert f == g
 
     def test_get_item(self):
@@ -226,10 +226,12 @@ class TestMethods:
 
     def test_set_item(self):
         f = Format(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
-        f[0] = 2  # TODO: Should this be allowed?
+        with pytest.raises(ValueError):
+            f[0] = 2
+        f[0].const = False
+        f[0] = 2
+        f[0].const = True
         assert f[0].value == 2
-        f[0] = None
-        assert f[0].value is None
         f['pop'] = 999999
         assert f['pop'].value == 999999
 
@@ -279,7 +281,6 @@ def test_format_get_and_set():
     assert g[-1].value == 12
 
 @pytest.mark.skip
-
 def test_repeating_from_expression():
     f = Format([
         'x: u8',
@@ -289,7 +290,6 @@ def test_repeating_from_expression():
     assert b.parse('hex') == '02abcd'
 
 @pytest.mark.skip
-
 def test_repeat_with_const_expression():
     f = Format(['the_size: i9',
                 Repeat('{the_size}', [
@@ -300,7 +300,6 @@ def test_repeat_with_const_expression():
     assert f.to_bits() == 'i9=3, 0x070707'
 
 @pytest.mark.skip
-
 def test_repeat_with_bits():
     f = Repeat(3, '0xab')
     b = f.pack()

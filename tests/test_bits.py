@@ -92,14 +92,12 @@ class TestCreation:
             _ = Bits.pack(Dtype.from_parameters('int', length), int_)
 
     def test_creation_from_bool(self):
-        a = Bits.pack('bool', 1)
-        assert a == 'bool=1'
-        b = Bits.from_string('bool1=0')
+        a = Bits.pack('bool', False)
+        assert a == '0b0'
+        b = Bits.from_string('bool=0')
         assert b == [0]
 
     def test_creation_from_bool_errors(self):
-        with pytest.raises(ValueError):
-            _ = Bits.pack('bool', 3)
         with pytest.raises(ValueError):
             _ = Bits.pack('bool2', 0)
 

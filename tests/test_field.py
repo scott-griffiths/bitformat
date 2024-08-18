@@ -85,7 +85,7 @@ class TestCreation:
     def test_string_creation_with_const(self):
         f1 = Field.from_string('f1: u1 = 1')
         f2 = Field.from_string('f2: const u1 = 1')
-        assert f1 == f2
+        assert f1 != f2
         assert f2.const
         assert not f1.const
         f1.clear()
@@ -185,3 +185,19 @@ def test_creation_with_bytes_string():
     f = Field('const bytes3 = b"abc"')
     assert f.const is True
     assert f.value == b'abc'
+
+def test_creation_with_bool_string():
+    f = Field.from_string('bool=True')
+    assert f.value == True
+    f = Field('const bool=False')
+    assert f.const is True
+    assert f.value == False
+    g = Field('x: bool=1')
+    assert g.value == True
+    with pytest.raises(ValueError):
+        _ = Field('x: bool=false')
+
+def test_const_equality():
+    a = Field('const i5=1')
+    b = Field('i5=1')
+    assert a != b

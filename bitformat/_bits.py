@@ -6,6 +6,7 @@ import struct
 import io
 import re
 import functools
+from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 import bitformat
@@ -39,7 +40,14 @@ def token_to_bitstore(token: str) -> BitStore:
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
         name, length_str, value = match.groups()
         length = int(length_str) if length_str else 0
-        return Dtype.from_parameters(name, length).pack(value)._bitstore
+        dtype = Dtype.from_parameters(name, length)
+        if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
+            try:
+                value_str = value
+                value = literal_eval(value)
+            except ValueError:
+                raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
+        return dtype.pack(value)._bitstore
     if token.startswith(('0x', '0X')):
         return BitStore.from_hex(token[2:])
     if token.startswith(('0b', '0B')):
@@ -718,16 +726,9 @@ class Bits:
         fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
-    def _setbool(self, value: bool | str) -> None:
-        # We deliberately don't want to have implicit conversions to bool here.
-        # If we did then it would be difficult to deal with the 'False' string.
-        match value:
-            case 1 | 'True' | '1':
-                self._bitstore = BitStore.from_binstr('1')
-            case 0 | 'False' | '0':
-                self._bitstore = BitStore.from_binstr('0')
-            case _:
-                raise ValueError(f"Cannot initialise boolean with {value}.")
+    def _setbool(self, value: bool) -> None:
+        self._bitstore = BitStore.from_binstr('1') if value else BitStore.from_binstr('0')
+        return
 
     def _getbool(self) -> bool:
         return self[0]

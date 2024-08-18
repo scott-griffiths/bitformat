@@ -4,6 +4,7 @@ import pytest
 import sys
 import bitformat
 from bitformat import Bits, Dtype
+import math
 
 sys.path.insert(0, '..')
 
@@ -207,7 +208,7 @@ class TestBFloats:
             _ = a.float
 
     def test_overflows(self):
-        inf16 = Bits.pack('f16', float('inf'))
+        inf16 = Bits.pack('f16', math.inf)
         inf32 = Bits.from_string('f32 = inf')
         inf64 = Dtype.from_string('f64').pack(float('inf'))
 

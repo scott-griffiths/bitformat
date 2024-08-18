@@ -151,10 +151,11 @@ class Field(FieldType):
         return cls.from_string(token)
 
     @classmethod
-    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool | None = None) -> Field:
+    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> Field:
         x = super().__new__(cls)
         x._bits = None
         x._dtype = dtype
+        x.const = const
         if isinstance(x._dtype, str):
             try:
                 x._dtype = Dtype.from_string(dtype)
@@ -163,11 +164,29 @@ class Field(FieldType):
         x.name = name
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
-        x.const = const
-        if isinstance(value, str) and x._dtype.return_type in (int, float, bytes):
-            x.value = literal_eval(value)
+        if isinstance(value, str):  # TODO: Refactor this mess.
+            if x._dtype.return_type is bytes:
+                try:
+                    value_str = value
+                    value = literal_eval(value)
+                except ValueError:
+                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
+                if not isinstance(value, bytes):
+                    raise ValueError()
+            if x._dtype.return_type is bool:
+                try:
+                    value_str = value
+                    value = literal_eval(value)
+                except ValueError:
+                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
+                if not isinstance(value, bool):
+                    if isinstance(value, int) and value in [0, 1]:
+                        pass
+                    else:
+                        raise ValueError()
+            x._setvalue_no_const_check(value)
         else:
-            x.value = value
+            x._setvalue_no_const_check(value)
         if x._dtype.length == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
@@ -191,8 +210,8 @@ class Field(FieldType):
         return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
 
     @classmethod
-    def from_bytes(cls, b: bytes | bytearray, /, name: str = '') -> Field:
-        return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const=True)
+    def from_bytes(cls, b: bytes | bytearray, /, name: str = '', const: bool = False) -> Field:
+        return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const)
 
     @override
     def to_bits(self) -> Bits:
@@ -258,8 +277,7 @@ class Field(FieldType):
     def _getvalue(self) -> Any:
         return self._dtype.unpack(self._bits) if self._bits is not None else None
 
-    @override
-    def _setvalue(self, value: Any) -> None:
+    def _setvalue_no_const_check(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
@@ -267,6 +285,12 @@ class Field(FieldType):
             self._bits = self._dtype.pack(value)
         except ValueError as e:
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
+
+    @override
+    def _setvalue(self, value: Any) -> None:
+        if self.const:
+            raise ValueError()
+        self._setvalue_no_const_check(value)
 
     value = property(_getvalue, _setvalue)
 
@@ -305,10 +329,13 @@ class Field(FieldType):
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
+        """Check if two fields are equal."""
         try:
             if self._dtype != other._dtype:
                 return False
             if self._dtype.name != 'pad' and self._bits != other._bits:
+                return False
+            if self.const != other.const:
                 return False
         except AttributeError:
             return False
