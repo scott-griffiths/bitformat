@@ -148,7 +148,7 @@ class Array:
             self._bitstore = BitStore.from_zeros(initializer * self._dtype.item_size)
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
-            self._bitstore = initializer._bitstore._copy()
+            self._bitstore = initializer._bitstore.copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
             self._bitstore = BitStore.from_bytes(initializer)
         elif initializer is not None:
@@ -420,7 +420,7 @@ class Array:
 
     def to_bits(self) -> Bits:
         x = Bits()
-        x._bitstore = self._bitstore._copy()
+        x._bitstore = self._bitstore.copy()
         return x
 
     def reverse(self) -> None:
@@ -486,7 +486,7 @@ class Array:
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = 0b" + self._getbitslice(-trailing_bit_length, None).parse('bin'))
+            stream.write(" + trailing_bits = 0b" + self._getbitslice(-trailing_bit_length, None).unpack('bin'))
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:

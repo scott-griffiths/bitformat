@@ -4,7 +4,7 @@ import bitarray
 import bitarray.util
 import copy
 import struct
-from typing import Iterable, Iterator, Any
+from typing import Iterable, Iterator
 
 
 def tidy_input_string(s: str) -> str:
@@ -145,11 +145,11 @@ class BitStore:
         return self
 
     def __add__(self, other: BitStore, /) -> BitStore:
-        bs = self._copy()
+        bs = self.copy()
         bs += other
         return bs
 
-    def __eq__(self, other: Any, /) -> bool:
+    def __eq__(self, other: BitStore, /) -> bool:
         return self._bitarray == other._bitarray
 
     def __and__(self, other: BitStore, /) -> BitStore:
@@ -240,7 +240,7 @@ class BitStore:
         for i in range(len(self)):
             yield self.getindex(i)
 
-    def _copy(self) -> BitStore:
+    def copy(self) -> BitStore:
         """Always creates a copy, even if instance is immutable."""
         s_copy = self.__class__()
         s_copy._bitarray = copy.copy(self._bitarray)

@@ -22,7 +22,7 @@ __all__ = ['Bits']
 BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 
 # Maximum number of digits to use in __str__ and __repr__.
-MAX_CHARS: int = 256
+MAX_CHARS: int = 1000
 
 # name[length]=value
 NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))$')
@@ -41,9 +41,9 @@ def token_to_bitstore(token: str) -> BitStore:
         name, length_str, value = match.groups()
         length = int(length_str) if length_str else 0
         dtype = Dtype.from_parameters(name, length)
+        value_str = value
         if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
             try:
-                value_str = value
                 value = literal_eval(value)
             except ValueError:
                 raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
@@ -580,19 +580,17 @@ class Bits:
 
         """
         s = self._copy()
+        v = 1 if value else 0
         if pos is None:
             # Set all bits to either 1 or 0
-            v = -1 if value else 0
-            s._bitstore = BitStore.from_int(v, len(self), True)
-            return s
-        if not isinstance(pos, abc.Iterable):
-            pos = (pos,)
-        v = 1 if value else 0
-        if isinstance(pos, range):
+            s._bitstore = BitStore.from_int(-v, len(self), True)
+        elif not isinstance(pos, abc.Iterable):
+            s._bitstore.setitem(pos, v)
+        elif isinstance(pos, range):
             s._bitstore.setitem(slice(pos.start, pos.stop, pos.step), v)
-            return s
-        for p in pos:
-            s._bitstore.setitem(p, v)
+        else:
+            for p in pos:
+                s._bitstore.setitem(p, v)
         return s
 
     def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
@@ -615,7 +613,7 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> list[Any]:
+    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
         """Interpret the Bits as a given data type or list of data types."""
 
         # First do the cases where there's only one data type.
@@ -652,22 +650,25 @@ class Bits:
         return
 
     def _str_interpretations(self) -> list[str]:
+        max_interpretation_length = 64
         length = len(self)
         if length == 0:
             return []
         hex_str = bin_str = f_str = u_str = i_str = ''
-        if length % 4 == 0:
-            t = self.hex
-            with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            hex_str = f'hex == {with_underscores}'
-        if length <= 64:
-            t = self.bin
+        if length <= max_interpretation_length and length % 4 == 0:
+            t = self.unpack('bin')
             with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
             bin_str = f'bin == {with_underscores}'
-            u_str = f'u{length} == {self.u:_}'
-            i_str = f'i{length} == {self.i:_}'
+        if length <= max_interpretation_length:
+            u = self.unpack('u')
+            i = self.unpack('i')
+            if u == i:
+                u_str = f'u{length} == i{length} == {u:_}'
+            else:
+                u_str = f'u{length} == {u:_}'
+                i_str = f'i{length} == {i:_}'
         if length in dtype_register['f'].allowed_lengths:
-            f_str = f'f{length} == {self.f}'
+            f_str = f'f{length} == {self.unpack('f')}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _setbits(self, bs: BitsType, _length: None = None) -> None:
@@ -771,7 +772,7 @@ class Bits:
         """Create and return a new copy of the Bits (always in memory)."""
         # Note that __copy__ may choose to return self if it's immutable. This method always makes a copy.
         s_copy = self.__class__()
-        s_copy._bitstore = self._bitstore._copy()
+        s_copy._bitstore = self._bitstore.copy()
         return s_copy
 
     def _slice_copy(self: Bits, start: int, end: int) -> Bits:
@@ -1093,7 +1094,7 @@ class Bits:
     def __ne__(self, bs: Any, /) -> bool:
         """Return False if two Bits have the same binary representation.
 
-        >>> Bits('0b111') == '0x7'
+        >>> Bits('0b111') != '0x7'
         False
 
         """
@@ -1222,8 +1223,7 @@ class Bits:
         """Return an integer hash of the object."""
         # Only requirement is that equal Bits should return the same hash.
         # For equal Bits the bytes at the start/end will be the same and they will have the same length
-        # (need to check the length as there could be zero padding when getting the bytes). We do not check any
-        # bit position inside the Bits as that does not feature in the __eq__ operation.
+        # (need to check the length as there could be zero padding when getting the bytes).
         if len(self) <= 2000:
             # Use the whole Bits.
             return hash((self.to_bytes(), len(self)))
