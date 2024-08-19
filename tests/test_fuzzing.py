@@ -39,11 +39,9 @@ def test_field_consistency(dtype_name, length, const, int_value):
     f2.value = v
     if dtype_name != 'pad' and not (isinstance(v, float) and math.isnan(v)):
         assert f.to_bits() == f2.to_bits()
-    if dtype_name != 'pad':
         f.const = const
         f3 = eval(repr(f))
         compare_fields(f, f3)
-
 
 @given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
        length=st.integers(1, 5),
