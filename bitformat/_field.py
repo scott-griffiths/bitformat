@@ -164,28 +164,26 @@ class Field(FieldType):
         x.name = name
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
-        if isinstance(value, str):  # TODO: Refactor this mess.
+        if isinstance(value, str):
+            # Special cases converting from strings to bytes and bools.
             value_str = value
             if x._dtype.return_type is bytes:
                 try:
                     value = literal_eval(value)
+                    if not isinstance(value, bytes):
+                        raise ValueError()
                 except ValueError:
-                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
-                if not isinstance(value, bytes):
-                    raise ValueError()
+                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
+                                     f"as it can't be converted to a bytes object.")
             if x._dtype.return_type is bool:
                 try:
                     value = literal_eval(value)
-                except ValueError:
-                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' as it can't be converted to the appropriate type.")
-                if not isinstance(value, bool):
-                    if isinstance(value, int) and value in [0, 1]:
-                        pass
-                    else:
+                    if not isinstance(value, int) or value not in (0, 1):
                         raise ValueError()
-            x._setvalue_no_const_check(value)
-        else:
-            x._setvalue_no_const_check(value)
+                except ValueError:
+                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
+                                     f"as it can't be converted to a bool.")
+        x._setvalue_no_const_check(value)
         if x._dtype.length == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
@@ -288,7 +286,8 @@ class Field(FieldType):
     @override
     def _setvalue(self, value: Any) -> None:
         if self.const:
-            raise ValueError()
+            raise ValueError(f"Cannot set the value of a const Field '{self}'. "
+                             f"To change the value, first set the const property of the Field to False.")
         self._setvalue_no_const_check(value)
 
     value = property(_getvalue, _setvalue)
@@ -329,14 +328,13 @@ class Field(FieldType):
 
     def __eq__(self, other: Any) -> bool:
         """Check if two fields are equal."""
-        try:
-            if self._dtype != other._dtype:
-                return False
-            if self._dtype.name != 'pad' and self._bits != other._bits:
-                return False
-            if self.const != other.const:
-                return False
-        except AttributeError:
+        if not isinstance(other, Field):
+            return False
+        if self._dtype != other._dtype:
+            return False
+        if self._dtype.name != 'pad' and self._bits != other._bits:
+            return False
+        if self.const != other.const:
             return False
         return True
 
