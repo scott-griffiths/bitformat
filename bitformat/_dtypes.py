@@ -26,7 +26,6 @@ class Dtype:
     _get_fn: Callable
     _return_type: Any
     _is_signed: bool
-    _set_fn_needs_length: bool
     _item_size: int
     _multiplier: int
     _items: int | None
@@ -141,11 +140,10 @@ class Dtype:
         x._items = items
         x._multiplier = definition.multiplier
         x._item_size = length * x._multiplier
-        x._set_fn_needs_length = definition.set_fn_needs_length
         if definition.set_fn is None:
             x._set_fn = None
         else:
-            if x._set_fn_needs_length:
+            if 'length' in inspect.signature(definition.set_fn).parameters:
                 x._set_fn = functools.partial(definition.set_fn, length=x._item_size)
             else:
                 x._set_fn = definition.set_fn
@@ -259,11 +257,7 @@ class DtypeDefinition:
         self.return_type = return_type
         self.is_signed = is_signed
         self.allowed_lengths = AllowedLengths(allowed_lengths)
-
         self.multiplier = multiplier
-
-        # Can work out if set_fn needs length based on its signature.
-        self.set_fn_needs_length = set_fn is not None and 'length' in inspect.signature(set_fn).parameters
         self.set_fn = set_fn
 
         if self.allowed_lengths.values:
@@ -303,7 +297,7 @@ class DtypeDefinition:
     def __repr__(self) -> str:
         s = (f"{self.__class__.__name__}(name='{self.name}', description='{self.description}',"
              f"return_type={self.return_type.__name__}, ")
-        s += (f"is_signed={self.is_signed}, set_fn_needs_length={self.set_fn_needs_length}, "
+        s += (f"is_signed={self.is_signed}, "
               f"allowed_lengths={self.allowed_lengths!s}, multiplier={self.multiplier})")
         return s
 
