@@ -22,7 +22,7 @@ class Dtype:
     """
 
     _name: str
-    _set_fn: Callable
+    _create_fn: Callable
     _get_fn: Callable
     _return_type: Any
     _is_signed: bool
@@ -141,12 +141,17 @@ class Dtype:
         x._multiplier = definition.multiplier
         x._item_size = length * x._multiplier
         if definition.set_fn is None:
-            x._set_fn = None
+            x._create_fn = None
         else:
             if 'length' in inspect.signature(definition.set_fn).parameters:
-                x._set_fn = functools.partial(definition.set_fn, length=x._item_size)
+                set_fn = functools.partial(definition.set_fn, length=x._item_size)
             else:
-                x._set_fn = definition.set_fn
+                set_fn = definition.set_fn
+            def create_bits(v):
+                b = bitformat.Bits()
+                set_fn(b, v)
+                return b
+            x._create_fn = create_bits
         x._get_fn = definition.get_fn
         x._return_type = definition.return_type if items is None else tuple
         x._is_signed = definition.is_signed
@@ -158,10 +163,9 @@ class Dtype:
         The value parameter should be of a type appropriate to the data type.
 
         """
-        b = bitformat.Bits()
         if self._items is None:
             # Single item to pack
-            self._set_fn(b, value)
+            b = self._create_fn(value)
             if self.item_size != 0 and len(b) != self.item_size:
                 raise ValueError(f"Dtype has a length of {self.item_size} bits, but value '{value}' has {len(b)} bits.")
             return b
@@ -171,10 +175,7 @@ class Dtype:
             return value
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        for v in value:
-            item = bitformat.Bits()
-            self._set_fn(item, v)
-            b += item  # TODO: Horrible performance.
+        b = bitformat.Bits.join(self._create_fn(v) for v in value)
         return b
 
     def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple[Any]:
