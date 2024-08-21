@@ -68,9 +68,7 @@ class Dtype:
             t = token[p + 1: -1]
             items = int(t) if t else 0
             return dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
-        else:
-            d = dtype_register.get_dtype(*_utils.parse_name_length_token(token))
-            return d
+        return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
 
     @property
     def name(self) -> str:
@@ -175,8 +173,7 @@ class Dtype:
             return value
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        b = bitformat.Bits.join(self._create_fn(v) for v in value)
-        return b
+        return bitformat.Bits.join(self._create_fn(v) for v in value)
 
     def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple[Any]:
         """Unpack a Bits to find its value.
@@ -251,7 +248,7 @@ class DtypeDefinition:
 
         # Consistency checks
         if int(multiplier) != multiplier or multiplier <= 0:
-            raise ValueError("multiplier must be an positive integer")
+            raise ValueError("multiplier must be an integer >= 1.")
 
         self.name = name
         self.description = description

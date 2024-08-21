@@ -69,7 +69,7 @@ class Bits:
 
     To construct use a builder method:
 
-    * ``Bits.from_auto(auto)`` - Delegates to ``from_bytes``, ``from_iterable`` or ``from_string``.
+    * ``Bits.from_auto(auto)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
     * ``Bits.from_iterable(i)`` - Convert each element to a bool.
     * ``Bits.from_string(s)`` - Use a formatted string.
@@ -96,14 +96,15 @@ class Bits:
 
     @classmethod
     def from_auto(cls: Type[Bits], auto: BitsType, /) -> Bits:
-        """Create a new Bits from one of the many things that can be used to build it.
+        """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
-        auto -- The object to convert to a ``Bits``.
+        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
+        The builder delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string` as appropriate.
 
-        This method will be implicitly called whenever an object needs to be promoted to a Bits.
-        The builder delegates to ``from_bytes``, ``from_iterable`` or ``from_string`` as appropriate.
+        :param auto: The object to convert to a :class:`Bits`.
+        :type auto: BitsType
 
-        If no builder can be found it raises a ``TypeError``.
+        :raises TypeError: If no builder can be found.
 
         """
         if isinstance(auto, cls):
@@ -118,31 +119,58 @@ class Bits:
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
-        """Create a new Bits from a bytes object."""
+        """Create a new :class:`Bits` from a bytes object.
+
+        This method initializes a new instance of the :class:`Bits` class using a bytes object.
+
+        :param b: The bytes object to convert to a :class:`Bits`.
+        :type b: bytes
+        :rtype: Bits
+        """
         x = super().__new__(cls)
         x._bitstore = BitStore.from_bytes(b)
         return x
 
     @classmethod
     def from_iterable(cls, i: Iterable[Any], /) -> Bits:
-        """Create a new Bits from an iterable by converting each element to a bool."""
+        """
+        Create a new :class:`Bits` from an iterable by converting each element to a bool.
+
+        This method initializes a new instance of the :class:`Bits` class using an iterable, where each element is converted to a boolean value.
+
+        :param i: The iterable to convert to a :class:`Bits`.
+        :type i: Iterable[Any]
+        :rtype: Bits
+        """
         x = super().__new__(cls)
         x._bitstore = BitStore.from_binstr(''.join('1' if x else '0' for x in i))
         return x
 
     @classmethod
     def from_string(cls, s: str, /) -> Bits:
-        """Create a new Bits from a formatted string."""
+        """
+        Create a new :class:`Bits` from a formatted string.
+
+        This method initializes a new instance of the :class:`Bits` class using a formatted string.
+
+        :param s: The formatted string to convert to a :class:`Bits`.
+        :type s: str
+        :rtype: Bits
+        """
         x = super().__new__(cls)
         x._bitstore = str_to_bitstore(s)
         return x
 
     @classmethod
     def join(cls, sequence: Iterable[Any], /) -> Bits:
-        """Return concatenation of Bits.
+        """
+        Return concatenation of Bits.
 
-        sequence -- A sequence of Bits.
+        This method concatenates a sequence of Bits objects into a single Bits object.
 
+        :param sequence: A sequence of Bits objects to concatenate.
+        :type sequence: Iterable[Bits]
+        :rtype: Bits
         """
         x = super().__new__(cls)
         x._bitstore = BitStore()
@@ -152,10 +180,14 @@ class Bits:
 
     @classmethod
     def ones(cls, n: int, /) -> Bits:
-        """Create a new Bits with all bits set to one.
+        """
+        Create a new :class:`Bits` with all bits set to one.
 
-        n -- The number of bits.
+        This method initializes a new instance of the :class:`Bits` class with all bits set to one.
 
+        :param n: The number of bits.
+        :type n: int
+        :rtype: Bits
         """
         if n == 0:
             return Bits()
@@ -193,7 +225,12 @@ class Bits:
     # ----- Instance Methods -----
 
     def all(self) -> bool:
-        """Return True if all bits are equal to 1, otherwise return False."""
+        """
+        Return True if all bits are equal to 1, otherwise return False.
+
+        :return: True if all bits are 1, otherwise False.
+        :rtype: bool
+        """
         return self._bitstore.all_set()
 
     def any(self) -> bool:
@@ -226,14 +263,17 @@ class Bits:
         return Bits.join(chunks)
 
     def count(self, value: Any, /) -> int:
-        """Return count of total number of either zero or one bits.
+        """
+        Return count of total number of either zero or one bits.
 
-        value -- If bool(value) is True then bits set to 1 are counted, otherwise bits set
-                 to 0 are counted.
+        :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
+        :type value: Any
+        :return: The count of bits set to 1 or 0.
+        :rtype: int
 
+        :example:
         >>> Bits('0xef').count(1)
         7
-
         """
         # count the number of 1s (from which it's easy to work out the 0s).
         count = self._bitstore.count(1)
@@ -241,15 +281,19 @@ class Bits:
 
     def cut(self, bits: int, start: int | None = None, end: int | None = None,
             count: int | None = None) -> Iterator[Bits]:
-        """Return Bits generator by cutting into bits sized chunks.
+        """
+        Return Bits generator by cutting into bits sized chunks.
 
-        bits -- The size in bits of the Bits chunks to generate.
-        start -- The bit position to start the first cut. Defaults to 0.
-        end -- The bit position one past the last bit to use in the cut.
-               Defaults to len(self).
-        count -- If specified then at most count items are generated.
-                 Default is to cut as many times as possible.
-
+        :param bits: The size in bits of the Bits chunks to generate.
+        :type bits: int
+        :param start: The bit position to start the first cut. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position one past the last bit to use in the cut. Defaults to len(self).
+        :type end: int, optional
+        :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
+        :type count: int, optional
+        :return: A generator yielding Bits chunks.
+        :rtype: Iterator[Bits]
         """
         start_, end_ = self._validate_slice(start, end)
         if count is not None and count < 0:
