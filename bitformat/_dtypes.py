@@ -5,6 +5,7 @@ from typing import Any, Callable, Iterable
 import inspect
 import bitformat
 from bitformat import _utils
+from ._common import Expression
 
 __all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
 
@@ -373,3 +374,36 @@ Initializes a singleton instance of the Register class.
 
 This is used to maintain a centralized registry of data type definitions.
 """
+
+
+class DtypeWithExpression:
+    """Used internally. A Dtype that can contain an Expression instead of fixed values for length or items."""
+
+    def __init__(self, s: str) -> None:
+        self.name = ''
+        self.items_expression = None
+        self.length_expression = None
+        token = ''.join(s.split())  # Remove whitespace
+        if token.startswith('[') and token.endswith(']'):
+            if (p := token.find(';')) == -1:
+                raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
+            self.items_expression = Expression(token[p + 1: -1])
+            self.name, length_str = _utils.parse_name_expression_token(token[1:p])
+        else:
+            self.name, length_str = _utils.parse_name_expression_token(token)
+        self.length_expression = Expression(length_str)
+
+            # return dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
+        # return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+
+    def __str__(self) -> str:
+        return "TODO"
+        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
+        length_str = '' if hide_length else str(self.length)
+        if self._items is None:
+            return f"{self._name}{length_str}"
+        items_str = '' if self._items == 0 else f" {self._items}"
+        return f"[{self._name}{length_str};{items_str}]"
+
+
+    # def get_dtype(self, **kwargs) -> Dtype:

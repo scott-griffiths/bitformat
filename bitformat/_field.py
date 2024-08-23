@@ -2,7 +2,7 @@ from __future__ import annotations
 import abc
 import re
 from ._bits import Bits
-from ._dtypes import Dtype
+from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
 from ._common import colour, Expression, _indent, override, final
 from typing import Any, Sequence, Iterable
@@ -18,10 +18,6 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
     except ValueError:
         return s, None
     return None, e
-
-class DtypeWithExpression(Dtype):
-    """Used internally. A Dtype that can contain an Expression instead of fixed values for length or items."""
-    pass
 
 
 class FieldType(abc.ABC):
@@ -154,13 +150,23 @@ class Field(FieldType):
     def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> Field:
         x = super().__new__(cls)
         x._bits = None
-        x._dtype = dtype
         x.const = const
-        if isinstance(x._dtype, str):
-            try:
-                x._dtype = Dtype.from_string(dtype)
-            except ValueError as e:
-                raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
+        if isinstance(dtype, str):
+            if '{' in dtype:
+                try:
+                    x._dtype_expression = DtypeWithExpression(dtype)
+                    x._dtype = Dtype.from_parameters(x._dtype_expression.name)
+                except ValueError as e:
+                    raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
+            else:
+                try:
+                    x._dtype = Dtype.from_string(dtype)
+                    x._dtype_expression = None
+                except ValueError as e:
+                    raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
+        else:
+            x._dtype = dtype
+            x._dtype_expression = None
         x.name = name
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
@@ -184,7 +190,7 @@ class Field(FieldType):
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bool.")
         x._setvalue_no_const_check(value)
-        if x._dtype.length == 0:
+        if x._dtype_expression is None and x._dtype.length == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
             else:
@@ -305,7 +311,8 @@ class Field(FieldType):
     @override
     def _str(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
-        d = f"{colour.purple}{const_str}{self._dtype}{colour.off}"
+        dtype_str = self._dtype if self._dtype_expression is None else self._dtype_expression
+        d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
         return f"{_indent(indent)}{n}{d}{v}"

@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Dtype, Bits, Field
+from bitformat import Dtype, Bits, Field, Expression
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
@@ -201,3 +201,14 @@ def test_const_equality():
     a = Field('const i5=1')
     b = Field('i5=1')
     assert a != b
+
+def test_length_expression():
+    f = Field('x: u{5}')
+    assert f._dtype_expression.length_expression == Expression('{5}')
+    assert f._dtype_expression.items_expression is None
+    with pytest.raises(ValueError):
+        _ = Field('x: u8{5}')
+    g = Field('p5:  [i{x}; {x + 2}]')
+    assert g._dtype_expression.length_expression == Expression('{x}')
+    assert g._dtype_expression.items_expression == Expression('{x+2}')
+    assert g._dtype == Dtype('i')
