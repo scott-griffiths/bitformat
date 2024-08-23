@@ -29,7 +29,7 @@ class FieldType(abc.ABC):
         try:
             return self._parse(b, {})
         except ValueError as e:
-            raise ValueError(f"Error parsing field {self}: {e}")
+            raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
     def build(self, values: Any | None = None, /,  **kwargs) -> Bits:

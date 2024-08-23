@@ -207,7 +207,11 @@ class Bits:
         """
         if isinstance(dtype, str):
             dtype = Dtype.from_string(dtype)
-        return dtype.pack(value)
+        try:
+            x = dtype.pack(value)
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
+        return x
 
     @classmethod
     def zeros(cls, n: int, /) -> Bits:
