@@ -122,7 +122,7 @@ class Array:
     - ``reverse()``: Reverse the order of all items.
     - ``to_bits()``: Return the Array data as a Bits object.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
-    - ``to_list()``: Return Array items as a list.
+    - ``unpack()``: Return Array items as a list of values.
 
     **Special methods:**
 
@@ -301,7 +301,7 @@ class Array:
             self._bitstore = self._bitstore.getslice(0, start) + self._bitstore.getslice(start + self._dtype.length, None)
 
     def __repr__(self) -> str:
-        list_str = f"{self.to_list()}"
+        list_str = f"{self.unpack()}"
         trailing_bit_length = len(self._bitstore) % self._dtype.length
         final_str = "" if trailing_bit_length == 0 else ", trailing_bits=" + repr(
             self._getbitslice(-trailing_bit_length, None)).splitlines()[0]
@@ -331,10 +331,10 @@ class Array:
         print(float_array.dtype)  # Output: Dtype('float')
         ```
         """
-        new_array = self.__class__(dtype, self.to_list())
+        new_array = self.__class__(dtype, self.unpack())
         return new_array
 
-    def to_list(self) -> list[ElementType]:
+    def unpack(self) -> list[ElementType]:
         return [self._dtype.unpack(self._proxy[start:start + len(self._dtype)])
                 for start in range(0, len(self._proxy) - len(self._dtype) + 1, len(self._dtype))]
 
