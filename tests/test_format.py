@@ -11,14 +11,14 @@ class TestCreation:
 
     def test_create_empty(self):
         f = Format()
-        b = f.build([])
+        b = f.pack([])
         assert len(b) == 0
         assert f.name == ''
 
     def test_create_from_dtype(self):
         d = Dtype.from_string('u12')
         f = Format([Field.from_parameters(d)], 'x')
-        x = f.build([1000])
+        x = f.pack([1000])
         assert f.name == 'x'
         assert x == 'u12=1000'
         assert len(x) == 12
@@ -37,25 +37,25 @@ class TestCreation:
     @given(name=st.sampled_from(['float16', 'u12', 'bool', 'float64']))
     def test_building_field(self, name):
         f = Field(name)
-        b = f.build(0)
+        b = f.pack(0)
         assert b == Bits.from_string(f'{name}=0')
 
     def test_create_from_bits(self):
         b = Bits.from_string('0xabc')
         f = Format([Field.from_bits(b)])
-        x = f.build([])
+        x = f.pack([])
         assert f.name == ''
         assert x == '0xabc'
         assert isinstance(x, Bits)
 
     def test_create_from_bits_with_name(self):
         f = Format([Field.from_bits('0xabc', 'some_bits')])
-        x = f.build([])
+        x = f.pack([])
         assert x, '0xabc'
 
     def test_create_from_list(self):
         f = Format(['const bits = 0xabc', 'u5', 'u5'])
-        x = f.build([3, 10])
+        x = f.pack([3, 10])
         assert x == 'bits = 0xabc, u5=3, u5=10'
         f.parse(x)
         assert isinstance(f, Format)
@@ -63,10 +63,10 @@ class TestCreation:
     def testComplicatedCreation(self):
         f = Format(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
         assert f.name == 'header'
-        b = f.build([352])
+        b = f.pack([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
         f2 = Format([f, 'bytes5'], 'main')
-        f3 = f2.build([[352], b'12345'])
+        f3 = f2.pack([[352], b'12345'])
         assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
@@ -93,35 +93,35 @@ class TestCreation:
 @pytest.mark.skip
 def test_building():
     f1 = Field('u8')
-    f1.build(9)
+    f1.pack(9)
     assert f1.value == 9
 
     f2 = Field('[u8; 3]')
-    f2.build([1, 2, 3])
+    f2.pack([1, 2, 3])
     assert f2.value == (1, 2, 3)
 
     f3 = Format(['u8'])
-    f3.build([4])
+    f3.pack([4])
     assert f3.value == [4]
 
     f4 = Format(['[u8; 3]'])
-    f4.build([[1, 2, 3]])
+    f4.pack([[1, 2, 3]])
     assert f4.value == [(1, 2, 3)]
 
     f5 = Format(['u8', '[u8; 3]'])
-    f5.build([4, [1, 2, 3]])
+    f5.pack([4, [1, 2, 3]])
     assert f5.value == [4, (1, 2, 3)]
 
     f6 = Format(['u8', '[u8; 3]', 'u8'])
-    f6.build([4, [1, 2, 3], 5])
+    f6.pack([4, [1, 2, 3], 5])
     assert f6.value == [4, (1, 2, 3), 5]
 
     f7 = Format([f1, f2])
-    f7.build([6, [4, 5, 6]])
+    f7.pack([6, [4, 5, 6]])
     assert f7.value == [6, (4, 5, 6)]
 
     f8 = Format([f1, f7])
-    f8.build([7, [8, [9, 10, 11]]])
+    f8.pack([7, [8, [9, 10, 11]]])
     assert f8.value == [7, (8, (9, 10, 11))]
 
 
@@ -144,7 +144,7 @@ class TestArray:
         array_field = Field.from_parameters('[u8; 20]', 'my_array')
         f = Format([array_field], 'a')
         assert f.fieldtypes[0].dtype.items == 20
-        a = f.build([list(range(20))])
+        a = f.pack([list(range(20))])
 
         f2 = Format(['new_array: [u8;20]'], 'b')
         assert f2.fieldtypes[0].dtype.items == 20
@@ -163,7 +163,7 @@ class TestArray:
                    ], 'construct_example')
         # TODO: This should be chosen by hypothesis to make it repeatable.
         p = [random.randint(0, 255) for _ in range(w * h)]
-        b = f.build([w, h, p])
+        b = f.pack([w, h, p])
         f.clear()
         f.parse(b)
         assert f['width'].value == w
@@ -186,12 +186,12 @@ def test_example_from_docs():
                 ]),
                 'u8'
                 ])
-    f.build([1, b'1', 2, b'22', 3, b'333', 12], items=2, flags=[True, False, True])
+    f.pack([1, b'1', 2, b'22', 3, b'333', 12], items=2, flags=[True, False, True])
 
 @pytest.mark.skip
 def test_creating_with_keyword_value():
     f = Format(['x: u10', 'u10={2*x}'])
-    b = f.build([6])
+    b = f.pack([6])
     assert b == 'u10=6, u10=12'
 
 @pytest.mark.skip
@@ -202,10 +202,10 @@ def test_items():
     assert f[0].value == 1
     assert f[1].value == [2, 0]
     f.clear()
-    b2 = f.build([1, [2, 0]])
+    b2 = f.pack([1, [2, 0]])
     assert b2 == b
     f.clear()
-    b3 = f.build([3, [1, 2, 3, 4]])
+    b3 = f.pack([3, [1, 2, 3, 4]])
     assert b3 == Bits.from_string('i5=3, u3=1, u3=2, u3=3, u3=4')
 
 
@@ -255,7 +255,7 @@ def test_find_field():
     assert f['width'].value == 352
     f.clear()
     assert f['width'].value is None
-    f.build([352, 288])
+    f.pack([352, 288])
     assert f.to_bits() == '0x000001b3160120'
 
 @pytest.mark.skip
@@ -286,7 +286,7 @@ def test_repeating_from_expression():
         'x: u8',
         Repeat('{2*x}', 'hex4')
     ], 'my_little_format')
-    b = f.build([2, ['a', 'b', 'c', 'd']])
+    b = f.pack([2, ['a', 'b', 'c', 'd']])
     assert b.parse('hex') == '02abcd'
 
 @pytest.mark.skip
@@ -296,7 +296,7 @@ def test_repeat_with_const_expression():
                     'const u5=0',
                     'const bin3=111'
                 ])])
-    f.build([3])
+    f.pack([3])
     assert f.to_bits() == 'i9=3, 0x070707'
 
 @pytest.mark.skip
@@ -333,7 +333,7 @@ def test_format_repr_string():
 
 def test_to_bits():
     f = Format(['u8', 'u8', 'u8'])
-    f.build([1, 2, 3])
+    f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == 'u8=1, u8=2, u8=3'
     f[1].clear()

@@ -32,13 +32,13 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
-    def build(self, values: Any | None = None, /,  **kwargs) -> Bits:
+    def pack(self, values: Any | None = None, /, **kwargs) -> Bits:
         if kwargs is None:
             kwargs = {}
         if values is None:
-            return self._build([], 0, {}, kwargs)[0]
+            return self._pack([], 0, {}, kwargs)[0]
         try:
-            bits, values_used = self._build([values], 0, {}, kwargs)
+            bits, values_used = self._pack([values], 0, {}, kwargs)
         except TypeError as e:
             if not isinstance(values, Sequence):
                 raise TypeError(f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}.")
@@ -70,8 +70,8 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-               kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         """Build the field from the values list, starting at index.
 
         Return the bits and the number of values used.
@@ -260,8 +260,8 @@ class Field(FieldType):
         return len(self)
 
     @override
-    def _build(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-               kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         if self.const and self.value is not None:
             if self.name != '':
                 vars_[self.name] = self.value
@@ -355,8 +355,8 @@ class Find(FieldType):
         self.name = name
         self._value = None
 
-    def _build(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
-               kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         return Bits(), 0
 
     def to_bits(self) -> Bits:

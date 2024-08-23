@@ -60,7 +60,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     f.parse(b)
     assert f.to_bits() == b
     if not isinstance(f.value[0], float) and not f.dtype.name == 'pad':  # Can't compare NaN or pad
-        f2.build(f.value)
+        f2.pack(f.value)
         assert f.to_bits() == f2.to_bits()
         assert f.value == f2.value
 
