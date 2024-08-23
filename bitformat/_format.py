@@ -59,6 +59,8 @@ class Format(FieldType):
                     start = i + 1
         if inside_brackets == 0 and start < len(content):
             fieldtypes.append(FieldType.from_string(content[start:]))
+        if inside_brackets != 0:
+            raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
         return Format(fieldtypes, name)
 
     @override
