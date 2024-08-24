@@ -14,26 +14,20 @@
 ---------
 
 **bitformat** is a Python module for creating, manipulating and interpreting binary data.
-It also supports parsing and creating from more complex binary formats.
+It also supports parsing and creating more complex binary formats.
 
 It is from the author of the widely used [**bitstring**](https://github.com/scott-griffiths/bitstring) module.
 
 
 ----
 
-Features
---------
-* The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating and interpreting the data.
+## Features
+* The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
-* A wide array of data types is supported with no restrictions on length.
-* Several field types are available:
-  * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values.
-  * A `Format` contains a list of other fields. These can be nested to any depth.
-  * More fields like `Repeat`, `Find` and `Condition` will be added later to add more logical structure.
+* A wide array of data types is supported with no arbitrary restrictions on length.
 * Data is always stored efficiently as a contiguous array of bits.
 
-Some Examples
--------------
+## Some Examples
 
 ### Creating some Bits
 
@@ -44,6 +38,7 @@ Some Examples
 >>> b = Bits('u12 = 54')  # Create from a formatted string.
 >>> c = Bits.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
 >>> d = Bits.pack('f16', -0.75)  # Pack a value into a data type.
+>>> e = Bits.join([a, b, c, d])  # The best way to join lots of bits together.
 ```
 
 A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
@@ -85,6 +80,38 @@ Some example data type strings are:
 
 Other types, and modifiers for endianness will be added later.
 
+### Bit operations
+
+An extensive set of operations are available to query `Bits` or to create new ones. For example:
+
+```pycon
+>>> a + b  # Concatenation
+Bits('0xa036')
+>>> c.find('0b11')  # Returns found bit position
+22
+>>> b.replace('0b1', '0xfe')
+Bits('0x03fbf9fdfc')
+>>> b[0:10] | d[2:12]  # Slicing and logical operators
+Bits('0b1110101101')
+```
+
+### Arrays
+
+An `Array` class is provided which stores a contiguous sequence of `Bits` of the same data type.
+This is similar to the `array` type in the standard module of the same name, but it's not restricted to just a dozen or so types.
+
+```pycon
+>>> r = Array('i5', [4, -3, 0, 1, -5, 15])  # An array of 5 bit signed ints
+>>> r -= 2  # Operates on each element
+>>> r.unpack()
+[2, -5, -2, -1, -7, 13]
+>>> r.dtype = 'u6'  # Freely change the data type
+>>> r
+Array('u6', [5, 47, 55, 60, 45])
+>>> r.to_bits()
+Bits('0b000101101111110111111100101101')
+```
+
 ### A `Format` example
 
 The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
@@ -125,21 +152,23 @@ Format([
 ])
 ```
 
-The `parse` method is able to lazily parse the input bytes, and simply returns the number of bits that were consumed. The actual values of the individual fields aren't calculated until they are needed which allows large and complex file formats to be efficiently dealt with.
+The `parse` method is able to lazily parse the input bytes, and simply returns the number of bits that were consumed. The actual values of the individual fields aren't calculated until they are needed, which allows large and complex file formats to be efficiently dealt with.
 
-### More to come
+## More to come
 
-The `bitformat` library is still pre-alpha and being actively developed.
+The `bitformat` library is still pre-alpha and is being actively developed.
+I'm hoping to make a couple of alpha releases in late 2024, with more features added in 2025.
+
 There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
 
-The Todo list includes:
+The :todo: list includes:
 
 * **Endianness modifiers.** Currently everything is both bit and byte big endian. There will be modifiers that can be added to any whole-byte type to specify if they should be interpreted as big, little, or native endian.
 * **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`. This is available in `bitstring`, but I want to find a better way of doing it before adding it to `bitformat`.
-* **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'[w: u16, h: u16, [u8; {w*h}]]` the size of the `'u8'` array would depend on the values parsed just before it.
-* **New field types.** Planned are things like `Repeat`, `Find` and `If` which allow more flexible formats to be written.
+* **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'[w: u16, h: u16, [u8; {w * h}]]` the size of the `'u8'` array would depend on the values parsed just before it.
+* **New field types.** Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
-* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising and the design philosophy should mean that it can be made even more performant later.
+* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
 
 
 <sub>Copyright (c) 2024 Scott Griffiths</sub>
