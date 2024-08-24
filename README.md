@@ -13,57 +13,133 @@
 -->
 ---------
 
-**bitformat** is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
+**bitformat** is a Python module for creating, manipulating and interpreting binary data.
+It also supports parsing and creating from more complex binary formats.
 
 It is from the author of the widely used [**bitstring**](https://github.com/scott-griffiths/bitstring) module.
+
 
 ----
 
 Features
 --------
-* A bitformat is a specification of a binary format using fields that can say how to build it from supplied values, or how to parse binary data to retrieve those values.
-* A wide array of data types is supported.  Want to use a 13 bit integer or an 8-bit float? Fine - there are no special hoops to jump through.
+* The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating and interpreting the data.
+* The `Format` class provides a way to define a binary format using a simple and flexible syntax.
+* A wide array of data types is supported with no restrictions on length.
 * Several field types are available:
-  * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from just a string. 
+  * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values.
   * A `Format` contains a list of other fields. These can be nested to any depth.
-  * Fields like `Repeat`, `Find` and `Condition` can be used to add more logical structure.
-* The values of other fields can be used in later calculations via an f-string-like expression syntax.
+  * More fields like `Repeat`, `Find` and `Condition` will be added later to add more logical structure.
 * Data is always stored efficiently as a contiguous array of bits.
 
-An Example
-----------
+Some Examples
+-------------
 
-A quick example: the MPEG-2 video standard specifies a 'sequence_header' that could be defined in bitformat by
+### Creating some Bits
 
-    seq_header = Format(['sequence_header_code: hex32 = 0x000001b3',
-                         'horizontal_size_value: u12',
-                         'vertical_size_value: u12',
-                         'aspect_ratio_information: u4',
-                         'frame_rate_code: u4',
-                         'bit_rate_value: u18',
-                         'marker_bit: bool',
-                         'vbv_buffer_size_value: u10',
-                         'constrained_parameters_flag: bool',
-                         'load_intra_quantizer_matrix: bool',
-                         Repeat('{load_intra_quantizer_matrix}',
-                             'intra_quantizer_matrix: [u8; 64]'),
-                         'load_non_intra_quantizer_matrix bool',
-                         Repeat('{load_non_intra_quantizer_matrix}',
-                             'non_intra_quantizer_matrix: [u8; 64]'),
-                         Find('0x000001')
-                         ], 'sequence_header')
+```pycon
+>>> from bitformat import *
 
-To parse such a header you can write simply
+>>> a = Bits('0b1010')  # Create from a binary string
+>>> b = Bits('u12 = 54')  # Create from a formatted string.
+>>> c = Bits.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
+>>> d = Bits.pack('f16', -0.75)  # Pack a value into a data type.
+```
 
-    seq_header.parse(some_bytes_object)
+A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
 
-then you can access and modify the field values
 
-    seq_header['bit_rate_value'].value *= 2
+### Interpreting those Bits
 
-before rebuilding the binary object
+Although the examples above were created from a variety of data types, the `Bits` instance doesn't retain any knowledge of how it was created - it's just a sequence of bits.
+You can therefore interpret them however you'd like:
 
-    b = seq_header.build()
+```pycon
+>>> a.i
+-6
+>>> b.hex
+'036'
+>>> c.unpack(['u4', 'f16', 'u4'])
+[0, 0.0005035400390625, 3]
+>>> d.bytes
+b'\xba\x00'
+```
+
+The `unpack` method is available as a general-case way to unpack the bits into a single or multiple data types.
+If you only want to unpack to a single data type you can use properties of the `Bits` as a short-cut.
+
+### Data types
+
+A wide range of data types are supported. These are essentially descriptions on how binary data can be converted to a useful value. The `Dtype` class is used to define these, but usually just the string representation can be used.
+
+Some example data type strings are:
+
+* `'u3'` - a 3 bit unsigned integer. All lengths are supported.
+* `'i32'` - a 32 bit signed integer. All lengths are supported.
+* `'f64'` - a 64 bit IEEE float. Lengths of 16, 32 and 64 are supported.
+* `'bool'` - a single bit boolean value.
+* `'bytes10'` - a 10 byte sequence.
+* `'hex'` - a hexadecimal string.
+* `'bin'` - a binary string.
+* `'[u8; 40]'` - an array of 40 unsigned 8 bit integers.
+
+Other types, and modifiers for endianness will be added later.
+
+### A `Format` example
+
+The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
+
+```pycon
+>>> f = Format.from_string('[width: u12, height: u12, flags: [bool; 4]]')
+>>> f.pack([320, 240, [True, False, True, False]])
+Bits('0x1400f0a')
+>>> print(f)
+[
+    width: u12 = 320,
+    height: u12 = 240,
+    flags: [bool; 4] = (True, False, True, False)
+]
+>>> f['height'].value /= 2
+>>> f.to_bits()
+Bits('0x140078a')
+>>> f.to_bits() == 'u12=320, u12=120, 0b1010'
+True
+```
+
+The `Format` and its fields can optionally have names (the `Format` above is unnamed, but its fields are named).
+In this example the `pack` method was used with appropriate values, which then returned a `Bits` object.
+The `Format` now contains all the interpreted values, which can be easily accessed and modified.
+
+The final line in the example above demonstrates how new `Bits` objects can be created when needed by promoting other types, in this case the formatted string is promoted to a `Bits` object before the comparison is made.
+
+The `Format` can be used symmetrically to both create and parse binary data:
+
+```pycon
+>>> f.parse(b'x\x048\x10')
+28
+>>> f
+Format([
+    'width: u12 = 1920',
+    'height: u12 = 1080',
+    'flags: [bool; 4] = (False, False, False, True)'
+])
+```
+
+The `parse` method is able to lazily parse the input bytes, and simply returns the number of bits that were consumed. The actual values of the individual fields aren't calculated until they are needed which allows large and complex file formats to be efficiently dealt with.
+
+### More to come
+
+The `bitformat` library is still pre-alpha and being actively developed.
+There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
+
+The Todo list includes:
+
+* **Endianness modifiers.** Currently everything is both bit and byte big endian. There will be modifiers that can be added to any whole-byte type to specify if they should be interpreted as big, little, or native endian.
+* **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`. This is available in `bitstring`, but I want to find a better way of doing it before adding it to `bitformat`.
+* **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'[w: u16, h: u16, [u8; {w*h}]]` the size of the `'u8'` array would depend on the values parsed just before it.
+* **New field types.** Planned are things like `Repeat`, `Find` and `If` which allow more flexible formats to be written.
+* **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
+* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising and the design philosophy should mean that it can be made even more performant later.
 
 
 <sub>Copyright (c) 2024 Scott Griffiths</sub>
