@@ -716,7 +716,7 @@ class Bits:
                 u_str = f'u{length} == {u:_}'
                 i_str = f'i{length} == {i:_}'
         if length in dtype_register['f'].allowed_lengths:
-            f_str = f'f{length} == {self.unpack('f')}'
+            f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _setbits(self, bs: BitsType, _length: None = None) -> None:
