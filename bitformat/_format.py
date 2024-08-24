@@ -122,17 +122,26 @@ class Format(FieldType):
         for fieldtype in self.fieldtypes:
             if fieldtype.name == key:
                 return fieldtype
-        raise KeyError(key)
+        raise KeyError(f"Field '{key}' not found.")
 
     def __setitem__(self, key, value) -> None:
+        if isinstance(value, str):
+            try:
+                field = FieldType.from_string(value)
+            except ValueError as e:
+                raise ValueError(f"Can't set field from string: {e}") from None
+        elif isinstance(value, FieldType):
+            field = value
+        else:
+            raise ValueError(f"Can't create and set field from type '{type(value)}'.")
         if isinstance(key, int):
-            self.fieldtypes[key].value = value
+            self.fieldtypes[key] = field
             return
-        for fieldtype in self.fieldtypes:
-            if fieldtype.name == key:
-                fieldtype.value = value
+        for i in range(len(self.fieldtypes)):
+            if self.fieldtypes[i].name == key:
+                self.fieldtypes[i] = field
                 return
-        raise KeyError(key)
+        raise KeyError(f"Field '{key}' not found.")
 
     value = property(_getvalue, _setvalue)
 

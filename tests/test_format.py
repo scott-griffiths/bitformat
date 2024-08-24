@@ -149,7 +149,7 @@ class TestArray:
         f2 = Format(['new_array: [u8;20]'], 'b')
         assert f2.fieldtypes[0].dtype.items == 20
         assert f2.fieldtypes[0].value is None
-        f2['new_array'] = a
+        f2['new_array'].value = a
         assert a == f2.to_bits()
 
     @pytest.mark.skip
@@ -227,12 +227,14 @@ class TestMethods:
     def test_set_item(self):
         f = Format(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
         with pytest.raises(ValueError):
-            f[0] = 2
+            f[0].value = 2
         f[0].const = False
-        f[0] = 2
+        with pytest.raises(ValueError):
+            f[0] = 2
+        f[0].value = 2
         f[0].const = True
         assert f[0].value == 2
-        f['pop'] = 999999
+        f['pop'].value = 999999
         assert f['pop'].value == 999999
 
 @pytest.mark.skip
