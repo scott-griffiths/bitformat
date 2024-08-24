@@ -392,3 +392,10 @@ def test_interesting_types_from_string():
 def test_expression_dtypes():
     f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
 
+def test_unpack():
+    f = Format.from_string('header: [u8, u4, bool]')
+    b = Bits.from_string('u8=1, u4=2, 0b1')
+    assert f.unpack(b) == [1, 2, True]
+    f[1].clear()
+    with pytest.raises(ValueError):
+        _ = f.unpack()

@@ -212,3 +212,12 @@ def test_length_expression():
     assert g._dtype_expression.length_expression == Expression('{x}')
     assert g._dtype_expression.items_expression == Expression('{x+2}')
     assert g._dtype == Dtype('i')
+
+def test_unpack():
+    f = Field('[i9; 4]')
+    f.pack([5, -5, 0, 100])
+    assert f.unpack() == (5, -5, 0, 100)
+    f.clear()
+    with pytest.raises(ValueError):
+        _ = f.unpack()
+

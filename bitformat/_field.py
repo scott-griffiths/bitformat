@@ -46,6 +46,17 @@ class FieldType(abc.ABC):
         return bits
 
     @final
+    def unpack(self, b: Bits | bytes | bytearray | None = None) -> Any | list[Any]:
+        if b is not None:
+            self.parse(b)
+        try:
+            bits = self.to_bits()
+        except ValueError as e:
+            raise ValueError(f"Cannot unpack '{self!r}' as not all field have binary data to unpack: {e}") from None
+        else:
+            return self.value
+
+    @final
     def __str__(self) -> str:
         return self._str(0)
 

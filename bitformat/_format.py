@@ -31,12 +31,11 @@ class Format(FieldType):
     @staticmethod
     def _parse_format_str(format_str: str) -> tuple[str, str]:
         pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
-        match = re.match(pattern, format_str)
-        if match:
+        if match := re.match(pattern, format_str):
             name = match.group('name')
             content = match.group('content')
         else:
-            raise ValueError(f"Invalid format string '{format_str}'.")
+            raise ValueError(f"Invalid format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
         name = '' if name is None else name.strip()
         return name, content
 
