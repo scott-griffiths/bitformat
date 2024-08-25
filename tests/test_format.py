@@ -403,3 +403,19 @@ def test_unpack():
     f[1].clear()
     with pytest.raises(ValueError):
         _ = f.unpack()
+
+def test_construction_by_appending():
+    f = Format()
+    f += 'u8'
+    f += 'i4'
+    f += Field('const f16 = 0.25')
+    g = Format()
+    g.append('u8')
+    g.append('i4')
+    g += Field('const f16 = 0.25')
+    h = Format()
+    h.extend(['u8', 'i4', 'const float16=0.25'])
+    i = Format() + 'u8'
+    i = i + 'i4' + 'const f16=0.25'
+    assert f == g == h == i
+

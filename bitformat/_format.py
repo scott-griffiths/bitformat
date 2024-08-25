@@ -20,7 +20,7 @@ class Format(FieldType):
             x = super().__new__(cls)
             x.fieldtypes = []
             x.name = ''
-            x.var = {}
+            x.vars = {}
             return x
         return cls.from_string(s)
 
@@ -181,12 +181,10 @@ class Format(FieldType):
         s += f"{_indent(indent)}]{name_str})"
         return s
 
-    def __iadd__(self, other: Format | Dtype | Bits | str | Field) -> Format:
-        if isinstance(other, FieldType):
-            self.fieldtypes.append(copy.copy(other))
-            return self
-        field = Field(other)
-        self.fieldtypes.append(field)
+    def __iadd__(self, other: FieldType | str) -> Format:
+        if isinstance(other, str):
+            other = FieldType.from_string(other)
+        self.fieldtypes.append(copy.copy(other))
         return self
 
     def __copy__(self) -> Format:
@@ -196,9 +194,9 @@ class Format(FieldType):
         x.fieldtypes = [copy.copy(f) for f in self.fieldtypes]
         return x
 
-    def __add__(self, other: Format | Dtype | Bits | str | Field) -> Format:
-        x = copy.deepcopy(self)
-        x += other
+    def __add__(self, other: FieldType | str) -> Format:
+        x = copy.copy(self)
+        x.__iadd__(other)
         return x
 
     def append(self, value: Any) -> None:
