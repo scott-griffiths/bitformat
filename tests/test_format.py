@@ -17,21 +17,21 @@ class TestCreation:
 
     def test_create_from_dtype(self):
         d = Dtype.from_string('u12')
-        f = Format([Field.from_parameters(d)], 'x')
+        f = Format.from_parameters([Field.from_parameters(d)], 'x')
         x = f.pack([1000])
         assert f.name == 'x'
         assert x == 'u12=1000'
         assert len(x) == 12
 
     def test_create_from_bits_string(self):
-        f = Format([Field.from_parameters('float16', 'foo', 12.5)], 'x')
-        g = Format(['foo: float16=12.5'], 'y')
+        f = Format.from_parameters([Field.from_parameters('float16', 'foo', 12.5)], 'x')
+        g = Format.from_parameters(['foo: float16=12.5'], 'y')
         assert f.to_bits() == g.to_bits()
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
-        f = Format(['float16'], 'x')
-        assert f.fieldtypes[0].name == ''
+        f = Format('[x: f16]')
+        assert f.fieldtypes[0].name == 'x'
         assert f.fieldtypes[0].dtype == Dtype.from_parameters('float', 16)
 
     @given(name=st.sampled_from(['float16', 'u12', 'bool', 'float64']))
@@ -42,37 +42,39 @@ class TestCreation:
 
     def test_create_from_bits(self):
         b = Bits.from_string('0xabc')
-        f = Format([Field.from_bits(b)])
+        f = Format.from_parameters([Field.from_bits(b)])
         x = f.pack([])
         assert f.name == ''
         assert x == '0xabc'
         assert isinstance(x, Bits)
 
     def test_create_from_bits_with_name(self):
-        f = Format([Field.from_bits('0xabc', 'some_bits')])
+        f = Format.from_parameters([Field.from_bits('0xabc', 'some_bits')])
         x = f.pack([])
         assert x, '0xabc'
 
     def test_create_from_list(self):
-        f = Format(['const bits = 0xabc', 'u5', 'u5'])
+        f = Format.from_parameters(['const bits = 0xabc', 'u5', 'u5'])
         x = f.pack([3, 10])
         assert x == 'bits = 0xabc, u5=3, u5=10'
         f.parse(x)
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
-        f = Format(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
+        f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
+        g = Format('header: [const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True]')
+        assert f == g
         assert f.name == 'header'
         b = f.pack([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
-        f2 = Format([f, 'bytes5'], 'main')
+        f2 = Format.from_parameters([f, 'bytes5'], 'main')
         f3 = f2.pack([[352], b'12345'])
         assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
-        header = Format(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
-        main = Format(['bits = 0b1', 'v1:i7', 'v2:i9'], 'main')
-        f = Format([header, main, 'bits = 0x47'], 'all')
+        header = Format.from_parameters(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
+        main = Format.from_parameters(['bits = 0b1', 'v1:i7', 'v2:i9'], 'main')
+        f = Format.from_parameters([header, main, 'bits = 0x47'], 'all')
         b = Bits.from_string('bits = 0x000001b3, u12=100, u12=200, bits = 0b1, bits = 0b0, bits = 0b1, i7=5, i9=-99, bits = 0x47')
         f.parse(b)
         t = f['header']
@@ -142,11 +144,11 @@ class TestArray:
 
     def test_simple_array(self):
         array_field = Field.from_parameters('[u8; 20]', 'my_array')
-        f = Format([array_field], 'a')
+        f = Format.from_parameters([array_field], 'a')
         assert f.fieldtypes[0].dtype.items == 20
         a = f.pack([list(range(20))])
 
-        f2 = Format(['new_array: [u8;20]'], 'b')
+        f2 = Format.from_parameters(['new_array: [u8;20]'], 'b')
         assert f2.fieldtypes[0].dtype.items == 20
         assert f2.fieldtypes[0].value is None
         f2['new_array'].value = a
@@ -212,20 +214,20 @@ def test_items():
 class TestMethods:
 
     def test_clear(self):
-        f = Format(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
+        f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
         g = Format.from_string('empty_header: [const bits = 0x000001b3, u12, u12, bool]')
         assert f == g
 
     def test_get_item(self):
-        f = Format(['float16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
+        f = Format.from_parameters(['float16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
         assert f[0].value == 7
         assert f[1].value is None
         assert f['pop'].value == 144
 
     def test_set_item(self):
-        f = Format(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
+        f = Format.from_parameters(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
         with pytest.raises(ValueError):
             f[0].value = 2
         f[0].const = False
@@ -271,7 +273,7 @@ def test_format_repr_and_str():
     assert 'my_format' in r
 
 def test_format_get_and_set():
-    f = Format(['u8', 'u8', 'u8'])
+    f = Format('[u8, u8, u8]')
     for field in f:
         field.value = 12
     assert f.value == [12, 12, 12]
@@ -329,12 +331,12 @@ def test_field_array_str():
     assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():
-    f = Format(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
+    f = Format.from_parameters(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format([\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n], 'dave')"
+    assert r == "Format.from_parameters([\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n], 'dave')"
 
 def test_to_bits():
-    f = Format(['u8', 'u8', 'u8'])
+    f = Format.from_parameters(['u8', 'u8', 'u8'])
     f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == 'u8=1, u8=2, u8=3'
@@ -350,8 +352,8 @@ def test_to_bits():
         _ = f.to_bits()
 
 def test_partial_parse():
-    f = Format(['bool',
-                '[f16;3]'])
+    f = Format.from_parameters(['bool',
+                                '[f16;3]'])
     b = Bits.from_string('0b1, f16=1.0, f16=2.0, f16=3.0')
     f.parse(b)
     assert f[0].value == True

@@ -15,18 +15,30 @@ __all__ = ['Format']
 class Format(FieldType):
     """A sequence of FieldTypes, used to group fields together."""
 
-    def __init__(self, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> None:
-        self.fieldtypes = []
+    def __new__(cls,  s: str | None = None) -> Format:
+        if s is None:
+            x = super().__new__(cls)
+            x.fieldtypes = []
+            x.name = ''
+            x.var = {}
+            return x
+        return cls.from_string(s)
+
+    @classmethod
+    def from_parameters(cls, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
+        x = super().__new__(cls)
+        x.fieldtypes = []
         if fieldtypes is None:
             fieldtypes = []
-        self.name = name
-        self.vars = {}
+        x.name = name
+        x.vars = {}
         for fieldtype in fieldtypes:
             if isinstance(fieldtype, str):
                 fieldtype = Field.from_string(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-            self.fieldtypes.append(fieldtype)
+            x.fieldtypes.append(fieldtype)
+        return x
 
     @staticmethod
     def _parse_format_str(format_str: str) -> tuple[str, str]:
@@ -60,7 +72,7 @@ class Format(FieldType):
             fieldtypes.append(FieldType.from_string(content[start:]))
         if inside_brackets != 0:
             raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
-        return Format(fieldtypes, name)
+        return Format.from_parameters(fieldtypes, name)
 
     @override
     def __len__(self):
@@ -160,7 +172,7 @@ class Format(FieldType):
     @override
     def _repr(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{_indent(indent)}{self.__class__.__name__}([\n"
+        s = f"{_indent(indent)}{self.__class__.__name__}.from_parameters([\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._repr(indent + 1)
             if i != len(self.fieldtypes) - 1:

@@ -82,7 +82,7 @@ def test_format_consistency(dtype_names, lengths):
     zipped = list(zip(dtype_names, als, multipliers))
     for i in range(6):
         dtypes = [Dtype.from_parameters(dtype_name, length*multiplier) for dtype_name, length, multiplier in zipped[:i]]
-        f = Format([Field.from_parameters(dtype) for dtype in dtypes])
+        f = Format.from_parameters([Field.from_parameters(dtype) for dtype in dtypes])
         f2 = f
         assert f == f2
         # Create some bits of the right length
