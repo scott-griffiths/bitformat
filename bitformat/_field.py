@@ -1,7 +1,7 @@
 from __future__ import annotations
 import abc
 import re
-from ._bits import Bits
+from ._bits import Bits, BitsType
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
 from ._common import colour, Expression, _indent, override, final
@@ -23,9 +23,8 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
 class FieldType(abc.ABC):
 
     @final
-    def parse(self, b: Bits | bytes | bytearray) -> int:
-        if isinstance(b, (bytes, bytearray)):
-            b = Bits.from_bytes(b)
+    def parse(self, b: BitsType) -> int:
+        b = Bits.from_auto(b)
         try:
             return self._parse(b, {})
         except ValueError as e:
@@ -312,12 +311,7 @@ class Field(FieldType):
     def _getdtype(self) -> Dtype:
         return self._dtype
 
-    def _setdtype(self, dtype: Dtype | str) -> None:
-        if isinstance(dtype, str):
-            dtype = Dtype.from_string(dtype)
-        self._dtype = dtype
-
-    dtype = property(_getdtype, _setdtype)
+    dtype = property(_getdtype)
 
     @override
     def _str(self, indent: int) -> str:

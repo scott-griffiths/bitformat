@@ -166,9 +166,9 @@ def test_field_array_issues():
     assert len(f) == 10
 
 
-def test_setting_dtype():
-    f = Field.from_bits('0x0102')
-    f.dtype = '[u8; 2]'
+def test_simple_array_parse():
+    f = Field('[u8; 2]')
+    f.parse('0x0102')
     assert f.value == (1, 2)
 
 
