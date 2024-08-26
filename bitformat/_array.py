@@ -339,11 +339,28 @@ class Array:
                 for start in range(0, len(self._proxy) - len(self._dtype) + 1, len(self._dtype))]
 
     def append(self, x: ElementType, /) -> None:
+        """
+        Append a single item to the end of the Array.
+
+        :param x: The item to append.
+        :type x: ElementType
+        :return: None
+        """
         if len(self._proxy) % self._dtype.length != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._bitstore += self._create_element(x)._bitstore
 
     def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> None:
+        """
+        Append new items to the end of the Array from an iterable.
+
+        This method allows you to extend the Array by appending elements from another iterable.
+        The iterable can be another Array, bytes, bytearray, Bits, or any other iterable containing elements of a compatible type.
+
+        :param iterable: The iterable containing elements to append to the Array.
+        :type iterable: Array, bytes, bytearray, Bits, or any iterable of compatible elements
+        :return: None
+        """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
             self._bitstore += Bits.from_bytes(iterable)._bitstore
@@ -366,8 +383,14 @@ class Array:
                 self._bitstore += self._create_element(item)._bitstore
 
     def insert(self, pos: int, x: ElementType, /) -> None:
-        """Insert a new element into the Array at position pos.
+        """
+        Insert a new element into the Array at position pos.
 
+        :param pos: The position to insert the item.
+        :type pos: int
+        :param x: The item to insert.
+        :type x: ElementType
+        :return: None
         """
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
@@ -375,10 +398,15 @@ class Array:
                           self._bitstore.getslice(pos * self._dtype.length, None))
 
     def pop(self, pos: int = -1, /) -> ElementType:
-        """Return and remove an element of the Array.
+        """
+        Return and remove an element of the Array.
 
         Default is to return and remove the final element.
 
+        :param pos: The position of the item to remove. Default is -1 (last item).
+        :type pos: int
+        :return: The removed item.
+        :rtype: ElementType
         """
         if len(self) == 0:
             raise IndexError("Can't pop from an empty Array.")
@@ -387,10 +415,12 @@ class Array:
         return x
 
     def byteswap(self) -> None:
-        """Change the endianness in-place of all items in the Array.
+        """
+        Change the endianness in-place of all items in the Array.
 
         If the Array format is not a whole number of bytes a ValueError will be raised.
 
+        :return: None
         """
         if self._dtype.length % 8 != 0:
             raise ValueError(
@@ -432,14 +462,21 @@ class Array:
 
     def pp(self, fmt: str | None = None, width: int = 120,
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
-        """Pretty-print the Array contents.
+        """
+        Pretty-print the Array contents.
 
-        fmt -- Data format string. Defaults to current Array dtype.
-        width -- Max width of printed lines in characters. Defaults to 120. A single group will always
-                 be printed per line even if it exceeds the max width.
-        show_offset -- If True shows the element offset in the first column of each line.
-        stream -- A TextIO object with a write() method. Defaults to sys.stdout.
+        This method provides a formatted output of the Array's contents, allowing for easy inspection of the data.
+        The output can be customized with various parameters to control the format, width, and display options.
 
+        :param fmt: Data format string. Defaults to the current Array dtype.
+        :type fmt: str or None
+        :param width: Maximum width of printed lines in characters. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
+        :type width: int
+        :param show_offset: If True, shows the element offset in the first column of each line.
+        :type show_offset: bool
+        :param stream: A TextIO object with a write() method. Defaults to sys.stdout.
+        :type stream: TextIO
+        :return: None
         """
         colour = Colour(not options.no_color)
         sep = ' '
@@ -490,7 +527,14 @@ class Array:
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:
-        """Return True if format and all Array items are equal."""
+        """
+        Return True if the format and all Array items are equal to another Array.
+
+        :param other: The other Array to compare with.
+        :type other: Any
+        :return: True if the Arrays are equal, False otherwise.
+        :rtype: bool
+        """
         if isinstance(other, Array):
             if self._dtype.length != other._dtype.length:
                 return False

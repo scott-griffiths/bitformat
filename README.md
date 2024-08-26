@@ -117,7 +117,7 @@ Bits('0b000101101111110111111100101101')
 The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
 
 ```pycon
->>> f = Format.from_string('[width: u12, height: u12, flags: [bool; 4]]')
+>>> f = Format('[width: u12, height: u12, flags: [bool; 4]]')
 >>> f.pack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
 >>> print(f)

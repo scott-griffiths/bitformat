@@ -198,6 +198,8 @@ class Bits:
     @classmethod
     def pack(cls, dtype: Dtype | str, value: Any, /) -> Bits:
         """
+        Pack a value according to a data type.
+
         :param dtype: The data type to pack.
         :type dtype: Dtype | str
         :param value: A value appropriate for the data type.
@@ -215,10 +217,13 @@ class Bits:
 
     @classmethod
     def zeros(cls, n: int, /) -> Bits:
-        """Create a new Bits with all bits set to zero.
+        """
+        Create a new Bits with all bits set to zero.
 
-        n -- The number of bits.
-
+        :param n: The number of bits.
+        :type n: int
+        :return: A Bits object with all bits set to zero.
+        :rtype: Bits
         """
         if n == 0:
             return Bits()
@@ -238,17 +243,24 @@ class Bits:
         return self._bitstore.all_set()
 
     def any(self) -> bool:
-        """Return True if any bits are equal to 1, otherwise return False."""
+        """
+        Return True if any bits are equal to 1, otherwise return False.
+
+        :return: True if any bits are 1, otherwise False.
+        :rtype: bool
+        """
         return self._bitstore.any_set()
 
     def byteswap(self, bytelength: int | None = None, /) -> Bits:
         """Change the byte endianness. Return new Bits.
 
-        bytelength: An int giving the number of bytes to swap.
-
         The whole of the Bits will be byte-swapped. It must be a multiple
         of bytelength long.
 
+        :param bytelength: An int giving the number of bytes to swap.
+        :type bytelength: int or None
+        :return: A new Bits object with byte-swapped data.
+        :rtype: Bits
         """
         if len(self) % 8 != 0:
             raise ValueError(f"Bit length must be an multiple of 8 to use byteswap.")
@@ -317,12 +329,17 @@ class Bits:
         return
 
     def ends_with(self, suffix: BitsType, /, start: int | None = None, end: int | None = None) -> bool:
-        """Return whether the current Bits ends with suffix.
+        """
+        Return whether the current Bits ends with suffix.
 
-        suffix -- The Bits to search for.
-        start -- The bit position to start from. Defaults to 0.
-        end -- The bit position to end at. Defaults to len(self).
-
+        :param suffix: The Bits to search for.
+        :type suffix: BitsType
+        :param start: The bit position to start from. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position to end at. Defaults to len(self).
+        :type end: int, optional
+        :return: True if the Bits ends with the suffix, otherwise False.
+        :rtype: bool
         """
         suffix = self.from_auto(suffix)
         start, end = self._validate_slice(start, end)
@@ -330,23 +347,25 @@ class Bits:
 
     def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
              bytealigned: bool | None = None) -> int | None:
-        """Find first occurrence of substring bs.
+        """
+        Find first occurrence of substring bs.
 
-        Returns a the bit position if found, or None if not found.
+        Returns the bit position if found, or None if not found.
 
-        bs -- The Bits to find.
-        start -- The bit position to start the search. Defaults to 0.
-        end -- The bit position one past the last bit to search.
-               Defaults to len(self).
-        bytealigned -- If True the Bits will only be
-                       found on byte boundaries.
+        :param bs: The Bits to find.
+        :type bs: BitsType
+        :param start: The bit position to start the search. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position one past the last bit to search.
+        :type end: int, optional
+        :param bytealigned: If True, the Bits will only be found on byte boundaries.
+        :type bytealigned: bool, optional
+        :return: The bit position if found, or None if not found.
+        :rtype: int or None
 
-        Raises ValueError if bs is empty, if start < 0, if end > len(self) or
-        if end < start.
-
+        :example:
         >>> Bits.from_string('0xc3e').find('0b1111')
         6
-
         """
         bs = Bits.from_auto(bs)
         if len(bs) == 0:
@@ -360,13 +379,18 @@ class Bits:
                  bytealigned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
-        bs -- The Bits to find.
-        start -- The bit position to start the search. Defaults to 0.
-        end -- The bit position one past the last bit to search.
-               Defaults to len(self).
-        count -- The maximum number of occurrences to find.
-        bytealigned -- If True the Bits will only be found on
-                       byte boundaries.
+        :param bs: The Bits to find.
+        :type bs: BitsType
+        :param start: The bit position to start the search. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position one past the last bit to search.
+        :type end: int, optional
+        :param count: The maximum number of occurrences to find.
+        :type count: int, optional
+        :param bytealigned: If True, the Bits will only be found on byte boundaries.
+        :type bytealigned: bool, optional
+        :return: A generator yielding bit positions.
+        :rtype: Iterable[int]
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
@@ -384,8 +408,12 @@ class Bits:
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
 
-        pos -- The bit position to insert at.
-        bs -- The Bits to insert.
+        :param pos: The bit position to insert at.
+        :type pos: int
+        :param bs: The Bits to insert.
+        :type bs: BitsType
+        :return: A new Bits object with the inserted bits.
+        :rtype: Bits
 
         Raises ValueError if pos < 0 or pos > len(self).
 
@@ -400,8 +428,10 @@ class Bits:
     def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
         """Return new Bits with one or many bits inverted between 0 and 1.
 
-        pos -- Either a single bit position or an iterable of bit positions.
-               Negative numbers are treated in the same way as slice indices.
+        :param pos: Either a single bit position or an iterable of bit positions.
+        :type pos: int or Iterable[int] or None
+        :return: A new Bits object with the inverted bits.
+        :rtype: Bits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -425,9 +455,12 @@ class Bits:
     def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs overwritten at bit position pos.
 
-        pos -- The bit position to start overwriting at.
-        bs -- The Bits to overwrite.
-
+        :param pos: The bit position to start overwriting at.
+        :type pos: int
+        :param bs: The Bits to overwrite.
+        :type bs: BitsType
+        :return: A new Bits object with the overwritten bits.
+        :rtype: Bits
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
@@ -442,19 +475,21 @@ class Bits:
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
-        fmt -- Printed data format. One or two of 'bin', 'oct', 'hex' or 'bytes'.
-              The number of bits represented in each printed group defaults to 8 for hex and bin,
-              12 for oct and 32 for bytes. This can be overridden with an explicit length, e.g. 'hex:64'.
-              Use a length of 0 to not split into groups, e.g. `bin:0`.
-        width -- Max width of printed lines. Defaults to 120. A single group will always be printed
-                 per line even if it exceeds the max width.
-        sep -- A separator string to insert between groups. Defaults to a single space.
-        show_offset -- If True (the default) shows the bit offset in the first column of each line.
-        stream -- A TextIO object with a write() method. Defaults to sys.stdout.
+        :param fmt: Printed data format. One or two of 'bin', 'oct', 'hex' or 'bytes'.
+        :type fmt: str or None
+        :param width: Max width of printed lines. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
+        :type width: int
+        :param sep: A separator string to insert between groups. Defaults to a single space.
+        :type sep: str
+        :param show_offset: If True (the default) shows the bit offset in the first column of each line.
+        :type show_offset: bool
+        :param stream: A TextIO object with a write() method. Defaults to sys.stdout.
+        :type stream: TextIO
+        :return: None
 
+        :example:
         >>> s.pp('hex16')
         >>> s.pp('bin, hex', sep='_', show_offset=False)
-
         """
         if fmt is None:
             fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
@@ -482,16 +517,20 @@ class Bits:
                 count: int | None = None, bytealigned: bool | None = None) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.
 
-        old -- The Bits to replace.
-        new -- The replacement Bits.
-        start -- Any occurrences that start before this will not be replaced.
-                 Defaults to 0.
-        end -- Any occurrences that finish after this will not be replaced.
-               Defaults to len(self).
-        count -- The maximum number of replacements to make. Defaults to
-                 replace all occurrences.
-        bytealigned -- If True replacements will only be made on byte
-                       boundaries.
+        :param old: The Bits to replace.
+        :type old: BitsType
+        :param new: The replacement Bits.
+        :type new: BitsType
+        :param start: Any occurrences that start before this will not be replaced.
+        :type start: int, optional
+        :param end: Any occurrences that finish after this will not be replaced.
+        :type end: int, optional
+        :param count: The maximum number of replacements to make. Defaults to all.
+        :type count: int, optional
+        :param bytealigned: If True, replacements will only be made on byte boundaries.
+        :type bytealigned: bool, optional
+        :return: A new Bits object with the replaced bits.
+        :rtype: Bits
 
         Raises ValueError if old is empty or if start or end are
         out of range.
@@ -539,9 +578,12 @@ class Bits:
     def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
         """Reverse bits.
 
-        start -- Position of first bit to reverse. Defaults to 0.
-        end -- One past the position of the last bit to reverse.
-               Defaults to len(self).
+        :param start: Position of first bit to reverse. Defaults to 0.
+        :type start: int, optional
+        :param end: One past the position of the last bit to reverse. Defaults to len(self).
+        :type end: int, optional
+        :return: A new Bits object with the reversed bits.
+        :rtype: Bits
 
         Using on an empty Bits will have no effect.
 
@@ -559,12 +601,16 @@ class Bits:
 
         Returns a the bit position if found, or None if not found.
 
-        bs -- The Bits to find.
-        start -- The bit position to end the reverse search. Defaults to 0.
-        end -- The bit position one past the first bit to reverse search.
-               Defaults to len(self).
-        bytealigned -- If True the Bits will only be found on byte
-                       boundaries.
+        :param bs: The Bits to find.
+        :type bs: BitsType
+        :param start: The bit position to end the reverse search. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position one past the first bit to reverse search. Defaults to len(self).
+        :type end: int, optional
+        :param bytealigned: If True, the Bits will only be found on byte boundaries.
+        :type bytealigned: bool, optional
+        :return: The bit position if found, or None if not found.
+        :rtype: int or None
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
@@ -581,9 +627,14 @@ class Bits:
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Return new Bits with bit pattern rotated to the left.
 
-        n -- The number of bits to rotate by.
-        start -- Start of slice to rotate. Defaults to 0.
-        end -- End of slice to rotate. Defaults to len(self).
+        :param n: The number of bits to rotate by.
+        :type n: int
+        :param start: Start of slice to rotate. Defaults to 0.
+        :type start: int, optional
+        :param end: End of slice to rotate. Defaults to len(self).
+        :type end: int, optional
+        :return: A new Bits object with the rotated bits.
+        :rtype: Bits
 
         Raises ValueError if bits < 0.
 
@@ -600,9 +651,14 @@ class Bits:
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Return new Bits with bit pattern rotated to the right.
 
-        n -- The number of bits to rotate by.
-        start -- Start of slice to rotate. Defaults to 0.
-        end -- End of slice to rotate. Defaults to len(self).
+        :param n: The number of bits to rotate by.
+        :type n: int
+        :param start: Start of slice to rotate. Defaults to 0.
+        :type start: int, optional
+        :param end: End of slice to rotate. Defaults to len(self).
+        :type end: int, optional
+        :return: A new Bits object with the rotated bits.
+        :rtype: Bits
 
         Raises ValueError if bits < 0.
 
@@ -619,10 +675,12 @@ class Bits:
     def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
         """Return new Bits with one or many bits set to 1 or 0.
 
-        value -- If bool(value) is True bits are set to 1, otherwise they are set to 0.
-        pos -- Either a single bit position or an iterable of bit positions.
-               Negative numbers are treated in the same way as slice indices.
-               Defaults to the entire Bits.
+        :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
+        :type value: Any
+        :param pos: Either a single bit position or an iterable of bit positions.
+        :type pos: int or Iterable[int] or None
+        :return: A new Bits object with the set bits.
+        :rtype: Bits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -644,9 +702,14 @@ class Bits:
     def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
         """Return whether the current Bits starts with prefix.
 
-        prefix -- The Bits to search for.
-        start -- The bit position to start from. Defaults to 0.
-        end -- The bit position to end at. Defaults to len(self).
+        :param prefix: The Bits to search for.
+        :type prefix: BitsType
+        :param start: The bit position to start from. Defaults to 0.
+        :type start: int, optional
+        :param end: The bit position to end at. Defaults to len(self).
+        :type end: int, optional
+        :return: True if the Bits starts with the prefix, otherwise False.
+        :rtype: bool
 
         """
         prefix = self.from_auto(prefix)
@@ -658,12 +721,21 @@ class Bits:
 
         Up to seven zero bits will be added at the end to byte align.
 
+        :return: The Bits as bytes.
+        :rtype: bytes
+
         """
         return self._bitstore.to_bytes()
 
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
-        """Interpret the Bits as a given data type or list of data types."""
+        """
+        Interpret the Bits as a given data type or list of data types.
 
+        :param fmt: The data type or list of data types to interpret the Bits as.
+        :type fmt: Dtype | str | list[Dtype | str]
+        :return: The interpreted value(s).
+        :rtype: Any or list[Any]
+        """
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.
         if isinstance(fmt, Dtype):

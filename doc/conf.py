@@ -19,14 +19,18 @@ release = '0.1.0'
 extensions = ['sphinx.ext.autodoc', 'autoapi.extension']
 autoapi_dirs = ['../bitformat']
 autoapi_options = ['members',
+                   'inherited-members',
                    'undoc-members',
                    # 'show-inheritance',
-                   'show-module-summary',
+                   # 'show-module-summary',
                    'special-members',
                    'imported-members',
+                   # 'no-module',
                    ]
 autoapi_own_page_level = 'class'
 autoapi_add_toctree_entry = False
+# autoapi_keep_files = True
+
 
 skipped = ['Bits.__gt__', 'Bits.__lt__', 'Bits.__ge__', 'Bits.__le__',
            '__slots__']
@@ -61,7 +65,7 @@ html_theme_options = {
     "banner_text": "bitformat is in a pre-alpha planning stage. This documentation is wildly inaccurate.",
     "banner_hiding": "permanent",
     "show_theme_credit": False,
-    "globaltoc_maxdepth": 2,
+    "globaltoc_maxdepth": 3,
     "source_url": 'https://github.com/scott-griffiths/bitformat/',
 }
 
