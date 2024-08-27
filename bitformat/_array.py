@@ -197,8 +197,8 @@ class Array:
         else:
             try:
                 dtype = Dtype.from_string(new_dtype)
-            except ValueError:
-                raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}'.")
+            except ValueError as e:
+                raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}': {e}")
             self._dtype = dtype
         if self._dtype.length <= 0:
             raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")

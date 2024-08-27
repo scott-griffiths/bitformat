@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import ast
 from typing import Any
+import enum
 
 indent_size = 4
 
@@ -92,3 +93,10 @@ class Expression:
         if isinstance(other, Expression):
             return self.code_str == other.code_str
         return False
+
+
+class Endianness(enum.Enum):
+    BIG = 'be'
+    LITTLE = 'le'
+    NATIVE = 'ne'
+    UNSPECIFIED = ''

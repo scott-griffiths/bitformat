@@ -98,13 +98,13 @@ class TestCreatingNewDtypes:
         assert a.cat == '11110000'
 
     def test_new_type(self):
-        md = DtypeDefinition('uint_r', Bits._setuint, Bits._getuint)
+        md = DtypeDefinition('uintr', Bits._setuint, Bits._getuint)
         dtype_register.add_dtype(md)
         a = Bits('0xf')
-        assert a.uint_r == 15
-        a = Bits.pack('uint_r4',  1)
+        assert a.uintr == 15
+        a = Bits.pack('uintr4',  1)
         assert a == '0x1'
-        a += 'uint_r100=0'
+        a += 'uintr100=0'
         assert a == '0x1, 0b' + '0'*100
 
     def test_new_type_with_getter(self):
@@ -144,3 +144,30 @@ def test_len_errors():
         d = Dtype(x)
         with pytest.raises(ValueError):
             _ = len(d)
+
+def test_endianness():
+    d_le = Dtype.from_parameters('u', 16, endianness='le')
+    d_be = Dtype.from_parameters('u', 16, endianness='be')
+    d_ne = Dtype.from_parameters('u', 16, endianness='ne')
+
+    be = d_be.pack(0x1234)
+    le = d_le.pack(0x1234)
+
+    assert be.unpack(d_be) == 0x1234
+    assert le.unpack(d_le) == 0x1234
+
+    assert be == '0x1234'
+    assert le == '0x3412'
+
+def test_endianness_type_str():
+    d_le = Dtype.from_parameters('u', 16, endianness='le')
+    d_be = Dtype.from_parameters('u', 16, endianness='be')
+    d_ne = Dtype.from_parameters('u', 16, endianness='ne')
+
+    d_le2 = Dtype('u_le16')
+    d_be2 = Dtype('u_be16')
+    d_ne2 = Dtype('u_ne16')
+
+    assert d_le == d_le2
+    assert d_be == d_be2
+    assert d_ne == d_ne2

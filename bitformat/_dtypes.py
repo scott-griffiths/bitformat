@@ -5,7 +5,9 @@ from typing import Any, Callable, Iterable
 import inspect
 import bitformat
 from bitformat import _utils
-from ._common import Expression
+from ._common import Expression, Endianness
+import sys
+
 
 __all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
 
@@ -30,20 +32,22 @@ class Dtype:
     _item_size: int
     _multiplier: int
     _items: int | None
+    _endianness: Endianness
 
     def __new__(cls, token: str, /) -> Dtype:
         return cls.from_string(token)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_parameters(cls, name: str, length: int = 0, items: int | None = None) -> Dtype:
+    def from_parameters(cls, name: str, length: int = 0, items: int | None = None, endianness: str = '') -> Dtype:
         """Create a new Dtype from its name, length and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
         this builder will be more efficient and is used internally to avoid str parsing.
 
         """
-        x = dtype_register.get_dtype(name, length, items)
+        endianness = Endianness(endianness)
+        x = dtype_register.get_dtype(name, length, items, endianness)
         return x
 
     @classmethod
@@ -68,8 +72,15 @@ class Dtype:
                 raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
             t = token[p + 1: -1]
             items = int(t) if t else 0
-            return dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
-        return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+            name, length = _utils.parse_name_length_token(token[1:p])
+            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            endianness = Endianness(modifier)
+            return dtype_register.get_array_dtype(name, length, items, endianness)
+        else:
+            name, length = _utils.parse_name_length_token(token)
+            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            endianness = Endianness(modifier)
+            return dtype_register.get_dtype(name, length, None, endianness)
 
     @property
     def name(self) -> str:
@@ -133,7 +144,8 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, length: int | None, items: int | None) -> Dtype:
+    def _create(cls, definition: DtypeDefinition, length: int | None, items: int | None,
+                endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
@@ -149,9 +161,15 @@ class Dtype:
             def create_bits(v):
                 b = bitformat.Bits()
                 set_fn(b, v)
+                if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and sys.byteorder == 'little'):
+                    b = b.byteswap()
                 return b
             x._create_fn = create_bits
         x._get_fn = definition.get_fn
+        x._endianness = endianness
+        if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and sys.byteorder == 'little'):
+            x._get_fn = lambda b: definition.get_fn(b.byteswap())
+
         x._return_type = definition.return_type if items is None else tuple
         x._is_signed = definition.is_signed
         return x
@@ -194,17 +212,17 @@ class Dtype:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
         length_str = '' if hide_length else str(self.length)
         if self._items is None:
-            return f"{self._name}{length_str}"
+            return f"{self._name}{self._endianness.value}{length_str}"
         items_str = '' if self._items == 0 else f" {self._items}"
-        return f"[{self._name}{length_str};{items_str}]"
+        return f"[{self._name}{self._endianness.value}{length_str};{items_str}]"
 
     def __repr__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
         length_str = '' if hide_length else str(self.length)
         if self._items is None:
-            return f"{self.__class__.__name__}('{self._name}{length_str}')"
+            return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{length_str}')"
         items_str = '' if self._items == 0 else f" {self._items}"
-        return f"{self.__class__.__name__}('[{self._name}{length_str};{items_str}]')"
+        return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{length_str};{items_str}]')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
@@ -245,7 +263,7 @@ class DtypeDefinition:
     """
 
     def __init__(self, name: str, set_fn, get_fn, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: tuple[int, ...] = tuple(), multiplier: int = 1, description: str = ''):
+                 allowed_lengths: tuple[int, ...] = tuple(), multiplier: int = 1, endianness_variants: bool = False, description: str = ''):
 
         # Consistency checks
         if int(multiplier) != multiplier or multiplier <= 0:
@@ -258,6 +276,7 @@ class DtypeDefinition:
         self.allowed_lengths = AllowedLengths(allowed_lengths)
         self.multiplier = multiplier
         self.set_fn = set_fn
+        self.endianness_variants = endianness_variants
 
         if self.allowed_lengths.values:
             def allowed_length_checked_get_fn(bs):
@@ -272,7 +291,7 @@ class DtypeDefinition:
             self.get_fn = get_fn  # Interpret everything
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, length: int = 0, items: int | None = None) -> Dtype:
+    def get_dtype(self, length: int = 0, items: int | None = None, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         if self.allowed_lengths:
             if length == 0:
                 if self.allowed_lengths.only_one_value():
@@ -285,12 +304,12 @@ class DtypeDefinition:
                     else:
                         raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which "
                                          f"is not one of its possible lengths (must be one of {self.allowed_lengths}).")
-        d = Dtype._create(self, length, items)
+        d = Dtype._create(self, length, items, endianness)
         return d
 
-    def get_array_dtype(self, length: int, items: int) -> Dtype:
+    def get_array_dtype(self, length: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         d = self.get_dtype(length)
-        d = Dtype.from_parameters(d.name, d.length, items)
+        d = Dtype.from_parameters(d.name, d.length, items, endianness)
         return d
 
     def __repr__(self) -> str:
@@ -313,12 +332,20 @@ class Register:
             cls._instance = super(Register, cls).__new__(cls)
         return cls._instance
 
+    # TODO: 1) The next two methods should be refactored together.
+    # TODO: 2) The lambdas should be replaced here and elsewhere. The double byteswap obviously needs to go!
+    # TODO: 3) Native endianness.
     @classmethod
     def add_dtype(cls, definition: DtypeDefinition):
         cls.names[definition.name] = definition
         if definition.get_fn is not None:
             setattr(bitformat._bits.Bits, definition.name,
                     property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
+            if definition.endianness_variants:
+                setattr(bitformat._bits.Bits, definition.name + '_le',
+                        property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
+                setattr(bitformat._bits.Bits, definition.name + '_be',
+                        property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
 
     @classmethod
     def add_dtype_alias(cls, name: str, alias: str):
@@ -327,26 +354,33 @@ class Register:
         if definition.get_fn is not None:
             setattr(bitformat._bits.Bits, alias,
                     property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
+            if definition.endianness_variants:
+                setattr(bitformat._bits.Bits, alias + '_le',
+                        property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"An alias for '{name}'. Read only."))
+                setattr(bitformat._bits.Bits, alias + '_be',
+                        property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"An alias for '{name}'. Read only."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_dtype(cls, name: str, length: int | None, items: int | None = None) -> Dtype:
+    def get_dtype(cls, name: str, length: int | None, items: int | None = None,
+                  endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            return definition.get_dtype(length, items)
+            return definition.get_dtype(length, items, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: str, length: int, items: int) -> Dtype:
+    def get_array_dtype(cls, name: str, length: int, items: int,
+                        endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            d = definition.get_array_dtype(length, items)
+            d = definition.get_array_dtype(length, items, endianness)
             return d
 
     @classmethod

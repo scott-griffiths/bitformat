@@ -15,6 +15,8 @@ from bitformat import _utils
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat._common import colour
 from typing import Pattern
+from ._common import Endianness
+
 
 __all__ = ['Bits']
 
@@ -39,8 +41,10 @@ def token_to_bitstore(token: str) -> BitStore:
             raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
         name, length_str, value = match.groups()
+        name, modifier = _utils.parse_name_to_name_and_modifier(name)
+
         length = int(length_str) if length_str else 0
-        dtype = Dtype.from_parameters(name, length)
+        dtype = Dtype.from_parameters(name, length, endianness=Endianness(modifier))
         value_str = value
         if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
             try:
@@ -263,7 +267,8 @@ class Bits:
         :rtype: Bits
         """
         if len(self) % 8 != 0:
-            raise ValueError(f"Bit length must be an multiple of 8 to use byteswap.")
+            raise ValueError(f"Bit length must be an multiple of 8 to use byteswap (got length of {len(self)} bits). "
+                             "This error can be caused by using an endianness modifier on non-whole byte data.")
         if bytelength is None:
             bytelength = len(self) // 8
         if bytelength == 0:

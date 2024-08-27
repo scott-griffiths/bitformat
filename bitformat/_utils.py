@@ -15,6 +15,15 @@ def parse_name_length_token(fmt: str) -> tuple[str, int]:
     name, length_str = match.groups()
     return name, int(length_str) if length_str else 0
 
+def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
+    modifiers = name.split('_')
+    if len(modifiers) == 1:
+        return name, ''
+    if len(modifiers) == 2:
+        return modifiers[0], modifiers[1]
+    raise ValueError(f"Can't parse name '{name}' as more than one '_' is present.")
+
+
 # A token name followed by a string that starts with '{' and ends with '}'
 NAME_EXPRESSION_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)({.*})$')
 

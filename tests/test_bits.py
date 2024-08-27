@@ -543,3 +543,70 @@ def test_mul_by_zero():
     assert b == a
     b = a * 2
     assert b == a + a
+
+
+def test_uintne():
+    s = Bits.pack('uint_ne160', 454)
+    t = Bits('uint_ne160=454')
+    assert s == t
+
+
+def test_float_endianness():
+    a = Bits('float_le64=12, float_be64=-0.01, float_ne64=3e33')
+    x, y, z = a.unpack(['float_le64', 'float_be64', 'float_ne64'])
+    assert x == 12.0
+    assert y == -0.01
+    assert z == 3e33
+    a = Bits('float_le16=12, float_be32=-0.01, float_ne32=3e33')
+    x, y, z = a.unpack(['f_le16', 'f_be32', 'f_ne32'])
+    assert x / 12.0 == pytest.approx(1.0)
+    assert y / -0.01 == pytest.approx(1.0)
+    assert z / 3e33 == pytest.approx(1.0)
+
+
+def test_non_aligned_float_reading():
+    s = Bits('0b1, float32 = 10.0')
+    y, = s.unpack(['pad1', 'f32'])
+    assert y == 10.0
+    s = Bits('0b1, f_le32 = 20.0')
+    x, y = s.unpack(['bits1', 'f_le32'])
+    assert y == 20.0
+
+def test_float_errors():
+    a = Bits('0x3')
+    with pytest.raises(ValueError):
+        _ = a.f
+    for le in (8, 10, 12, 18, 30, 128, 200):
+        with pytest.raises(ValueError):
+            _ = Bits.pack(Dtype.from_parameters('f', le), 1.0)
+
+def test_little_endian_uint():
+    s = Bits('uint16 = 100')
+    assert s.unpack('uint_le') == 25600
+    assert s.u_le == 25600
+    s = Bits('u_le16=100')
+    assert s.u == 25600
+    assert s.u_le == 100
+    s = Bits('uint_le32=999')
+    assert s.uint_le == 999
+    s = s.byteswap()
+    assert s.uint == 999
+    s = Bits.pack('uint_le24', 1001)
+    assert s.u_le == 1001
+    assert len(s) == 24
+    assert s.unpack('uint_le') == 1001
+
+def test_little_endian_errors():
+    with pytest.raises(ValueError):
+        _ = Bits('uint_le15=10')
+    with pytest.raises(ValueError):
+        _ = Bits('i_le31=-999')
+    s = Bits('0xfff')
+    with pytest.raises(ValueError):
+        _ = s.i_le
+    with pytest.raises(ValueError):
+        _ = s.u_be
+    with pytest.raises(ValueError):
+        _ = s.unpack('uint_le')
+    with pytest.raises(ValueError):
+        _ = s.unpack('i_ne')
