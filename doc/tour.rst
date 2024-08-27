@@ -256,32 +256,6 @@ It represents a well-defined amount of binary data with a single data type.
         Often the easiest way to construct a `Field` is to use a formatted string to set the `name`, `value` and `const` parameters - see :ref:`Field strings` below.
 
 
-FieldArray
-----------
-
-An `FieldArray` field contains multiple copies of a single dtype that has a well-defined length.
-
-.. class:: FieldArray(dtype: Dtype | str, items: int | str, name: str = '', value: Any = None, const: bool = False)
-    :no-index:
-
-The `items` parameter gives the length of the `FieldArray`.
-The other parameters are the same as for the `Field` class.
-
-This creates an array of 20 fields, each containing a 6-bit unsigned integer followed by two bools.
-
-If you want to repeat a single field then it is usually simpler to have one field and use the `items` parameter rather than use the `FieldArray` class.
-So instead of ::
-
-    a = FieldArray(80, ['bool'])
-
-use ::
-
-    a = Field.from_string('[bool; 80]')
-
-If you need to repeat fields whose lengths aren't known at the time of construction then you can use a `Repeat` field as described below.
-If you have a choice then choose the `FieldArray` class over the `Repeat` class, as it is more efficient and easier to use.
-
-
 .. _Field strings:
 
 Field strings
@@ -304,14 +278,14 @@ To specify a ``const`` field use either ::
 
     "name: const dtype = value"
 
-for a ``Field`` or ::
+or ::
 
     "name: const [dtype; items] = value"
 
-for a ``FieldArray``. When ``const`` is used the `value` must be set.
+When ``const`` is used the `value` must be set.
 
 
-For example instead of ``Field(Dtype('uint', 12), 'width', 100)`` you could say ``Field.from_string('width: u12 = 100')``.
+For example instead of ``Field.from_parameters(Dtype.from_parameters('uint', 12), 'width', 100)`` you could say ``Field('width: u12 = 100')``.
 The whitespace between the elements is optional.
 
 An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.from_string('sequence_header: bits32 = 0x000001b3')``.
@@ -337,55 +311,6 @@ In its simplest form is could just be a flat list of ``Field`` objects, but it c
 
 .. class:: Format(fieldtypes: Sequence[FieldType | str] | None = None, name: str = '')
     :no-index:
-
-
-Repeat
-------
-
-A `Repeat` field simply repeats another field a given number of times.
-
-.. class:: Repeat(count: int | Iterable | str, fieldtype: FieldType | str | Dtype | Bits | Sequence[FieldType | str])
-
-The `count` parameter can be either an integer or an iterable of integers, so for example a ``range`` object is accepted.
-
-If you want to repeat a single dtype then it is usually better to a ``FieldArray`` rather than use the `Repeat` class.
-So instead of ::
-
-    r = Repeat(10, 'f64')  # This creates ten fields, each a 64 bit float
-
-use ::
-
-    r = Field.from_string('float64 * 10')  # Creates a single field with an array of ten float64
-
-
-..
-    Find
-    ----
-
-    .. class:: Find(bits: Bits | bytes | bytearray | str, bytealigned: bool = True, name: str = '')
-
-    The `Find` field is used to seek to the next occurrence of a bitstring.
-
-    :meth:`Find.parse` will seek to the start of the next occurrence of `bits`, and set `value` to be the number of bits that
-
-    If `bytealigned` is `True` it will only search on byte boundaries.
-
-    The optional `name` parameter is used to give the number of bits skipped a name that can be referenced elsewhere.
-
-    :meth:`Find.build` does nothing and returns an empty `Bits` object.
-
-    :meth:`Find.value`  returns the number of bits skipped to get to the start of the found bits.
-    Note that the value will always be in bits, not bytes and that `None` will be returned if the bits could not be found.
-
-    :meth:`Find.bits` returns an empty `Bits` and :meth:`Find.bytes` returns an empty `bytes`.
-
-..
-    Condition
-    ---------
-
-    .. class:: Condition(cond: lambda, fieldtype: [FieldType | str] | None = None, name: str = '')
-
-
 
 
 Expressions

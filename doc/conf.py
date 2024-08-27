@@ -21,7 +21,7 @@ autoapi_dirs = ['../bitformat']
 autoapi_options = ['members',
                    'inherited-members',
                    'undoc-members',
-                   # 'show-inheritance',
+                   'show-inheritance',
                    # 'show-module-summary',
                    'special-members',
                    'imported-members',
@@ -30,7 +30,6 @@ autoapi_options = ['members',
 autoapi_own_page_level = 'class'
 autoapi_add_toctree_entry = False
 # autoapi_keep_files = True
-
 
 skipped = ['Bits.__gt__', 'Bits.__lt__', 'Bits.__ge__', 'Bits.__le__',
            '__slots__']

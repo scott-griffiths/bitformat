@@ -51,7 +51,7 @@ Documentation
 
     manual
     tour
-    api
+    autoapi/bitformat/index
 
 
 These docs are styled using the `Piccolo theme <https://github.com/piccolo-orm/piccolo_theme>`_.
