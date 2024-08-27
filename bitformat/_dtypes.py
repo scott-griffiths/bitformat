@@ -332,33 +332,21 @@ class Register:
             cls._instance = super(Register, cls).__new__(cls)
         return cls._instance
 
-    # TODO: 1) The next two methods should be refactored together.
     # TODO: 2) The lambdas should be replaced here and elsewhere. The double byteswap obviously needs to go!
     # TODO: 3) Native endianness.
     @classmethod
-    def add_dtype(cls, definition: DtypeDefinition):
-        cls.names[definition.name] = definition
-        if definition.get_fn is not None:
-            setattr(bitformat._bits.Bits, definition.name,
-                    property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
-            if definition.endianness_variants:
-                setattr(bitformat._bits.Bits, definition.name + '_le',
-                        property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
-                setattr(bitformat._bits.Bits, definition.name + '_be',
-                        property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
-
-    @classmethod
-    def add_dtype_alias(cls, name: str, alias: str):
-        cls.names[alias] = cls.names[name]
-        definition = cls.names[alias]
-        if definition.get_fn is not None:
-            setattr(bitformat._bits.Bits, alias,
-                    property(fget=definition.get_fn, doc=f"An alias for '{name}'. Read only."))
-            if definition.endianness_variants:
-                setattr(bitformat._bits.Bits, alias + '_le',
-                        property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"An alias for '{name}'. Read only."))
-                setattr(bitformat._bits.Bits, alias + '_be',
-                        property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"An alias for '{name}'. Read only."))
+    def add_dtype(cls, definition: DtypeDefinition, alias: str | None = None):
+        names = [definition.name] if alias is None else [definition.name, alias]
+        for name in names:
+            cls.names[name] = definition
+            if definition.get_fn is not None:
+                setattr(bitformat._bits.Bits, name,
+                        property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
+                if definition.endianness_variants:
+                    setattr(bitformat._bits.Bits, name + '_le',
+                            property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
+                    setattr(bitformat._bits.Bits, name + '_be',
+                            property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)

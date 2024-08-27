@@ -122,18 +122,11 @@ dtype_definitions = [
                     description="a skipped section of padding")
     ]
 
-
-aliases: list[tuple[str, str]] = [
-    # Longer aliases for some popular types
-    ('i', 'int'),
-    ('u', 'uint'),
-    ('f', 'float'),
-]
+# Longer aliases for some popular types
+aliases = {'i': 'int', 'u': 'uint', 'f': 'float'}
 
 for dt in dtype_definitions:
-    dtype_register.add_dtype(dt)
-for alias in aliases:
-    dtype_register.add_dtype_alias(alias[0], alias[1])
+    dtype_register.add_dtype(dt, aliases.get(dt.name, None))
 
 
 __all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'options', 'dtype_register']

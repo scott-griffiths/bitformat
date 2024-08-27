@@ -90,13 +90,6 @@ class TestChangingTheRegister:
 
 class TestCreatingNewDtypes:
 
-    def test_new_alias(self):
-        dtype_register.add_dtype_alias('bin', 'cat')
-        a = Bits.from_string('0b110110')
-        assert a.cat == '110110'
-        a = Bits.pack('cat', '11110000')
-        assert a.cat == '11110000'
-
     def test_new_type(self):
         md = DtypeDefinition('uintr', Bits._setuint, Bits._getuint)
         dtype_register.add_dtype(md)
