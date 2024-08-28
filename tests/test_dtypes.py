@@ -164,3 +164,11 @@ def test_endianness_type_str():
     assert d_le == d_le2
     assert d_be == d_be2
     assert d_ne == d_ne2
+
+def test_endianness_errors():
+    with pytest.raises(ValueError):
+        _ = Dtype.from_parameters('u', 15, endianness='be')
+    with pytest.raises(ValueError):
+        _ = Dtype.from_parameters('bool', endianness='le')
+    with pytest.raises(ValueError):
+        _ = Dtype.from_parameters('bytes', 16, endianness='ne')

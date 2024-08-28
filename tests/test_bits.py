@@ -611,6 +611,12 @@ def test_little_endian_errors():
     with pytest.raises(ValueError):
         _ = s.unpack('i_ne')
 
+def test_big_endian_errors():
+    a = Bits('u_be16 = 10')
+    with pytest.raises(ValueError):
+        _ = Bits('u_be15 = 10')
+
+
 
 
 class TestNativeEndianIntegers:

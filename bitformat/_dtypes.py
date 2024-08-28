@@ -311,6 +311,11 @@ class DtypeDefinition:
                     else:
                         raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which "
                                          f"is not one of its possible lengths (must be one of {self.allowed_lengths}).")
+        if endianness != Endianness.UNSPECIFIED:
+            if not self.endianness_variants:
+                raise ValueError(f"The '{self.name}' dtype does not support endianness variants.")
+            if length % 8 != 0:
+                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a length of {length} bits.")
         d = Dtype._create(self, length, items, endianness)
         return d
 
