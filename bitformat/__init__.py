@@ -37,7 +37,7 @@ from ._dtypes import DtypeDefinition, dtype_register, Dtype
 from ._field import Field
 from ._format import Format
 from ._options import Options
-from ._common import Expression
+from ._common import Expression, byteorder
 from typing import Literal
 
 # The Options class returns a singleton.

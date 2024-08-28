@@ -5,8 +5,7 @@ from typing import Any, Callable, Iterable
 import inspect
 import bitformat
 from bitformat import _utils
-from ._common import Expression, Endianness
-import sys
+from ._common import Expression, Endianness, byteorder
 
 
 __all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
@@ -88,6 +87,11 @@ class Dtype:
         return self._name
 
     @property
+    def endianness(self) -> Endianness:
+        """The endianness of the data type."""
+        return self._endianness
+
+    @property
     def length(self) -> int:
         """The length of the data type in units of the multiplier.
 
@@ -161,13 +165,13 @@ class Dtype:
             def create_bits(v):
                 b = bitformat.Bits()
                 set_fn(b, v)
-                if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and sys.byteorder == 'little'):
+                if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little'):
                     b = b.byteswap()
                 return b
             x._create_fn = create_bits
         x._get_fn = definition.get_fn
         x._endianness = endianness
-        if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and sys.byteorder == 'little'):
+        if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little'):
             x._get_fn = lambda b: definition.get_fn(b.byteswap())
 
         x._return_type = definition.return_type if items is None else tuple
@@ -226,7 +230,10 @@ class Dtype:
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
-            return self._name == other._name and self._item_size == other._item_size and self._items == other._items
+            return (self._name == other._name and
+                    self._item_size == other._item_size and
+                    self._items == other._items and
+                    self._endianness == other._endianness)
         return False
 
 
@@ -333,7 +340,6 @@ class Register:
         return cls._instance
 
     # TODO: 2) The lambdas should be replaced here and elsewhere. The double byteswap obviously needs to go!
-    # TODO: 3) Native endianness.
     @classmethod
     def add_dtype(cls, definition: DtypeDefinition, alias: str | None = None):
         names = [definition.name] if alias is None else [definition.name, alias]
@@ -347,6 +353,12 @@ class Register:
                             property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
                     setattr(bitformat._bits.Bits, name + '_be',
                             property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
+                    if byteorder == 'big':
+                        setattr(bitformat._bits.Bits, name + '_ne',
+                                property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in native-endian (i.e. big-endian) byte order. Read only."))
+                    else:
+                        setattr(bitformat._bits.Bits, name + '_ne',
+                                property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in native-endian (i.e. little-endian) byte order. Read only."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)

@@ -100,3 +100,7 @@ class Endianness(enum.Enum):
     LITTLE = 'le'
     NATIVE = 'ne'
     UNSPECIFIED = ''
+
+# The byte order of the system, used for the 'native' endianness modifiers ('_ne').
+# If you'd like to emulate a different native endianness, you can set this to 'little' or 'big'.
+byteorder: str = sys.byteorder
