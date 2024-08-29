@@ -155,6 +155,9 @@ class Dtype:
         x._items = items
         x._multiplier = definition.multiplier
         x._item_size = length * x._multiplier
+        little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')
+        x._endianness = endianness
+        x._get_fn = (lambda b: definition.get_fn(b.byteswap())) if little_endian else definition.get_fn
         if definition.set_fn is None:
             x._create_fn = None
         else:
@@ -164,15 +167,14 @@ class Dtype:
                 set_fn = definition.set_fn
             def create_bits(v):
                 b = bitformat.Bits()
+                # The set_fn will do the length check for big endian too.
                 set_fn(b, v)
-                if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little'):
-                    b = b.byteswap()
                 return b
-            x._create_fn = create_bits
-        x._get_fn = definition.get_fn
-        x._endianness = endianness
-        if endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little'):
-            x._get_fn = lambda b: definition.get_fn(b.byteswap())
+            def create_bits_le(v):
+                b = bitformat.Bits()
+                set_fn(b, v)
+                return b.byteswap()
+            x._create_fn = create_bits_le if little_endian else create_bits
 
         x._return_type = definition.return_type if items is None else tuple
         x._is_signed = definition.is_signed
@@ -269,7 +271,7 @@ class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``.
     """
 
-    def __init__(self, name: str, set_fn, get_fn, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
+    def __init__(self, name: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_lengths: tuple[int, ...] = tuple(), multiplier: int = 1, endianness_variants: bool = False, description: str = ''):
 
         # Consistency checks
@@ -313,7 +315,7 @@ class DtypeDefinition:
                                          f"is not one of its possible lengths (must be one of {self.allowed_lengths}).")
         if endianness != Endianness.UNSPECIFIED:
             if not self.endianness_variants:
-                raise ValueError(f"The '{self.name}' dtype does not support endianness variants.")
+                raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
             if length % 8 != 0:
                 raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a length of {length} bits.")
         d = Dtype._create(self, length, items, endianness)
@@ -344,7 +346,6 @@ class Register:
             cls._instance = super(Register, cls).__new__(cls)
         return cls._instance
 
-    # TODO: 2) The lambdas should be replaced here and elsewhere. The double byteswap obviously needs to go!
     @classmethod
     def add_dtype(cls, definition: DtypeDefinition, alias: str | None = None):
         names = [definition.name] if alias is None else [definition.name, alias]
@@ -354,16 +355,24 @@ class Register:
                 setattr(bitformat._bits.Bits, name,
                         property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
                 if definition.endianness_variants:
+                    def fget_be(b):
+                        if len(b) % 8 != 0:
+                            raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                        return definition.get_fn(b)
+                    def fget_le(b):
+                        if len(b) % 8 != 0:
+                            raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                        return definition.get_fn(b.byteswap())
+                    fget_ne = fget_le if byteorder == 'little' else fget_be
                     setattr(bitformat._bits.Bits, name + '_le',
-                            property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
+                            property(fget=fget_le,
+                                     doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
                     setattr(bitformat._bits.Bits, name + '_be',
-                            property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
-                    if byteorder == 'big':
-                        setattr(bitformat._bits.Bits, name + '_ne',
-                                property(fget=lambda self: definition.get_fn(self.byteswap().byteswap()), doc=f"The Bits as {definition.description} in native-endian (i.e. big-endian) byte order. Read only."))
-                    else:
-                        setattr(bitformat._bits.Bits, name + '_ne',
-                                property(fget=lambda self: definition.get_fn(self.byteswap()), doc=f"The Bits as {definition.description} in native-endian (i.e. little-endian) byte order. Read only."))
+                            property(fget=fget_be,
+                                     doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
+                    setattr(bitformat._bits.Bits, name + '_ne',
+                            property(fget=fget_ne,
+                                     doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -444,5 +453,3 @@ class DtypeWithExpression:
         items_str = '' if self._items == 0 else f" {self._items}"
         return f"[{self._name}{length_str};{items_str}]"
 
-
-    # def get_dtype(self, **kwargs) -> Dtype:

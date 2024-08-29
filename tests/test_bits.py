@@ -615,7 +615,9 @@ def test_big_endian_errors():
     a = Bits('u_be16 = 10')
     with pytest.raises(ValueError):
         _ = Bits('u_be15 = 10')
-
+    b = Bits('0xabc')
+    with pytest.raises(ValueError):
+        _ = b.f_be
 
 
 
