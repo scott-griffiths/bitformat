@@ -31,6 +31,8 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 
 ### Creating some Bits
 
+A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
+
 ```pycon
 >>> from bitformat import *
 
@@ -40,9 +42,6 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 >>> d = Bits.pack('f16', -0.75)  # Pack a value into a data type.
 >>> e = Bits.join([a, b, c, d])  # The best way to join lots of bits together.
 ```
-
-A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
-
 
 ### Interpreting those Bits
 
@@ -69,8 +68,8 @@ A wide range of data types are supported. These are essentially descriptions on 
 
 Some example data type strings are:
 
-* `'u3'` - a 3 bit unsigned integer. All lengths are supported.
-* `'i32'` - a 32 bit signed integer. All lengths are supported.
+* `'u3'` - a 3 bit unsigned integer.
+* `'i_le32'` - a 32 bit little-endian signed integer.
 * `'f64'` - a 64 bit IEEE float. Lengths of 16, 32 and 64 are supported.
 * `'bool'` - a single bit boolean value.
 * `'bytes10'` - a 10 byte sequence.
@@ -78,7 +77,7 @@ Some example data type strings are:
 * `'bin'` - a binary string.
 * `'[u8; 40]'` - an array of 40 unsigned 8 bit integers.
 
-Other types, and modifiers for endianness will be added later.
+Byte endianness for float and int data types is specified with `_le`, `_be` and `_ne` suffixes to the base type. 
 
 ### Bit operations
 
@@ -105,7 +104,7 @@ This is similar to the `array` type in the standard module of the same name, but
 >>> r -= 2  # Operates on each element
 >>> r.unpack()
 [2, -5, -2, -1, -7, 13]
->>> r.dtype = 'u6'  # Freely change the data type
+>>> r.dtype = 'u6'  # You can freely change the data type
 >>> r
 Array('u6', [5, 47, 55, 60, 45])
 >>> r.to_bits()
@@ -157,13 +156,12 @@ The `parse` method is able to lazily parse the input bytes, and simply returns t
 ## More to come
 
 The `bitformat` library is still pre-alpha and is being actively developed.
-I'm hoping to make a couple of alpha releases in late 2024, with more features added in 2025.
+I'm hoping to make an alpha release or two in late 2024, with more features added in 2025.
 
 There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
 
-The :todo: list includes:
+The (unordered) :todo: list includes:
 
-* **Endianness modifiers.** Currently everything is both bit and byte big endian. There will be modifiers that can be added to any whole-byte type to specify if they should be interpreted as big, little, or native endian.
 * **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`. This is available in `bitstring`, but I want to find a better way of doing it before adding it to `bitformat`.
 * **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'[w: u16, h: u16, [u8; {w * h}]]` the size of the `'u8'` array would depend on the values parsed just before it.
 * **New field types.** Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
