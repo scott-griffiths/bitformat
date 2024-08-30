@@ -70,7 +70,7 @@ The second parameter is a value that makes sense for that data type, which could
 Once you've created your ``Bits`` object there is a rich API for manipulating and interpreting the data.
 One fundamental thing to do is to interpret the binary data according to a format or data-type; essentially the opposite to how the ``pack`` method works. ::
 
-    g.unpack(['u8'])  # Returns [65]
+    g.unpack('u8')  # Returns 65
     h.unpack(['hex'])  # Returns ['abcde']
 
 The ``unpack`` method is quite powerful and is a bit of a sledgehammer for these simple cases, so as a shortcut you can use properties that are available for simple dtypes. ::
