@@ -620,19 +620,11 @@ def test_big_endian_errors():
         _ = b.f_be
 
 
-
-class TestNativeEndianIntegers:
-
-    def setup_method(self) -> None:
-        self.original_byteorder = bitformat.byteorder
-
-    def teardown_method(self) -> None:
-        bitformat.byteorder = self.original_byteorder
-
-    def test_floats(self):
-        bitformat.byteorder = 'little'
+def test_native_endian_floats():
+    if bitformat.byteorder == 'little':
         a = Bits.pack('f_ne64', 0.55)
         assert a.unpack('f_ne64') == 0.55
+        assert a.f_le == 0.55
         assert a.f_ne == 0.55
         d = Dtype('f_ne64')
         d2 = Dtype.from_parameters('f', 64, endianness='ne')
