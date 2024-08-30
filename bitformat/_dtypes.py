@@ -89,7 +89,7 @@ class Dtype:
     @property
     def endianness(self) -> Endianness:
         """The endianness of the data type."""
-        return self._endianness
+        return self._endianness.value
 
     @property
     def length(self) -> int:
