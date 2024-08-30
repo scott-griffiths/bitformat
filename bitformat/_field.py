@@ -244,7 +244,8 @@ class Field(FieldType):
     @staticmethod
     def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
         pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
-        match = re.match(pattern, field_str)
+        compiled_pattern = re.compile(pattern, re.DOTALL)
+        match = compiled_pattern.match(field_str)
         if match:
             name = match.group('name')
             const = match.group('const') is not None

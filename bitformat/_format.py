@@ -11,6 +11,9 @@ from ._field import FieldType, Field
 
 __all__ = ['Format']
 
+format_str_pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
+compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
+
 
 class Format(FieldType):
     """A sequence of FieldTypes, used to group fields together."""
@@ -42,8 +45,7 @@ class Format(FieldType):
 
     @staticmethod
     def _parse_format_str(format_str: str) -> tuple[str, str]:
-        pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
-        if match := re.match(pattern, format_str):
+        if match := compiled_format_str_pattern.match(format_str):
             name = match.group('name')
             content = match.group('content')
         else:
