@@ -1,13 +1,6 @@
 
 .. currentmodule:: bitformat
 
-.. warning::
-    This library is in the planning stages.
-    The API will be very unstable and I do not recommend its use for anything serious.
-
-    This documentation may in places be more aspirational than accurate.
-
-
 .. image:: bitformat_logo.png
    :width: 400px
 
@@ -31,6 +24,13 @@ Features
 * Data is always stored efficiently as a contiguous array of bits.
 
 ----
+
+.. warning::
+    This library is in the planning stages.
+    The API will be very unstable and I do not recommend its use for anything serious.
+
+    This documentation may in places be more aspirational than accurate.
+
 
 Installation and download
 -------------------------
@@ -85,7 +85,7 @@ Documentation
 
 A tour of the features of bitformat is given in notebook form:
 
-* `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/tour.ipynb>`_
+* `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_
 
 The auto generated API documentation is available here:
 
@@ -100,6 +100,13 @@ The auto generated API documentation is available here:
 
 ----
 
-These docs are styled using the `Piccolo theme <https://github.com/piccolo-orm/piccolo_theme>`_.
+.. raw:: html
 
-
+   <style>
+       .small-font {
+           font-size: 0.9em;
+       }
+   </style>
+   <div class="small-font">
+       These docs are styled using the <a href="https://github.com/piccolo-orm/piccolo_theme">Piccolo theme</a>.
+   </div>

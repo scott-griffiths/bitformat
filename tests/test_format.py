@@ -419,3 +419,20 @@ def test_construction_by_appending():
     i = i + 'i4' + 'const f16=0.25'
     assert f == g == h == i
 
+f_str = """
+sequence_header: [
+    sequence_header_code: const hex32 = 0x000001b3,
+    horizontal_size_value: u12,
+    vertical_size_value: u12,
+    aspect_ratio_information: u4,
+    frame_rate_code: u4,
+    bit_rate_value: u18,
+    marker_bit: bool,
+    vbv_buffer_size_value: u10,
+    constrained_parameters_flag: bool,
+    load_intra_quantiser_matrix: u1
+]
+"""
+
+def test_example_format():
+    f = Format(f_str)

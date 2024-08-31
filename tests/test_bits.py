@@ -468,16 +468,16 @@ class TestPrettyPrintingErrors:
 class TestPrettyPrinting_NewFormats:
 
     def test_float(self):
-        a = Bits.from_string('float32=10.5')
+        a = Bits.from_string('f_le32=10.5')
         s = io.StringIO()
-        a.pp('float32', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='float32', length=32 bits> [
+        a.pp('float_le32', stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='float_le32', length=32 bits> [
  0:                    10.5
 ]
 """
         s = io.StringIO()
-        a.pp('float16', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='float16', length=32 bits> [
+        a.pp('f_be16', stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='f_be16', length=32 bits> [
  0:                2.578125                     0.0
 ]
 """
