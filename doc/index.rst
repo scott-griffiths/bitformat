@@ -15,8 +15,11 @@
 
 It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, and uses its `Dtype <https://bitstring.readthedocs.io/en/latest/dtypes.html#dtypes>`_, `Bits <https://bitstring.readthedocs.io/en/latest/bits.html#bits>`_ and `Array <https://bitstring.readthedocs.io/en/latest/array.html#array>`_ classes as the basis for building complex bit formats.
 
+----
+
 Features
-^^^^^^^^
+--------
+
 * A bitformat is a specification of a binary format using fields that can say how to build it from supplied values, or how to parse binary data to retrieve those values.
 * A wide array of data types is supported.  Want to use a 13 bit integer or an 8-bit float? Fine - there are no special hoops to jump through.
 * Several field types are available:
@@ -27,15 +30,19 @@ Features
 * The values of other fields can be used in later calculations via an f-string-like expression syntax.
 * Data is always stored efficiently as a contiguous array of bits.
 
+----
 
 Installation and download
-^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------
+
 I am planning on a minimal viable product release by September 2024, with a fuller release later in the year.
 If you wish to try it out now then I recommend installing from the main branch on GitHub as that will be far ahead of the release on PyPI. ::
 
     pip install git+https://github.com/scott-griffiths/bitformat
 
 To download the module, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
+
+----
 
 bitformat vs. bitstring
 -----------------------
@@ -71,11 +78,16 @@ Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely
     While both packages have classes such as ``Bits``, ``Dtype`` and ``Array`` and many similar methods,
     they do have many differences in their behaviour and API.
 
+----
 
 Documentation
-^^^^^^^^^^^^^
+-------------
 
-A tour of the features of bitformat is given in the notebook `tour.ipynb <doc/tour.ipynb>`_
+A tour of the features of bitformat is given in notebook form:
+
+* `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/tour.ipynb>`_
+
+The auto generated API documentation is available here:
 
 .. toctree::
    :hidden:
@@ -84,9 +96,9 @@ A tour of the features of bitformat is given in the notebook `tour.ipynb <doc/to
 
 .. toctree::
 
-    manual
     autoapi/bitformat/index
 
+----
 
 These docs are styled using the `Piccolo theme <https://github.com/piccolo-orm/piccolo_theme>`_.
 
