@@ -1,7 +1,7 @@
 from __future__ import annotations
 import abc
 import re
-from ._bits import Bits, BitsType
+from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
 from ._common import colour, Expression, _indent, override, final
@@ -200,7 +200,7 @@ class Field(FieldType):
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bool.")
         x._setvalue_no_const_check(value)
-        if x._dtype_expression is None and x._dtype.length == 0:
+        if x._dtype_expression is None and x._dtype.bits_per_item == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
             else:
@@ -209,7 +209,7 @@ class Field(FieldType):
 
     @override
     def __len__(self) -> int:
-        return len(self._dtype)
+        return self._dtype.bitlength
 
     @classmethod
     @override
@@ -220,6 +220,8 @@ class Field(FieldType):
     @classmethod
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
         b = Bits.from_auto(b)
+        if len(b) == 0:
+            raise ValueError  # TODO: Better error
         return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
 
     @classmethod

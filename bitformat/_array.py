@@ -145,7 +145,7 @@ class Array:
         self._set_dtype(dtype)
 
         if isinstance(initializer, numbers.Integral):
-            self._bitstore = BitStore.from_zeros(initializer * self._dtype.item_size)
+            self._bitstore = BitStore.from_zeros(initializer * self._dtype.bits_per_item)
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
             self._bitstore = initializer._bitstore.copy()
@@ -174,12 +174,12 @@ class Array:
     @property
     def item_size(self) -> int:
         """The length of a single item in bits. Read only."""
-        return self._dtype.item_size
+        return self._dtype.bits_per_item
 
     @property
     def trailing_bits(self) -> Bits:
         """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
-        trailing_bit_length = len(self._bitstore) % self._dtype.item_size
+        trailing_bit_length = len(self._bitstore) % self._dtype.bits_per_item
         return Bits() if trailing_bit_length == 0 else self._getbitslice(-trailing_bit_length, None)
 
     @property
@@ -200,20 +200,20 @@ class Array:
             except ValueError as e:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}': {e}")
             self._dtype = dtype
-        if self._dtype.length <= 0:
+        if self._dtype.bits_per_item <= 0:
             raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
 
 
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
-        if len(b) != len(self._dtype):
+        if len(b) != self._dtype.bitlength:
             raise ValueError(f"The value {value!r} has the wrong length for the format '{self._dtype}'.")
         return b
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
-        return len(self._bitstore) // len(self._dtype)
+        return len(self._bitstore) // self._dtype.bitlength
 
     @overload
     def __getitem__(self, key: slice, /) -> Array:
@@ -228,21 +228,21 @@ class Array:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 d = Bits()
-                for s in range(start * len(self._dtype), stop * len(self._dtype), step * len(self._dtype)):
-                    d += self._bitstore.getslice(s, s + len(self._dtype))
+                for s in range(start * self._dtype.bitlength, stop * self._dtype.bitlength, step * self._dtype.bitlength):
+                    d += self._bitstore.getslice(s, s + self._dtype.bitlength)
                 a = self.__class__(self._dtype)
                 a._bitstore = d._bitstore
                 return a
             else:
                 a = self.__class__(self._dtype)
-                a._bitstore = self._bitstore.getslice(start * len(self._dtype), stop * len(self._dtype))
+                a._bitstore = self._bitstore.getslice(start * self._dtype.bitlength, stop * self._dtype.bitlength)
                 return a
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            return self._dtype.unpack(self._getbitslice(len(self._dtype) * key, len(self._dtype) * (key + 1)))
+            return self._dtype.unpack(self._getbitslice(self._dtype.bitlength * key, self._dtype.bitlength * (key + 1)))
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[ElementType], /) -> None:
@@ -261,7 +261,7 @@ class Array:
                 new_data = Bits()
                 for x in value:
                     new_data += self._create_element(x)
-                self._bitstore.setitem(slice(start * len(self._dtype), stop * len(self._dtype)), new_data._bitstore)
+                self._bitstore.setitem(slice(start * self._dtype.bitlength, stop * self._dtype.bitlength), new_data._bitstore)
                 return
             items_in_slice = len(range(start, stop, step))
             if not isinstance(value, Sized):
@@ -269,7 +269,7 @@ class Array:
             if len(value) == items_in_slice:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
-                    self._bitstore.setitem(slice(s * len(self._dtype), s * len(self._dtype) + len(x)), x._bitstore)
+                    self._bitstore.setitem(slice(s * self._dtype.bitlength, s * self._dtype.bitlength + len(x)), x._bitstore)
             else:
                 raise ValueError(f"Can't assign {len(value)} values to an extended slice of length {items_in_slice}.")
         else:
@@ -277,7 +277,7 @@ class Array:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            start = len(self._dtype) * key
+            start = self._dtype.bitlength * key
             x = self._create_element(value)
             self._bitstore.setitem(slice(start, start + len(x)), x._bitstore)
             return
@@ -286,23 +286,23 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = self._bitstore.getslice(0, start * self._dtype.length) + self._bitstore.getslice(stop * self._dtype.length, None)
+                self._bitstore = self._bitstore.getslice(0, start * self._dtype.bitlength) + self._bitstore.getslice(stop * self._dtype.bitlength, None)
                 return
             # We need to delete from the end or the earlier positions will change
             r = reversed(range(start, stop, step)) if step > 0 else range(start, stop, step)
             for s in r:
-                self._bitstore = self._bitstore.getslice(0, s * self._dtype.length) + self._bitstore.getslice((s + 1) * self._dtype.length, None)
+                self._bitstore = self._bitstore.getslice(0, s * self._dtype.bitlength) + self._bitstore.getslice((s + 1) * self._dtype.bitlength, None)
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError
-            start = self._dtype.length * key
-            self._bitstore = self._bitstore.getslice(0, start) + self._bitstore.getslice(start + self._dtype.length, None)
+            start = self._dtype.bitlength * key
+            self._bitstore = self._bitstore.getslice(0, start) + self._bitstore.getslice(start + self._dtype.bitlength, None)
 
     def __repr__(self) -> str:
         list_str = f"{self.unpack()}"
-        trailing_bit_length = len(self._bitstore) % self._dtype.length
+        trailing_bit_length = len(self._bitstore) % self._dtype.bitlength
         final_str = "" if trailing_bit_length == 0 else ", trailing_bits=" + repr(
             self._getbitslice(-trailing_bit_length, None)).splitlines()[0]
         return f"Array('{self._dtype}', {list_str}{final_str})"
@@ -335,8 +335,8 @@ class Array:
         return new_array
 
     def unpack(self) -> list[ElementType]:
-        return [self._dtype.unpack(self._proxy[start:start + len(self._dtype)])
-                for start in range(0, len(self._proxy) - len(self._dtype) + 1, len(self._dtype))]
+        return [self._dtype.unpack(self._proxy[start:start + self._dtype.bitlength])
+                for start in range(0, len(self._proxy) - self._dtype.bitlength + 1, self._dtype.bitlength)]
 
     def append(self, x: ElementType, /) -> None:
         """
@@ -346,7 +346,7 @@ class Array:
         :type x: ElementType
         :return: None
         """
-        if len(self._proxy) % self._dtype.length != 0:
+        if len(self._proxy) % self._dtype.bitlength != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._bitstore += self._create_element(x)._bitstore
 
@@ -368,10 +368,10 @@ class Array:
         if isinstance(iterable, Bits):
             self._bitstore += iterable._bitstore
             return
-        if len(self._proxy) % self._dtype.length != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self._proxy)} bits) is not a multiple of the format length ({self._dtype.length} bits).")
+        if len(self._proxy) % self._dtype.bitlength != 0:
+            raise ValueError(f"Cannot extend Array as its data length ({len(self._proxy)} bits) is not a multiple of the format length ({self._dtype.bitlength} bits).")
         if isinstance(iterable, Array):
-            if self._dtype.name != iterable._dtype.name or self._dtype.length != iterable._dtype.length:
+            if self._dtype != iterable._dtype:
                 raise TypeError(
                     f"Cannot extend an Array with format '{self._dtype}' from an Array of format '{iterable._dtype}'.")
             # No need to iterate over the elements, we can just append the data
@@ -394,8 +394,8 @@ class Array:
         """
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = (self._bitstore.getslice(0, pos * self._dtype.length) + v._bitstore +
-                          self._bitstore.getslice(pos * self._dtype.length, None))
+        self._bitstore = (self._bitstore.getslice(0, pos * self._dtype.bitlength) + v._bitstore +
+                          self._bitstore.getslice(pos * self._dtype.bitlength, None))
 
     def pop(self, pos: int = -1, /) -> ElementType:
         """
@@ -422,9 +422,9 @@ class Array:
 
         :return: None
         """
-        if self._dtype.length % 8 != 0:
+        if self._dtype.bitlength % 8 != 0:  # TODO: This shouldn't be total_bitlength, but bitlength of each item.
             raise ValueError(
-                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.length} bits long.")
+                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bitlength} bits long.")
         self.data = self._proxy.byteswap(self.item_size // 8)
 
     def count(self, value: ElementType, /) -> int:
@@ -454,11 +454,11 @@ class Array:
         return x
 
     def reverse(self) -> None:
-        trailing_bit_length = len(self._proxy) % self._dtype.length
+        trailing_bit_length = len(self._proxy) % self._dtype.bitlength
         if trailing_bit_length != 0:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._proxy)} bits) "
-                             f"is not a multiple of the format length ({self._dtype.length} bits).")
-        self._bitstore = Bits.join([self._getbitslice(s - self._dtype.length, s) for s in range(len(self._proxy), 0, -self._dtype.length)])._bitstore
+                             f"is not a multiple of the format length ({self._dtype.bitlength} bits).")
+        self._bitstore = Bits.join([self._getbitslice(s - self._dtype.bitlength, s) for s in range(len(self._proxy), 0, -self._dtype.bitlength)])._bitstore
 
     def pp(self, fmt: str | None = None, width: int = 120,
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -490,23 +490,23 @@ class Array:
             token_list = [token.strip() for token in fmt.split(',')]
             if len(token_list) not in [1, 2]:
                 raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
-            name1, length1 = _utils.parse_name_length_token(token_list[0])
+            name1, length1 = _utils.parse_name_size_token(token_list[0])
             dtype1 = Dtype.from_parameters(name1, length1)
             if len(token_list) == 2:
-                name2, length2 = _utils.parse_name_length_token(token_list[1])
+                name2, length2 = _utils.parse_name_size_token(token_list[1])
                 dtype2 = Dtype.from_parameters(name2, length2)
 
-        token_length = dtype1.item_size
+        token_length = dtype1.bits_per_item
         if dtype2 is not None:
             # For two types we're OK as long as they don't have different lengths given.
-            if dtype1.item_size is not None and dtype2.item_size is not None and dtype1.item_size != dtype2.item_size:
+            if dtype1.bits_per_item is not None and dtype2.bits_per_item is not None and dtype1.bits_per_item != dtype2.bits_per_item:
                 raise ValueError(f"Two different format lengths specified ('{fmt}'). Either specify just one, or two the same length.")
             if token_length == 0:
-                token_length = dtype2.item_size
+                token_length = dtype2.bits_per_item
         if token_length == 0:
             token_length = self.item_size
 
-        if dtype1.items is not None or (dtype2 is not None and dtype2.items is not None):
+        if dtype1._items is not None or (dtype2 is not None and dtype2._items is not None):  # TODO: This should use new is_array
             raise ValueError(f"Array.pp() only supports simple Dtypes, not ones which represent arrays.")
 
         trailing_bit_length = len(self._proxy) % token_length
@@ -536,9 +536,7 @@ class Array:
         :rtype: bool
         """
         if isinstance(other, Array):
-            if self._dtype.length != other._dtype.length:
-                return False
-            if self._dtype.name != other._dtype.name:
+            if self._dtype != other._dtype:
                 return False
             if self.data != other.data:
                 return False
@@ -548,8 +546,8 @@ class Array:
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
         for _ in range(len(self)):
-            yield self._dtype.unpack(self._proxy[start:start + len(self._dtype)])
-            start += self._dtype.length
+            yield self._dtype.unpack(self._proxy[start:start + self._dtype.bitlength])
+            start += self._dtype.bitlength
 
     def __copy__(self) -> Array:
         a_copy = self.__class__(self._dtype, self.to_bits())
@@ -568,7 +566,7 @@ class Array:
             def partial_op(a):
                 return op(a)
         for i in range(len(self)):
-            v = self._dtype.unpack(self._proxy[len(self._dtype) * i: len(self._dtype) * (i + 1)])
+            v = self._dtype.unpack(self._proxy[self._dtype.bitlength * i: self._dtype.bitlength * (i + 1)])
             try:
                 new_data += new_array._create_element(partial_op(v))
             except (ZeroDivisionError, ValueError) as e:
@@ -589,7 +587,7 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            v = self._dtype.unpack(self._proxy[len(self._dtype) * i: len(self._dtype) * (i + 1)])
+            v = self._dtype.unpack(self._proxy[self._dtype.bitlength * i: self._dtype.bitlength * (i + 1)])
             try:
                 new_data += self._create_element(op(v, value))
             except (ZeroDivisionError, ValueError) as e:
@@ -612,10 +610,10 @@ class Array:
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
         value = Bits.from_auto(value)
-        if len(value) != len(self._dtype):
-            raise ValueError(f"Bitwise op {op} needs a Bits of length {len(self._dtype)} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
-        for start in range(0, len(self) * len(self._dtype), len(self._dtype)):
-            self._bitstore.setitem(slice(start, start + self._dtype.length), op(self._bitstore.getslice(start, start + self._dtype.length), value._bitstore))
+        if len(value) != self._dtype.bitlength:
+            raise ValueError(f"Bitwise op {op} needs a Bits of length {self._dtype.bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
+        for start in range(0, len(self) * self._dtype.bitlength, self._dtype.bitlength):
+            self._bitstore.setitem(slice(start, start + self._dtype.bitlength), op(self._bitstore.getslice(start, start + self._dtype.bitlength), value._bitstore))
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
@@ -635,8 +633,8 @@ class Array:
         failures = index = 0
         msg = ''
         for i in range(len(self)):
-            a = self._dtype.unpack(self._proxy[len(self._dtype) * i: len(self._dtype) * (i + 1)])
-            b = other._dtype.unpack(other._proxy[len(other._dtype) * i: len(other._dtype) * (i + 1)])
+            a = self._dtype.unpack(self._proxy[self._dtype.bitlength * i: self._dtype.bitlength * (i + 1)])
+            b = other._dtype.unpack(other._proxy[other._dtype.bitlength * i: other._dtype.bitlength * (i + 1)])
             try:
                 new_data += new_array._create_element(op(a, b))
             except (ValueError, ZeroDivisionError) as e:
@@ -668,20 +666,20 @@ class Array:
             raise ValueError(f"Only integer and floating point types can be combined - not '{type1}' and '{type2}'.")
         # If same type choose the widest
         if type1.name == type2.name:
-            return type1 if type1.length > type2.length else type2
+            return type1 if type1._bits_per_item > type2._bits_per_item else type2
         # We choose floats above integers, irrespective of the widths
         if is_float(type1) and is_int(type2):
             return type1
         if is_int(type1) and is_float(type2):
             return type2
         if is_float(type1) and is_float(type2):
-            return type2 if type2.length > type1.length else type1
+            return type2 if type2._bits_per_item > type1._bits_per_item else type1
         assert is_int(type1) and is_int(type2)
         if type1.is_signed and not type2.is_signed:
             return type1
         if type2.is_signed and not type1.is_signed:
             return type2
-        return type2 if type2.length > type1.length else type1
+        return type2 if type2._bits_per_item > type1._bits_per_item else type1
 
     # Operators between Arrays or an Array and scalar value
 

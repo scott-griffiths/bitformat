@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 import math
 
 def get_allowed_length(dtype_name, length):
-    al = dtype_register[dtype_name].allowed_lengths
+    al = dtype_register[dtype_name].allowed_sizes
     if al and al.values:
         if al.values[-1] is Ellipsis:
             return al.values[1] * length
@@ -70,7 +70,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
 def test_format_consistency(dtype_names, lengths):
     multipliers = [dtype_register[dtype_name].multiplier for dtype_name in dtype_names]
     als = []
-    for al, length in zip([dtype_register[dtype_name].allowed_lengths for dtype_name in dtype_names], lengths):
+    for al, length in zip([dtype_register[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
         if al.values:
             if al.values[-1] is Ellipsis:
                 als.append(al.values[1] * length)

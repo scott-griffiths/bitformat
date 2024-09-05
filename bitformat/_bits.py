@@ -747,6 +747,9 @@ class Bits:
             return fmt.unpack(self)
         if isinstance(fmt, str):
             return Dtype.from_string(fmt).unpack(self)
+        from ._field import FieldType
+        if isinstance(fmt, FieldType):
+            return fmt.unpack(self)
 
         dtypes = [Dtype.from_string(f) if isinstance(f, str) else f for f in fmt]
 
@@ -755,11 +758,11 @@ class Bits:
         ret_val = []
         for dtype in dtypes:
             if dtype.name != 'pad':
-                if dtype.length == 0:
-                    raise ValueError(f"No length given for dtype '{dtype}'. A length must be specified for each dtype"
+                if dtype.size == 0:
+                    raise ValueError(f"No size given for dtype '{dtype}'. A size must be specified for each dtype"
                                      " when a list of dtypes is being unpacked.")
-                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + len(dtype))))
-            pos += dtype.length
+                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.bitlength)))
+            pos += dtype.bitlength
         return ret_val
 
     # ----- Private Methods -----
@@ -792,7 +795,7 @@ class Bits:
             else:
                 u_str = f'u{length} == {u:_}'
                 i_str = f'i{length} == {i:_}'
-        if length in dtype_register['f'].allowed_lengths:
+        if length in dtype_register['f'].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -1060,19 +1063,19 @@ class Bits:
             raise ValueError(
                 f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
         has_length_in_fmt = True
-        name1, length1 = _utils.parse_name_length_token(token_list[0])
+        name1, length1 = _utils.parse_name_size_token(token_list[0])
         dtype1 = Dtype.from_parameters(name1, length1)
-        bits_per_group = dtype1.item_size
+        bits_per_group = dtype1.bits_per_item
         dtype2 = None
 
         if len(token_list) == 2:
-            name2, length2 = _utils.parse_name_length_token(token_list[1])
+            name2, length2 = _utils.parse_name_size_token(token_list[1])
             dtype2 = Dtype.from_parameters(name2, length2)
-            if 0 not in {dtype1.item_size, dtype2.item_size} and dtype1.item_size != dtype2.item_size:
+            if 0 not in {dtype1.bits_per_item, dtype2.bits_per_item} and dtype1.bits_per_item != dtype2.bits_per_item:
                 raise ValueError(
-                    f"Differing bit lengths of {dtype1.item_size} and {dtype2.item_size} in format string '{fmt}'.")
+                    f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item} in format string '{fmt}'.")
             if bits_per_group == 0:
-                bits_per_group = dtype2.item_size
+                bits_per_group = dtype2.bits_per_item
 
         if bits_per_group == 0:
             has_length_in_fmt = False

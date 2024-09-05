@@ -28,9 +28,10 @@ class Dtype:
     _get_fn: Callable
     _return_type: Any
     _is_signed: bool
-    _item_size: int
+    _bits_per_item: int
     _multiplier: int
     _items: int | None
+    _size: int
     _endianness: Endianness
 
     def __new__(cls, token: str, /) -> Dtype:
@@ -38,15 +39,15 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_parameters(cls, name: str, length: int = 0, items: int | None = None, endianness: str = '') -> Dtype:
-        """Create a new Dtype from its name, length and items.
+    def from_parameters(cls, name: str, size: int = 0, items: int | None = None, endianness: str = '') -> Dtype:
+        """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
-        this builder will be more efficient and is used internally to avoid str parsing.
+        this builder will be more efficient and is used internally to avoid string parsing.
 
         """
         endianness = Endianness(endianness)
-        x = dtype_register.get_dtype(name, length, items, endianness)
+        x = dtype_register.get_dtype(name, size, items, endianness)
         return x
 
     @classmethod
@@ -57,8 +58,8 @@ class Dtype:
         The token string examples:
 
         ``'u12'``: An unsigned 12-bit integer.
-        ``'bytes'``: A ``bytes`` object with no explicit length.
-        ``'[i6; 5]'``: An array of length 5 containing signed 6-bit integers.
+        ``'bytes'``: A ``bytes`` object with no explicit size.
+        ``'[i6; 5]'``: An array of 5 signed 6-bit integers.
 
         As a shortcut the ``Dtype`` constructor can be used directly with a token string.
 
@@ -71,15 +72,15 @@ class Dtype:
                 raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
             t = token[p + 1: -1]
             items = int(t) if t else 0
-            name, length = _utils.parse_name_length_token(token[1:p])
+            name, size = _utils.parse_name_size_token(token[1:p])
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
-            return dtype_register.get_array_dtype(name, length, items, endianness)
+            return dtype_register.get_array_dtype(name, size, items, endianness)
         else:
-            name, length = _utils.parse_name_length_token(token)
+            name, size = _utils.parse_name_size_token(token)
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
-            return dtype_register.get_dtype(name, length, None, endianness)
+            return dtype_register.get_dtype(name, size, None, endianness)
 
     @property
     def name(self) -> str:
@@ -92,31 +93,39 @@ class Dtype:
         return self._endianness.value
 
     @property
-    def length(self) -> int:
-        """The length of the data type in units of the multiplier.
+    def bits_per_item(self) -> int:
+        """The number of bits needed to represent a single item of the underlying data type.
 
-        A length of 0 means the length is currently unset.
+        For a simple dtype this equals len(dtype)
+        For an array dtype this equals len(dtype) // items
 
         """
-        return self._item_size // self._multiplier
+        return self._bits_per_item
 
     @property
-    def item_size(self) -> int:
-        """The number of bits needed to represent a single element of the data type."""
-        return self._item_size
-
-    @property
-    def items(self) -> int | None:
-        """The number of items in the data type. Will be None unless it's an array.
+    def items(self) -> int:
+        """The number of items in the data type. Will be 1 unless it's an array.
 
         An items equal to 0 means it's an array data type but with items currently unset.
 
         """
-        return self._items
+        return 1 if self._items is None else self._items
+
+    @property
+    def size(self) -> int:
+        """The size of one element of the data type in units of the multiplier."""
+        return self._size
+
+    @property
+    def bitlength(self) -> int:
+        """The total length of the data type in bits."""
+        if self._items is None:
+            return self._bits_per_item
+        return self._bits_per_item * self._items
 
     @property
     def multiplier(self) -> int:
-        """The number of bits for each unit of length. Usually 1, but equals 8 for bytes type."""
+        """The number of bits for each unit of size. Usually 1, but equals 8 for bytes type."""
         return self._multiplier
 
     @property
@@ -130,31 +139,21 @@ class Dtype:
         return self._is_signed
 
     def __hash__(self) -> int:
-        return hash((self._name, self._item_size))
+        return hash((self._name, self._bits_per_item))
 
-    def __len__(self) -> int:
-        """The length of the data type in bits.
-
-        Raises ValueError if either the length of the items is not set (equals 0).
-
-        """
-        if self._item_size == 0:
-            raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no length set.")
-        if self._items is None:
-            return self._item_size
-        if self._items == 0:
-            raise ValueError(f"Cannot return the length of the Dtype '{self}' because it has no number of items set.")
-        return self._item_size * self._items
+    def __len__(self):
+        raise TypeError("'Dtype' has no len() method. Use 'size', 'items' or 'bitlength' properties instead.")
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, length: int | None, items: int | None,
+    def _create(cls, definition: DtypeDefinition, size: int, items: int | None,
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
         x._multiplier = definition.multiplier
-        x._item_size = length * x._multiplier
+        x._size = size
+        x._bits_per_item = size * x._multiplier
         little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')
         x._endianness = endianness
         x._get_fn = (lambda b: definition.get_fn(b.byteswap())) if little_endian else definition.get_fn
@@ -162,7 +161,7 @@ class Dtype:
             x._create_fn = None
         else:
             if 'length' in inspect.signature(definition.set_fn).parameters:
-                set_fn = functools.partial(definition.set_fn, length=x._item_size)
+                set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
             else:
                 set_fn = definition.set_fn
             def create_bits(v):
@@ -189,11 +188,11 @@ class Dtype:
         if self._items is None:
             # Single item to pack
             b = self._create_fn(value)
-            if self.item_size != 0 and len(b) != self.item_size:
-                raise ValueError(f"Dtype has a length of {self.item_size} bits, but value '{value}' has {len(b)} bits.")
+            if self.bits_per_item != 0 and len(b) != self.bits_per_item:
+                raise ValueError(f"Dtype has a bitlength of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits.")
             return b
         if isinstance(value, bitformat.Bits):
-            if len(value) != len(self):
+            if len(value) != self.bitlength:
                 raise ValueError(f"Expected {len(self)} bits, but got {len(value)} bits.")
             return value
         if len(value) != self._items:
@@ -208,45 +207,45 @@ class Dtype:
         """
         b = bitformat.Bits.from_auto(b)
         if self._items is None:
-            if self._item_size == 0:
+            if self._bits_per_item == 0:
                 return self._get_fn(b)
             else:
-                return self._get_fn(b[0:self._item_size])
-        return tuple(self._get_fn(b[i * self._item_size:(i + 1) * self._item_size]) for i in range(self.items))
+                return self._get_fn(b[0:self._bits_per_item])
+        return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
 
     def __str__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
-        length_str = '' if hide_length else str(self.length)
+        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
+        size_str = '' if hide_length else str(self.size)
         if self._items is None:
-            return f"{self._name}{self._endianness.value}{length_str}"
+            return f"{self._name}{self._endianness.value}{size_str}"
         items_str = '' if self._items == 0 else f" {self._items}"
-        return f"[{self._name}{self._endianness.value}{length_str};{items_str}]"
+        return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 
     def __repr__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
-        length_str = '' if hide_length else str(self.length)
+        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
+        size_str = '' if hide_length else str(self.size)
         if self._items is None:
-            return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{length_str}')"
+            return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{size_str}')"
         items_str = '' if self._items == 0 else f" {self._items}"
-        return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{length_str};{items_str}]')"
+        return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{size_str};{items_str}]')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, Dtype):
             return (self._name == other._name and
-                    self._item_size == other._item_size and
+                    self._size == other._size and
                     self._items == other._items and
                     self._endianness == other._endianness)
         return False
 
 
-class AllowedLengths:
+class AllowedSizes:
     """Used to specify either concrete values or ranges of values that are allowed lengths for data types."""
     def __init__(self, value: tuple[int, ...] = tuple()) -> None:
         if len(value) >= 3 and value[-1] is Ellipsis:
             step = value[1] - value[0]
             for i in range(1, len(value) - 1):
                 if value[i] - value[i - 1] != step:
-                    raise ValueError(f"Allowed length tuples must be equally spaced when final element is Ellipsis, but got {value}.")
+                    raise ValueError(f"Allowed size tuples must be equally spaced when final element is Ellipsis, but got {value}.")
             self.values = (value[0], value[1], Ellipsis)
         else:
             self.values = value
@@ -282,55 +281,55 @@ class DtypeDefinition:
         self.description = description
         self.return_type = return_type
         self.is_signed = is_signed
-        self.allowed_lengths = AllowedLengths(allowed_lengths)
+        self.allowed_sizes = AllowedSizes(allowed_lengths)
         self.multiplier = multiplier
         self.set_fn = set_fn
         self.endianness_variants = endianness_variants
 
-        if self.allowed_lengths.values:
-            def allowed_length_checked_get_fn(bs):
-                if len(bs) not in self.allowed_lengths:
-                    if self.allowed_lengths.only_one_value():
-                        raise ValueError(f"'{self.name}' dtypes must have a length of {self.allowed_lengths.values[0]}, but received a length of {len(bs)}.")
+        if self.allowed_sizes.values:
+            def allowed_size_checked_get_fn(bs):
+                if len(bs) not in self.allowed_sizes:
+                    if self.allowed_sizes.only_one_value():
+                        raise ValueError(f"'{self.name}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {len(bs)}.")
                     else:
-                        raise ValueError(f"'{self.name}' dtypes must have a length in {self.allowed_lengths}, but received a length of {len(bs)}.")
+                        raise ValueError(f"'{self.name}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
                 return get_fn(bs)
-            self.get_fn = allowed_length_checked_get_fn  # Interpret everything and check the length
+            self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
         else:
             self.get_fn = get_fn  # Interpret everything
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, length: int = 0, items: int | None = None, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
-        if self.allowed_lengths:
-            if length == 0:
-                if self.allowed_lengths.only_one_value():
-                    length = self.allowed_lengths.values[0]
+    def get_dtype(self, size: int = 0, items: int | None = None, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
+        if self.allowed_sizes:  # TODO: This is wrong check - always true.
+            if size == 0:
+                if self.allowed_sizes.only_one_value():
+                    size = self.allowed_sizes.values[0]
             else:
-                if length not in self.allowed_lengths:
-                    if self.allowed_lengths.only_one_value():
-                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype, but its "
-                                         f"only allowed length is {self.allowed_lengths.values[0]}.")
+                if size not in self.allowed_sizes:
+                    if self.allowed_sizes.only_one_value():
+                        raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype, but its "
+                                         f"only allowed size is {self.allowed_sizes.values[0]}.")
                     else:
-                        raise ValueError(f"A length of {length} was supplied for the '{self.name}' dtype which "
-                                         f"is not one of its possible lengths (must be one of {self.allowed_lengths}).")
+                        raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype which "
+                                         f"is not one of its possible sizes (must be one of {self.allowed_sizes}).")
         if endianness != Endianness.UNSPECIFIED:
             if not self.endianness_variants:
                 raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
-            if length % 8 != 0:
-                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a length of {length} bits.")
-        d = Dtype._create(self, length, items, endianness)
+            if size % 8 != 0:
+                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
+        d = Dtype._create(self, size, items, endianness)
         return d
 
-    def get_array_dtype(self, length: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
-        d = self.get_dtype(length)
-        d = Dtype.from_parameters(d.name, d.length, items, endianness)
+    def get_array_dtype(self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
+        d = self.get_dtype(size)
+        d = Dtype.from_parameters(d.name, d.size, items, endianness)
         return d
 
     def __repr__(self) -> str:
         s = (f"{self.__class__.__name__}(name='{self.name}', description='{self.description}',"
              f"return_type={self.return_type.__name__}, ")
         s += (f"is_signed={self.is_signed}, "
-              f"allowed_lengths={self.allowed_lengths!s}, multiplier={self.multiplier})")
+              f"allowed_lengths={self.allowed_sizes!s}, multiplier={self.multiplier})")
         return s
 
 
@@ -376,25 +375,25 @@ class Register:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_dtype(cls, name: str, length: int | None, items: int | None = None,
+    def get_dtype(cls, name: str, size: int | None, items: int | None = None,
                   endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            return definition.get_dtype(length, items, endianness)
+            return definition.get_dtype(size, items, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: str, length: int, items: int,
+    def get_array_dtype(cls, name: str, size: int, items: int,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            d = definition.get_array_dtype(length, items, endianness)
+            d = definition.get_array_dtype(size, items, endianness)
             return d
 
     @classmethod
@@ -410,7 +409,7 @@ class Register:
         s.append('-' * 72)
         for key in self.names:
             m = self.names[key]
-            allowed = '' if not m.allowed_lengths else m.allowed_lengths
+            allowed = '' if not m.allowed_sizes else m.allowed_sizes
             ret = 'None' if m.return_type is None else m.return_type.__name__
             s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.multiplier:^12}{ret:<13} # {m.description}")
         return '\n'.join(s)
@@ -425,7 +424,7 @@ This is used to maintain a centralized registry of data type definitions.
 
 
 class DtypeWithExpression:
-    """Used internally. A Dtype that can contain an Expression instead of fixed values for length or items."""
+    """Used internally. A Dtype that can contain an Expression instead of fixed values for size or items."""
 
     def __init__(self, s: str) -> None:
         self.name = ''
@@ -446,8 +445,8 @@ class DtypeWithExpression:
 
     def __str__(self) -> str:
         return "TODO"
-        hide_length = dtype_register.names[self._name].allowed_lengths.only_one_value() or self.length == 0
-        length_str = '' if hide_length else str(self.length)
+        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
+        length_str = '' if hide_length else str(self.size)
         if self._items is None:
             return f"{self._name}{length_str}"
         items_str = '' if self._items == 0 else f" {self._items}"

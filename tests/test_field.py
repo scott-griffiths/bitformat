@@ -6,7 +6,12 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        ds = [Dtype.from_string(x) for x in ['u9', 'i4', 'f32', 'bytes3', 'bits11']]
+        d = Dtype.from_parameters('bytes', 2)
+        assert d.size == 2
+        assert d.bitlength == 16
+        assert d.bits_per_item
+
+        ds = [Dtype.from_string(x) for x in ['bytes3', 'u9', 'i4', 'f32', 'bits11']]
         for d in ds:
             f = Field.from_parameters(d)
             assert f.dtype == d
@@ -21,12 +26,12 @@ class TestCreation:
         assert f2.value == x
 
 
-    def test_creation_from_bits(self):
+    def test_creation_from_bits1(self):
         b = Bits('0xf, 0b1')
         f1 = Field.from_bits(b)
         assert f1.to_bits() == b
         assert f1.const is True
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             _ = Field(Bits())
         f2 = Field.from_bits(b'123')
         assert f2.value == b'123'
@@ -64,23 +69,24 @@ class TestCreation:
         assert f.value == b
         assert f.name == 'hello'
         assert f.dtype.name == 'bytes'
-        assert f.dtype.length == len(b)
+        assert f.dtype.bitlength == len(b) * 8
 
         f = Field.from_bytes(b, name='hello')
         assert f.value == b
         assert f.name == 'hello'
         assert f.dtype.name == 'bytes'
-        assert f.dtype.length == len(b)
+        assert f.dtype.bitlength == len(b) * 8
 
 
     @given(st.binary())
     def test_creation_from_bits(self, b):
         b = Bits.from_bytes(b)
-        f = Field.from_bits(b, 'hello')
-        assert f.value == b
-        assert f.name == 'hello'
-        assert f.dtype.name == 'bits'
-        assert f.dtype.length == len(b)
+        if b:
+            f = Field.from_bits(b, 'hello')
+            assert f.value == b
+            assert f.name == 'hello'
+            assert f.dtype.name == 'bits'
+            assert f.dtype.bitlength == len(b)
 
     def test_string_creation_with_const(self):
         f1 = Field.from_string('f1: u1 = 1')

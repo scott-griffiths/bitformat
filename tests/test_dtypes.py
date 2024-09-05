@@ -13,7 +13,8 @@ class TestBasicFunctionality:
         b = Dtype('bool')
         assert str(b) == 'bool'
         assert b.name == 'bool'
-        assert b.length == 1
+        assert b.size == 1
+        assert b.bitlength == 1
 
         b2 = Dtype.from_string('bool1')
         assert b == b2
@@ -22,7 +23,7 @@ class TestBasicFunctionality:
     def test_setting_with_length(self):
         d = Dtype.from_parameters('uint', 12)
         assert str(d) == 'u12'
-        assert d.length == 12
+        assert d.size == 12
         assert d.name == 'u'
 
     def test_build_errors(self):
@@ -43,8 +44,6 @@ class TestBasicFunctionality:
 
     def test_immutability(self):
         d = Dtype('f32')
-        with pytest.raises(AttributeError):
-            d.length = 8
         with pytest.raises(AttributeError):
             d.name = 'uint8'
 
@@ -118,24 +117,44 @@ class TestCreatingNewDtypes:
 
 
 def test_len():
+    a = Dtype('bytes2')
+    assert a.size == 2
+    assert a.items == 1
+    assert a.bitlength == 16
+    a = Dtype('[bytes1; 2]')
+    assert a.size == 1
+    assert a.items == 2
+    assert a.bitlength == 16
     a = Dtype('u8')
-    assert len(a) == 8
+    assert a.size == 8
+    assert a.bitlength == 8
+    assert a.items == 1
     a = Dtype('bits8')
-    assert len(a) == 8
+    assert a.size == 8
+    assert a.bitlength == 8
+    assert a.items == 1
     a = Dtype('bool')
-    assert len(a) == 1
+    assert a.size == 1
+    assert a.bitlength == 1
+    assert a.items == 1
     a = Dtype('bytes4')
-    assert len(a) == 32
-    b = Dtype('[u8; 3]')
-    assert len(b) == 24
-    b = Dtype('[bytes3; 4]')
-    assert len(b) == 96
+    assert a.size == 4
+    assert a.bitlength == 32
+    assert a.items == 1
+    a = Dtype('[u8; 3]')
+    assert a.size == 8
+    assert a.bitlength == 24
+    assert a.items == 3
+    a = Dtype('[bytes3; 4]')
+    assert a.size == 3
+    assert a.bitlength == 96
+    assert a.items == 4
 
 
 def test_len_errors():
     for x in ['u', '[u8;]']:
         d = Dtype(x)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             _ = len(d)
 
 def test_endianness():

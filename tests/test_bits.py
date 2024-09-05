@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits
+from bitformat import Dtype, Bits, Field
 
 
 def test_build():
@@ -632,3 +632,14 @@ def test_native_endian_floats():
         assert d.endianness == 'ne'
         d3 = Dtype.from_parameters('f', 64, endianness='le')
         assert d != d3
+
+
+def test_unpack_field():
+    f = Field('tadpole: u12')
+    a = Bits('u12=100')
+    assert f.unpack(a) == 100
+    assert a.unpack(f) == 100
+
+    a = Bits('0x000001b3, u12=352, u12=288, bool=1')
+    v = a.unpack(['hex32', '[u12; 2]' , 'bool'])
+    assert v == ['000001b3', (352, 288), True]
