@@ -520,7 +520,7 @@ def test_unpack_single():
     assert a.unpack('u8') == 0x12
 
 def test_pack_array():
-    d = Dtype.from_parameters('u', 33, 5)
+    d = Dtype.from_parameters('u', 33, True, 5)
     a = Bits.pack(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
     assert d.return_type == tuple

@@ -625,7 +625,7 @@ class Array:
                 msg += " Use equals() method to compare Arrays for a single boolean result."
             raise ValueError(msg)
         if is_comparison:
-            new_type = dtype_register.get_dtype('bool', 1)
+            new_type = dtype_register.get_single_dtype('bool', 1)
         else:
             new_type = self._promotetype(self._dtype, other._dtype)
         new_array = self.__class__(new_type)
@@ -649,11 +649,11 @@ class Array:
         return new_array
 
     @classmethod
-    def _promotetype(cls, type1: Dtype, type2: Dtype) -> Dtype:
+    def _promotetype(cls, type1: Dtype, type2: Dtype) -> Dtype:  # TODO: How does this work for array dtypes?
         """When combining types which one wins?
 
         1. We only deal with types representing floats or integers.
-        2. One of the two types gets returned. We never create a new one.
+        2. One of the two types gets used. We never create a new one.
         3. Floating point types always win against integer types.
         4. Signed integer types always win against unsigned integer types.
         5. Longer types win against shorter types.
@@ -666,20 +666,20 @@ class Array:
             raise ValueError(f"Only integer and floating point types can be combined - not '{type1}' and '{type2}'.")
         # If same type choose the widest
         if type1.name == type2.name:
-            return type1 if type1._bits_per_item > type2._bits_per_item else type2
+            return type1 if type1.bits_per_item > type2.bits_per_item else type2
         # We choose floats above integers, irrespective of the widths
         if is_float(type1) and is_int(type2):
             return type1
         if is_int(type1) and is_float(type2):
             return type2
         if is_float(type1) and is_float(type2):
-            return type2 if type2._bits_per_item > type1._bits_per_item else type1
+            return type2 if type2.bits_per_item > type1.bits_per_item else type1
         assert is_int(type1) and is_int(type2)
         if type1.is_signed and not type2.is_signed:
             return type1
         if type2.is_signed and not type1.is_signed:
             return type2
-        return type2 if type2._bits_per_item > type1._bits_per_item else type1
+        return type2 if type2.bits_per_item > type1.bits_per_item else type1
 
     # Operators between Arrays or an Array and scalar value
 

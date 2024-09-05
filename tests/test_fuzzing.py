@@ -50,7 +50,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
 def test_field_array_consistency(dtype_name, length, int_value, items):
     length = get_allowed_length(dtype_name, length)
 
-    f = Field.from_parameters(Dtype.from_parameters(dtype_name, length, items))
+    f = Field.from_parameters(Dtype.from_parameters(dtype_name, length, True, items))
     f2 = Field.from_string(str(f))
     assert f == f2
 

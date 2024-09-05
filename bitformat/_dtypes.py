@@ -19,7 +19,7 @@ class Dtype:
     Dtype instances are immutable. They are often created implicitly elsewhere via a token string.
 
     >>> u12 = Dtype('u12')
-    >>> float16 = Dtype('float16')
+    >>> float16 = Dtype('f16')
 
     """
 
@@ -40,7 +40,7 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_parameters(cls, name: str, size: int = 0, items: int | None = None, endianness: str = '') -> Dtype:
+    def from_parameters(cls, name: str, size: int = 0, is_array: bool = False, items: int = 1, endianness: str = '') -> Dtype:
         """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -48,8 +48,12 @@ class Dtype:
 
         """
         endianness = Endianness(endianness)
-        x = dtype_register.get_dtype(name, size, items, endianness)
-        return x
+        if not is_array:
+            return dtype_register.get_single_dtype(name, size, endianness)
+        elif is_array == 1:
+            return dtype_register.get_array_dtype(name, size, items, endianness)
+        else:
+            raise ValueError(f"Invalid value for is_array: {is_array}. Should be True or False.")
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -81,7 +85,7 @@ class Dtype:
             name, size = _utils.parse_name_size_token(token)
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
-            return dtype_register.get_dtype(name, size, None, endianness)
+            return dtype_register.get_single_dtype(name, size, endianness)
 
     @property
     def name(self) -> str:
@@ -114,6 +118,7 @@ class Dtype:
 
     @property
     def is_array(self) -> bool:
+        """If True then the data type represents an array of items."""
         return self._is_array
 
     @property
@@ -149,16 +154,12 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, size: int, items: int | None,
+    def _create(cls, definition: DtypeDefinition, size: int, is_array: bool = False, items: int = 1,
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
-        if items is None:
-            x._is_array = False
-            x._items = 1
-        else:
-            x._is_array = True
-            x._items = items
+        x._is_array = is_array
+        x._items = items
         x._multiplier = definition.multiplier
         x._size = size
         x._bits_per_item = size * x._multiplier
@@ -183,7 +184,7 @@ class Dtype:
                 return b.byteswap()
             x._create_fn = create_bits_le if little_endian else create_bits
 
-        x._return_type = definition.return_type if items is None else tuple
+        x._return_type = tuple if is_array else definition.return_type
         x._is_signed = definition.is_signed
         return x
 
@@ -307,7 +308,7 @@ class DtypeDefinition:
             self.get_fn = get_fn  # Interpret everything
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def get_dtype(self, size: int = 0, items: int | None = None, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
+    def sanitize(self, size: int, endianness: Endianness) -> tuple(int, Endianness):
         if self.allowed_sizes:  # TODO: This is wrong check - always true.
             if size == 0:
                 if self.allowed_sizes.only_one_value():
@@ -322,15 +323,21 @@ class DtypeDefinition:
                                          f"is not one of its possible sizes (must be one of {self.allowed_sizes}).")
         if endianness != Endianness.UNSPECIFIED:
             if not self.endianness_variants:
-                raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
+                raise ValueError(
+                    f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
             if size % 8 != 0:
-                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
-        d = Dtype._create(self, size, items, endianness)
+                raise ValueError(
+                    f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
+        return size, endianness
+
+    def get_single_dtype(self, size: int = 0, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
+        size, endianness = self.sanitize(size, endianness)
+        d = Dtype._create(self, size, False, 1, endianness)
         return d
 
     def get_array_dtype(self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
-        d = self.get_dtype(size)
-        d = Dtype.from_parameters(d.name, d.size, items, endianness)
+        size, endianness = self.sanitize(size, endianness)
+        d = Dtype._create(self, size, True, items, endianness)
         return d
 
     def __repr__(self) -> str:
@@ -383,14 +390,14 @@ class Register:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_dtype(cls, name: str, size: int | None, items: int | None = None,
+    def get_single_dtype(cls, name: str, size: int | None,
                   endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
             definition = cls.names[name]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
         else:
-            return definition.get_dtype(size, items, endianness)
+            return definition.get_single_dtype(size, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
