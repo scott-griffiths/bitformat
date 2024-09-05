@@ -30,7 +30,8 @@ class Dtype:
     _is_signed: bool
     _bits_per_item: int
     _multiplier: int
-    _items: int | None
+    _items: int
+    _is_array: bool
     _size: int
     _endianness: Endianness
 
@@ -109,7 +110,11 @@ class Dtype:
         An items equal to 0 means it's an array data type but with items currently unset.
 
         """
-        return 1 if self._items is None else self._items
+        return self._items
+
+    @property
+    def is_array(self) -> bool:
+        return self._is_array
 
     @property
     def size(self) -> int:
@@ -119,8 +124,6 @@ class Dtype:
     @property
     def bitlength(self) -> int:
         """The total length of the data type in bits."""
-        if self._items is None:
-            return self._bits_per_item
         return self._bits_per_item * self._items
 
     @property
@@ -150,7 +153,12 @@ class Dtype:
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         x = super().__new__(cls)
         x._name = definition.name
-        x._items = items
+        if items is None:
+            x._is_array = False
+            x._items = 1
+        else:
+            x._is_array = True
+            x._items = items
         x._multiplier = definition.multiplier
         x._size = size
         x._bits_per_item = size * x._multiplier
@@ -185,7 +193,7 @@ class Dtype:
         The value parameter should be of a type appropriate to the data type.
 
         """
-        if self._items is None:
+        if not self._is_array:
             # Single item to pack
             b = self._create_fn(value)
             if self.bits_per_item != 0 and len(b) != self.bits_per_item:
@@ -206,7 +214,7 @@ class Dtype:
 
         """
         b = bitformat.Bits.from_auto(b)
-        if self._items is None:
+        if not self._is_array:
             if self._bits_per_item == 0:
                 return self._get_fn(b)
             else:
@@ -216,7 +224,7 @@ class Dtype:
     def __str__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
         size_str = '' if hide_length else str(self.size)
-        if self._items is None:
+        if not self._is_array:
             return f"{self._name}{self._endianness.value}{size_str}"
         items_str = '' if self._items == 0 else f" {self._items}"
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
@@ -224,7 +232,7 @@ class Dtype:
     def __repr__(self) -> str:
         hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
         size_str = '' if hide_length else str(self.size)
-        if self._items is None:
+        if not self._is_array:
             return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{size_str}')"
         items_str = '' if self._items == 0 else f" {self._items}"
         return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{size_str};{items_str}]')"
@@ -447,7 +455,7 @@ class DtypeWithExpression:
         return "TODO"
         hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
         length_str = '' if hide_length else str(self.size)
-        if self._items is None:
+        if not self._is_array:
             return f"{self._name}{length_str}"
         items_str = '' if self._items == 0 else f" {self._items}"
         return f"[{self._name}{length_str};{items_str}]"

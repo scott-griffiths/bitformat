@@ -958,3 +958,12 @@ def test_rgb_array():
 
     with pytest.raises(ValueError):
         a.pp()
+
+def test_dtype_array_byteswap():
+    a = Array('[u_le16; 3]', [(1, 2, 3), (4, 5, 6)])
+    assert a[1] == (4, 5, 6)
+    a.byteswap()
+    a.dtype = '[u_be16; 3]'
+    assert a[1] == (4, 5, 6)
+
+    

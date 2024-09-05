@@ -422,7 +422,7 @@ class Array:
 
         :return: None
         """
-        if self._dtype.bitlength % 8 != 0:  # TODO: This shouldn't be total_bitlength, but bitlength of each item.
+        if self.item_size % 8 != 0:
             raise ValueError(
                 f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bitlength} bits long.")
         self.data = self._proxy.byteswap(self.item_size // 8)
@@ -506,7 +506,7 @@ class Array:
         if token_length == 0:
             token_length = self.item_size
 
-        if dtype1._items is not None or (dtype2 is not None and dtype2._items is not None):  # TODO: This should use new is_array
+        if dtype1.is_array or (dtype2 is not None and dtype2.is_array):
             raise ValueError(f"Array.pp() only supports simple Dtypes, not ones which represent arrays.")
 
         trailing_bit_length = len(self._proxy) % token_length
