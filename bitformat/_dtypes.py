@@ -259,6 +259,9 @@ class AllowedSizes:
         else:
             self.values = value
 
+    def __bool__(self) -> bool:
+        return bool(self.values)
+
     def __str__(self) -> str:
         if self.values and self.values[-1] is Ellipsis:
             return f"({self.values[0]}, {self.values[1]}, ...)"
@@ -309,7 +312,7 @@ class DtypeDefinition:
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: int, endianness: Endianness) -> tuple(int, Endianness):
-        if self.allowed_sizes:  # TODO: This is wrong check - always true.
+        if self.allowed_sizes:
             if size == 0:
                 if self.allowed_sizes.only_one_value():
                     size = self.allowed_sizes.values[0]
