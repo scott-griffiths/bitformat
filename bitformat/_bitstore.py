@@ -25,12 +25,6 @@ class BitStore:
         self._bitarray = bitarray.bitarray()
 
     @classmethod
-    def _from_bitarray(cls, b: bitarray.bitarray) -> BitStore:
-        x = super().__new__(cls)
-        x._bitarray = b
-        return x
-
-    @classmethod
     def from_zeros(cls, i: int) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray(i)
@@ -64,7 +58,9 @@ class BitStore:
             ba = bitarray.util.hex2ba(hexstring)
         except ValueError:
             raise ValueError(f"Invalid symbol in hex initialiser '{hexstring}'")
-        return BitStore._from_bitarray(ba)
+        x = super().__new__(cls)
+        x._bitarray = ba
+        return x
 
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
@@ -74,7 +70,9 @@ class BitStore:
             ba = bitarray.util.base2ba(8, octstring)
         except ValueError:
             raise ValueError(f"Invalid symbol in oct initialiser '{octstring}'.")
-        return BitStore._from_bitarray(ba)
+        x = super().__new__(cls)
+        x._bitarray = ba
+        return x
 
     @classmethod
     def from_bin(cls, binstring: str, /) -> BitStore:
@@ -89,7 +87,9 @@ class BitStore:
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
         i = int(i)
         try:
-            return BitStore._from_bitarray(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
+            x = super().__new__(cls)
+            x._bitarray = bitarray.util.int2ba(i, length=length, endian='big', signed=signed)
+            return x
         except OverflowError as e:
             if signed:
                 if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
@@ -153,13 +153,19 @@ class BitStore:
         return self._bitarray == other._bitarray
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        return BitStore._from_bitarray(self._bitarray & other._bitarray)
+        x = super().__new__(BitStore)
+        x._bitarray = self._bitarray & other._bitarray
+        return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        return BitStore._from_bitarray(self._bitarray | other._bitarray)
+        x = super().__new__(BitStore)
+        x._bitarray = self._bitarray | other._bitarray
+        return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        return BitStore._from_bitarray(self._bitarray ^ other._bitarray)
+        x = super().__new__(BitStore)
+        x._bitarray = self._bitarray ^ other._bitarray
+        return x
 
     def __iand__(self, other: BitStore, /) -> BitStore:
         self._bitarray &= other._bitarray
@@ -254,10 +260,14 @@ class BitStore:
         return bool(self._bitarray.__getitem__(index))
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        return BitStore._from_bitarray(self._bitarray.__getitem__(key))
+        x = super().__new__(BitStore)
+        x._bitarray = self._bitarray.__getitem__(key)
+        return x
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        return BitStore._from_bitarray(self._bitarray[start:stop])
+        x = super().__new__(BitStore)
+        x._bitarray = self._bitarray[start:stop]
+        return x
 
     def invert(self, index: int | None = None, /) -> None:
         if index is not None:
