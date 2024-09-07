@@ -12,7 +12,9 @@ class Options:
     Used to query and change module options.
 
     :example:
+    ```
     Options().bytealigned = True
+    ```
     """
 
     _instance = None
@@ -31,6 +33,13 @@ class Options:
 
     def __init__(self):
         pass
+
+    def __setattr__(self, name, value):
+        if hasattr(self, name):
+            super().__setattr__(name, value)
+        else:
+            raise AttributeError(f"Cannot add new attribute '{name}' to Options. "
+                                 f"Only existing attributes can be modified:\n{self!r}")
 
     def __repr__(self) -> str:
         attributes = {attr: getattr(self, attr) for attr in dir(self) if not attr.startswith('_') and not callable(getattr(self, attr))}

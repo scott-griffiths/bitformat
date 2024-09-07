@@ -352,14 +352,15 @@ class DtypeDefinition:
 
 
 class Register:
-    """A singleton class that holds all the DtypeDefinitions.
+    """Returns the singleton register of the dtype definitions.
 
     This is used to maintain a centralized registry of data type definitions.
     It is not yet part of the public API, so should not be used.
 
     :example:
+    ```
     print(Register())
-    
+    ```
     """
 
     _instance: Register | None = None
