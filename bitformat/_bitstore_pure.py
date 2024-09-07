@@ -169,28 +169,40 @@ class BitStore:
 
     def __and__(self, other: BitStore, /) -> BitStore:
         x = BitStore()
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         x.bytearray_ = bytearray(int(a) & int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
         x = BitStore()
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         x.bytearray_ = bytearray(int(a) | int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
         x = BitStore()
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         x.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
     def __iand__(self, other: BitStore, /) -> BitStore:
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         self.bytearray_ = bytearray(int(a) & int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return self
 
     def __ior__(self, other: BitStore, /) -> BitStore:
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         self.bytearray_ = bytearray(int(a) | int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return self
 
     def __ixor__(self, other: BitStore, /) -> BitStore:
+        if len(self.bytearray_) != len(other.bytearray_):
+            raise ValueError
         self.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return self
 
@@ -208,12 +220,10 @@ class BitStore:
             start = f + start + 1
 
     def rfind(self, bs: BitStore, start: int, end: int, bytealigned: bool = False):
-        if not bytealigned:
-            return self.bytearray_.find(bs.bytearray_, start, end)
-        try:
-            return next(self.rfindall(bs, start, end, bytealigned))
-        except StopIteration:
+        all_pos = list(self.findall(bs, start, end, bytealigned))
+        if not all_pos:
             return -1
+        return all_pos[-1]
 
     def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
         # Use self.find() to find all the positions of a BitStore in another BitStore
@@ -222,16 +232,6 @@ class BitStore:
             yield f
             start = f + 1
             f = self.find(bs, start, end, bytealigned)
-
-    def rfindall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
-        i = self._bitarray.itersearch(bs._bitarray, start, end, right=True)
-        if not bytealigned:
-            for p in i:
-                yield p
-        else:
-            for p in i:
-                if (p % 8) == 0:
-                    yield p
 
     def count(self, value, /) -> int:
         return self.bytearray_.count(value)
