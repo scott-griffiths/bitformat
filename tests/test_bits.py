@@ -36,8 +36,6 @@ class TestCreation:
     def test_creation_from_hex(self):
         s = Bits.pack('hex', '0xA0ff')
         assert (len(s), s.unpack('hex')) == (16, 'a0ff')
-        s = Bits.pack('hex', '0x0x0X')
-        assert (len(s), s.hex) == (0, '')
 
     def test_creation_from_hex_with_whitespace(self):
         s = Bits('  \n0 X a  4e       \r3  \n')
@@ -205,7 +203,7 @@ class TestUnderscoresInLiterals:
     def test_binary_creation(self):
         a = Bits.pack('bin', '0000_0001_0010')
         assert a.bin == '000000010010'
-        b = Bits('0b0011_1100_1111_0000')
+        b = Bits.from_string('0b0011_1100_1111_0000')
         assert b.bin == '0011110011110000'
         v = 0b1010_0000
         c = Bits.pack('uint8', 0b1010_0000)
@@ -255,7 +253,7 @@ class TestPrettyPrinting:
 """
 
     def test_separator(self):
-        a = Bits.from_string('0x0f0f'*9)
+        a = Bits.from_string('0x' + '0f0f'*9)
         s = io.StringIO()
         a.pp('hex32', sep='!-!', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex32', length=144 bits> [
@@ -367,7 +365,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
     def test_oct(self):
-        a = Bits.from_string('0o01234567'*20)
+        a = Bits.from_string('0o' + '01234567'*20)
         s = io.StringIO()
         a.pp(stream=s, fmt='oct', show_offset=False, width=20)
         expected_output = """<Bits, fmt='oct', length=480 bits> [

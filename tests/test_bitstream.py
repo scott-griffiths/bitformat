@@ -555,19 +555,15 @@ class TestAdding:
         assert s.bin == ''
 
     def test_init_with_concatenated_strings(self):
-        s = Bits('0xff 0Xee 0xd 0xcc')
+        s = Bits('0xff, 0Xee,0xd ,0xcc')
         assert s.hex == 'ffeedcc'
-        s = Bits('0b0 0B111 0b001')
+        s = Bits('0b0 ,0B111 ,0b001')
         assert s.bin == '0111001'
-        s += '0b1' + '0B1'
-        assert s.bin == '011100111'
-        s = Bits('0xff0xee')
+        s = Bits('0xffee')
         assert s.hex == 'ffee'
-        s = Bits('0b000b0b11')
-        assert s.bin == '0011'
-        s = Bits('  0o123 0O 7 0   o1')
+        s = Bits('  0o123 ,0O7 ,0o1')
         assert s.oct == '12371'
-        s += '  0 o 332'
+        s += '  0o 332'
         assert s.oct == '12371332'
 
     def test_equals(self):
@@ -599,7 +595,7 @@ class TestAdding:
         assert a == '0b00110111'
         assert a == '0x37'
         assert '0b0011 0111' == a
-        assert '0x3 0x7' == a
+        assert '0x37' == a
         assert not a == '0b11001000'
         assert not '0x3737' == a
 

@@ -225,9 +225,9 @@ class TestArrayMethods:
         assert b.unpack() == ['123', '345']
         with pytest.raises(ValueError):
             b[0] = 'abcd'
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             b[0] = 12
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             b[0] = Bits.from_string('0xfff')
         b[0] = 'fff'
         assert b.data.hex == 'fff345'

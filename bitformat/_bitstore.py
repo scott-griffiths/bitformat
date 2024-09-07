@@ -38,12 +38,6 @@ class BitStore:
         return x
 
     @classmethod
-    def from_binstr(cls, s: str) -> BitStore:
-        x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(s)
-        return x
-
-    @classmethod
     def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
         x = super().__new__(cls)
         x._bitarray = bitarray.bitarray()
@@ -51,37 +45,31 @@ class BitStore:
         return x
 
     @classmethod
-    def from_hex(cls, hexstring: str, /) -> BitStore:
-        hexstring = tidy_input_string(hexstring)
-        hexstring = hexstring.replace('0x', '')
-        try:
-            ba = bitarray.util.hex2ba(hexstring)
-        except ValueError:
-            raise ValueError(f"Invalid symbol in hex initialiser '{hexstring}'")
+    def from_bin(cls, binstring: str, /) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = ba
+        try:
+            x._bitarray = bitarray.bitarray(binstring)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid symbol in binary initialiser '{binstring}'")
+        return x
+
+    @classmethod
+    def from_hex(cls, hexstring: str, /) -> BitStore:
+        x = super().__new__(cls)
+        try:
+            x._bitarray = bitarray.util.hex2ba(hexstring)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid symbol in hex initialiser '{hexstring}'")
         return x
 
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
-        octstring = tidy_input_string(octstring)
-        octstring = octstring.replace('0o', '')
-        try:
-            ba = bitarray.util.base2ba(8, octstring)
-        except ValueError:
-            raise ValueError(f"Invalid symbol in oct initialiser '{octstring}'.")
         x = super().__new__(cls)
-        x._bitarray = ba
-        return x
-
-    @classmethod
-    def from_bin(cls, binstring: str, /) -> BitStore:
-        binstring = tidy_input_string(binstring)
-        binstring = binstring.replace('0b', '')
         try:
-            return BitStore.from_binstr(binstring)
-        except ValueError:
-            raise ValueError(f"Invalid character in bin initialiser '{binstring}'.")
+            x._bitarray = bitarray.util.base2ba(8, octstring)
+        except (TypeError, ValueError):
+            raise ValueError(f"Invalid symbol in oct initialiser '{octstring}'.")
+        return x
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:

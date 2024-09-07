@@ -23,6 +23,14 @@ else:
 
 __all__ = ['Bits']
 
+def tidy_input_string(s: str) -> str:
+    """Return string made lowercase and with all whitespace and underscores removed."""
+    try:
+        t = s.split()
+    except (AttributeError, TypeError):
+        raise ValueError(f"Expected str object but received a {type(s)} with value {s}.")
+    return ''.join(t).lower().replace('_', '')
+
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 
@@ -56,11 +64,14 @@ def token_to_bitstore(token: str) -> BitStore:
                 raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
         return dtype.pack(value)._bitstore
     if token.startswith(('0x', '0X')):
-        return BitStore.from_hex(token[2:])
+        token = token[2:].replace('_', '')
+        return BitStore.from_hex(token)
     if token.startswith(('0b', '0B')):
-        return BitStore.from_bin(token[2:])
+        token = token[2:].replace('_', '')
+        return BitStore.from_bin(token)
     if token.startswith(('0o', '0O')):
-        return BitStore.from_oct(token[2:])
+        token = token[2:].replace('_', '')
+        return BitStore.from_oct(token)
     raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
 
@@ -150,7 +161,7 @@ class Bits:
         :rtype: Bits
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_binstr(''.join('1' if x else '0' for x in i))
+        x._bitstore = BitStore.from_bin(''.join('1' if x else '0' for x in i))
         return x
 
     @classmethod
@@ -859,7 +870,7 @@ class Bits:
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _setbool(self, value: bool) -> None:
-        self._bitstore = BitStore.from_binstr('1') if value else BitStore.from_binstr('0')
+        self._bitstore = BitStore.from_bin('1') if value else BitStore.from_bin('0')
         return
 
     def _getbool(self) -> bool:
@@ -873,7 +884,12 @@ class Bits:
 
     def _setbin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
-        self._bitstore = BitStore.from_bin(binstring)
+        try:
+            if binstring.startswith(('0b', '0B')):
+                binstring = binstring[2:]
+        except AttributeError:
+            raise TypeError(f"Expected a binary string, but received a {type(binstring)} with value {binstring}.")
+        self._bitstore = BitStore.from_bin(binstring.replace('_', ''))
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
@@ -881,7 +897,12 @@ class Bits:
 
     def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
-        self._bitstore = BitStore.from_oct(octstring)
+        try:
+            if octstring.startswith(('0o', '0O')):
+                octstring = octstring[2:]
+        except AttributeError:
+            raise TypeError(f"Expected an octal string, but received a {type(octstring)} with value {octstring}.")
+        self._bitstore = BitStore.from_oct(octstring.replace('_', ''))
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
@@ -889,7 +910,12 @@ class Bits:
 
     def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
-        self._bitstore = BitStore.from_hex(hexstring)
+        try:
+            if hexstring.startswith(('0x', '0X')):
+                hexstring = hexstring[2:]
+        except AttributeError:
+            raise TypeError(f"Expected a hex string, but received a {type(hexstring)} with value {hexstring}.")
+        self._bitstore = BitStore.from_hex(hexstring.replace('_', ''))
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string.
