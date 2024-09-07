@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, dtype_register
+from bitformat import Format, Dtype, Bits, Field, Register
 from hypothesis import given, settings
 import hypothesis.strategies as st
 import math
 
 def get_allowed_length(dtype_name, length):
-    al = dtype_register[dtype_name].allowed_sizes
+    al = Register()[dtype_name].allowed_sizes
     if al and al.values:
         if al.values[-1] is Ellipsis:
             return al.values[1] * length
@@ -20,7 +20,7 @@ def compare_fields(f, f2):
     assert f == f2, f"Fields are not equal: {f} != {f2}"
 
 
-@given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
+@given(dtype_name=st.sampled_from(sorted(Register().names.keys())),
        length=st.integers(1, 100),
        const=st.booleans(),
        int_value=st.integers(0, 2**800 - 1))
@@ -31,7 +31,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
     compare_fields(f, f2)
 
     # Create some bits of the right length
-    multiplier = dtype_register[dtype_name].multiplier
+    multiplier = Register()[dtype_name].multiplier
     b = Bits.pack('u800', int_value)[0:length * multiplier]
     f.parse(b)
     assert f.to_bits() == b
@@ -43,7 +43,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
         f3 = eval(repr(f))
         compare_fields(f, f3)
 
-@given(dtype_name=st.sampled_from(sorted(dtype_register.names.keys())),
+@given(dtype_name=st.sampled_from(sorted(Register().names.keys())),
        length=st.integers(1, 5),
        int_value=st.integers(0, 2**160 - 1),
        items=st.integers(1, 4))
@@ -55,7 +55,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     assert f == f2
 
     # Create some bits of the right length
-    multiplier = dtype_register[dtype_name].multiplier
+    multiplier = Register()[dtype_name].multiplier
     b = Bits.pack('u320', int_value)[0:length * multiplier * items]
     f.parse(b)
     assert f.to_bits() == b
@@ -65,12 +65,12 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
         assert f.value == f2.value
 
 
-@given(dtype_names=st.lists(st.sampled_from(sorted(dtype_register.names.keys())), min_size=5, max_size=5),
+@given(dtype_names=st.lists(st.sampled_from(sorted(Register().names.keys())), min_size=5, max_size=5),
        lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5))
 def test_format_consistency(dtype_names, lengths):
-    multipliers = [dtype_register[dtype_name].multiplier for dtype_name in dtype_names]
+    multipliers = [Register()[dtype_name].multiplier for dtype_name in dtype_names]
     als = []
-    for al, length in zip([dtype_register[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
+    for al, length in zip([Register()[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
         if al.values:
             if al.values[-1] is Ellipsis:
                 als.append(al.values[1] * length)

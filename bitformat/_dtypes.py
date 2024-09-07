@@ -8,7 +8,7 @@ from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
 
 
-__all__ = ['Dtype', 'DtypeDefinition', 'Register', 'dtype_register']
+__all__ = ['Dtype', 'DtypeDefinition', 'Register']
 
 CACHE_SIZE = 256
 
@@ -49,9 +49,9 @@ class Dtype:
         """
         endianness = Endianness(endianness)
         if not is_array:
-            return dtype_register.get_single_dtype(name, size, endianness)
+            return Register().get_single_dtype(name, size, endianness)
         elif is_array == 1:
-            return dtype_register.get_array_dtype(name, size, items, endianness)
+            return Register().get_array_dtype(name, size, items, endianness)
         else:
             raise ValueError(f"Invalid value for is_array: {is_array}. Should be True or False.")
 
@@ -80,12 +80,12 @@ class Dtype:
             name, size = _utils.parse_name_size_token(token[1:p])
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
-            return dtype_register.get_array_dtype(name, size, items, endianness)
+            return Register().get_array_dtype(name, size, items, endianness)
         else:
             name, size = _utils.parse_name_size_token(token)
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
-            return dtype_register.get_single_dtype(name, size, endianness)
+            return Register().get_single_dtype(name, size, endianness)
 
     @property
     def name(self) -> str:
@@ -223,7 +223,7 @@ class Dtype:
         return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
 
     def __str__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
+        hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self.size == 0
         size_str = '' if hide_length else str(self.size)
         if not self._is_array:
             return f"{self._name}{self._endianness.value}{size_str}"
@@ -231,7 +231,7 @@ class Dtype:
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 
     def __repr__(self) -> str:
-        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
+        hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
         size_str = '' if hide_length else str(self.size)
         if not self._is_array:
             return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{size_str}')"
@@ -352,7 +352,15 @@ class DtypeDefinition:
 
 
 class Register:
-    """A singleton class that holds all the DtypeDefinitions. Not (yet) part of the public interface."""
+    """A singleton class that holds all the DtypeDefinitions.
+
+    This is used to maintain a centralized registry of data type definitions.
+    It is not yet part of the public API, so should not be used.
+
+    :example:
+    print(Register())
+    
+    """
 
     _instance: Register | None = None
     names: dict[str, DtypeDefinition] = {}
@@ -433,14 +441,6 @@ class Register:
         return '\n'.join(s)
 
 
-dtype_register = Register()
-"""
-Initializes a singleton instance of the Register class.
-
-This is used to maintain a centralized registry of data type definitions.
-"""
-
-
 class DtypeWithExpression:
     """Used internally. A Dtype that can contain an Expression instead of fixed values for size or items."""
 
@@ -458,12 +458,12 @@ class DtypeWithExpression:
             self.name, length_str = _utils.parse_name_expression_token(token)
         self.length_expression = Expression(length_str)
 
-            # return dtype_register.get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
-        # return dtype_register.get_dtype(*_utils.parse_name_length_token(token))
+            # return Register().get_array_dtype(*_utils.parse_name_length_token(token[1:p]), items)
+        # return Register().get_dtype(*_utils.parse_name_length_token(token))
 
     def __str__(self) -> str:
         return "TODO"
-        hide_length = dtype_register.names[self._name].allowed_sizes.only_one_value() or self.size == 0
+        hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self.size == 0
         length_str = '' if hide_length else str(self.size)
         if not self._is_array:
             return f"{self._name}{length_str}"

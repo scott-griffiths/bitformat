@@ -33,7 +33,7 @@ __author__ = "Scott Griffiths"
 
 from ._bits import Bits
 from ._array import Array, BitsProxy
-from ._dtypes import DtypeDefinition, dtype_register, Dtype
+from ._dtypes import DtypeDefinition, Register, Dtype
 from ._field import Field
 from ._format import Format
 from ._options import Options
@@ -123,7 +123,7 @@ dtype_definitions = [
 aliases = {'i': 'int', 'u': 'uint', 'f': 'float'}
 
 for dt in dtype_definitions:
-    dtype_register.add_dtype(dt, aliases.get(dt.name, None))
+    Register().add_dtype(dt, aliases.get(dt.name, None))
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'dtype_register']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'Register']

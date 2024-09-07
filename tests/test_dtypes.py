@@ -2,7 +2,7 @@
 import pytest
 import sys
 from bitformat import Dtype, Bits
-from bitformat._dtypes import DtypeDefinition, dtype_register
+from bitformat._dtypes import DtypeDefinition, Register
 
 sys.path.insert(0, '..')
 
@@ -72,7 +72,7 @@ class TestBasicFunctionality:
 class TestChangingTheRegister:
 
     def test_retrieving_meta_dtype(self):
-        r = dtype_register
+        r = Register()
         u = r['uint']
         u2 = r['u']
         assert u == u2
@@ -80,18 +80,18 @@ class TestChangingTheRegister:
             i = r['integer']
 
     # def test_removing_type(self):
-    #     del dtype_register['bool']
+    #     del Register()['bool']
     #     with pytest.raises(KeyError):
-    #         i = dtype_register['bool']
+    #         i = Register()['bool']
     #     with pytest.raises(KeyError):
-    #         del dtype_register['penguin']
+    #         del Register()['penguin']
 
 
 class TestCreatingNewDtypes:
 
     def test_new_type(self):
         md = DtypeDefinition('uintr', Bits._setuint, Bits._getuint)
-        dtype_register.add_dtype(md)
+        Register().add_dtype(md)
         a = Bits('0xf')
         assert a.uintr == 15
         a = Bits.pack('uintr4',  1)
@@ -103,7 +103,7 @@ class TestCreatingNewDtypes:
         def get_fn(bs):
             return bs.count(1)
         md = DtypeDefinition('counter', None, get_fn)
-        dtype_register.add_dtype(md)
+        Register().add_dtype(md)
         a = Bits.from_string('0x010f')
         assert a.counter == 5
         with pytest.raises(AttributeError):

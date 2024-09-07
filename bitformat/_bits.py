@@ -10,7 +10,7 @@ from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat import _utils
-from bitformat._dtypes import Dtype, dtype_register
+from bitformat._dtypes import Dtype, Register
 from bitformat._common import colour
 from typing import Pattern
 from ._common import Endianness
@@ -801,7 +801,7 @@ class Bits:
             else:
                 u_str = f'u{length} == {u:_}'
                 i_str = f'i{length} == {i:_}'
-        if length in dtype_register['f'].allowed_sizes:
+        if length in Register()['f'].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -984,7 +984,7 @@ class Bits:
         if dtype.name == 'bytes':  # Special case for bytes to print one character each.
             get_fn = Bits._getbytes_printable
         if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-            get_fn = dtype_register.get_single_dtype('uint', bits_per_group).unpack
+            get_fn = Register().get_single_dtype('uint', bits_per_group).unpack
         if bits_per_group == 0:
             if dtype.name == 'bits':
                 x = bits._simple_str()
@@ -993,8 +993,8 @@ class Bits:
         else:
             align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
             chars_per_group = 0
-            if dtype_register[dtype.name].bitlength2chars_fn is not None:
-                chars_per_group = dtype_register[dtype.name].bitlength2chars_fn(bits_per_group)
+            if Register()[dtype.name].bitlength2chars_fn is not None:
+                chars_per_group = Register()[dtype.name].bitlength2chars_fn(bits_per_group)
             if dtype.name == 'bits':
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
             else:
@@ -1010,16 +1010,16 @@ class Bits:
     @staticmethod
     def _chars_per_group(bits_per_group: int, fmt: str | None):
         """How many characters are needed to represent a number of bits with a given format."""
-        if fmt is None or dtype_register[fmt].bitlength2chars_fn is None:
+        if fmt is None or Register()[fmt].bitlength2chars_fn is None:
             return 0
-        return dtype_register[fmt].bitlength2chars_fn(bits_per_group)
+        return Register()[fmt].bitlength2chars_fn(bits_per_group)
 
     @staticmethod
     def _bits_per_char(fmt: str):
         """How many bits are represented by each character of a given format."""
         if fmt not in ['bin', 'oct', 'hex', 'bytes']:
             raise ValueError
-        return 24 // dtype_register[fmt].bitlength2chars_fn(24)
+        return 24 // Register()[fmt].bitlength2chars_fn(24)
 
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
@@ -1048,7 +1048,7 @@ class Bits:
             if name2 is None:
                 max_bits_per_line = width_available * Bits._bits_per_char(name1)
             else:
-                chars_per_24_bits = dtype_register[name1].bitlength2chars_fn(24) + dtype_register[name2].bitlength2chars_fn(24)
+                chars_per_24_bits = Register()[name1].bitlength2chars_fn(24) + Register()[name2].bitlength2chars_fn(24)
                 max_bits_per_line = 24 * (width_available // chars_per_24_bits)
                 if max_bits_per_line == 0:
                     max_bits_per_line = 24  # We can't fit into the width asked for. Show something small.
