@@ -23,14 +23,6 @@ else:
 
 __all__ = ['Bits']
 
-def tidy_input_string(s: str) -> str:
-    """Return string made lowercase and with all whitespace and underscores removed."""
-    try:
-        t = s.split()
-    except (AttributeError, TypeError):
-        raise ValueError(f"Expected str object but received a {type(s)} with value {s}.")
-    return ''.join(t).lower().replace('_', '')
-
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 

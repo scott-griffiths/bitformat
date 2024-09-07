@@ -7,15 +7,6 @@ import struct
 from typing import Iterable, Iterator
 
 
-def tidy_input_string(s: str) -> str:
-    """Return string made lowercase and with all whitespace and underscores removed."""
-    try:
-        t = s.split()
-    except (AttributeError, TypeError):
-        raise ValueError(f"Expected str object but received a {type(s)} with value {s}.")
-    return ''.join(t).lower().replace('_', '')
-
-
 class BitStore:
     """A light wrapper around bitarray"""
 

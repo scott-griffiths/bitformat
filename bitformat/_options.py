@@ -7,7 +7,13 @@ def is_interactive() -> bool:
     return hasattr(sys, 'ps1')
 
 class Options:
-    """Internal class to create singleton module options instance."""
+    """Returns the singleton module options instance.
+
+    Used to query and change module options.
+
+    :example:
+    Options().bytealigned = True
+    """
 
     _instance = None
 
@@ -17,12 +23,11 @@ class Options:
             cls._bytealigned = False
             cls._verbose_bits_repr = is_interactive()
             no_color = os.getenv('NO_COLOR')
-            cls.no_color = True if no_color else not is_interactive()
+            cls._no_color = True if no_color else not is_interactive()
             # This is an experimental feature to use pure Python only (not bitarray)
             # It affects imports so you need to change its value here in the code.
             cls._use_pure_python = False
         return cls._instance
-
 
     def __init__(self):
         pass
@@ -33,6 +38,7 @@ class Options:
 
     @property
     def bytealigned(self) -> bool:
+        """Governs the default byte alignment option in methods that use it."""
         return self._bytealigned
 
     @bytealigned.setter
@@ -41,9 +47,18 @@ class Options:
 
     @property
     def verbose_bits_repr(self) -> bool:
+        """If True then Bits objects will be given a more verbose output printed in interactive mode."""
         return self._verbose_bits_repr
 
     @verbose_bits_repr.setter
     def verbose_bits_repr(self, value: bool) -> None:
         self._verbose_bits_repr = bool(value)
 
+    @property
+    def no_color(self) -> bool:
+        """If True then no ANSI color codes will be used in output."""
+        return self._no_color
+
+    @no_color.setter
+    def no_color(self, value: bool) -> None:
+        self._no_color = bool(value)
