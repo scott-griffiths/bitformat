@@ -91,7 +91,7 @@ class TestByteAligned:
         assert a == '0x000'
 
     def test_byte_aligned(self):
-        bitformat.options.bytealigned = True
+        bitformat.Options().bytealigned = True
         a = Bits.from_string('0x00 ff 0f f')
         li = list(a.find_all('0xff'))
         assert li == [8]
@@ -101,7 +101,7 @@ class TestByteAligned:
         assert p == 8
         a = a.replace('0xff', '')
         assert a == '0x000ff'
-        bitformat.options.bytealigned = False
+        bitformat.Options().bytealigned = False
 
 
 def test_adding():

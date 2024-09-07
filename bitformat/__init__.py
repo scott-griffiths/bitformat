@@ -40,9 +40,6 @@ from ._options import Options
 from ._common import Expression, byteorder
 from typing import Literal
 
-# The Options class returns a singleton.
-options = Options()
-
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
 def hex_bits2chars(bitlength: int):
@@ -129,4 +126,4 @@ for dt in dtype_definitions:
     dtype_register.add_dtype(dt, aliases.get(dt.name, None))
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'options', 'dtype_register']
+__all__ = ['Bits', 'Dtype', 'Format', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'dtype_register']

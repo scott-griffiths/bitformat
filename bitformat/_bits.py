@@ -9,14 +9,17 @@ import functools
 from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
-import bitformat
-from ._bitstore import BitStore
 from bitformat import _utils
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat._common import colour
 from typing import Pattern
 from ._common import Endianness
+from ._options import Options
 
+if Options()._use_pure_python:
+    from ._bitstore_pure import BitStore
+else:
+    from ._bitstore import BitStore
 
 __all__ = ['Bits']
 
@@ -376,7 +379,7 @@ class Bits:
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         start, end = self._validate_slice(start, end)
-        ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
+        ba = Options().bytealigned if bytealigned is None else bytealigned
         p = self._bitstore.find(bs._bitstore, start, end, ba)
         return None if p == -1 else p
 
@@ -407,7 +410,7 @@ class Bits:
             raise ValueError("In findall, count must be >= 0.")
         bs = Bits.from_auto(bs)
         start, end = self._validate_slice(start, end)
-        ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
+        ba = Options().bytealigned if bytealigned is None else bytealigned
         return self._findall(bs, start, end, count, ba)
 
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
@@ -554,7 +557,7 @@ class Bits:
             # Prevent self assignment woes
             new = self._copy()
         if bytealigned is None:
-            bytealigned = bitformat.options.bytealigned
+            bytealigned = Options().bytealigned
         # First find all the places where we want to do the replacements
         starting_points: list[int] = []
         for x in self.find_all(old, start, end, bytealigned=bytealigned):
@@ -623,7 +626,7 @@ class Bits:
         """
         bs = Bits.from_auto(bs)
         start, end = self._validate_slice(start, end)
-        ba = bitformat.options.bytealigned if bytealigned is None else bytealigned
+        ba = Options().bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         p = self._bitstore.rfind(bs._bitstore, start, end, ba)
@@ -1185,7 +1188,7 @@ class Bits:
         """
         repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
         interpretations = ''
-        if bitformat.options.verbose_bits_repr:
+        if Options().verbose_bits_repr:
             interpretations = '\n'.join('# ' + x for x in self._str_interpretations() if x != '')
         return f"{repr_}\n{interpretations}" if interpretations else repr_
 

@@ -4,21 +4,26 @@ import math
 import numbers
 from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
+
+import bitformat
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, dtype_register
 from bitformat import _utils
-from ._bitstore import BitStore
 from bitformat._options import Options
 from bitformat._common import Colour
 import operator
 import sys
 
+
+if Options()._use_pure_python:
+    from ._bitstore_pure import BitStore
+else:
+    from ._bitstore import BitStore
+
 __all__ = ['Array', 'BitsProxy']
 
 # The possible types stored in each element of the Array
 ElementType = Union[float, str, int, bytes, bool, Bits]
-
-options = Options()
 
 
 class BitsProxy:
@@ -478,7 +483,7 @@ class Array:
         :type stream: TextIO
         :return: None
         """
-        colour = Colour(not options.no_color)
+        colour = Colour(not Options().no_color)
         sep = ' '
         dtype2 = None
         tidy_fmt = None
