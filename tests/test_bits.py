@@ -69,19 +69,19 @@ class TestCreation:
             Bits.pack('u2', 12)
 
     def test_creation_from_int(self):
-        s = Bits.pack('int4', 0)
+        s = Bits.pack('i4', 0)
         assert s.unpack([Dtype.from_string('bin4')])[0] == '0000'
         s = Bits.pack(Dtype.from_string('i2'), 1)
         assert s.bin == '01'
         s = Bits.pack('i11', -1)
         assert s.bin == '11111111111'
         s = Bits.from_string('i12=7')
-        assert s.int == 7
+        assert s.i == 7
         s = Bits.pack(Dtype.from_string('i108'), -243)
         assert (s.unpack(Dtype('i')), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.pack(Dtype.from_parameters('int', length), value)
+                s = Bits.pack(Dtype.from_parameters('i', length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
@@ -206,7 +206,7 @@ class TestUnderscoresInLiterals:
         b = Bits.from_string('0b0011_1100_1111_0000')
         assert b.bin == '0011110011110000'
         v = 0b1010_0000
-        c = Bits.pack('uint8', 0b1010_0000)
+        c = Bits.pack('u8', 0b1010_0000)
         assert c.u == v
 
     def test_octal_creation(self):
@@ -468,8 +468,8 @@ class TestPrettyPrinting_NewFormats:
     def test_float(self):
         a = Bits.from_string('f_le32=10.5')
         s = io.StringIO()
-        a.pp('float_le32', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='float_le32', length=32 bits> [
+        a.pp('f_le32', stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='f_le32', length=32 bits> [
  0:                    10.5
 ]
 """
@@ -483,7 +483,7 @@ class TestPrettyPrinting_NewFormats:
     def test_uint(self):
         a = Bits().join([Bits.pack('u12', x) for x in range(40, 105)])
         s = io.StringIO()
-        a.pp('uint, hex12', stream=s)
+        a.pp('u, hex12', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='u, hex12', length=780 bits> [
   0:   40   41   42   43   44   45   46   47   48   49   50   51 : 028 029 02a 02b 02c 02d 02e 02f 030 031 032 033
 144:   52   53   54   55   56   57   58   59   60   61   62   63 : 034 035 036 037 038 039 03a 03b 03c 03d 03e 03f
@@ -497,7 +497,7 @@ class TestPrettyPrinting_NewFormats:
     def test_float(self):
         a = Bits.pack('f64', 76.25) + '0b11111'
         s = io.StringIO()
-        a.pp('i64, float', stream=s)
+        a.pp('i64, f', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='i64, f', length=69 bits> [
  0:  4635066033680416768 :                    76.25
 ] + trailing_bits = 0b11111
@@ -544,18 +544,18 @@ def test_mul_by_zero():
 
 
 def test_uintne():
-    s = Bits.pack('uint_ne160', 454)
-    t = Bits('uint_ne160=454')
+    s = Bits.pack('u_ne160', 454)
+    t = Bits('u_ne160=454')
     assert s == t
 
 
 def test_float_endianness():
-    a = Bits('float_le64=12, float_be64=-0.01, float_ne64=3e33')
-    x, y, z = a.unpack(['float_le64', 'float_be64', 'float_ne64'])
+    a = Bits('f_le64=12, f_be64=-0.01, f_ne64=3e33')
+    x, y, z = a.unpack(['f_le64', 'f_be64', 'f_ne64'])
     assert x == 12.0
     assert y == -0.01
     assert z == 3e33
-    a = Bits('float_le16=12, float_be32=-0.01, float_ne32=3e33')
+    a = Bits('f_le16=12, f_be32=-0.01, f_ne32=3e33')
     x, y, z = a.unpack(['f_le16', 'f_be32', 'f_ne32'])
     assert x / 12.0 == pytest.approx(1.0)
     assert y / -0.01 == pytest.approx(1.0)
@@ -563,7 +563,7 @@ def test_float_endianness():
 
 
 def test_non_aligned_float_reading():
-    s = Bits('0b1, float32 = 10.0')
+    s = Bits('0b1, f32 = 10.0')
     y, = s.unpack(['pad1', 'f32'])
     assert y == 10.0
     s = Bits('0b1, f_le32 = 20.0')
@@ -579,20 +579,20 @@ def test_float_errors():
             _ = Bits.pack(Dtype.from_parameters('f', le), 1.0)
 
 def test_little_endian_uint():
-    s = Bits('uint16 = 100')
-    assert s.unpack('uint_le') == 25600
+    s = Bits('u16 = 100')
+    assert s.unpack('u_le') == 25600
     assert s.u_le == 25600
     s = Bits('u_le16=100')
     assert s.u == 25600
     assert s.u_le == 100
-    s = Bits('uint_le32=999')
-    assert s.uint_le == 999
+    s = Bits('u_le32=999')
+    assert s.u_le == 999
     s = s.byteswap()
-    assert s.uint == 999
-    s = Bits.pack('uint_le24', 1001)
+    assert s.u == 999
+    s = Bits.pack('u_le24', 1001)
     assert s.u_le == 1001
     assert len(s) == 24
-    assert s.unpack('uint_le') == 1001
+    assert s.unpack('u_le') == 1001
 
 def test_little_endian_errors():
     with pytest.raises(ValueError):

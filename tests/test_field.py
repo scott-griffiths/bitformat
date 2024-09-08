@@ -143,7 +143,7 @@ def test_field_str():
     assert str(f) == 'x: u8'
     f = Field('u8')
     assert str(f) == 'u8'
-    f = Field.from_parameters('uint8', value=8)
+    f = Field.from_parameters('u8', value=8)
     assert str(f) == 'u8 = 8'
     f = Field.from_parameters('u8', value=8, name='x')
     assert str(f) == 'x: u8 = 8'

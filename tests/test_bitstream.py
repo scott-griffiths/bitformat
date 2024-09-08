@@ -8,13 +8,13 @@ from bitformat import Bits
 
 class TestFlexibleInitialisation:
     def test_flexible_initialisation(self):
-        a = Bits('uint 8=12')
-        c = Bits(' uint  8 =  12')
-        assert a == c == Bits.pack('uint8', 12)
-        assert a.uint == 12
-        a = Bits('     int2=  -1')
-        b = Bits('int 2   = -1')
-        c = Bits(' int  2  =-1  ')
+        a = Bits('u 8=12')
+        c = Bits(' u  8 =  12')
+        assert a == c == Bits.pack('u8', 12)
+        assert a.u == 12
+        a = Bits('     i2=  -1')
+        b = Bits('i 2   = -1')
+        c = Bits(' i  2  =-1  ')
         assert a == b == c == Bits.pack('i2', -1)
 
     def test_flexible_initialisation2(self):
@@ -28,10 +28,10 @@ class TestFlexibleInitialisation:
     def test_multiple_string_initialisation(self):
         a = Bits('0b1 , 0x1')
         assert a == '0b10001'
-        b = Bits('u32 = 12, 0b11') + 'int100=-100, 0o44'
-        assert b[0: 32].uint == 12
+        b = Bits('u32 = 12, 0b11') + 'i100=-100, 0o44'
+        assert b[0: 32].u == 12
         assert b[32: 34].bin == '11'
-        assert b[34: 134].int == -100
+        assert b[34: 134].i == -100
 
 
 class TestFind:
@@ -237,11 +237,11 @@ class TestReplace:
 
 class TestSimpleConversions:
     def test_convert_to_uint(self):
-        assert Bits('0x10').uint == 16
+        assert Bits('0x10').u == 16
         assert Bits('0b000111').u == 7
 
     def test_convert_to_int(self):
-        assert Bits('0x10').int == 16
+        assert Bits('0x10').i == 16
         assert Bits('0b11110').i == -2
 
     def test_convert_to_hex(self):
@@ -255,9 +255,9 @@ def test_empty_bitstring():
     assert s.bin == ''
     assert s.hex == ''
     with pytest.raises(ValueError):
-        _ = s.int
+        _ = s.i
     with pytest.raises(ValueError):
-        _ = s.uint
+        _ = s.u
     assert not s
 
 class TestAppend:
@@ -466,7 +466,7 @@ class TestAdding:
         s = Bits.join(bsl)
         assert s.hex == '00112233010c30c3'
 
-        bsl = [Bits.pack('uint12', j) for j in range(10) for _ in range(10)]
+        bsl = [Bits.pack('u12', j) for j in range(10) for _ in range(10)]
         s = Bits.join(bsl)
         assert len(s) == 1200
 
@@ -1051,9 +1051,9 @@ class TestSet:
     def test_set_list(self):
         a = Bits.zeros(18)
         a = a.set(True, range(18))
-        assert a.int == -1
+        assert a.i == -1
         a = a.set(False, range(18))
-        assert a.int == 0
+        assert a.i == 0
 
     def test_unset(self):
         a = Bits.ones(16)
@@ -1180,11 +1180,12 @@ class TestMoreMisc:
 
     def test_float_init_strings(self):
         for s in ('5', '+0.0001', '-1e101', '4.', '.2', '-.65', '43.21E+32'):
-            a = Bits.from_string(f'float64={s}')
-            assert a.float == float(s)
+            a = Bits.from_string(f'f64={s}')
+            assert a.f == float(s)
         for s in ('5', '+0.5', '-1e2', '4.', '.25', '-.75'):
             a = Bits.pack('f16', s)
             assert a.f == float(s)
+
     def test_ror(self):
         a = Bits('0b11001')
         a = a.ror(0)
@@ -1407,7 +1408,7 @@ class TestBugs:
 
     def test_unicode(self):
         a = Bits(u'u12=34')
-        assert a.uint == 34
+        assert a.u == 34
         a += u'0xfe'
         assert a == 'u12 = 34, 0xfe'
 

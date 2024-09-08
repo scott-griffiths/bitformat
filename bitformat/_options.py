@@ -56,7 +56,7 @@ class Options:
 
     @property
     def verbose_bits_repr(self) -> bool:
-        """If True then Bits objects will be given a more verbose output printed in interactive mode."""
+        """If True then Bits objects will be given a more verbose output when printed in interactive mode."""
         return self._verbose_bits_repr
 
     @verbose_bits_repr.setter

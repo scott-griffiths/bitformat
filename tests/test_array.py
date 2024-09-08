@@ -75,7 +75,7 @@ class TestCreation:
         with pytest.raises(ValueError):
             a.dtype = 'se'
         assert a[-1] == 1.0
-        assert a.dtype == Dtype.from_string('float64')
+        assert a.dtype == Dtype.from_string('f64')
 
     def test_changing_format_with_trailing_bits(self):
         a = Array('bool', 803)
@@ -130,19 +130,19 @@ class TestCreation:
         assert b.unpack() == list(range(-10, 10))
 
     def test_format_changes(self):
-        a = Array('uint8', [5, 4, 3])
+        a = Array('u8', [5, 4, 3])
         with pytest.raises(ValueError):
             a.dtype = 'ue3'
         b = a[:]
-        b.dtype = 'int8'
+        b.dtype = 'i8'
         assert a.unpack() == b.unpack()
         assert not a.equals(b)
         with pytest.raises(ValueError):
             b.dtype = 'hello_everyone'
         with pytest.raises(ValueError):
-            b.dtype = 'float'
+            b.dtype = 'f'
         with pytest.raises(ValueError):
-            b.dtype = 'uintle12'
+            b.dtype = 'u_le12'
             _ = b[0]
         with pytest.raises(ValueError):
             b.dtype = 'float17'
@@ -175,7 +175,7 @@ class TestArrayMethods:
         assert len(a) == 3
 
     def test_equals(self):
-        a = Array('int40')
+        a = Array('i40')
         b = Array('i40')
         assert a.equals(b)
         c = Array('bin40')
@@ -187,8 +187,8 @@ class TestArrayMethods:
         b.extend(v)
         assert not a.equals(b)
 
-        a = Array('uint20', [16, 32, 64, 128])
-        b = Array('uint10', [0, 16, 0, 32, 0, 64, 0, 128])
+        a = Array('u20', [16, 32, 64, 128])
+        b = Array('u10', [0, 16, 0, 32, 0, 64, 0, 128])
         assert not b.equals(a)
         b.dtype = 'u20'
         assert a.equals(b)
@@ -197,7 +197,7 @@ class TestArrayMethods:
         b = Array(b.dtype, b.data + '0b1')
         assert a.equals(b)
 
-        c = Array('uint8', [1, 2])
+        c = Array('u8', [1, 2])
         assert not c.equals('hello')
         assert not c.equals(array.array('B', [1, 3]))
 
@@ -233,7 +233,7 @@ class TestArrayMethods:
         assert b.data.hex == 'fff345'
 
     def test_setting_from_iterable(self):
-        a = Array('uint99', range(100))
+        a = Array('u99', range(100))
         x = itertools.chain([1, 2, 3], [4, 5])
         a[10:15] = x
         assert a[10:15].unpack() == list(range(1, 6))
@@ -261,17 +261,17 @@ class TestArrayMethods:
             a.extend('u3=3')  # Can't extend with a str even though it's iterable
 
     def test_extend_with_mixed_classes(self):
-        a = Array('uint8', [1, 2, 3])
+        a = Array('u8', [1, 2, 3])
         b = array.array('B', [4, 5, 6])
-        ap = Array('uint8', a[:])
+        ap = Array('u8', a[:])
         bp = array.array('B', b[:])
         a.extend(b)
         bp.extend(ap)
         assert a.unpack() == [1, 2, 3, 4, 5, 6]
         assert bp.tolist() == [4, 5, 6, 1, 2, 3]
 
-        a.dtype = 'int8'
-        ap = Array('uint8', a.unpack())
+        a.dtype = 'i8'
+        ap = Array('u8', a.unpack())
         assert not a.equals(ap)
         assert a.unpack() == ap.unpack()
 
@@ -313,7 +313,7 @@ class TestArrayMethods:
             _ = a.pop()
 
     def test_reverse(self):
-        a = Array('int30', [])
+        a = Array('i30', [])
         a.reverse()
         assert a.unpack() == []
         a.append(2)
@@ -338,7 +338,7 @@ class TestArrayMethods:
         a = Array('u16')
         a.byteswap()
         assert a.unpack() == []
-        b = Array('uint17')
+        b = Array('u17')
         with pytest.raises(ValueError):
             b.byteswap()
         a.extend([1, 0, 256])
@@ -348,7 +348,7 @@ class TestArrayMethods:
         assert a.unpack() == [1, 0, 256]
 
     def test_getting(self):
-        a = Array('int17')
+        a = Array('i17')
         with pytest.raises(IndexError):
             _ = a[0]
         a.extend([1, 2, 3, 4])
@@ -392,7 +392,7 @@ class TestArrayMethods:
 
 
     def test_repr(self):
-        a = Array('int5')
+        a = Array('i5')
         b = eval(a.__repr__())
         assert a.equals(b)
         a = Array(a.dtype, Bits.from_string('0b11'))
@@ -412,7 +412,7 @@ class TestArrayMethods:
         b = eval(a.__repr__())
         assert a.equals(b)
 
-        a.dtype = 'float32'
+        a.dtype = 'f32'
         b = eval(a.__repr__())
         assert a.equals(b)
 
@@ -425,7 +425,7 @@ class TestArrayMethods:
         assert c.equals(Array('u8', [1, 2, 3, 3, 4]))
         d = a[:]
         d.extend([10, 11, 12])
-        assert d.equals(Array('uint8', [1, 2, 3, 10, 11, 12]))
+        assert d.equals(Array('u8', [1, 2, 3, 10, 11, 12]))
 
     def test__contains__(self):
         a = Array('i9', [-1, 88, 3])
@@ -440,7 +440,7 @@ class TestArrayMethods:
         assert not a.equals(b)
 
     def test__iadd__(self):
-        a = Array('uint999')
+        a = Array('u999')
         a.extend([4])
         assert a.unpack() == [4]
         a += 5
@@ -469,7 +469,7 @@ class TestArrayMethods:
 # ] + trailing_bits = 0b110\n"""
 
     def test_pp_uint(self):
-        a = Array('uint32', [12, 100, 99])
+        a = Array('u32', [12, 100, 99])
         s = io.StringIO()
         a.pp(stream=s)
         assert remove_unprintable(s.getvalue()) == """<Array dtype='u32', length=3, item_size=32 bits, total data size=12 bytes> [
@@ -504,7 +504,7 @@ class TestArrayMethods:
 # ]\n"""
 
     def test_pp_two_formats_no_length(self):
-        a = Array('float16', bytearray(range(50, 56)))
+        a = Array('f16', bytearray(range(50, 56)))
         s = io.StringIO()
         a.pp(stream=s, fmt='u, bin')
         assert remove_unprintable(s.getvalue()) == """<Array fmt='u, bin', length=3, item_size=16 bits, total data size=6 bytes> [
@@ -528,14 +528,14 @@ class TestArrayOperations:
         assert b.equals(Array('f64', [3.0, 0.0, 102.5]))
 
     def test_sub(self):
-        a = Array('uint44', [3, 7, 10])
+        a = Array('u44', [3, 7, 10])
         b = a - 3
         assert b.equals(Array('u44', [0, 4, 7]))
         with pytest.raises(ValueError):
             _ = a - 4
 
     def test_in_place_sub(self):
-        a = Array('float16', [-9, -10.5])
+        a = Array('f16', [-9, -10.5])
         a -= -1.5
         assert a.unpack() == [-7.5, -9.0]
 
@@ -543,7 +543,7 @@ class TestArrayOperations:
         a = Array('i21', [-5, -4, 0, 2, 100])
         b = a * 2
         assert b.unpack() == [-10, -8, 0, 4, 200]
-        a = Array('int9', [-1, 0, 3])
+        a = Array('i9', [-1, 0, 3])
         b = a * 2
         assert a.unpack() == [-1, 0, 3]
         assert b.unpack() == [-2, 0, 6]
@@ -567,31 +567,31 @@ class TestArrayOperations:
         assert a.equals(Array('i10', [-2, -2, -1, -1, 0, 0, 1]))
 
     def test_true_div(self):
-        a = Array('float16', [5, 10, -6])
+        a = Array('f16', [5, 10, -6])
         b = a / 4
-        assert a.equals(Array('float16', [5.0, 10.0, -6.0]))
-        assert b.equals(Array('float16', [1.25, 2.5, -1.5]))
+        assert a.equals(Array('f16', [5.0, 10.0, -6.0]))
+        assert b.equals(Array('f16', [1.25, 2.5, -1.5]))
 
     def test_in_place_true_div(self):
-        a = Array('int71', [-4, -3, -2, -1, 0, 1, 2])
+        a = Array('i71', [-4, -3, -2, -1, 0, 1, 2])
         a /= 2
-        assert a.equals(Array('int71', [-2, -1, -1, 0, 0, 0, 1]))
+        assert a.equals(Array('i71', [-2, -1, -1, 0, 0, 0, 1]))
 
     def test_and(self):
-        a = Array('int16', [-1, 100, 9])
+        a = Array('i16', [-1, 100, 9])
         with pytest.raises(TypeError):
             _ = a & 0
         b = a & '0x0001'
         assert b.unpack() == [1, 0, 1]
         b = a & '0xffff'
-        assert b.dtype == Dtype.from_string('int16')
+        assert b.dtype == Dtype.from_string('i16')
         assert b.unpack() == [-1, 100, 9]
 
     def test_in_place_and(self):
         a = Array('bool', [True, False, True])
         with pytest.raises(TypeError):
             a &= 0b1
-        a = Array('uint10', a.unpack())
+        a = Array('u10', a.unpack())
         a <<= 3
         assert a.unpack() == [8, 0, 8]
         a += 1
@@ -651,7 +651,7 @@ class TestArrayOperations:
         a = Array('f16', [0.3, 1.2])
         with pytest.raises(TypeError):
             _ = a << 3
-        a = Array('int16', [-2, -1, 0, 128])
+        a = Array('i16', [-2, -1, 0, 128])
         b = a << 4
         assert a.unpack() == [-2, -1, 0, 128]
         assert b.unpack() == [-32, -16, 0, 2048]
@@ -674,9 +674,9 @@ class TestArrayOperations:
         assert str(b.dtype) == 'i92'
 
     def test_abs(self):
-        a = Array('float16', [-2.0, 0, -0, 100, -5.5])
+        a = Array('f16', [-2.0, 0, -0, 100, -5.5])
         b = abs(a)
-        assert b.equals(Array('float16', [2.0, 0, 0, 100, 5.5]))
+        assert b.equals(Array('f16', [2.0, 0, 0, 100, 5.5]))
 
 
 class TestCreationFromBits:
@@ -701,21 +701,21 @@ class TestSameSizeArrayOperations:
         b = Array('u8', [5, 5, 5, 4])
         c = a + b
         assert c.unpack() == [6, 7, 8, 8]
-        assert c.dtype == Dtype.from_string('uint8')
+        assert c.dtype == Dtype.from_string('u8')
 
     def test_adding_different_types(self):
         a = Array('u8', [1, 2, 3, 4])
         b = Array('i6', [5, 5, 5, 4])
         c = a + b
         assert c.unpack() == [6, 7, 8, 8]
-        assert c.dtype == Dtype.from_string('int6')
-        d = Array('float16', [-10, 0, 5, 2])
+        assert c.dtype == Dtype.from_string('i6')
+        d = Array('f16', [-10, 0, 5, 2])
         e = d + a
         assert e.unpack() == [-9.0, 2.0, 8.0, 6.0]
-        assert e.dtype == Dtype.from_string('float16')
+        assert e.dtype == Dtype.from_string('f16')
         e = a + d
         assert e.unpack() == [-9.0, 2.0, 8.0, 6.0]
-        assert e.dtype == Dtype.from_string('float16')
+        assert e.dtype == Dtype.from_string('f16')
         x1 = a[:]
         x2 = a[:]
         # x1.dtype = 'p3binary'
@@ -724,7 +724,7 @@ class TestSameSizeArrayOperations:
         # assert y.dtype == x1.dtype
 
     def test_adding_errors(self):
-        a = Array('float16', [10, 100, 1000])
+        a = Array('f16', [10, 100, 1000])
         b = Array('i3', [-1, 2])
         with pytest.raises(ValueError):
             _ = a + b
@@ -775,8 +775,8 @@ class TestAsType:
         assert b.dtype == Dtype.from_string('i8')
 
     def test_switching_float_types(self):
-        a = Array('float64', [-990, 34, 1, 0.25])
-        b = a.astype('float16')
+        a = Array('f64', [-990, 34, 1, 0.25])
+        b = a.astype('f16')
         assert a.unpack() == b.unpack()
         assert b.dtype == Dtype.from_string('f16')
 
@@ -786,7 +786,7 @@ class TestReverseMethods:
     def test_radd(self):
         a = Array('u6', [1,2,3])
         b = 5 + a
-        assert b.equals(Array('uint6', [6, 7, 8]))
+        assert b.equals(Array('u6', [6, 7, 8]))
 
     # def test_rmul(self):
     #     a = Array('bfloat', [4, 2, 8])
@@ -796,7 +796,7 @@ class TestReverseMethods:
     def test_rsub(self):
         a = Array('i90', [-1, -10, -100])
         b = 100 - a
-        assert b.equals(Array('int90', [101, 110, 200]))
+        assert b.equals(Array('i90', [101, 110, 200]))
 
     def test_rmod(self):
         a = Array('i8', [1, 2, 4, 8, 10])
@@ -842,7 +842,7 @@ class TestMisc:
             a[0:5:2] = [1, 0]
 
     def test_set_out_of_range_element(self):
-        a = Array(Dtype.from_parameters('float', 16), [1, 2, 3, 4.5])
+        a = Array(Dtype.from_parameters('f', 16), [1, 2, 3, 4.5])
         a[3] = 100.0
         a[-4] = 100.0
         with pytest.raises(IndexError):
@@ -863,8 +863,8 @@ class TestMisc:
         assert a.trailing_bits == '0b111'
 
     def test_operation_with_bool(self):
-        x = Array('int4', [1, 2, 3, 4])
-        y = Array('float16', [100, 2.0, 0.0, 4])
+        x = Array('i4', [1, 2, 3, 4])
+        y = Array('f16', [100, 2.0, 0.0, 4])
         x = x + (y == 0.0)
         assert x.unpack() == [1, 2, 4, 4]
 

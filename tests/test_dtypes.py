@@ -21,13 +21,13 @@ class TestBasicFunctionality:
         # self.assertTrue(b is b2)
 
     def test_setting_with_length(self):
-        d = Dtype.from_parameters('uint', 12)
+        d = Dtype.from_parameters('u', 12)
         assert str(d) == 'u12'
         assert d.size == 12
         assert d.name == 'u'
 
     def test_build_errors(self):
-        dtype = Dtype.from_string('uint8')
+        dtype = Dtype.from_string('u8')
         value = 'not_an_integer'
         with pytest.raises(ValueError):
             dtype.pack(value)
@@ -73,7 +73,7 @@ class TestChangingTheRegister:
 
     def test_retrieving_meta_dtype(self):
         r = Register()
-        u = r['uint']
+        u = r['u']
         u2 = r['u']
         assert u == u2
         with pytest.raises(KeyError):

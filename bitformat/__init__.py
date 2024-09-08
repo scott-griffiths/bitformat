@@ -119,8 +119,8 @@ dtype_definitions = [
                     description="a skipped section of padding")
     ]
 
-# Longer aliases for some popular types
-aliases = {'i': 'int', 'u': 'uint', 'f': 'float'}
+# Currently not using aliases for any types. Perhaps remove it, or it could be useful again later?
+aliases = {}
 
 for dt in dtype_definitions:
     Register().add_dtype(dt, aliases.get(dt.name, None))

@@ -407,7 +407,12 @@ class Register:
         try:
             definition = cls.names[name]
         except KeyError:
-            raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
+            aliases = {'int': 'i', 'uint': 'u', 'float': 'f'}
+            if name in aliases:
+                extra = f"Did you mean '{aliases[name]}'? "
+            else:
+                extra = ''
+            raise ValueError(f"Unknown Dtype name '{name}'. {extra}Names available: {list(cls.names.keys())}.")
         else:
             return definition.get_single_dtype(size, endianness)
 

@@ -11,12 +11,12 @@ sys.path.insert(0, '..')
 
 class TestAll:
     def test_creation_from_uint(self):
-        s = Bits.pack('uint6', 15)
+        s = Bits.pack('u6', 15)
         assert s.bin == '001111'
         s = Bits.pack('u1', 0)
         assert s.bin == '0'
         s = Bits.zeros(8)
-        assert s.uint == 0
+        assert s.u == 0
 
     def test_creation_from_oct(self):
         s = Bits.pack(Dtype('oct'), '7')
@@ -205,7 +205,7 @@ class TestBFloats:
     def test_interpret_bug(self):
         a = Bits.ones(100)
         with pytest.raises(ValueError):
-            _ = a.float
+            _ = a.f
 
     def test_overflows(self):
         inf16 = Bits.pack('f16', math.inf)

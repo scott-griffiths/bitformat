@@ -24,17 +24,17 @@ class TestCreation:
         assert len(x) == 12
 
     def test_create_from_bits_string(self):
-        f = Format.from_parameters([Field.from_parameters('float16', 'foo', 12.5)], 'x')
-        g = Format.from_parameters(['foo: float16=12.5'], 'y')
+        f = Format.from_parameters([Field.from_parameters('f16', 'foo', 12.5)], 'x')
+        g = Format.from_parameters(['foo: f16=12.5'], 'y')
         assert f.to_bits() == g.to_bits()
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
         f = Format('[x: f16]')
         assert f.fieldtypes[0].name == 'x'
-        assert f.fieldtypes[0].dtype == Dtype.from_parameters('float', 16)
+        assert f.fieldtypes[0].dtype == Dtype.from_parameters('f', 16)
 
-    @given(name=st.sampled_from(['float16', 'u12', 'bool', 'float64']))
+    @given(name=st.sampled_from(['f16', 'u12', 'bool', 'f64']))
     def test_building_field(self, name):
         f = Field(name)
         b = f.pack(0)
@@ -221,7 +221,7 @@ class TestMethods:
         assert f == g
 
     def test_get_item(self):
-        f = Format.from_parameters(['float16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
+        f = Format.from_parameters(['f16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
         assert f[0].value == 7
         assert f[1].value is None
         assert f['pop'].value == 144
@@ -414,7 +414,7 @@ def test_construction_by_appending():
     g.append('i4')
     g += Field('const f16 = 0.25')
     h = Format()
-    h.extend(['u8', 'i4', 'const float16=0.25'])
+    h.extend(['u8', 'i4', 'const f16=0.25'])
     i = Format() + 'u8'
     i = i + 'i4' + 'const f16=0.25'
     assert f == g == h == i
