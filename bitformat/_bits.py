@@ -829,11 +829,21 @@ class Bits:
         string = ''.join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
 
-    def _setuint(self, uint: int, length: int | None = None) -> None:
+    def _setuint(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
+        i = int(i)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with a uint initialiser.")
-        self._bitstore = BitStore.from_int(uint, length, False)
+        try:
+            self._bitstore = BitStore.from_int(i, length, False)
+        except OverflowError as e:
+            if i >= (1 << length):
+                raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                                 f"The allowed range is [0, {(1 << length) - 1}].")
+            if i < 0:
+                raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
+            raise e
+
 
     def _getuint(self) -> int:
         """Return data as an unsigned int."""
@@ -841,11 +851,18 @@ class Bits:
             raise ValueError("Cannot interpret empty Bits as an integer.")
         return self._bitstore.slice_to_uint()
 
-    def _setint(self, int_: int, length: int | None = None) -> None:
+    def _setint(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
+        i = int(i)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with an int initialiser.")
-        self._bitstore = BitStore.from_int(int_, length, True)
+        try:
+            self._bitstore = BitStore.from_int(i, length, True)
+        except OverflowError as e:
+            if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
+                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
+                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
+            raise e
 
     def _getint(self) -> int:
         """Return data as a two's complement signed int."""
@@ -853,8 +870,15 @@ class Bits:
             raise ValueError("Cannot interpret empty Bits as an integer.")
         return self._bitstore.slice_to_int()
 
-    def _setfloat(self, f: float, length: int | None) -> None:
-        self._bitstore = BitStore.from_float(f, length)
+    def _setfloat(self, f: float | str, length: int | None) -> None:
+        f = float(f)
+        fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
+        try:
+            b = struct.pack(fmt, f)
+        except OverflowError:
+            # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
+            b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
+        self._bitstore = BitStore.from_bytes(b)
 
     def _getfloat(self) -> float:
         """Interpret the whole Bits as a big-endian float."""

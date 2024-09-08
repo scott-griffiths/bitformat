@@ -5,17 +5,8 @@ import struct
 from typing import Iterable, Iterator
 
 
-def tidy_input_string(s: str) -> str:
-    """Return string made lowercase and with all whitespace and underscores removed."""
-    try:
-        t = s.split()
-    except (AttributeError, TypeError):
-        raise ValueError(f"Expected str object but received a {type(s)} with value {s}.")
-    return ''.join(t).lower().replace('_', '')
-
-
 class BitStore:
-    """A light wrapper around bitarray"""
+    """A pure Python implementation of a BitStore. Horribly inefficient but useful for testing."""
 
     def __init__(self) -> None:
         self.bytearray_ = bytearray()
@@ -33,12 +24,6 @@ class BitStore:
         return x
 
     @classmethod
-    def from_binstr(cls, s: str) -> BitStore:
-        x = super().__new__(cls)
-        x.bytearray_ = bytearray(int(b) for b in s)
-        return x
-
-    @classmethod
     def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
         x = super().__new__(cls)
         binstr = ''.join(format(byte, '08b') for byte in b)
@@ -47,8 +32,6 @@ class BitStore:
 
     @classmethod
     def from_hex(cls, hexstring: str, /) -> BitStore:
-        hexstring = tidy_input_string(hexstring)
-        hexstring = hexstring.replace('0x', '')
         x = super().__new__(cls)
         if hexstring == '':
             x.bytearray_ = bytearray()
@@ -58,8 +41,6 @@ class BitStore:
 
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
-        octstring = tidy_input_string(octstring)
-        octstring = octstring.replace('0o', '')
         x = super().__new__(cls)
         if octstring == '':
             x.bytearray_ = bytearray()
@@ -68,17 +49,16 @@ class BitStore:
         return x
 
     @classmethod
-    def from_bin(cls, binstring: str, /) -> BitStore:
-        binstring = tidy_input_string(binstring)
-        binstring = binstring.replace('0b', '')
-        try:
-            return BitStore.from_binstr(binstring)
-        except ValueError:
-            raise ValueError(f"Invalid character in bin initialiser '{binstring}'.")
+    def from_bin(cls, binstring: str) -> BitStore:
+        x = super().__new__(cls)
+        if binstring == '':
+            x.bytearray_ = bytearray()
+        else:
+            x.bytearray_ = bytearray(int(b) for b in binstring)
+        return x
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
-        i = int(i)
         if signed:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
                 raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
@@ -95,8 +75,7 @@ class BitStore:
         return x
 
     @classmethod
-    def from_float(cls, f: str | float, length: int) -> BitStore:
-        f = float(f)
+    def from_float(cls, f: float, length: int) -> BitStore:
         fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
         try:
             b = struct.pack(fmt, f)
@@ -117,7 +96,7 @@ class BitStore:
         # Ensure the length of the bytearray is a multiple of 8
         ba = self.bytearray_[:]
         if len(ba) % 8 != 0:
-            ba.extend([0] * ((8 - len(ba) % 8)))
+            ba.extend([0] * (8 - len(ba) % 8))
 
         # Convert each group of 8 bits to a byte
         byte_list = [

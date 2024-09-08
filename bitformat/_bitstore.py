@@ -64,34 +64,9 @@ class BitStore:
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
-        i = int(i)
-        try:
-            x = super().__new__(cls)
-            x._bitarray = bitarray.util.int2ba(i, length=length, endian='big', signed=signed)
-            return x
-        except OverflowError as e:
-            if signed:
-                if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                    raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                     f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
-            else:
-                if i >= (1 << length):
-                    raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
-                                     f"The allowed range is [0, {(1 << length) - 1}].")
-                if i < 0:
-                    raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
-            raise e
-
-    @classmethod
-    def from_float(cls, f: str | float, length: int) -> BitStore:
-        f = float(f)
-        fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
-        try:
-            b = struct.pack(fmt, f)
-        except OverflowError:
-            # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-            b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
-        return BitStore.from_bytes(b)
+        x = super().__new__(cls)
+        x._bitarray = bitarray.util.int2ba(i, length=length, endian='big', signed=signed)
+        return x
 
     @classmethod
     def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
@@ -158,7 +133,7 @@ class BitStore:
         self._bitarray ^= other._bitarray
         return self
 
-    def find(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> int:
+    def find(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> int:
         if not bytealigned:
             return self._bitarray.find(bs._bitarray, start, end)
         try:
@@ -166,7 +141,7 @@ class BitStore:
         except StopIteration:
             return -1
 
-    def rfind(self, bs: BitStore, start: int, end: int, bytealigned: bool = False):
+    def rfind(self, bs: BitStore, start: int, end: int, bytealigned: bool):
         if not bytealigned:
             return self._bitarray.find(bs._bitarray, start, end, right=True)
         try:
@@ -174,7 +149,7 @@ class BitStore:
         except StopIteration:
             return -1
 
-    def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
+    def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> Iterator[int]:
         if bytealigned is True and len(bs) % 8 == 0:
             # Special case, looking for whole bytes on whole byte boundaries
             bytes_ = bs.to_bytes()
@@ -202,7 +177,7 @@ class BitStore:
                 if (p % 8) == 0:
                     yield p
 
-    def rfindall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
+    def rfindall(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> Iterator[int]:
         i = self._bitarray.itersearch(bs._bitarray, start, end, right=True)
         if not bytealigned:
             for p in i:
