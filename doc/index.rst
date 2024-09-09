@@ -87,7 +87,7 @@ A tour of the features of bitformat is given in notebook form:
 
 * `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_
 
-The auto generated API documentation is available here:
+The API documentation is available here:
 
 .. toctree::
    :hidden:
@@ -95,8 +95,9 @@ The auto generated API documentation is available here:
    self
 
 .. toctree::
+    :maxdepth: 1
 
-    autoapi/bitformat/index
+    api
 
 ----
 
