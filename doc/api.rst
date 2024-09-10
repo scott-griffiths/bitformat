@@ -6,20 +6,31 @@ API Reference
 Main Classes
 ------------
 
-* :doc:`Bits <bits>` -- An immutable container for storing binary data.
-* :doc:`Dtype <dtype>` -- A data type used to interpret binary data.
-* :doc:`Array <array>` -- A mutable array of of data with a single data type.
-* :doc:`Field <field>`
-* :doc:`Format <format>`
+* :ref:`Bits <bits>` -- An immutable container for storing binary data.
+* :ref:`Dtype <dtype>` -- A data type used to interpret binary data.
+* :ref:`Array <array>` -- A mutable array of of data with a single data type.
+* :ref:`Field <field>`
+* :ref:`Format <format>`
 
 Other Classes
 -------------
-* :doc:`Options <options>`
-* :doc:`BitsProxy <bitsproxy>`
-* :doc:`FieldType <fieldtype>`
-* :doc:`Register <register>`
+* :ref:`Options <options>`
+* :ref:`BitsProxy <bitsproxy>`
+* :ref:`FieldType <fieldtype>`
+* :ref:`Register <register>`
 
 
+.. toctree::
+    :maxdepth: 1
+    :hidden:
 
-
+    bits.rst
+    dtype.rst
+    array.rst
+    field.rst
+    format.rst
+    options.rst
+    bitsproxy.rst
+    fieldtype.rst
+    register.rst
 

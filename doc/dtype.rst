@@ -1,4 +1,5 @@
 .. currentmodule:: bitformat
+.. _dtype:
 
 Dtype
 =====

@@ -1,4 +1,5 @@
 .. currentmodule:: bitformat
+.. _format:
 
 Format
 ======
