@@ -6,7 +6,7 @@
 
 `bitformat <https://github.com/scott-griffiths/bitformat/>`_ is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
 
-It is intended to complement the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module from the same author, and uses its `Dtype <https://bitstring.readthedocs.io/en/latest/dtypes.html#dtypes>`_, `Bits <https://bitstring.readthedocs.io/en/latest/bits.html#bits>`_ and `Array <https://bitstring.readthedocs.io/en/latest/array.html#array>`_ classes as the basis for building complex bit formats.
+It is from the author of the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module.
 
 ----
 
@@ -71,12 +71,9 @@ Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely
 
 .. warning::
 
-    While there are many similarities between bitformat and bitstring, there has been no attempt to make them compatible.
+    There are many similarities between bitformat and bitstring, but there has been no attempt to make them compatible.
     Much of the reason for making a new package was to revisit many of the design decisions that were made almost two
     decades ago when George W. Bush was president, the Nintendo Wii was the latest must-have tech, and Python 2.4 was the latest version.
-
-    While both packages have classes such as ``Bits``, ``Dtype`` and ``Array`` and many similar methods,
-    they do have many differences in their behaviour and API.
 
 ----
 

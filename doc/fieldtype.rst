@@ -8,6 +8,8 @@ The :class:`FieldType` class is an abstract base class for 'field-like' types th
 
 You shouldn't usually need to deal with this type directly, but its methods are available for all of the other field types.
 
+----
+
 .. autoclass:: bitformat.FieldType
    :members:
    :undoc-members:
