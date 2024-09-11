@@ -1,4 +1,4 @@
-> :warning: **This project is currently in the planning stage. The documentation is only partially accurate and there are lots of bugs and missing features!**
+> :warning: **This project is pre-alpha and there are no guarantees of API stability. The documentation is sometimes more aspirational than accurate.**
 
 [![bitformat](https://raw.githubusercontent.com/scott-griffiths/bitformat/main/doc/bitformat_logo_small.png)](https://github.com/scott-griffiths/bitformat)
 
@@ -26,6 +26,12 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported with no arbitrary restrictions on length.
 * Data is always stored efficiently as a contiguous array of bits.
+
+## Documentation :book:
+
+* [The bitformat documentation](https://bitformat.readthedocs.io/en/latest/) includes a full reference for the library.
+* [A Tour of bitformat](https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb) is a notebook
+which gives a quick introduction to the library and some worked examples.
 
 ## Some Examples
 
@@ -167,6 +173,6 @@ The (unordered) :todo: list includes:
 * **New field types.** Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
 * **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
-
+* **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
 
 <sub>Copyright (c) 2024 Scott Griffiths</sub>
