@@ -24,6 +24,17 @@ class FieldType(abc.ABC):
 
     @final
     def parse(self, b: BitsType) -> int:
+        """
+        Parse the field type from the supplied bits.
+
+        The parsing is done lazily, so any values might not be calculated at this point, instead waiting until
+        they are explicitly asked for.
+
+        :param b: The bits to parse.
+        :type b: BitsType
+        :return: The number of bits used.
+        :rtype: int
+        """
         b = Bits.from_auto(b)
         try:
             return self._parse(b, {})
@@ -32,6 +43,15 @@ class FieldType(abc.ABC):
 
     @final
     def pack(self, values: Any | None = None, /, **kwargs) -> Bits:
+        """
+        Pack the field type into bits.
+
+        :param values: The values to pack.
+        :type values: Any, optional
+        :param kwargs: Additional keyword arguments.
+        :return: The packed bits.
+        :rtype: Bits
+        """
         if kwargs is None:
             kwargs = {}
         if values is None:
@@ -46,6 +66,14 @@ class FieldType(abc.ABC):
 
     @final
     def unpack(self, b: Bits | bytes | bytearray | None = None) -> Any | list[Any]:
+        """
+        Unpack the field type from bits.
+
+        :param b: The bits to unpack.
+        :type b: Bits, bytes, bytearray, optional
+        :return: The unpacked value.
+        :rtype: Any or list[Any]
+        """
         if b is not None:
             self.parse(b)
         try:
@@ -57,13 +85,33 @@ class FieldType(abc.ABC):
 
     @final
     def __str__(self) -> str:
+        """
+        Return a string representation of the field type.
+
+        :return: The string representation.
+        :rtype: str
+        """
         return self._str(0)
 
     def __repr__(self) -> str:
+        """
+        Return a detailed string representation of the field type.
+
+        :return: The detailed string representation.
+        :rtype: str
+        """
         return self._repr(0)
 
     @classmethod
     def from_string(cls, s: str) -> FieldType:
+        """
+        Create a FieldType instance from a string.
+
+        :param s: The string to parse.
+        :type s: str
+        :return: The FieldType instance.
+        :rtype: FieldType
+        """
         try:
             return Field.from_string(s)
         except ValueError:
@@ -72,7 +120,8 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        """Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
+        """
+        Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
 
         Return the number of bits used.
 
@@ -82,7 +131,8 @@ class FieldType(abc.ABC):
     @abc.abstractmethod
     def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
               kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        """Build the field from the values list, starting at index.
+        """
+        Build the field from the values list, starting at index.
 
         Return the bits and the number of values used.
 
@@ -91,18 +141,30 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def to_bits(self) -> Bits:
-        """Return the bits that represent the field."""
+        """
+        Return the bits that represent the field.
+
+        :return: The bits that represent the field.
+        :rtype: Bits
+        """
         ...
 
     @final
     def to_bytes(self) -> bytes:
-        """Return the bytes that represent the field. Pads with up to 7 zero bits if necessary."""
+        """
+        Return the bytes that represent the field. Pads with up to 7 zero bits if necessary.
+
+        :return: The bytes that represent the field.
+        :rtype: bytes
+        """
         b = self.to_bits()
         return b.to_bytes()
 
     @abc.abstractmethod
     def clear(self) -> None:
-        """Clear the value of the field, unless it is a constant."""
+        """
+        Clear the value of the field, unless it is a constant.
+        """
         ...
 
     @abc.abstractmethod
@@ -115,7 +177,12 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def flatten(self) -> list[FieldType]:
-        """Return a flat list of all the fields in the object."""
+        """
+        Return a flat list of all the fields in the object.
+
+        :return: A flat list of all the fields.
+        :rtype: list[FieldType]
+        """
         ...
 
     @abc.abstractmethod
@@ -128,7 +195,12 @@ class FieldType(abc.ABC):
 
     @abc.abstractmethod
     def __len__(self) -> int:
-        """The length of the FieldType in bits."""
+        """
+        Return the length of the FieldType in bits.
+
+        :return: The length in bits.
+        :rtype: int
+        """
         ...
 
     def __eq__(self, other) -> bool:
@@ -158,6 +230,20 @@ class Field(FieldType):
 
     @classmethod
     def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> Field:
+        """
+        Create a Field instance from parameters.
+
+        :param dtype: The data type of the field.
+        :type dtype: Dtype or str
+        :param name: The name of the field, optional.
+        :type name: str
+        :param value: The value of the field, optional.
+        :type value: Any
+        :param const: Whether the field is constant, optional.
+        :type const: bool
+        :return: The Field instance.
+        :rtype: Field
+        """
         x = super().__new__(cls)
         x._bits = None
         x.const = const
@@ -219,13 +305,35 @@ class Field(FieldType):
 
     @classmethod
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
+        """
+        Create a Field instance from bits.
+
+        :param b: The bits to parse.
+        :type b: Bits, str, Iterable, bytearray, bytes, or memoryview
+        :param name: The name of the field, optional.
+        :type name: str
+        :return: The Field instance.
+        :rtype: Field
+        """
         b = Bits.from_auto(b)
         if len(b) == 0:
-            raise ValueError  # TODO: Better error
+            raise ValueError(f"Can't create a Field from an empty Bits object.")
         return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = '', const: bool = False) -> Field:
+        """
+        Create a Field instance from bytes.
+
+        :param b: The bytes to parse.
+        :type b: bytes or bytearray
+        :param name: The name of the field, optional.
+        :type name: str
+        :param const: Whether the field is constant, optional.
+        :type const: bool
+        :return: The Field instance.
+        :rtype: Field
+        """
         return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const)
 
     @override
@@ -342,7 +450,14 @@ class Field(FieldType):
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
-        """Check if two fields are equal."""
+        """
+         Check if two fields are equal.
+
+         :param other: The other field to compare.
+         :type other: Any
+         :return: True if the fields are equal, False otherwise.
+         :rtype: bool
+         """
         if not isinstance(other, Field):
             return False
         if self._dtype != other._dtype:

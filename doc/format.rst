@@ -9,3 +9,7 @@ A :class:`Format` is a sequence of :class:`FieldType` objects, which allows comp
 
 .. autoclass:: bitformat.Format
    :members:
+   :undoc-members:
+   :inherited-members:
+   :member-order: groupwise
+

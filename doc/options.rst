@@ -10,3 +10,5 @@ It's used by creating an instance of the class and setting or getting the desire
 
 .. autoclass:: bitformat.Options
    :members:
+   :undoc-members:
+   :member-order: groupwise

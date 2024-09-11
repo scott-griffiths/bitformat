@@ -12,3 +12,5 @@ They are mutable, so values can be changed after creation.
 
 .. autoclass:: bitformat.Array
    :members:
+   :member-order: groupwise
+   :undoc-members:

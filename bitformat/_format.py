@@ -29,6 +29,16 @@ class Format(FieldType):
 
     @classmethod
     def from_parameters(cls, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
+        """
+        Create a Format instance from parameters.
+
+        :param fieldtypes: The field types to include in the format, optional.
+        :type fieldtypes: Sequence[FieldType or str] or None
+        :param name: The name of the format, optional.
+        :type name: str
+        :return: The Format instance.
+        :rtype: Format
+        """
         x = super().__new__(cls)
         x.fieldtypes = []
         if fieldtypes is None:
@@ -56,6 +66,14 @@ class Format(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str) -> Format:
+        """
+        Create a Format instance from a string.
+
+        :param s: The string to parse.
+        :type s: str
+        :return: The Format instance.
+        :rtype: Format
+        """
         name, content = cls._parse_format_str(s)
         fieldtypes = []
         # split by ',' but ignore any ',' that is inside []
@@ -197,14 +215,34 @@ class Format(FieldType):
         return x
 
     def __add__(self, other: FieldType | str) -> Format:
+        """
+        Add a field to a copy of the format.
+
+        :param other: The field to add.
+        :type other: FieldType or str
+        :return: The updated format.
+        :rtype: Format
+        """
         x = copy.copy(self)
         x.__iadd__(other)
         return x
 
     def append(self, value: Any) -> None:
+        """
+        Append a field to the format.
+
+        :param value: The field to append.
+        :type value: Any
+        """
         self.__iadd__(value)
 
     def extend(self, values: Iterable) -> None:
+        """
+        Extend the format with multiple fields.
+
+        :param values: The fields to add.
+        :type values: Iterable
+        """
         for value in values:
             self.__iadd__(value)
 

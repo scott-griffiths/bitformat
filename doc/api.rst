@@ -27,6 +27,10 @@ Other Classes
 * :ref:`FieldType <fieldtype>` -- The abstract base class for :class:`Field`, :class:`Format` etc.
 * :ref:`Register <register>` -- The register of allowed :class:`Dtype` types.
 
+Miscellaneous
+-------------
+
+* :ref:`Everything else <misc>`
 
 .. toctree::
     :maxdepth: 1
@@ -41,4 +45,5 @@ Other Classes
     bitsproxy.rst
     fieldtype.rst
     register.rst
+    misc.rst
 

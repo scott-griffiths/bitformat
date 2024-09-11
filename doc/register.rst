@@ -10,3 +10,5 @@ It's not yet part of the public API so please don't rely on it.
 
 .. autoclass:: bitformat.Register
    :members:
+   :undoc-members:
+   :member-order: groupwise

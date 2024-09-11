@@ -37,7 +37,7 @@ from ._dtypes import DtypeDefinition, Register, Dtype
 from ._field import Field, FieldType
 from ._format import Format
 from ._options import Options
-from ._common import Expression, byteorder
+from ._common import Expression, byteorder, Endianness
 from typing import Literal
 
 
@@ -126,4 +126,4 @@ for dt in dtype_definitions:
     Register().add_dtype(dt, aliases.get(dt.name, None))
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'Register']
+__all__ = ['Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'Register', 'Endianness']

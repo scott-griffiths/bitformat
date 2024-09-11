@@ -10,3 +10,5 @@ You shouldn't usually need to deal with this type directly, but its methods are 
 
 .. autoclass:: bitformat.FieldType
    :members:
+   :undoc-members:
+   :member-order: groupwise

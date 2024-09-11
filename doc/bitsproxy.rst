@@ -10,3 +10,5 @@ This should usually not be noticed by the user - the reason it is needed is that
 
 .. autoclass:: bitformat.BitsProxy
    :members:
+   :undoc-members:
+   :member-order: groupwise

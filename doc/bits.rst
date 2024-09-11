@@ -10,3 +10,4 @@ The ``Bits`` class represents an immutable sequence of bits, similar to how the 
 .. autoclass:: bitformat.Bits
    :members:
    :member-order: groupwise
+   :undoc-members:
