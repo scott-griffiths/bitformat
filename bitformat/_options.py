@@ -9,12 +9,14 @@ def is_interactive() -> bool:
 class Options:
     """Returns the singleton module options instance.
 
-    Used to query and change module options.
+    To query and change module options create an instance and set or get properties of it.
 
-    :example:
-    ```
-    Options().bytealigned = True
-    ```
+    .. code-block:: python
+
+        if Options().bytealigned:
+            # ...
+            Options().bytealigned = False
+
     """
 
     _instance = None

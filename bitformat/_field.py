@@ -79,7 +79,7 @@ class FieldType(abc.ABC):
         try:
             bits = self.to_bits()
         except ValueError as e:
-            raise ValueError(f"Cannot unpack '{self!r}' as not all field have binary data to unpack: {e}") from None
+            raise ValueError(f"Cannot unpack '{self!r}' as not all fields have binary data to unpack: {e}") from None
         else:
             return self.value
 

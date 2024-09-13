@@ -19,18 +19,11 @@ Features
 
   * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from just a string.
   * A `Format` contains a list of other fields. These can be nested to any depth.
-  * [Coming soon] Fields like `Repeat`, `Find` and `If` can be used to add more logical structure.
-* The values of other fields can be used in later calculations via an f-string-like expression syntax.
+  * [Coming soon] Field types like `Repeat`, `Find` and `If` can be used to add more logical structure.
+* [Coming soon] The values of other fields can be used in later calculations via an f-string-like expression syntax.
 * Data is always stored efficiently as a contiguous array of bits.
 
 ----
-
-.. warning::
-    This library is in the planning stages.
-    The API will be very unstable and I do not recommend its use for anything serious.
-
-    This documentation may in places be more aspirational than accurate.
-
 
 Installation and download
 -------------------------
@@ -69,7 +62,7 @@ When deciding which one to use the TLDR; for most people is that you should use 
 I am hoping that ``bitformat`` will become a worthy successor, and I'd be very happy for you to try it out and give feedback.
 Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely - at the time of writing their respective download counts are 88 million for bitstring and 882 for bitformat!
 
-.. warning::
+.. note::
 
     There are many similarities between bitformat and bitstring, but there has been no attempt to make them compatible.
     Much of the reason for making a new package was to revisit many of the design decisions that were made almost two

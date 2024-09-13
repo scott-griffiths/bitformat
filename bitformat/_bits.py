@@ -116,6 +116,11 @@ class Bits:
 
         :raises TypeError: If no builder can be found.
 
+        .. code-block:: python
+
+            # Bits.from_auto will be called internally to convert to Bits
+            a = Bits() + '0x3f'a + b'hello' + [1, 0, 1]
+
         """
         if isinstance(auto, cls):
             return auto
@@ -178,9 +183,14 @@ class Bits:
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
-        :param sequence: A sequence of Bits objects to concatenate.
+        :param sequence: A sequence to concatenate. Items can either be Bits, or something that can be converted via :meth:`from_auto`.
         :type sequence: Iterable[Bits]
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.join([f'u6={x}' for x in range(64)])
+
         """
         x = super().__new__(cls)
         x._bitstore = BitStore()
@@ -472,6 +482,7 @@ class Bits:
         :type bs: BitsType
         :return: A new Bits object with the overwritten bits.
         :rtype: Bits
+
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
@@ -501,6 +512,7 @@ class Bits:
         :example:
         >>> s.pp('hex16')
         >>> s.pp('bin, hex', sep='_', show_offset=False)
+
         """
         if fmt is None:
             fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
@@ -543,8 +555,7 @@ class Bits:
         :return: A new Bits object with the replaced bits.
         :rtype: Bits
 
-        Raises ValueError if old is empty or if start or end are
-        out of range.
+        Raises ValueError if old is empty or if start or end are out of range.
 
         """
         s = self._copy()
@@ -595,8 +606,6 @@ class Bits:
         :type end: int, optional
         :return: A new Bits object with the reversed bits.
         :rtype: Bits
-
-        Using on an empty Bits will have no effect.
 
         Raises ValueError if start < 0, end > len(self) or end < start.
 
@@ -746,6 +755,7 @@ class Bits:
         :type fmt: Dtype | str | list[Dtype | str]
         :return: The interpreted value(s).
         :rtype: Any or list[Any]
+
         """
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.

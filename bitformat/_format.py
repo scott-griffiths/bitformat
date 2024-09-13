@@ -16,7 +16,10 @@ compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
 class Format(FieldType):
-    """A sequence of FieldTypes, used to group fields together."""
+    """
+    A sequence of :class:`FieldType` objects, used to group fields together.
+
+    """
 
     def __new__(cls,  s: str | None = None) -> Format:
         if s is None:

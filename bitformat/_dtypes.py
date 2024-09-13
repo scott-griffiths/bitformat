@@ -357,10 +357,10 @@ class Register:
     This is used to maintain a centralized registry of data type definitions.
     It is not yet part of the public API, so should not be used.
 
-    :example:
-    ```
-    print(Register())
-    ```
+    .. code-block:: pycon
+
+        >>> print(Register())
+
     """
 
     _instance: Register | None = None
