@@ -7,7 +7,7 @@
 This release is quite fully featured in terms of the bit manipulation and creation capabilities.
 There are over 400 unit tests and the documentation is slowly getting there.
 
-The binary format features that make this library distict from others such as bitstring and bitarray are still quite limited, but the features that are present should be quite usuable.
+The binary format features that make this library distict from others such as bitstring and bitarray are still quite limited, but the features that are present should be quite useable.
 
 The API has gone through many iterations already, and is now settling down. There will still be changes though, and no guarantees are made about backwards compatibility at this stage.
 
@@ -32,5 +32,5 @@ Things not included yet:
 
 #### Project start
 
-The original version was really just a placeholder with very limited functionality. It's main job was to reserve the name on PyPI.
+The original version was really just a placeholder with very limited functionality. Its main job was to reserve the name on PyPI.
 

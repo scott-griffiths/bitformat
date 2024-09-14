@@ -4,9 +4,9 @@
 
 [![CI badge](https://github.com/scott-griffiths/bitformat/actions/workflows/.github/workflows/ci.yml/badge.svg)](https://github.com/scott-griffiths/bitformat/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/readthedocs/bitformat?logo=readthedocs&logoColor=white)](https://bitformat.readthedocs.io/en/latest/)
+[![Codacy Badge](https://img.shields.io/codacy/grade/b61ae16cc6404d0da5dbcc21ee19ddda?logo=codacy)](https://app.codacy.com/gh/scott-griffiths/bitformat/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 <!--
 [![Dependents (via libraries.io)](https://img.shields.io/librariesio/dependents/pypi/bitformat?logo=libraries.io&logoColor=white)](https://libraries.io/pypi/bitformat)
-[![Codacy Badge](https://img.shields.io/codacy/grade/b61ae16cc6404d0da5dbcc21ee19ddda?logo=codacy)](https://app.codacy.com/gh/scott-griffiths/bitformat/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade)
 &nbsp; &nbsp;
 [![Pepy Total Downlods](https://img.shields.io/pepy/dt/bitformat?logo=python&logoColor=white&labelColor=blue&color=blue)](https://www.pepy.tech/projects/bitformat)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/bitformat?label=%40&labelColor=blue&color=blue)](https://pypistats.org/packages/bitformat)
@@ -21,7 +21,7 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 
 ----
 
-## Features :hammer_and_wrench:	
+## Features
 * The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported with no arbitrary restrictions on length.
@@ -31,13 +31,13 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 > To see what been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
 
 
-## Documentation :book:
+## Documentation
 
 * [The bitformat documentation](https://bitformat.readthedocs.io/en/latest/) includes a full reference for the library.
 * [A Tour of bitformat](https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb) is a notebook
 which gives a quick introduction to the library and some worked examples.
 
-## Some Examples :bulb: 
+## Some Examples
 
 ### Creating some Bits
 
@@ -163,7 +163,7 @@ Format([
 
 The `parse` method is able to lazily parse the input bytes, and simply returns the number of bits that were consumed. The actual values of the individual fields aren't calculated until they are needed, which allows large and complex file formats to be efficiently dealt with.
 
-## More to come :construction:
+## More to come
 
 The `bitformat` library is still pre-alpha and is being actively developed.
 I'm hoping to make an alpha release or two in late 2024, with more features added in 2025.
