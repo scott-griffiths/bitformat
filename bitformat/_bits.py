@@ -308,9 +308,11 @@ class Bits:
         :return: The count of bits set to 1 or 0.
         :rtype: int
 
-        :example:
-        >>> Bits('0xef').count(1)
-        7
+        ..code-block:: pycon
+
+            >>> Bits('0xef').count(1)
+            7
+
         """
         # count the number of 1s (from which it's easy to work out the 0s).
         count = self._bitstore.count(1)
@@ -384,9 +386,10 @@ class Bits:
         :return: The bit position if found, or None if not found.
         :rtype: int or None
 
-        :example:
-        >>> Bits.from_string('0xc3e').find('0b1111')
-        6
+        ..code-block:: pycon
+            >>> Bits.from_string('0xc3e').find('0b1111')
+            6
+
         """
         bs = Bits.from_auto(bs)
         if len(bs) == 0:
@@ -509,9 +512,10 @@ class Bits:
         :type stream: TextIO
         :return: None
 
-        :example:
-        >>> s.pp('hex16')
-        >>> s.pp('bin, hex', sep='_', show_offset=False)
+        .. code-block:: pycon
+
+            >>> s.pp('hex16')
+            >>> s.pp('bin, hex', sep='_', show_offset=False)
 
         """
         if fmt is None:

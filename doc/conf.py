@@ -16,7 +16,7 @@ copyright = f'2024 - {year}, Scott Griffiths'
 author = 'Scott Griffiths'
 release = '0.1.0'
 
-extensions = ['sphinx.ext.autodoc', 'autoapi.extension']
+extensions = ['sphinx.ext.autodoc']
 autoapi_dirs = ['../bitformat/']
 autoapi_add_toctree_entry = False
 
