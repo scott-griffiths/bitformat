@@ -27,6 +27,10 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 * A wide array of data types is supported with no arbitrary restrictions on length.
 * Data is always stored efficiently as a contiguous array of bits.
 
+> [!NOTE]
+> To see what been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
+
+
 ## Documentation :book:
 
 * [The bitformat documentation](https://bitformat.readthedocs.io/en/latest/) includes a full reference for the library.
