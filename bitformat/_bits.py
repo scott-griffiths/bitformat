@@ -751,10 +751,26 @@ class Bits:
         """
         Interpret the Bits as a given data type or list of data types.
 
+        If a single Dtype is given then a single value will be returned, otherwise a list of values will be returned.
+        A single Dtype with no length can be used to interpret the whole Bits - in this common case properties
+        are provided as a shortcut. For example instead of ``b.unpack('bin')`` you can use ``b.bin``.
+
         :param fmt: The data type or list of data types to interpret the Bits as.
         :type fmt: Dtype | str | list[Dtype | str]
         :return: The interpreted value(s).
         :rtype: Any or list[Any]
+
+        .. code-block:: pycon
+
+            >>> s = Bits('0xdeadbeef')
+            >>> s.unpack(['bin4', 'u28'])
+            ['1101', 246267631]
+            >>> s.unpack(['f16', '[u4; 4]'])
+            [-427.25, (11, 14, 14, 15)]
+            >>> s.unpack('i')
+            -559038737
+            >>> s.i
+            -559038737
 
         """
         # First do the cases where there's only one data type.
@@ -762,7 +778,10 @@ class Bits:
         if isinstance(fmt, Dtype):
             return fmt.unpack(self)
         if isinstance(fmt, str):
-            return Dtype.from_string(fmt).unpack(self)
+            d = Dtype.from_string(fmt)
+            if d.bitlength != 0 and len(self) > d.bitlength:
+                return d.unpack(self[:d.bitlength])
+            return d.unpack(self)
         from ._field import FieldType
         if isinstance(fmt, FieldType):
             return fmt.unpack(self)

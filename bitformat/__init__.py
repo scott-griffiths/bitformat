@@ -126,8 +126,8 @@ for dt in dtype_definitions:
     Register().add_dtype(dt, aliases.get(dt.name, None))
 
 
-__all__ = ['Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'Register', 'Endianness']
+__all__ = ('Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options', 'Register', 'Endianness')
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:
-    globals()[name].__module__ = 'bitformat'
+    locals()[name].__module__ = 'bitformat'

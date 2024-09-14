@@ -215,12 +215,15 @@ class Dtype:
 
         """
         b = bitformat.Bits.from_auto(b)
+        if self.bitlength not in (0, len(b)):
+            raise ValueError(f"{self!r} is {self.bitlength} bits long, but got {len(b)} bits to unpack.")
         if not self._is_array:
-            if self._bits_per_item == 0:
+            if self.bitlength == 0:
                 return self._get_fn(b)
             else:
-                return self._get_fn(b[0:self._bits_per_item])
-        return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
+                return self._get_fn(b)
+        else:
+            return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
 
     def __str__(self) -> str:
         hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self.size == 0
@@ -378,7 +381,7 @@ class Register:
         for name in names:
             cls.names[name] = definition
             if definition.get_fn is not None:
-                setattr(bitformat._bits.Bits, name,
+                setattr(bitformat.Bits, name,
                         property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
                 if definition.endianness_variants:
                     def fget_be(b):
@@ -390,13 +393,13 @@ class Register:
                             raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
                         return definition.get_fn(b.byteswap())
                     fget_ne = fget_le if byteorder == 'little' else fget_be
-                    setattr(bitformat._bits.Bits, name + '_le',
+                    setattr(bitformat.Bits, name + '_le',
                             property(fget=fget_le,
                                      doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
-                    setattr(bitformat._bits.Bits, name + '_be',
+                    setattr(bitformat.Bits, name + '_be',
                             property(fget=fget_be,
                                      doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
-                    setattr(bitformat._bits.Bits, name + '_ne',
+                    setattr(bitformat.Bits, name + '_ne',
                             property(fget=fget_ne,
                                      doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only."))
 

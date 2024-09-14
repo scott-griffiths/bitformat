@@ -512,6 +512,19 @@ def test_unpack_array():
     assert a.unpack(['[u4; 4]']) == [(10, 10, 10, 10)]
     assert a.unpack('[u4; 3]') == (10, 10, 10)
 
+def test_unpack_errors():
+    with pytest.raises(ValueError):
+        _ = Bits().unpack('bool')
+    with pytest.raises(ValueError):
+        _ = Bits('0b1').unpack('u2')
+    a = Bits.from_string('0b101010101')
+    with pytest.raises(ValueError):
+        _ = a.unpack(['u4', 'u4', 'u4'])
+    with pytest.raises(ValueError):
+        _ = a.unpack('i10')
+    with pytest.raises(ValueError):
+        _ = a.unpack(['u8', 'u'])
+
 def test_unpack_single():
     a = Bits('0x12345')
     assert a.unpack('[u4; 5]') == (1, 2, 3, 4, 5)
