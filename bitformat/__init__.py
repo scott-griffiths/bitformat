@@ -99,11 +99,11 @@ dtype_definitions = [
                     description="a two's complement signed int"),
     # String types
     DtypeDefinition('hex', Bits._sethex, Bits._gethex, str, False, hex_bits2chars,
-                    allowed_lengths=(0, 4, 8, ...), description="a hexadecimal string"),
+                    bits_per_character=4, description="a hexadecimal string"),
     DtypeDefinition('bin', Bits._setbin_safe, Bits._getbin, str, False, bin_bits2chars,
-                    description="a binary string"),
+                    bits_per_character=1, description="a binary string"),
     DtypeDefinition('oct', Bits._setoct, Bits._getoct, str, False, oct_bits2chars,
-                    allowed_lengths=(0, 3, 6, ...), description="an octal string"),
+                    bits_per_character=3, description="an octal string"),
     # Float types
     DtypeDefinition('f', Bits._setfloat, Bits._getfloat, float, True, float_bits2chars, endianness_variants = True,
                     allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),

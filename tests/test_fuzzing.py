@@ -32,7 +32,9 @@ def test_field_consistency(dtype_name, length, const, int_value):
 
     # Create some bits of the right length
     bits_per_character = Register()[dtype_name].bits_per_character
-    b = Bits.pack('u800', int_value)[0:length * bits_per_character]
+    if bits_per_character is not None:
+        length *= bits_per_character
+    b = Bits.pack('u800', int_value)[0:length]
     f.parse(b)
     assert f.to_bits() == b
     v = f.value
@@ -56,7 +58,9 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
 
     # Create some bits of the right length
     bits_per_character = Register()[dtype_name].bits_per_character
-    b = Bits.pack('u320', int_value)[0:length * bits_per_character * items]
+    if bits_per_character is not None:
+        length *= bits_per_character
+    b = Bits.pack('u320', int_value)[0:length * items]
     f.parse(b)
     assert f.to_bits() == b
     if not isinstance(f.value[0], float) and not f.dtype.name == 'pad':  # Can't compare NaN or pad
@@ -69,6 +73,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
        lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5))
 def test_format_consistency(dtype_names, lengths):
     bits_per_characters = [Register()[dtype_name].bits_per_character for dtype_name in dtype_names]
+    bits_per_characters = [b if b is not None else 1 for b in bits_per_characters]
     als = []
     for al, length in zip([Register()[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
         if al.values:

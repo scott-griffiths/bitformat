@@ -421,7 +421,7 @@ def test_construction_by_appending():
 
 f_str = """
 sequence_header: [
-    sequence_header_code: const hex32 = 0x000001b3,
+    sequence_header_code: const hex8 = 0x000001b3,
     horizontal_size_value: u12,
     vertical_size_value: u12,
     aspect_ratio_information: u4,

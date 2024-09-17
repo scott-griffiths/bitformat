@@ -255,8 +255,8 @@ class TestPrettyPrinting:
     def test_separator(self):
         a = Bits.from_string('0x' + '0f0f'*9)
         s = io.StringIO()
-        a.pp('hex32', sep='!-!', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex32', length=144 bits> [
+        a.pp('hex8', sep='!-!', stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex8', length=144 bits> [
   0: 0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f
 ] + trailing_bits = 0b0000111100001111
 """
@@ -289,8 +289,8 @@ class TestPrettyPrinting:
     def test_multi_line_multi_format(self):
         a = Bits.ones(112)
         s = io.StringIO()
-        a.pp(stream=s, fmt='bin8, hex8', width=42)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin8, hex8', length=112 bits> [
+        a.pp(stream=s, fmt='bin8, hex2', width=42)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin8, hex2', length=112 bits> [
   0: 11111111 11111111 11111111 : ff ff ff
  24: 11111111 11111111 11111111 : ff ff ff
  48: 11111111 11111111 11111111 : ff ff ff
@@ -325,9 +325,7 @@ class TestPrettyPrinting:
     def test_group_size_errors(self):
         a = Bits.zeros(120)
         with pytest.raises(ValueError):
-            a.pp('hex3')
-        with pytest.raises(ValueError):
-            a.pp('hex4, oct')
+            a.pp('hex1, oct')
 
     def test_zero_group_size(self):
         a = Bits.zeros(600)
@@ -356,8 +354,8 @@ class TestPrettyPrinting:
 
         s = io.StringIO()
         a = Bits.from_string('u48 = 10')
-        a.pp(stream=s, width=20, fmt='hex24, oct24', show_offset=False)
-        expected_output = """<Bits, fmt='hex24, oct24', length=48 bits> [
+        a.pp(stream=s, width=20, fmt='hex6, oct8', show_offset=False)
+        expected_output = """<Bits, fmt='hex6, oct8', length=48 bits> [
 000000 : 00000000
 00000a : 00000012
 ]
@@ -384,8 +382,8 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
         t = io.StringIO()
-        a.pp('hex24, oct', width=1, show_offset=False, stream=t)
-        expected_output = """<Bits, fmt='hex24, oct', length=480 bits> [
+        a.pp('hex6, oct', width=1, show_offset=False, stream=t)
+        expected_output = """<Bits, fmt='hex6, oct', length=480 bits> [
 053977 : 01234567
 053977 : 01234567
 053977 : 01234567
@@ -483,8 +481,8 @@ class TestPrettyPrinting_NewFormats:
     def test_uint(self):
         a = Bits().join([Bits.pack('u12', x) for x in range(40, 105)])
         s = io.StringIO()
-        a.pp('u, hex12', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='u, hex12', length=780 bits> [
+        a.pp('u, hex3', stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Bits, fmt='u, hex3', length=780 bits> [
   0:   40   41   42   43   44   45   46   47   48   49   50   51 : 028 029 02a 02b 02c 02d 02e 02f 030 031 032 033
 144:   52   53   54   55   56   57   58   59   60   61   62   63 : 034 035 036 037 038 039 03a 03b 03c 03d 03e 03f
 288:   64   65   66   67   68   69   70   71   72   73   74   75 : 040 041 042 043 044 045 046 047 048 049 04a 04b
@@ -652,5 +650,5 @@ def test_unpack_field():
     assert a.unpack(f) == 100
 
     a = Bits('0x000001b3, u12=352, u12=288, bool=1')
-    v = a.unpack(['hex32', '[u12; 2]' , 'bool'])
+    v = a.unpack(['hex8', '[u12; 2]' , 'bool'])
     assert v == ['000001b3', (352, 288), True]

@@ -36,7 +36,7 @@ class TestCreation:
         assert a[-1] == 7
 
     def test_creation_from_bytes_explicit(self):
-        a = Array('hex8', Bits.from_bytes(b'ABCD'))
+        a = Array('hex2', Bits.from_bytes(b'ABCD'))
         assert a[0] == '41'
         assert a[1] == '42'
         assert a[2] == '43'
@@ -94,7 +94,7 @@ class TestCreation:
         b = Array('bin3', ['111', '000', '111'])
         assert len(b) == 3
         assert b.data == '0b111000111'
-        b.dtype = 'hex4'
+        b.dtype = 'hex1'
         assert len(b) == 2
         with pytest.raises(ValueError):
             b.append('f')
@@ -202,8 +202,8 @@ class TestArrayMethods:
         assert not c.equals(array.array('B', [1, 3]))
 
     def test_equals_with_trailing_bits(self):
-        a = Array('hex4', ['a', 'b', 'c', 'd', 'e', 'f'])
-        c = Array('hex4', Bits.from_string('0xabcdef, 0b11'))
+        a = Array('hex1', ['a', 'b', 'c', 'd', 'e', 'f'])
+        c = Array('hex1', Bits.from_string('0xabcdef, 0b11'))
         assert a.unpack() == c.unpack()
         assert a != c
         a = Array(a.dtype, a.data + '0b11')
@@ -215,7 +215,7 @@ class TestArrayMethods:
         a[0] = 1
         assert a[0] is True
 
-        b = Array('hex12')
+        b = Array('hex3')
         with pytest.raises(ValueError):
             b.append('12')
         b.append('123')
@@ -276,7 +276,7 @@ class TestArrayMethods:
         assert a.unpack() == ap.unpack()
 
     def test_insert(self):
-        a = Array('hex12', ['abc', 'def'])
+        a = Array('hex3', ['abc', 'def'])
         assert a.data.hex == 'abcdef'
         a.insert(0, '000')
         assert a.data.hex == '000abcdef'
@@ -294,7 +294,7 @@ class TestArrayMethods:
             a.insert(2, 'ab')
 
     def test_pop(self):
-        a = Array('oct6', ['33', '21', '11', '76'])
+        a = Array('oct2', ['33', '21', '11', '76'])
         with pytest.raises(IndexError):
             _ = a.pop(4)
         assert len(a) == 4
@@ -461,10 +461,10 @@ class TestArrayMethods:
 #                                         " 0: c040 3f80 4000\n" \
 #                                         "]\n"
 #         a.data += '0b110'
-#         a.dtype='hex16'
+#         a.dtype='hex4'
 #         s = io.StringIO()
 #         a.pp(stream=s)
-#         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex16', length=3, item_size=16 bits, total data size=7 bytes> [
+#         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex4', length=3, item_size=16 bits, total data size=7 bytes> [
 #  0: c040 3f80 4000
 # ] + trailing_bits = 0b110\n"""
 
@@ -608,7 +608,7 @@ class TestArrayOperations:
     #     assert b.unpack() == [-4, -2.5, -9, -0.25]
 
     def test_in_place_or(self):
-        a = Array('hex12')
+        a = Array('hex3')
         a.append('f0f')
         a.extend(['000', '111'])
         a |= '0x00f'
@@ -617,7 +617,7 @@ class TestArrayOperations:
             a |= 12
 
     def test_xor(self):
-        a = Array('hex8', ['00', 'ff', 'aa'])
+        a = Array('hex2', ['00', 'ff', 'aa'])
         b = a ^ '0xff'
         assert a.unpack() == ['00', 'ff', 'aa']
         assert b.unpack() == ['ff', '00', '55']
@@ -731,7 +731,7 @@ class TestSameSizeArrayOperations:
         b.append(0)
         c = a + b
         assert c.unpack() == [9, 102, 1000]
-        a.dtype = 'hex16'
+        a.dtype = 'hex4'
         with pytest.raises(ValueError):
             _ = a + b
 

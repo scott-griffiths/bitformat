@@ -29,7 +29,7 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _bits_per_item: int
-    _bits_per_character: int
+    _bits_per_character: int | None
     _items: int
     _is_array: bool
     _size: int
@@ -166,8 +166,9 @@ class Dtype:
         x._is_array = is_array
         x._items = items
         x._bits_per_character = definition.bits_per_character
-        x._size = size
-        x._bits_per_item = size * x._bits_per_character
+        x._bits_per_item = x._size = size
+        if x._bits_per_character is not None:
+            x._bits_per_item *= x._bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')
         x._endianness = endianness
         x._get_fn = (lambda b: definition.get_fn(b.byteswap())) if little_endian else definition.get_fn
@@ -291,12 +292,7 @@ class DtypeDefinition:
     """
 
     def __init__(self, name: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int = 1, endianness_variants: bool = False, description: str = ''):
-
-        # Consistency checks
-        if int(bits_per_character) != bits_per_character or bits_per_character <= 0:
-            raise ValueError("bits_per_character must be an integer >= 1.")
-
+                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int | None = None, endianness_variants: bool = False, description: str = ''):
         self.name = name
         self.description = description
         self.return_type = return_type
