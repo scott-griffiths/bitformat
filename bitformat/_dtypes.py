@@ -29,7 +29,7 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _bits_per_item: int
-    _multiplier: int
+    _bits_per_character: int
     _items: int
     _is_array: bool
     _size: int
@@ -123,7 +123,7 @@ class Dtype:
 
     @property
     def size(self) -> int:
-        """The size of one element of the data type in units of the multiplier."""
+        """The size of one element of the data type in units of the bits_per_character."""
         return self._size
 
     @property
@@ -132,9 +132,14 @@ class Dtype:
         return self._bits_per_item * self._items
 
     @property
-    def multiplier(self) -> int:
-        """The number of bits for each unit of size. Usually 1, but equals 8 for bytes type."""
-        return self._multiplier
+    def bits_per_character(self) -> int | None:
+        """
+        For literals, the number of bits represented for each character.
+
+        So =8 for bytes, 4 for hex, 3 for oct and 1 for bin.
+        For non-literal types this is set to None.
+        """
+        return self._bits_per_character
 
     @property
     def return_type(self) -> Any:
@@ -160,9 +165,9 @@ class Dtype:
         x._name = definition.name
         x._is_array = is_array
         x._items = items
-        x._multiplier = definition.multiplier
+        x._bits_per_character = definition.bits_per_character
         x._size = size
-        x._bits_per_item = size * x._multiplier
+        x._bits_per_item = size * x._bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')
         x._endianness = endianness
         x._get_fn = (lambda b: definition.get_fn(b.byteswap())) if little_endian else definition.get_fn
@@ -286,18 +291,18 @@ class DtypeDefinition:
     """
 
     def __init__(self, name: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: tuple[int, ...] = tuple(), multiplier: int = 1, endianness_variants: bool = False, description: str = ''):
+                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int = 1, endianness_variants: bool = False, description: str = ''):
 
         # Consistency checks
-        if int(multiplier) != multiplier or multiplier <= 0:
-            raise ValueError("multiplier must be an integer >= 1.")
+        if int(bits_per_character) != bits_per_character or bits_per_character <= 0:
+            raise ValueError("bits_per_character must be an integer >= 1.")
 
         self.name = name
         self.description = description
         self.return_type = return_type
         self.is_signed = is_signed
         self.allowed_sizes = AllowedSizes(allowed_lengths)
-        self.multiplier = multiplier
+        self.bits_per_character = bits_per_character
         self.set_fn = set_fn
         self.endianness_variants = endianness_variants
 
@@ -350,7 +355,7 @@ class DtypeDefinition:
         s = (f"{self.__class__.__name__}(name='{self.name}', description='{self.description}',"
              f"return_type={self.return_type.__name__}, ")
         s += (f"is_signed={self.is_signed}, "
-              f"allowed_lengths={self.allowed_sizes!s}, multiplier={self.multiplier})")
+              f"allowed_lengths={self.allowed_sizes!s}, bits_per_character={self.bits_per_character})")
         return s
 
 
@@ -440,13 +445,13 @@ class Register:
         del cls.names[name]
 
     def __repr__(self) -> str:
-        s = [f"{'key':<12}:{'name':^12}{'signed':^8}{'allowed_lengths':^16}{'multiplier':^12}{'return_type':<13}"]
+        s = [f"{'key':<12}:{'name':^12}{'signed':^8}{'allowed_lengths':^16}{'bits_per_character':^12}{'return_type':<13}"]
         s.append('-' * 72)
         for key in self.names:
             m = self.names[key]
             allowed = '' if not m.allowed_sizes else m.allowed_sizes
             ret = 'None' if m.return_type is None else m.return_type.__name__
-            s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.multiplier:^12}{ret:<13} # {m.description}")
+            s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}")
         return '\n'.join(s)
 
 

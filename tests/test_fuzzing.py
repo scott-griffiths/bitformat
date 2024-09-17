@@ -31,8 +31,8 @@ def test_field_consistency(dtype_name, length, const, int_value):
     compare_fields(f, f2)
 
     # Create some bits of the right length
-    multiplier = Register()[dtype_name].multiplier
-    b = Bits.pack('u800', int_value)[0:length * multiplier]
+    bits_per_character = Register()[dtype_name].bits_per_character
+    b = Bits.pack('u800', int_value)[0:length * bits_per_character]
     f.parse(b)
     assert f.to_bits() == b
     v = f.value
@@ -55,8 +55,8 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     assert f == f2
 
     # Create some bits of the right length
-    multiplier = Register()[dtype_name].multiplier
-    b = Bits.pack('u320', int_value)[0:length * multiplier * items]
+    bits_per_character = Register()[dtype_name].bits_per_character
+    b = Bits.pack('u320', int_value)[0:length * bits_per_character * items]
     f.parse(b)
     assert f.to_bits() == b
     if not isinstance(f.value[0], float) and not f.dtype.name == 'pad':  # Can't compare NaN or pad
@@ -68,7 +68,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
 @given(dtype_names=st.lists(st.sampled_from(sorted(Register().names.keys())), min_size=5, max_size=5),
        lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5))
 def test_format_consistency(dtype_names, lengths):
-    multipliers = [Register()[dtype_name].multiplier for dtype_name in dtype_names]
+    bits_per_characters = [Register()[dtype_name].bits_per_character for dtype_name in dtype_names]
     als = []
     for al, length in zip([Register()[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
         if al.values:
@@ -79,9 +79,9 @@ def test_format_consistency(dtype_names, lengths):
         else:
             als.append(length)
 
-    zipped = list(zip(dtype_names, als, multipliers))
+    zipped = list(zip(dtype_names, als, bits_per_characters))
     for i in range(6):
-        dtypes = [Dtype.from_parameters(dtype_name, length*multiplier) for dtype_name, length, multiplier in zipped[:i]]
+        dtypes = [Dtype.from_parameters(dtype_name, length*bits_per_character) for dtype_name, length, bits_per_character in zipped[:i]]
         f = Format.from_parameters([Field.from_parameters(dtype) for dtype in dtypes])
         f2 = f
         assert f == f2

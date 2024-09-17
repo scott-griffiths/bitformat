@@ -113,7 +113,7 @@ dtype_definitions = [
     DtypeDefinition('bool', Bits._setbool, Bits._getbool, bool, False, bool_bits2chars,
                     allowed_lengths=(1,), description="a bool (True or False)"),
     DtypeDefinition('bytes', Bits._setbytes, Bits._getbytes, bytes, False, bytes_bits2chars,
-                    multiplier=8, description="a bytes object"),
+                    bits_per_character=8, description="a bytes object"),
     # Special case pad type
     DtypeDefinition('pad', Bits._setpad, Bits._getpad, None, False, None,
                     description="a skipped section of padding")
