@@ -11,14 +11,14 @@ It represents a well-defined amount of binary data with a single data type.
 .. _Field strings:
 
 Field strings
-^^^^^^^^^^^^^
+-------------
 
 As a shortcut a single string can usually be used to specify the whole `Field`.
 To do this it should be a string of the format::
 
     "name: dtype = value"
 
- or ::
+or ::
 
     "name: [dtype; items] = value"
 

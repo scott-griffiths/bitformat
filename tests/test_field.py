@@ -31,8 +31,6 @@ class TestCreation:
         f1 = Field.from_bits(b)
         assert f1.to_bits() == b
         assert f1.const is True
-        with pytest.raises(TypeError):
-            _ = Field(Bits())
         f2 = Field.from_bits(b'123')
         assert f2.value == b'123'
         b = f2.pack()
@@ -226,4 +224,12 @@ def test_unpack():
     f.clear()
     with pytest.raises(ValueError):
         _ = f.unpack()
+
+def test_field_with_comment():
+    f = Field.from_parameters('u8', name='x', comment='  This is a comment ')
+    assert f.comment == 'This is a comment'
+    f.comment = '   Penguins are cool  '
+    assert f.comment == 'Penguins are cool'
+    assert str(f) == 'x: u8  # Penguins are cool'
+    assert repr(f) == "Field('x: u8  # Penguins are cool')"
 

@@ -76,7 +76,7 @@ class FieldType(abc.ABC):
         """
         if b is not None:
             self.parse(b)
-        try:
+        try:  # TODO: This is hacky. Why is bits needed here?
             bits = self.to_bits()
         except ValueError as e:
             raise ValueError(f"Cannot unpack '{self!r}' as not all fields have binary data to unpack: {e}") from None
@@ -112,6 +112,9 @@ class FieldType(abc.ABC):
         :return: The FieldType instance.
         :rtype: FieldType
         """
+        s = s.strip()
+        if s == '':
+            raise ValueError(f"Can't create a FieldType from an empty string.")
         try:
             return Field.from_string(s)
         except ValueError:
@@ -216,7 +219,16 @@ class FieldType(abc.ABC):
             if '__' in val:
                 raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
         self._name = val
+
     name = property(_get_name, _set_name)
+
+    def _get_comment(self) -> str:
+        return self._comment
+
+    def _set_comment(self, comment: str) -> None:
+        self._comment = comment.strip()
+
+    comment = property(_get_comment, _set_comment)
 
 
 class Field(FieldType):
@@ -229,7 +241,7 @@ class Field(FieldType):
         return cls.from_string(token)
 
     @classmethod
-    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False) -> Field:
+    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False, comment: str = '') -> Field:
         """
         Create a Field instance from parameters.
 
@@ -242,11 +254,15 @@ class Field(FieldType):
         :param const: Whether the field is constant, optional.
         :type const: bool
         :return: The Field instance.
+        :param comment: An optional comment string
+        :type comment: str
+
         :rtype: Field
         """
         x = super().__new__(cls)
         x._bits = None
         x.const = const
+        x.comment = comment.strip()
         if isinstance(dtype, str):
             if '{' in dtype:
                 try:
@@ -300,8 +316,10 @@ class Field(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:
+        s, comment = s.split('#', 1) if '#' in s else (s, '')
+        comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
-        return cls.from_parameters(dtype_str, name, value, const)
+        return cls.from_parameters(dtype_str, name, value, const, comment)
 
     @classmethod
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
@@ -431,7 +449,8 @@ class Field(FieldType):
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
-        return f"{_indent(indent)}{n}{d}{v}"
+        comment = '' if self.comment == '' else f"  # {self.comment}"
+        return f"{_indent(indent)}{n}{d}{v}{comment}"
 
     # This simple repr used when field is part of a larger object
     @override
