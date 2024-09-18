@@ -90,7 +90,7 @@ class TestChangingTheRegister:
 class TestCreatingNewDtypes:
 
     def test_new_type(self):
-        md = DtypeDefinition('uintr', Bits._setuint, Bits._getuint)
+        md = DtypeDefinition('uintr', "A new type", Bits._setuint, Bits._getuint)
         Register().add_dtype(md)
         a = Bits('0xf')
         assert a.uintr == 15
@@ -102,7 +102,7 @@ class TestCreatingNewDtypes:
     def test_new_type_with_getter(self):
         def get_fn(bs):
             return bs.count(1)
-        md = DtypeDefinition('counter', None, get_fn)
+        md = DtypeDefinition('counter', "Some sort of counter", None, get_fn)
         Register().add_dtype(md)
         a = Bits.from_string('0x010f')
         assert a.counter == 5

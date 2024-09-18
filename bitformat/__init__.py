@@ -42,25 +42,6 @@ from typing import Literal
 
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
-def hex_bits2chars(bitlength: int):
-    # One character for every 4 bits
-    return bitlength // 4
-
-
-def oct_bits2chars(bitlength: int):
-    # One character for every 3 bits
-    return bitlength // 3
-
-
-def bin_bits2chars(bitlength: int):
-    # One character for each bit
-    return bitlength
-
-
-def bytes_bits2chars(bitlength: int):
-    # One character for every 8 bits
-    return bitlength // 8
-
 
 def uint_bits2chars(bitlength: int):
     # How many characters is largest possible int of this length?
@@ -93,30 +74,31 @@ def bool_bits2chars(_: Literal[1]):
 
 dtype_definitions = [
     # Integer types
-    DtypeDefinition('u', Bits._setuint, Bits._getuint, int, False, uint_bits2chars, endianness_variants = True,
-                    description="a two's complement unsigned int"),
-    DtypeDefinition('i', Bits._setint, Bits._getint, int, True, int_bits2chars, endianness_variants = True,
-                    description="a two's complement signed int"),
-    # String types
-    DtypeDefinition('hex', Bits._sethex, Bits._gethex, str, False, hex_bits2chars,
-                    bits_per_character=4, description="a hexadecimal string"),
-    DtypeDefinition('bin', Bits._setbin_safe, Bits._getbin, str, False, bin_bits2chars,
-                    bits_per_character=1, description="a binary string"),
-    DtypeDefinition('oct', Bits._setoct, Bits._getoct, str, False, oct_bits2chars,
-                    bits_per_character=3, description="an octal string"),
+    DtypeDefinition('u', "a two's complement unsigned int",
+                    Bits._setuint, Bits._getuint, int, False, uint_bits2chars, endianness_variants = True),
+    DtypeDefinition('i', "a two's complement signed int",
+                    Bits._setint, Bits._getint, int, True, int_bits2chars, endianness_variants = True),
+    # Literal types
+    DtypeDefinition('bin', "a binary string",
+                    Bits._setbin_safe, Bits._getbin, str, False, bits_per_character=1),
+    DtypeDefinition('oct', "an octal string",
+                    Bits._setoct, Bits._getoct, str, False, bits_per_character=3),
+    DtypeDefinition('hex', "a hexadecimal string",
+                    Bits._sethex, Bits._gethex, str, False, bits_per_character=4),
+    DtypeDefinition('bytes', "a bytes object",
+                    Bits._setbytes, Bits._getbytes, bytes, False, bits_per_character=8),
     # Float types
-    DtypeDefinition('f', Bits._setfloat, Bits._getfloat, float, True, float_bits2chars, endianness_variants = True,
-                    allowed_lengths=(16, 32, 64), description="a big-endian floating point number"),
+    DtypeDefinition('f', "an IEEE floating point number",
+                    Bits._setfloat, Bits._getfloat, float, True, float_bits2chars, endianness_variants = True,
+                    allowed_lengths=(16, 32, 64)),
     # Other known length types
-    DtypeDefinition('bits', Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars,
-                    description="a Bits object"),
-    DtypeDefinition('bool', Bits._setbool, Bits._getbool, bool, False, bool_bits2chars,
-                    allowed_lengths=(1,), description="a bool (True or False)"),
-    DtypeDefinition('bytes', Bits._setbytes, Bits._getbytes, bytes, False, bytes_bits2chars,
-                    bits_per_character=8, description="a bytes object"),
+    DtypeDefinition('bits', "a Bits object",
+                    Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars),
+    DtypeDefinition('bool', "a bool (True or False)",
+                    Bits._setbool, Bits._getbool, bool, False, bool_bits2chars, allowed_lengths=(1,)),
     # Special case pad type
-    DtypeDefinition('pad', Bits._setpad, Bits._getpad, None, False, None,
-                    description="a skipped section of padding")
+    DtypeDefinition('pad', "a skipped section of padding",
+                    Bits._setpad, Bits._getpad, None, False, None),
     ]
 
 # Currently not using aliases for any types. Perhaps remove it, or it could be useful again later?

@@ -29,7 +29,6 @@ class Dtype:
     _return_type: Any
     _is_signed: bool
     _bits_per_item: int
-    _bits_per_character: int | None
     _items: int
     _is_array: bool
     _size: int
@@ -62,9 +61,9 @@ class Dtype:
 
         The token string examples:
 
-        ``'u12'``: An unsigned 12-bit integer.
-        ``'bytes'``: A ``bytes`` object with no explicit size.
-        ``'[i6; 5]'``: An array of 5 signed 6-bit integers.
+        * ``'u12'``: An unsigned 12-bit integer.
+        * ``'bytes'``: A ``bytes`` object with no explicit size.
+        * ``'[i6; 5]'``: An array of 5 signed 6-bit integers.
 
         As a shortcut the ``Dtype`` constructor can be used directly with a token string.
 
@@ -101,9 +100,6 @@ class Dtype:
     def bits_per_item(self) -> int:
         """The number of bits needed to represent a single item of the underlying data type.
 
-        For a simple dtype this equals len(dtype)
-        For an array dtype this equals len(dtype) // items
-
         """
         return self._bits_per_item
 
@@ -123,23 +119,13 @@ class Dtype:
 
     @property
     def size(self) -> int:
-        """The size of one element of the data type in units of the bits_per_character."""
+        """The size of one element of the data type."""
         return self._size
 
     @property
     def bitlength(self) -> int:
         """The total length of the data type in bits."""
         return self._bits_per_item * self._items
-
-    @property
-    def bits_per_character(self) -> int | None:
-        """
-        For literals, the number of bits represented for each character.
-
-        So =8 for bytes, 4 for hex, 3 for oct and 1 for bin.
-        For non-literal types this is set to None.
-        """
-        return self._bits_per_character
 
     @property
     def return_type(self) -> Any:
@@ -152,7 +138,7 @@ class Dtype:
         return self._is_signed
 
     def __hash__(self) -> int:
-        return hash((self._name, self._bits_per_item))
+        return hash((self._name, self._bits_per_item))  # TODO: Not enough info here - at least needs items?
 
     def __len__(self):
         raise TypeError("'Dtype' has no len() method. Use 'size', 'items' or 'bitlength' properties instead.")
@@ -165,10 +151,9 @@ class Dtype:
         x._name = definition.name
         x._is_array = is_array
         x._items = items
-        x._bits_per_character = definition.bits_per_character
         x._bits_per_item = x._size = size
-        if x._bits_per_character is not None:
-            x._bits_per_item *= x._bits_per_character
+        if definition.bits_per_character is not None:
+            x._bits_per_item *= definition.bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')
         x._endianness = endianness
         x._get_fn = (lambda b: definition.get_fn(b.byteswap())) if little_endian else definition.get_fn
@@ -291,8 +276,8 @@ class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``.
     """
 
-    def __init__(self, name: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int | None = None, endianness_variants: bool = False, description: str = ''):
+    def __init__(self, name: str, description: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
+                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int | None = None, endianness_variants: bool = False):
         self.name = name
         self.description = description
         self.return_type = return_type
@@ -313,6 +298,10 @@ class DtypeDefinition:
             self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
         else:
             self.get_fn = get_fn  # Interpret everything
+        if bits_per_character is not None:
+            if bitlength2chars_fn is not None:
+                raise ValueError("You shouldn't specify both a bits_per_character and a bitlength2chars_fn.")
+            bitlength2chars_fn = lambda x: x // bits_per_character
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: int, endianness: Endianness) -> tuple(int, Endianness):
