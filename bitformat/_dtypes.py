@@ -59,7 +59,7 @@ class Dtype:
     def from_string(cls, token: str, /) -> Dtype:
         """Create a new Dtype from a token string.
 
-        The token string examples:
+        Some token string examples:
 
         * ``'u12'``: An unsigned 12-bit integer.
         * ``'bytes'``: A ``bytes`` object with no explicit size.
@@ -94,11 +94,22 @@ class Dtype:
     @property
     def endianness(self) -> Endianness:
         """The endianness of the data type."""
-        return self._endianness.value
+        return self._endianness
 
     @property
     def bits_per_item(self) -> int:
         """The number of bits needed to represent a single item of the underlying data type.
+
+        .. code-block:: pycon
+
+            >>> Dtype('f64').bits_per_item
+            64
+            >>> Dtype('hex10').bits_per_item
+            40
+            >>> Dtype('[u5; 1001]').bits_per_item
+            5
+
+        See also :attr:`bitlength` and :attr:`size`.
 
         """
         return self._bits_per_item
@@ -114,27 +125,58 @@ class Dtype:
 
     @property
     def is_array(self) -> bool:
-        """If True then the data type represents an array of items."""
+        """Returns bool indicating if the data type represents an array of items.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u32').is_array
+            False
+            >>> Dtype('[u32; 3]').is_array
+            True
+        """
         return self._is_array
 
     @property
     def size(self) -> int:
-        """The size of one element of the data type."""
+        """The size of the data type.
+
+        This is the number used immediately after the data type name in a dtype string.
+        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
+        though they have bitlengths of 10, 40 and 30 respectively.
+
+        See also :attr:`bits_per_item` and :attr:`bitlength`.
+
+        """
         return self._size
 
     @property
     def bitlength(self) -> int:
-        """The total length of the data type in bits."""
+        """The total length of the data type in bits.
+
+        The ``bitlength`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u12').bitlength
+            12
+            >>> Dtype('[u12; 5]').bitlength
+            60
+            >>> Dtype('hex5').bitlength
+            20
+
+        See also :attr:`bits_per_item` and :attr:`size`.
+
+        """
         return self._bits_per_item * self._items
 
     @property
     def return_type(self) -> Any:
-        """The type of the value returned by the parse method, such as int, float or str."""
+        """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
         return self._return_type
 
     @property
     def is_signed(self) -> bool:
-        """If True then the data type represents a signed quantity."""
+        """Returns bool indicating if the data type represents a signed quantity."""
         return self._is_signed
 
     def __hash__(self) -> int:
@@ -276,13 +318,14 @@ class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``.
     """
 
-    def __init__(self, name: str, description: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_lengths: tuple[int, ...] = tuple(), bits_per_character: int | None = None, endianness_variants: bool = False):
+    def __init__(self, name: str, description: str, set_fn: Callable, get_fn: Callable, return_type: Any = Any,
+                 is_signed: bool = False, bitlength2chars_fn=None, allowed_sizes: tuple[int, ...] = tuple(),
+                 bits_per_character: int | None = None, endianness_variants: bool = False):
         self.name = name
         self.description = description
         self.return_type = return_type
         self.is_signed = is_signed
-        self.allowed_sizes = AllowedSizes(allowed_lengths)
+        self.allowed_sizes = AllowedSizes(allowed_sizes)
         self.bits_per_character = bits_per_character
         self.set_fn = set_fn
         self.endianness_variants = endianness_variants
@@ -304,7 +347,7 @@ class DtypeDefinition:
             bitlength2chars_fn = lambda x: x // bits_per_character
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def sanitize(self, size: int, endianness: Endianness) -> tuple(int, Endianness):
+    def sanitize(self, size: int, endianness: Endianness) -> tuple[int, Endianness]:
         if self.allowed_sizes:
             if size == 0:
                 if self.allowed_sizes.only_one_value():

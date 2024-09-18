@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits, Field
+from bitformat import Dtype, Bits, Field, Endianness
 
 
 def test_build():
@@ -638,7 +638,7 @@ def test_native_endian_floats():
         d = Dtype('f_ne64')
         d2 = Dtype.from_parameters('f', 64, endianness='ne')
         assert d == d2
-        assert d.endianness == 'ne'
+        assert d.endianness == Endianness.NATIVE
         d3 = Dtype.from_parameters('f', 64, endianness='le')
         assert d != d3
 

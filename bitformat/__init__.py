@@ -90,12 +90,12 @@ dtype_definitions = [
     # Float types
     DtypeDefinition('f', "an IEEE floating point number",
                     Bits._setfloat, Bits._getfloat, float, True, float_bits2chars, endianness_variants = True,
-                    allowed_lengths=(16, 32, 64)),
+                    allowed_sizes=(16, 32, 64)),
     # Other known length types
     DtypeDefinition('bits', "a Bits object",
                     Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars),
     DtypeDefinition('bool', "a bool (True or False)",
-                    Bits._setbool, Bits._getbool, bool, False, bool_bits2chars, allowed_lengths=(1,)),
+                    Bits._setbool, Bits._getbool, bool, False, bool_bits2chars, allowed_sizes=(1,)),
     # Special case pad type
     DtypeDefinition('pad', "a skipped section of padding",
                     Bits._setpad, Bits._getpad, None, False, None),
