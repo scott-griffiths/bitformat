@@ -12,7 +12,7 @@ description = "A library for creating and interpreting binary formats."
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-    "Development Status :: 1 - Planning",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",

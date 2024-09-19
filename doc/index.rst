@@ -56,7 +56,7 @@ It covers much of the same ground, but is designed to have a stronger emphasis o
 * Expressive syntax for complex binary formats.
 * Emphasis on performance.
 * Several major features still to be added.
-* In pre-alpha stage - still quite unstable.
+* In alpha stage - still quite unstable.
 
 When deciding which one to use the TLDR; for most people is that you should use ``bitstring`` for anything at all serious, at least for now.
 I am hoping that ``bitformat`` will become a worthy successor, and I'd be very happy for you to try it out and give feedback.

@@ -47,12 +47,10 @@ class Dtype:
 
         """
         endianness = Endianness(endianness)
-        if not is_array:
-            return Register().get_single_dtype(name, size, endianness)
-        elif is_array == 1:
+        if is_array:
             return Register().get_array_dtype(name, size, items, endianness)
         else:
-            raise ValueError(f"Invalid value for is_array: {is_array}. Should be True or False.")
+            return Register().get_single_dtype(name, size, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -444,10 +442,7 @@ class Register:
             definition = cls.names[name]
         except KeyError:
             aliases = {'int': 'i', 'uint': 'u', 'float': 'f'}
-            if name in aliases:
-                extra = f"Did you mean '{aliases[name]}'? "
-            else:
-                extra = ''
+            extra = f"Did you mean '{aliases[name]}'? " if name in aliases else ''
             raise ValueError(f"Unknown Dtype name '{name}'. {extra}Names available: {list(cls.names.keys())}.")
         else:
             return definition.get_single_dtype(size, endianness)

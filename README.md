@@ -1,4 +1,4 @@
-> :warning: **This project is pre-alpha and there are no guarantees of API stability. The documentation is sometimes more aspirational than accurate.**
+> :warning: **This project is still in alpha and there are no guarantees of API stability. The documentation is sometimes more aspirational than accurate.**
 
 [![bitformat](https://raw.githubusercontent.com/scott-griffiths/bitformat/main/doc/bitformat_logo_small.png)](https://github.com/scott-griffiths/bitformat)
 
