@@ -264,21 +264,13 @@ class Field(FieldType):
         x.const = const
         x.comment = comment.strip()
         if isinstance(dtype, str):
-            if '{' in dtype:
-                try:
-                    x._dtype_expression = DtypeWithExpression(dtype)
-                    x._dtype = Dtype.from_parameters(x._dtype_expression.name)
-                except ValueError as e:
-                    raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
-            else:
-                try:
-                    x._dtype = Dtype.from_string(dtype)
-                    x._dtype_expression = None
-                except ValueError as e:
-                    raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
+            try:
+                x._dtype_expression = DtypeWithExpression.from_string(dtype)
+            except ValueError as e:
+                raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         else:
-            x._dtype = dtype
-            x._dtype_expression = None
+            x._dtype_expression = DtypeWithExpression.from_string(str(dtype))  # HACK!
+        x._dtype = x._dtype_expression.evaluate()  # HACK
         x.name = name
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
@@ -302,9 +294,10 @@ class Field(FieldType):
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bool.")
         x._setvalue_no_const_check(value)
-        if x._dtype_expression is None and x._dtype.bits_per_item == 0:
+        if x._dtype.size == 0:
             if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
-                x._dtype = Dtype.from_parameters(x._dtype.name, len(x.value))
+                x._dtype_expression = DtypeWithExpression(x._dtype.name, len(x.value), x._dtype.is_array, x._dtype.items, x._dtype.endianness)
+                x._dtype = x._dtype_expression.evaluate()  # HACK
             else:
                 raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
         return x
