@@ -226,7 +226,7 @@ def test_field_with_comment():
     assert repr(f) == "Field('x: u8  # Penguins are cool')"
 
 def test_fieldtype_subclass_ordering():
-    x = FieldType.subclasses
+    x = FieldType.fieldtype_classes
     # We want these subclasses to be at the start of the list for some algorithms
     assert x[0] == Field
     assert x[1] == Format

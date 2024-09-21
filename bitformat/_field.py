@@ -22,10 +22,10 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
 
 class FieldType(abc.ABC):
 
-    subclasses = []
+    fieldtype_classes = []
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.subclasses.append(cls)
+        cls.fieldtype_classes.append(cls)
 
     @final
     def parse(self, b: BitsType) -> int:
@@ -125,7 +125,7 @@ class FieldType(abc.ABC):
             1 / 0
         except ZeroDivisionError:
             from ._format import Format
-            for ft in cls.subclasses:
+            for ft in cls.fieldtype_classes:
                 try:
                     return ft.from_string(s)
                 except ExpressionError as e:

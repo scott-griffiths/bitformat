@@ -11,7 +11,7 @@ from ._field import FieldType, Field
 
 __all__ = ['Format']
 
-format_str_pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
+format_str_pattern = r"^(?P<name>[^:]*):\s*\[(?P<content>.*)\]\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
@@ -189,10 +189,7 @@ class Format(FieldType):
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         s = f"{_indent(indent)}{name_str}[\n"
         for i, fieldtype in enumerate(self.fieldtypes):
-            s += fieldtype._str(indent + 1)
-            if i != len(self.fieldtypes) - 1:
-                s += ';'
-            s += '\n'
+            s += fieldtype._str(indent + 1) + '\n'
         s += f"{_indent(indent)}]"
         return s
 

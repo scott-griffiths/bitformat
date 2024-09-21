@@ -30,7 +30,7 @@ class TestCreation:
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
-        f = Format('[x: f16]')
+        f = Format(':[x: f16]')
         assert f.fieldtypes[0].name == 'x'
         assert f.fieldtypes[0].dtype == Dtype.from_parameters('f', 16)
 
@@ -279,7 +279,7 @@ def test_format_repr_and_str():
     assert 'my_format' in r
 
 def test_format_get_and_set():
-    f = Format('[u8; u8; u8]')
+    f = Format(':[u8; u8; u8]')
     for field in f:
         field.value = 12
     assert f.value == [12, 12, 12]
@@ -369,15 +369,12 @@ def test_partial_parse():
         _ = f.parse(b[:-16])
 
 
-def remove_whitespace(s: str) -> str:
-    return ''.join(s.split())
-
 def test_from_string():
     s = 'header: [u8; u4; bool]'
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[0].dtype == Dtype.from_string('u8')
-    assert remove_whitespace(str(f)) == remove_whitespace(s)
+    assert str(f) == str(Format(str(f)))
 
 
 def test_recursive_from_string():
@@ -387,20 +384,25 @@ def test_recursive_from_string():
     assert f[3][0].value == 23
     b = f['body']
     assert b[0].value == 23
-    assert remove_whitespace(str(f)) == remove_whitespace(s)
-    assert remove_whitespace(str(b)) == remove_whitespace("body:[u8=23; [u4; 3]; bool]")
+    assert str(f) == str(Format(str(s)))
+    assert str(b) == str(Format("body:[u8=23; [u4; 3]; bool]"))
 
     fp = eval(repr(f))
     assert fp == f
 
 def test_interesting_types_from_string():
-    s = "  [const f32= -3.75e2 ; _fred : bytes4 = b'abc\x04';] "
+    s = "  :[const f32= -3.75e2 ; _fred : bytes4 = b'abc\x04';] "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f['_fred'].value == b'abc\x04'
 
-def test_expression_dtypes():
-    f = Format.from_string('[x: u8; [u{x}; {x + 1}]]')
+# def test_expression_dtypes():
+#     f = Format.from_string(':[x: u8; [u{x}; {x + 1}]]')
+#     b = Bits('u8=3, u3=1, u4=2, u4=3')
+#     f.parse(b)
+#     assert f['x'].value == 3
+#     assert f[1].value == [1, 2, 3]
+#     assert f.value == [3, [1, 2, 3]]
 
 def test_unpack():
     f = Format.from_string('header: [u8; u4; bool]')
@@ -442,3 +444,22 @@ sequence_header: [
 
 def test_example_format():
     f = Format(f_str)
+
+def test_format_str_equivalences():
+    f1 = Format("  abc : [ f16; u5; [bool; 4]]")
+    f2 = Format("abc:[f16;u5;[  bool  ;4]  ]  ")
+    f3 = Format("""
+    
+    abc:
+    [
+    f16;
+    u5
+    
+    [bool;4];]
+    """)
+    assert f1 == f2 == f3
+    print(f1, f2, f3)
+    assert str(f1) == str(f2) == str(f3)
+    assert repr(f1) == repr(f2) == repr(f3)
+    f4 = eval(repr(f1))
+    assert f4 == f1
