@@ -28,8 +28,8 @@ Features
 Installation and download
 -------------------------
 
-I am planning on a minimal viable product release by September 2024, with a fuller release later in the year.
-If you wish to try it out now then I recommend installing from the main branch on GitHub as that will be far ahead of the release on PyPI. ::
+The first product release was made in September 2024, with a fuller release planned for later in the year.
+If you wish to try it out now then you may prefer to use the main branch on GitHub as that will be ahead of the release on PyPI. ::
 
     pip install git+https://github.com/scott-griffiths/bitformat
 
