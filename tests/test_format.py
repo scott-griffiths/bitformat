@@ -62,7 +62,7 @@ class TestCreation:
 
     def testComplicatedCreation(self):
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
-        g = Format('header: [const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True]')
+        g = Format('header: [const bits = 0x000001b3; u12; height: const u12 = 288; flag: const bool = True]')
         assert f == g
         assert f.name == 'header'
         b = f.pack([352])
@@ -102,29 +102,35 @@ def test_building():
     f2.pack([1, 2, 3])
     assert f2.value == (1, 2, 3)
 
-    f3 = Format(['u8'])
+    f3 = Format.from_parameters(['u8'])
     f3.pack([4])
     assert f3.value == [4]
 
-    f4 = Format(['[u8; 3]'])
+    f4 = Format.from_parameters(['[u8; 3]'])
     f4.pack([[1, 2, 3]])
     assert f4.value == [(1, 2, 3)]
 
-    f5 = Format(['u8', '[u8; 3]'])
+    f5 = Format.from_parameters(['u8', '[u8; 3]'])
     f5.pack([4, [1, 2, 3]])
     assert f5.value == [4, (1, 2, 3)]
 
-    f6 = Format(['u8', '[u8; 3]', 'u8'])
+    f6 = Format.from_parameters(['u8', '[u8; 3]', 'u8'])
     f6.pack([4, [1, 2, 3], 5])
     assert f6.value == [4, (1, 2, 3), 5]
 
-    f7 = Format([f1, f2])
+    f7 = Format.from_parameters([f1, f2])
     f7.pack([6, [4, 5, 6]])
     assert f7.value == [6, (4, 5, 6)]
 
-    f8 = Format([f1, f7])
-    f8.pack([7, [8, [9, 10, 11]]])
+    f8 = Format.from_parameters([f1, f7])
+    f8.pack([7, [8, (9, 10, 11)]])
     assert f8.value == [7, (8, (9, 10, 11))]
+
+@pytest.mark.skip
+def test_packing_bug():
+    f = Format("bug: [u8, [u8, u8]]")
+    f.pack([10, [20, 30]])
+    assert f.value == [10, [20, 30]]
 
 
 class TestAddition:
@@ -192,13 +198,13 @@ def test_example_from_docs():
 
 @pytest.mark.skip
 def test_creating_with_keyword_value():
-    f = Format(['x: u10', 'u10={2*x}'])
+    f = Format.from_parameters(['x: u10', 'u10={2*x}'])
     b = f.pack([6])
     assert b == 'u10=6, u10=12'
 
 @pytest.mark.skip
 def test_items():
-    f = Format(['q:i5', '[u3; {q + 1}]'])
+    f = Format.from_parameters(['q:i5', '[u3; {q + 1}]'])
     b = Bits.from_string('i5=1, u3=2, u3=0')
     f.parse(b)
     assert f[0].value == 1
@@ -217,7 +223,7 @@ class TestMethods:
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format.from_string('empty_header: [const bits = 0x000001b3, u12, u12, bool]')
+        g = Format.from_string('empty_header: [const bits = 0x000001b3; u12; u12; bool]')
         assert f == g
 
     def test_get_item(self):
@@ -273,7 +279,7 @@ def test_format_repr_and_str():
     assert 'my_format' in r
 
 def test_format_get_and_set():
-    f = Format('[u8, u8, u8]')
+    f = Format('[u8; u8; u8]')
     for field in f:
         field.value = 12
     assert f.value == [12, 12, 12]
@@ -367,7 +373,7 @@ def remove_whitespace(s: str) -> str:
     return ''.join(s.split())
 
 def test_from_string():
-    s = 'header: [u8, u4, bool]'
+    s = 'header: [u8; u4; bool]'
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[0].dtype == Dtype.from_string('u8')
@@ -375,20 +381,20 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header: [u8, u4, bool, body:[u8=23, [u4; 3], bool]]"
+    s = "header: [u8; u4; bool; body:[u8=23; [u4; 3]; bool]]"
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[3][0].value == 23
     b = f['body']
     assert b[0].value == 23
     assert remove_whitespace(str(f)) == remove_whitespace(s)
-    assert remove_whitespace(str(b)) == remove_whitespace("body:[u8=23, [u4; 3], bool]")
+    assert remove_whitespace(str(b)) == remove_whitespace("body:[u8=23; [u4; 3]; bool]")
 
     fp = eval(repr(f))
     assert fp == f
 
 def test_interesting_types_from_string():
-    s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
+    s = "  [const f32= -3.75e2 ; _fred : bytes4 = b'abc\x04';] "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f['_fred'].value == b'abc\x04'
@@ -397,7 +403,7 @@ def test_interesting_types_from_string():
 #     f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
 
 def test_unpack():
-    f = Format.from_string('header: [u8, u4, bool]')
+    f = Format.from_string('header: [u8; u4; bool]')
     b = Bits.from_string('u8=1, u4=2, 0b1')
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
@@ -421,15 +427,15 @@ def test_construction_by_appending():
 
 f_str = """
 sequence_header: [
-    sequence_header_code: const hex8 = 0x000001b3,
-    horizontal_size_value: u12,
-    vertical_size_value: u12,
-    aspect_ratio_information: u4,
-    frame_rate_code: u4,
-    bit_rate_value: u18,
-    marker_bit: bool,
-    vbv_buffer_size_value: u10,
-    constrained_parameters_flag: bool,
+    sequence_header_code: const hex8 = 0x000001b3
+    horizontal_size_value: u12
+    vertical_size_value: u12
+    aspect_ratio_information: u4
+    frame_rate_code: u4
+    bit_rate_value: u18
+    marker_bit: bool
+    vbv_buffer_size_value: u10;
+    constrained_parameters_flag: bool
     load_intra_quantiser_matrix: u1
 ]
 """

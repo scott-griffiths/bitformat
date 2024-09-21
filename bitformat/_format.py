@@ -62,7 +62,7 @@ class Format(FieldType):
             name = match.group('name')
             content = match.group('content')
         else:
-            raise ValueError(f"Invalid format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
+            raise ValueError(f"Invalid format string '{format_str}'. It should be in the form '[field1; field2; ...]' or 'name: [field1; field2; ...]'.")
         name = '' if name is None else name.strip()
         return name, content
 
@@ -79,17 +79,21 @@ class Format(FieldType):
         """
         name, content = cls._parse_format_str(s)
         fieldtypes = []
-        # split by ',' but ignore any ',' that is inside []
+        # split by ';' but ignore any ';' that is inside []
         start = 0
         inside_brackets = 0
         for i, p in enumerate(content):
             if p == '[':
                 inside_brackets += 1
             elif p == ']':
-                inside_brackets -= 1
-            elif p == ',':
                 if inside_brackets == 0:
-                    fieldtypes.append(FieldType.from_string(content[start:i]))
+                    raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
+                inside_brackets -= 1
+            elif p == ';' or p == '\n':
+                if inside_brackets == 0:
+                    s = content[start:i].strip()
+                    if s:
+                        fieldtypes.append(FieldType.from_string(content[start:i]))
                     start = i + 1
         if inside_brackets == 0 and start < len(content):
             fieldtypes.append(FieldType.from_string(content[start:]))
@@ -187,7 +191,7 @@ class Format(FieldType):
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._str(indent + 1)
             if i != len(self.fieldtypes) - 1:
-                s += ','
+                s += ';'
             s += '\n'
         s += f"{_indent(indent)}]"
         return s
