@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
-from ._common import colour, Expression, _indent, override, final
+from ._common import colour, Expression, ExpressionError, _indent, override, final
 from typing import Any, Sequence, Iterable
 
 __all__ = ['Field', 'FieldType']
@@ -21,6 +21,11 @@ def _perhaps_convert_to_expression(s: Any) -> tuple[Any | None, None | Expressio
 
 
 class FieldType(abc.ABC):
+
+    subclasses = []
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.subclasses.append(cls)
 
     @final
     def parse(self, b: BitsType) -> int:
@@ -115,11 +120,25 @@ class FieldType(abc.ABC):
         s = s.strip()
         if s == '':
             raise ValueError(f"Can't create a FieldType from an empty string.")
-        try:
-            return Field.from_string(s)
-        except ValueError:
+        errors = []
+        try:  # A stupid way to get it to compile without a circular dependency.
+            1 / 0
+        except ZeroDivisionError:
             from ._format import Format
-            return Format.from_string(s)
+            for ft in cls.subclasses:
+                try:
+                    return ft.from_string(s)
+                except ExpressionError as e:
+                    errors.append((ft, e))
+                    # If we got as far as evaluating an Expression then we probably(?) have the correct
+                    # FieldType, so just return the error so it doesn't get hidden by later ones.
+                    break
+                except ValueError as e:
+                    errors.append((ft, e))
+        if errors:
+            err_str = '\n'.join([f"When attempting conversion to {ft.__name__}:\n    {e.__class__.__name__}: {str(e)}" for ft, e in errors])
+            # Use the error type of the final error instead of always using ValueError, with the same
+            raise ValueError(f"Can't convert the string '{s}' to a FieldType.\n{err_str}")
 
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
@@ -269,15 +288,14 @@ class Field(FieldType):
             except ValueError as e:
                 raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         else:
-            x._dtype_expression = DtypeWithExpression.from_string(str(dtype))  # HACK!
-        x._dtype = x._dtype_expression.evaluate()  # HACK
+            x._dtype_expression = DtypeWithExpression.from_string(str(dtype))  # HACK
         x.name = name
         if const is True and value is None:
             raise ValueError(f"Fields with no value cannot be set to be const.")
         if isinstance(value, str):
             # Special cases converting from strings to bytes and bools.
             value_str = value
-            if x._dtype.return_type is bytes:
+            if x.dtype.return_type is bytes:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, bytes):
@@ -285,7 +303,7 @@ class Field(FieldType):
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bytes object.")
-            if x._dtype.return_type is bool:
+            if x.dtype.return_type is bool:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, int) or value not in (0, 1):
@@ -294,17 +312,14 @@ class Field(FieldType):
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bool.")
         x._setvalue_no_const_check(value)
-        if x._dtype.size == 0:
-            if x._dtype.name in ['bits', 'bytes'] and x.value is not None:
-                x._dtype_expression = DtypeWithExpression(x._dtype.name, len(x.value), x._dtype.is_array, x._dtype.items, x._dtype.endianness)
-                x._dtype = x._dtype_expression.evaluate()  # HACK
-            else:
-                raise ValueError(f"The dtype must have a known length to create a Field. Received '{str(dtype)}'.")
+        if x.dtype.size == 0:
+            if x.dtype.name in ['bits', 'bytes'] and x.value is not None:
+                x._dtype_expression = DtypeWithExpression(x.dtype.name, len(x.value), x.dtype.is_array, x.dtype.items, x.dtype.endianness)
         return x
 
     @override
     def __len__(self) -> int:
-        return self._dtype.bitlength
+        return self.dtype.bitlength
 
     @classmethod
     @override
@@ -410,14 +425,14 @@ class Field(FieldType):
 
     @override
     def _getvalue(self) -> Any:
-        return self._dtype.unpack(self._bits) if self._bits is not None else None
+        return self.dtype.unpack(self._bits) if self._bits is not None else None
 
     def _setvalue_no_const_check(self, value: Any) -> None:
         if value is None:
             self._bits = None
             return
         try:
-            self._bits = self._dtype.pack(value)
+            self._bits = self.dtype.pack(value)
         except ValueError as e:
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 
@@ -431,14 +446,14 @@ class Field(FieldType):
     value = property(_getvalue, _setvalue)
 
     def _getdtype(self) -> Dtype:
-        return self._dtype
+        return self._dtype_expression.base_dtype
 
     dtype = property(_getdtype)
 
     @override
     def _str(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
-        dtype_str = self._dtype if self._dtype_expression is None else self._dtype_expression
+        dtype_str = str(self.dtype)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
@@ -450,13 +465,13 @@ class Field(FieldType):
     def _repr(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
         n = '' if self.name == '' else f"{self.name}: "
-        dtype = f"{const_str}{self._dtype}"
+        dtype = f"{const_str}{self.dtype}"
         v = '' if self.value is None else f" = {self.value}"
         return f"{_indent(indent)}'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        if self._dtype.name == 'bytes':
+        if self.dtype.name == 'bytes':
             const_str = ', const=True' if self.const else ''
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}('{self.__str__()}')"
@@ -472,56 +487,56 @@ class Field(FieldType):
          """
         if not isinstance(other, Field):
             return False
-        if self._dtype != other._dtype:
+        if self.dtype != other.dtype:
             return False
-        if self._dtype.name != 'pad' and self._bits != other._bits:
+        if self.dtype.name != 'pad' and self._bits != other._bits:
             return False
         if self.const != other.const:
             return False
         return True
 
-
-class Find(FieldType):
-
-    def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = '') -> None:
-        super().__init__()
-        self.bits_to_find = Bits.from_string(bits)
-        self.bytealigned = bytealigned
-        self.name = name
-        self._value = None
-
-    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
-        return Bits(), 0
-
-    def to_bits(self) -> Bits:
-        return Bits()
-
-    def clear(self) -> None:
-        self._value = None
-
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
-        if p:
-            self._value = p[0]
-            return p[0]
-        self._value = None
-        return 0
-
-    def flatten(self) -> list[FieldType]:
-        # TODO
-        return []
-
-    def _str(self, indent: int) -> str:
-        name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-        find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
-        s = f"{_indent(indent)}{self.__class__.__name__}({name_str}{find_str})"
-        return s
-
-    def _repr(self, indent: int) -> str:
-        return self._str(indent)
-
-    def _getvalue(self) -> int | None:
-        return self._value
-
-    value = property(_getvalue, None)
+#
+# class Find(FieldType):
+#
+#     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = '') -> None:
+#         super().__init__()
+#         self.bits_to_find = Bits.from_string(bits)
+#         self.bytealigned = bytealigned
+#         self.name = name
+#         self._value = None
+#
+#     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
+#               kwargs: dict[str, Any]) -> tuple[Bits, int]:
+#         return Bits(), 0
+#
+#     def to_bits(self) -> Bits:
+#         return Bits()
+#
+#     def clear(self) -> None:
+#         self._value = None
+#
+#     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+#         p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
+#         if p:
+#             self._value = p[0]
+#             return p[0]
+#         self._value = None
+#         return 0
+#
+#     def flatten(self) -> list[FieldType]:
+#         # TODO
+#         return []
+#
+#     def _str(self, indent: int) -> str:
+#         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
+#         find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
+#         s = f"{_indent(indent)}{self.__class__.__name__}({name_str}{find_str})"
+#         return s
+#
+#     def _repr(self, indent: int) -> str:
+#         return self._str(indent)
+#
+#     def _getvalue(self) -> int | None:
+#         return self._value
+#
+#     value = property(_getvalue, None)

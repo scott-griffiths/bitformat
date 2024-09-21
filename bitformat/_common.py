@@ -18,6 +18,11 @@ def _indent(level: int) -> str:
     return ' ' * (level * indent_size)
 
 
+class ExpressionError(ValueError):
+    """Exception raised when failing to create or parse an Expression."""
+    pass
+
+
 class Colour:
     """A class to hold colour codes for terminal output. If use_colour is False, all codes are empty strings."""
     def __new__(cls, use_colour: bool) -> Colour:
@@ -48,7 +53,7 @@ class Expression:
         """Create an expression object from a string that starts and ends with braces."""
         code_str = code_str.strip()
         if len(code_str) < 2 or code_str[0] != '{' or code_str[-1] != '}':
-            raise ValueError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
+            raise ExpressionError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
         self.code_str = code_str[1:-1].strip()
         self.code = self._compile_safe_eval()
 
@@ -59,20 +64,20 @@ class Expression:
     def _compile_safe_eval(self):
         """Compile the expression, but only allow a whitelist of operations."""
         if '__' in self.code_str:
-            raise ValueError(f"Invalid Expression '{self}'. Double underscores are not permitted.")
+            raise ExpressionError(f"Invalid Expression '{self}'. Double underscores are not permitted.")
         try:
             nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
         except SyntaxError as e:
-            raise ValueError(f"Failed to parse Expression '{self}': {e}")
+            raise ExpressionError(f"Failed to parse Expression '{self}': {e}")
         bad_nodes = nodes_used - Expression.node_whitelist
         if bad_nodes:
-            raise ValueError(f"Disallowed operations used in Expression '{self}'. "
+            raise ExpressionError(f"Disallowed operations used in Expression '{self}'. "
                              f"Disallowed nodes were: {bad_nodes}. "
                              f"If you think this operation should be allowed, please raise a bug report.")
         try:
             code = compile(self.code_str, "<string>", "eval")
         except SyntaxError as e:
-            raise ValueError(f"Failed to compile Expression '{self}': {e}")
+            raise ExpressionError(f"Failed to compile Expression '{self}': {e}")
         return code
 
     def evaluate(self, **kwargs) -> Any:
@@ -80,7 +85,7 @@ class Expression:
         try:
             value = eval(self.code, {"__builtins__": {}}, kwargs)
         except NameError as e:
-            raise ValueError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
+            raise ExpressionError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
         return value
 
     def __str__(self):

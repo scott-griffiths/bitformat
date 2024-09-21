@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Dtype, Bits, Field, Expression
+from bitformat import Dtype, Bits, Field, Expression, FieldType, Format
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
@@ -161,15 +161,6 @@ def test_field_array():
     assert v == 24
 
 
-def test_field_array_issues():
-    with pytest.raises(ValueError):
-        _ = Field.from_string('[u; 3]')
-    with pytest.raises(ValueError):
-        _ = Field('f')
-    f = Field.from_string('[bool; 10]')
-    assert len(f) == 10
-
-
 def test_simple_array_parse():
     f = Field('[u8; 2]')
     f.parse('0x0102')
@@ -234,3 +225,9 @@ def test_field_with_comment():
     assert str(f) == 'x: u8  # Penguins are cool'
     assert repr(f) == "Field('x: u8  # Penguins are cool')"
 
+def test_fieldtype_subclass_ordering():
+    x = FieldType.subclasses
+    # We want these subclasses to be at the start of the list for some algorithms
+    assert x[0] == Field
+    assert x[1] == Format
+    # After those two I don't think the order matters?

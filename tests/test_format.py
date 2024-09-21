@@ -399,8 +399,8 @@ def test_interesting_types_from_string():
     assert f[0].value == -375
     assert f['_fred'].value == b'abc\x04'
 
-# def test_expression_dtypes():
-#     f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
+def test_expression_dtypes():
+    f = Format.from_string('[x: u8; [u{x}; {x + 1}]]')
 
 def test_unpack():
     f = Format.from_string('header: [u8; u4; bool]')
