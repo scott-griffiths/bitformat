@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Array
+from bitformat import Format, Dtype, Bits, Field, Array, FieldType
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -378,8 +378,8 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header :[u8, u4, bool,body:[u8=23, [u4; 3], bool]]"
-    f = Format.from_string(s)
+    s = "header :[u8, u4, bool,body:[u8=23, [u4, 3], bool]]"
+    f = FieldType.from_string(s)
     assert f.name == 'header'
     assert f[3][0].value == 23
     b = f['body']
@@ -428,7 +428,7 @@ def test_construction_by_appending():
     assert f == g == h == i
 
 f_str = """
-sequence_header: [
+sequence_header : [
     sequence_header_code: const hex8 = 0x000001b3
     horizontal_size_value: u12
     vertical_size_value: u12

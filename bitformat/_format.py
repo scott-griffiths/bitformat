@@ -56,14 +56,42 @@ class Format(FieldType):
         return x
 
     @staticmethod
-    def _parse_format_str(format_str: str) -> tuple[str, str]:
+    def _parse_format_str(format_str: str) -> tuple[str, list[str], str]:
         if match := compiled_format_str_pattern.match(format_str):
             name = match.group('name')
             content = match.group('content')
         else:
-            raise ValueError(f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
+            return ('', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
         name = '' if name is None else name.strip()
-        return name, content
+        field_strs = []
+        # split by ',' but ignore any ',' that are inside []
+        start = 0
+        inside_brackets = 0
+        for i, p in enumerate(content):
+            if p == '[':
+                inside_brackets += 1
+            elif p == ']':
+                if inside_brackets == 0:
+                    return ('', [], f"Unbalanced brackets in Format string '[{content}]'.")
+                inside_brackets -= 1
+            elif p == ',' or p == '\n':
+                if inside_brackets == 0:
+                    if s := content[start:i].strip():
+                        field_strs.append(s)
+                    start = i + 1
+        if inside_brackets == 0 and start < len(content):
+            if s := content[start:].strip():
+                field_strs.append(s)
+        if inside_brackets != 0:
+            return ('', [], f"Unbalanced brackets in Format string '[{content}]'.")
+        return name, field_strs, ''
+
+    @classmethod
+    def _from_field_strs(cls, name: str, field_strs: Sequence[str]) -> Format:
+        fieldtypes = []
+        for field_str in field_strs:
+            fieldtypes.append(FieldType.from_string(field_str))
+        return Format.from_parameters(fieldtypes, name)
 
     @classmethod
     @override
@@ -76,29 +104,10 @@ class Format(FieldType):
         :return: The Format instance.
         :rtype: Format
         """
-        name, content = cls._parse_format_str(s)
-        fieldtypes = []
-        # split by ',' but ignore any ',' that is inside []
-        start = 0
-        inside_brackets = 0
-        for i, p in enumerate(content):
-            if p == '[':
-                inside_brackets += 1
-            elif p == ']':
-                if inside_brackets == 0:
-                    raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
-                inside_brackets -= 1
-            elif p == ',' or p == '\n':
-                if inside_brackets == 0:
-                    if s := content[start:i].strip():
-                        fieldtypes.append(FieldType.from_string(s))
-                    start = i + 1
-        if inside_brackets == 0 and start < len(content):
-            if s := content[start:].strip():
-                fieldtypes.append(FieldType.from_string(s))
-        if inside_brackets != 0:
-            raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
-        return Format.from_parameters(fieldtypes, name)
+        name, field_strs, err_msg = cls._parse_format_str(s)
+        if err_msg:
+            raise ValueError(err_msg)
+        return cls._from_field_strs(name, field_strs)
 
     @override
     def __len__(self):

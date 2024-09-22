@@ -125,16 +125,30 @@ class FieldType(abc.ABC):
             1 / 0
         except ZeroDivisionError:
             from ._format import Format
-            for ft in cls.fieldtype_classes:
+            # Try Format first
+            name, field_strs, err_msg = Format._parse_format_str(s)
+            # if err_msg:
+            #     raise ValueError(err_msg)
+            if not err_msg:
                 try:
-                    return ft.from_string(s)
+                    return Format._from_field_strs(name, field_strs)
+                except ValueError:
+                    # It might have looked like a Format, but been a array-like Dtype.
+                    # TODO: We really need to tell [u3; 3] from [u3, u3] here. It would be easiest to
+                    # ask: is this string an array Dtype, as that's straightforward. So we should
+                    # really be doing Field before Format here.
+                    pass
+
+            for fieldtype in [f for f in cls.fieldtype_classes if f is not Format]:
+                try:
+                    return fieldtype.from_string(s)
                 except ExpressionError as e:
-                    errors.append((ft, e))
+                    errors.append((fieldtype, e))
                     # If we got as far as evaluating an Expression then we probably(?) have the correct
                     # FieldType, so just return the error so it doesn't get hidden by later ones.
                     break
                 except ValueError as e:
-                    errors.append((ft, e))
+                    errors.append((fieldtype, e))
         if errors:
             err_str = '\n'.join([f"When attempting conversion to {ft.__name__}:\n    {e.__class__.__name__}: {str(e)}" for ft, e in errors])
             # Use the error type of the final error instead of always using ValueError, with the same
