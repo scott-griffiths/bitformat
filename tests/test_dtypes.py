@@ -1,7 +1,7 @@
 
 import pytest
 import sys
-from bitformat import Dtype, Bits
+from bitformat import Dtype, Bits, Endianness
 from bitformat._dtypes import DtypeDefinition, Register
 
 sys.path.insert(0, '..')
@@ -158,9 +158,9 @@ def test_len_errors():
             _ = len(d)
 
 def test_endianness():
-    d_le = Dtype.from_parameters('u', 16, endianness='le')
-    d_be = Dtype.from_parameters('u', 16, endianness='be')
-    d_ne = Dtype.from_parameters('u', 16, endianness='ne')
+    d_le = Dtype.from_parameters('u', 16, endianness=Endianness.LITTLE)
+    d_be = Dtype.from_parameters('u', 16, endianness=Endianness.BIG)
+    d_ne = Dtype.from_parameters('u', 16, endianness=Endianness.NATIVE)
 
     be = d_be.pack(0x1234)
     le = d_le.pack(0x1234)
@@ -172,9 +172,9 @@ def test_endianness():
     assert le == '0x3412'
 
 def test_endianness_type_str():
-    d_le = Dtype.from_parameters('u', 16, endianness='le')
-    d_be = Dtype.from_parameters('u', 16, endianness='be')
-    d_ne = Dtype.from_parameters('u', 16, endianness='ne')
+    d_le = Dtype.from_parameters('u', 16, endianness=Endianness.LITTLE)
+    d_be = Dtype.from_parameters('u', 16, endianness=Endianness.BIG)
+    d_ne = Dtype.from_parameters('u', 16, endianness=Endianness.NATIVE)
 
     d_le2 = Dtype('u_le16')
     d_be2 = Dtype('u_be16')
@@ -186,8 +186,8 @@ def test_endianness_type_str():
 
 def test_endianness_errors():
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('u', 15, endianness='be')
+        _ = Dtype.from_parameters('u', 15, endianness=Endianness.BIG)
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('bool', endianness='le')
+        _ = Dtype.from_parameters('bool', endianness=Endianness.LITTLE)
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('bytes', 16, endianness='ne')
+        _ = Dtype.from_parameters('bytes', 16, endianness=Endianness.LITTLE)

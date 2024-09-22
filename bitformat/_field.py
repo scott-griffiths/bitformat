@@ -125,30 +125,32 @@ class FieldType(abc.ABC):
             1 / 0
         except ZeroDivisionError:
             from ._format import Format
-            # Try Format first
+            # Try Field first as it's the simplest and common
+            try:
+                return Field.from_string(s)
+            except ValueError as e:
+                errors.append((Field, e))
+            # Then try Format
             name, field_strs, err_msg = Format._parse_format_str(s)
-            # if err_msg:
-            #     raise ValueError(err_msg)
-            if not err_msg:
+            if err_msg:
+                errors.append((Format, err_msg))
+            else:
+                errors.pop()  # Remove error about not converting to Field
                 try:
                     return Format._from_field_strs(name, field_strs)
-                except ValueError:
-                    # It might have looked like a Format, but been a array-like Dtype.
-                    # TODO: We really need to tell [u3; 3] from [u3, u3] here. It would be easiest to
-                    # ask: is this string an array Dtype, as that's straightforward. So we should
-                    # really be doing Field before Format here.
-                    pass
-
-            for fieldtype in [f for f in cls.fieldtype_classes if f is not Format]:
-                try:
-                    return fieldtype.from_string(s)
-                except ExpressionError as e:
-                    errors.append((fieldtype, e))
-                    # If we got as far as evaluating an Expression then we probably(?) have the correct
-                    # FieldType, so just return the error so it doesn't get hidden by later ones.
-                    break
                 except ValueError as e:
-                    errors.append((fieldtype, e))
+                    errors.append((Format, e))
+
+            # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:
+            #     try:
+            #         return fieldtype.from_string(s)
+            #     except ExpressionError as e:
+            #         errors.append((fieldtype, e))
+            #         # If we got as far as evaluating an Expression then we probably(?) have the correct
+            #         # FieldType, so just return the error so it doesn't get hidden by later ones.
+            #         break
+            #     except ValueError as e:
+            #         errors.append((fieldtype, e))
         if errors:
             err_str = '\n'.join([f"When attempting conversion to {ft.__name__}:\n    {e.__class__.__name__}: {str(e)}" for ft, e in errors])
             # Use the error type of the final error instead of always using ValueError, with the same
@@ -254,6 +256,7 @@ class FieldType(abc.ABC):
         self._name = val
 
     name = property(_get_name, _set_name)
+    value = property(_getvalue, _setvalue)
 
     def _get_comment(self) -> str:
         return self._comment

@@ -39,14 +39,13 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_parameters(cls, name: str, size: int = 0, is_array: bool = False, items: int = 1, endianness: str = '') -> Dtype:
+    def from_parameters(cls, name: str, size: int = 0, is_array: bool = False, items: int = 1, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        endianness = Endianness(endianness)
         if is_array:
             return Register().get_array_dtype(name, size, items, endianness)
         else:
@@ -481,7 +480,7 @@ class Register:
 class DtypeWithExpression:
     """Used internally. A Dtype that can contain an Expression instead of fixed values for size or items."""
 
-    def __init__(self, name: str, size: int | Expression, is_array: bool, items: int | Expression, endianness: str = ''):
+    def __init__(self, name: str, size: int | Expression, is_array: bool, items: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
         if isinstance(size, Expression):
             self.size_expression = size
             size = 0

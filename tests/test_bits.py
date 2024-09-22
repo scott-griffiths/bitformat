@@ -636,10 +636,10 @@ def test_native_endian_floats():
         assert a.f_le == 0.55
         assert a.f_ne == 0.55
         d = Dtype('f_ne64')
-        d2 = Dtype.from_parameters('f', 64, endianness='ne')
+        d2 = Dtype.from_parameters('f', 64, endianness=Endianness.NATIVE)
         assert d == d2
         assert d.endianness == Endianness.NATIVE
-        d3 = Dtype.from_parameters('f', 64, endianness='le')
+        d3 = Dtype.from_parameters('f', 64, endianness=Endianness.LITTLE)
         assert d != d3
 
 

@@ -378,7 +378,7 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header = [u8, u4, bool,body:[u8=23, [u4, 3], bool]]"
+    s = "header = [u8, u4, bool,body=[u8=23, [u4; 3], bool]]"
     f = FieldType.from_string(s)
     assert f.name == 'header'
     assert f[3][0].value == 23
