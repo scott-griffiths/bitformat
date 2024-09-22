@@ -62,7 +62,7 @@ class TestCreation:
 
     def testComplicatedCreation(self):
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
-        g = Format('header: [const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True]')
+        g = Format('header= [const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True]')
         assert f == g
         assert f.name == 'header'
         b = f.pack([352])
@@ -128,7 +128,7 @@ def test_building():
 
 @pytest.mark.skip
 def test_packing_bug():
-    f = Format("bug: [u8, [u8, u8]]")
+    f = Format("bug = [u8, [u8, u8]]")
     f.pack([10, [20, 30]])
     assert f.value == [10, [20, 30]]
 
@@ -223,7 +223,7 @@ class TestMethods:
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format.from_string('empty_header: [const bits = 0x000001b3, u12, u12, bool]')
+        g = Format.from_string('empty_header = [const bits = 0x000001b3, u12, u12, bool]')
         assert f == g
 
     def test_get_item(self):
@@ -370,7 +370,7 @@ def test_partial_parse():
 
 
 def test_from_string():
-    s = 'header: [u8,u4, bool]'
+    s = 'header = [u8,u4, bool]'
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[0].dtype == Dtype.from_string('u8')
@@ -378,14 +378,14 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header :[u8, u4, bool,body:[u8=23, [u4, 3], bool]]"
+    s = "header = [u8, u4, bool,body:[u8=23, [u4, 3], bool]]"
     f = FieldType.from_string(s)
     assert f.name == 'header'
     assert f[3][0].value == 23
     b = f['body']
     assert b[0].value == 23
     assert str(f) == str(Format(str(s)))
-    assert str(b) == str(Format("body:[u8=23, [u4; 3], bool]"))
+    assert str(b) == str(Format("body = [u8=23, [u4; 3], bool]"))
 
     fp = eval(repr(f))
     assert fp == f
@@ -397,7 +397,7 @@ def test_interesting_types_from_string():
     assert f['_fred'].value == b'abc\x04'
 
 # def test_expression_dtypes():
-#     f = Format.from_string(':[x: u8; [u{x}; {x + 1}]]')
+#     f = Format.from_string('[x: u8; [u{x}; {x + 1}]]')
 #     b = Bits('u8=3, u3=1, u4=2, u4=3')
 #     f.parse(b)
 #     assert f['x'].value == 3
@@ -405,7 +405,7 @@ def test_interesting_types_from_string():
 #     assert f.value == [3, [1, 2, 3]]
 
 def test_unpack():
-    f = Format.from_string('header: [u8, u4, bool]')
+    f = Format.from_string('header = [u8, u4, bool]')
     b = Bits.from_string('u8=1, u4=2, 0b1')
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
@@ -428,7 +428,7 @@ def test_construction_by_appending():
     assert f == g == h == i
 
 f_str = """
-sequence_header : [
+sequence_header = [
     sequence_header_code: const hex8 = 0x000001b3
     horizontal_size_value: u12
     vertical_size_value: u12
@@ -446,11 +446,11 @@ def test_example_format():
     f = Format(f_str)
 
 def test_format_str_equivalences():
-    f1 = Format("  abc : [ f16, u5, [bool; 4]]")
-    f2 = Format("abc:[f16,u5,[  bool  ;4]  ]  ")
+    f1 = Format("  abc = [ f16, u5, [bool; 4]]")
+    f2 = Format("abc=[f16,u5,[  bool  ;4]  ]  ")
     f3 = Format("""
     
-    abc:
+    abc = 
     [
     f16,
     u5

@@ -10,7 +10,7 @@ from ._field import FieldType, Field
 
 __all__ = ['Format']
 
-format_str_pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
+format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\[(?P<content>.*)\]\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
@@ -61,7 +61,7 @@ class Format(FieldType):
             name = match.group('name')
             content = match.group('content')
         else:
-            return ('', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
+            return ('', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'.")
         name = '' if name is None else name.strip()
         field_strs = []
         # split by ',' but ignore any ',' that are inside []
@@ -194,7 +194,7 @@ class Format(FieldType):
 
     @override
     def _str(self, indent: int) -> str:
-        name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
+        name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
         s = f"{_indent(indent)}{name_str}[\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._str(indent + 1) + '\n'
