@@ -30,7 +30,7 @@ class TestCreation:
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
-        f = Format(':[x: f16]')
+        f = Format('[x: f16]')
         assert f.fieldtypes[0].name == 'x'
         assert f.fieldtypes[0].dtype == Dtype.from_parameters('f', 16)
 
@@ -62,7 +62,7 @@ class TestCreation:
 
     def testComplicatedCreation(self):
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'], 'header')
-        g = Format('header: [const bits = 0x000001b3; u12; height: const u12 = 288; flag: const bool = True]')
+        g = Format('header: [const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True]')
         assert f == g
         assert f.name == 'header'
         b = f.pack([352])
@@ -223,7 +223,7 @@ class TestMethods:
         f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format.from_string('empty_header: [const bits = 0x000001b3; u12; u12; bool]')
+        g = Format.from_string('empty_header: [const bits = 0x000001b3, u12, u12, bool]')
         assert f == g
 
     def test_get_item(self):
@@ -279,7 +279,7 @@ def test_format_repr_and_str():
     assert 'my_format' in r
 
 def test_format_get_and_set():
-    f = Format(':[u8; u8; u8]')
+    f = Format('[u8, u8, u8]')
     for field in f:
         field.value = 12
     assert f.value == [12, 12, 12]
@@ -370,7 +370,7 @@ def test_partial_parse():
 
 
 def test_from_string():
-    s = 'header: [u8; u4; bool]'
+    s = 'header: [u8,u4, bool]'
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[0].dtype == Dtype.from_string('u8')
@@ -378,20 +378,20 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header: [u8; u4; bool; body:[u8=23; [u4; 3]; bool]]"
+    s = "header :[u8, u4, bool,body:[u8=23, [u4; 3], bool]]"
     f = Format.from_string(s)
     assert f.name == 'header'
     assert f[3][0].value == 23
     b = f['body']
     assert b[0].value == 23
     assert str(f) == str(Format(str(s)))
-    assert str(b) == str(Format("body:[u8=23; [u4; 3]; bool]"))
+    assert str(b) == str(Format("body:[u8=23, [u4; 3], bool]"))
 
     fp = eval(repr(f))
     assert fp == f
 
 def test_interesting_types_from_string():
-    s = "  :[const f32= -3.75e2 ; _fred : bytes4 = b'abc\x04';] "
+    s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f['_fred'].value == b'abc\x04'
@@ -405,7 +405,7 @@ def test_interesting_types_from_string():
 #     assert f.value == [3, [1, 2, 3]]
 
 def test_unpack():
-    f = Format.from_string('header: [u8; u4; bool]')
+    f = Format.from_string('header: [u8, u4, bool]')
     b = Bits.from_string('u8=1, u4=2, 0b1')
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
@@ -436,7 +436,7 @@ sequence_header: [
     frame_rate_code: u4
     bit_rate_value: u18
     marker_bit: bool
-    vbv_buffer_size_value: u10;
+    vbv_buffer_size_value: u10,
     constrained_parameters_flag: bool
     load_intra_quantiser_matrix: u1
 ]
@@ -446,16 +446,16 @@ def test_example_format():
     f = Format(f_str)
 
 def test_format_str_equivalences():
-    f1 = Format("  abc : [ f16; u5; [bool; 4]]")
-    f2 = Format("abc:[f16;u5;[  bool  ;4]  ]  ")
+    f1 = Format("  abc : [ f16, u5, [bool; 4]]")
+    f2 = Format("abc:[f16,u5,[  bool  ;4]  ]  ")
     f3 = Format("""
     
     abc:
     [
-    f16;
+    f16,
     u5
     
-    [bool;4];]
+    [bool;4],]
     """)
     assert f1 == f2 == f3
     print(f1, f2, f3)

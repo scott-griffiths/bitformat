@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from ._bits import Bits
-from ._dtypes import Dtype
 from typing import Sequence, Any, Iterable
 import copy
 import re
@@ -11,7 +10,7 @@ from ._field import FieldType, Field
 
 __all__ = ['Format']
 
-format_str_pattern = r"^(?P<name>[^:]*):\s*\[(?P<content>.*)\]\s*$"
+format_str_pattern = r"^(?:(?P<name>[^:]+):)?\s*\[(?P<content>.*)\]\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
@@ -62,7 +61,7 @@ class Format(FieldType):
             name = match.group('name')
             content = match.group('content')
         else:
-            raise ValueError(f"Invalid format string '{format_str}'. It should be in the form '[field1; field2; ...]' or 'name: [field1; field2; ...]'.")
+            raise ValueError(f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name: [field1, field2, ...]'.")
         name = '' if name is None else name.strip()
         return name, content
 
@@ -79,7 +78,7 @@ class Format(FieldType):
         """
         name, content = cls._parse_format_str(s)
         fieldtypes = []
-        # split by ';' but ignore any ';' that is inside []
+        # split by ',' but ignore any ',' that is inside []
         start = 0
         inside_brackets = 0
         for i, p in enumerate(content):
@@ -89,7 +88,7 @@ class Format(FieldType):
                 if inside_brackets == 0:
                     raise ValueError(f"Unbalanced brackets in Format string '[{content}]'.")
                 inside_brackets -= 1
-            elif p == ';' or p == '\n':
+            elif p == ',' or p == '\n':
                 if inside_brackets == 0:
                     if s := content[start:i].strip():
                         fieldtypes.append(FieldType.from_string(s))
