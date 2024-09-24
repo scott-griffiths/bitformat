@@ -61,7 +61,7 @@ class Format(FieldType):
             name = match.group('name')
             content = match.group('content')
         else:
-            return ('', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'.")
+            return '', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'."
         name = '' if name is None else name.strip()
         field_strs = []
         # split by ',' but ignore any ',' that are inside []
@@ -72,7 +72,7 @@ class Format(FieldType):
                 inside_brackets += 1
             elif p == ']':
                 if inside_brackets == 0:
-                    return ('', [], f"Unbalanced brackets in Format string '[{content}]'.")
+                    return '', [], f"Unbalanced brackets in Format string '[{content}]'."
                 inside_brackets -= 1
             elif p == ',' or p == '\n':
                 if inside_brackets == 0:
@@ -80,10 +80,12 @@ class Format(FieldType):
                         field_strs.append(s)
                     start = i + 1
         if inside_brackets == 0 and start < len(content):
+            if len(field_strs) == 0:
+                raise ValueError(f"Format strings must contain a comma even when a single item. Try '[{content},]' instead.")
             if s := content[start:].strip():
                 field_strs.append(s)
         if inside_brackets != 0:
-            return ('', [], f"Unbalanced brackets in Format string '[{content}]'.")
+            return '', [], f"Unbalanced brackets in Format string '[{content}]'."
         return name, field_strs, ''
 
     @classmethod

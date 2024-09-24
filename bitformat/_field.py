@@ -126,20 +126,23 @@ class FieldType(abc.ABC):
         except ZeroDivisionError:
             from ._format import Format
             # Try Field first as it's the simplest and common
-            try:
-                return Field.from_string(s)
-            except ValueError as e:
-                errors.append((Field, e))
-            # Then try Format
-            name, field_strs, err_msg = Format._parse_format_str(s)
-            if err_msg:
-                errors.append((Format, err_msg))
-            else:
-                errors.pop()  # Remove error about not converting to Field
+            # But we know it's not a Field if it contains any commas.
+            if ',' not in s:
                 try:
-                    return Format._from_field_strs(name, field_strs)
+                    return Field.from_string(s)
                 except ValueError as e:
-                    errors.append((Format, e))
+                    errors.append((Field, e))
+            else:
+                # Then try Format
+                name, field_strs, err_msg = Format._parse_format_str(s)
+                if err_msg:
+                    errors.append((Format, err_msg))
+                else:
+                    try:
+                        return Format._from_field_strs(name, field_strs)
+                    except ValueError as e:
+                        pass
+                        # errors.append((Format, e))
 
             # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:
             #     try:
@@ -155,6 +158,8 @@ class FieldType(abc.ABC):
             err_str = '\n'.join([f"When attempting conversion to {ft.__name__}:\n    {e.__class__.__name__}: {str(e)}" for ft, e in errors])
             # Use the error type of the final error instead of always using ValueError, with the same
             raise ValueError(f"Can't convert the string '{s}' to a FieldType.\n{err_str}")
+        else:
+            raise ValueError(f"Can't convert the string '{s}' to a FieldType.")
 
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:

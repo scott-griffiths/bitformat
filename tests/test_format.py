@@ -30,7 +30,9 @@ class TestCreation:
         assert f.name == 'x'
 
     def test_create_from_dtype_string(self):
-        f = Format('[x: f16]')
+        with pytest.raises(ValueError):
+            _ = Format('[x: f16]')  # No comma
+        f = Format('[x: f16,]')
         assert f.fieldtypes[0].name == 'x'
         assert f.fieldtypes[0].dtype == Dtype.from_parameters('f', 16)
 
