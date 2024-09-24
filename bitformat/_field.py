@@ -416,12 +416,16 @@ class Field(FieldType):
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)
-        if len(b) < len(self):
-            raise ValueError(f"Field '{str(self)}' needs {len(self)} bits to parse, but only {len(b)} were available.")
-        self._bits = b[:len(self)]
+        if self._dtype_expression is not None:
+            dtype = self._dtype_expression.evaluate(vars_)
+        else:
+            dtype = self._dtype_expression.base_dtype
+        if len(b) < dtype.bitlength:
+            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but only {len(b)} were available.")
+        self._bits = b[:dtype.bitlength]
         if self.name != '':
             vars_[self.name] = self.value
-        return len(self)
+        return dtype.bitlength
 
     @override
     def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
@@ -463,14 +467,14 @@ class Field(FieldType):
     value = property(_getvalue, _setvalue)
 
     def _getdtype(self) -> Dtype:
-        return self._dtype_expression.base_dtype
+        return self._dtype_expression.evaluate({})
 
     dtype = property(_getdtype)
 
     @override
     def _str(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
-        dtype_str = str(self.dtype)
+        dtype_str = str(self._dtype_expression)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
@@ -482,7 +486,7 @@ class Field(FieldType):
     def _repr(self, indent: int) -> str:
         const_str = 'const ' if self.const else ''
         n = '' if self.name == '' else f"{self.name}: "
-        dtype = f"{const_str}{self.dtype}"
+        dtype = f"{const_str}{self._dtype_expression}"
         v = '' if self.value is None else f" = {self.value}"
         return f"{_indent(indent)}'{n}{dtype}{v}'"
 

@@ -397,12 +397,16 @@ def test_interesting_types_from_string():
     assert f['_fred'].value == b'abc\x04'
 
 # def test_expression_dtypes():
-#     f = Format.from_string('[x: u8; [u{x}; {x + 1}]]')
-#     b = Bits('u8=3, u3=1, u4=2, u4=3')
+#     a = Field.from_string('u{testing}')
+#     assert str(a) == 'u{testing}'
+#     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
+#     assert str(d) == 'my_name: [f{4*e}; {a+b}]'
+#     f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
+#     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
 #     f.parse(b)
 #     assert f['x'].value == 3
-#     assert f[1].value == [1, 2, 3]
-#     assert f.value == [3, [1, 2, 3]]
+#     assert f[1].value == [1, 2, 3, 4]
+#     assert f.value == [3, [1, 2, 3, 4]]
 
 def test_unpack():
     f = Format.from_string('header = [u8, u4, bool]')

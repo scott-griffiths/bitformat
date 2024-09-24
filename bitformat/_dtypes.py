@@ -536,18 +536,20 @@ class DtypeWithExpression:
             x.base_dtype = Register().get_single_dtype(name, size, endianness)
             return x
 
-    def evaluate(self, **kwargs) -> Dtype:
+    def evaluate(self, vars) -> Dtype:
         if self.size_expression is None and self.items_expression is None:
+            return self.base_dtype
+        if not vars:
             return self.base_dtype
         if self.base_dtype.is_array:
             name = self.base_dtype.name
-            size = self.size_expression.evaluate(**kwargs) if self.size_expression else self.base_dtype.size
-            items = self.items_expression.evaluate(**kwargs) if self.items_expression else self.base_dtype.items
+            size = self.size_expression.evaluate(**vars) if (self.size_expression and vars) else self.base_dtype.size
+            items = self.items_expression.evaluate(**vars) if (self.items_expression and vars) else self.base_dtype.items
             endianness = self.base_dtype.endianness
             return Register().get_array_dtype(name, size, items, endianness)
         else:
             name = self.base_dtype.name
-            size = self.size_expression.evaluate(**kwargs) if self.size_expression else self.base_dtype.size
+            size = self.size_expression.evaluate(**vars) if (self.size_expression and vars) else self.base_dtype.size
             endianness = self.base_dtype.endianness
             return Register().get_single_dtype(name, size, endianness)
 
@@ -557,5 +559,6 @@ class DtypeWithExpression:
         size_str = '' if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
         if not self.base_dtype.is_array:
             return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
-        items_str = '' if self.base_dtype.items == 0 else f" {self.base_dtype.items}"
-        return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str};{items_str}]"
+        hide_items = self.base_dtype.items == 0 and self.items_expression is None
+        items_str = '' if hide_items else (self.items_expression if self.items_expression else str(self.base_dtype.items))
+        return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}; {items_str}]"
