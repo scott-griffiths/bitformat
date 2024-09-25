@@ -120,46 +120,48 @@ class FieldType(abc.ABC):
         s = s.strip()
         if s == '':
             raise ValueError(f"Can't create a FieldType from an empty string.")
-        errors = []
         try:  # A stupid way to get it to compile without a circular dependency.
             1 / 0
         except ZeroDivisionError:
             from ._format import Format
-            # Try Field first as it's the simplest and common
-            # But we know it's not a Field if it contains any commas.
-            if ',' not in s:
+            if ',' in s:
+                # If it's legal it must be a Format.
                 try:
-                    return Field.from_string(s)
+                    name, field_strs, err_msg = Format._parse_format_str(s)
                 except ValueError as e:
-                    errors.append((Field, e))
-            else:
-                # Then try Format
-                name, field_strs, err_msg = Format._parse_format_str(s)
-                if err_msg:
-                    errors.append((Format, err_msg))
-                else:
+                    e.add_note(f" -- tried to parse'{s}' as a Format.")
+                    raise e
+                field_types = []
+                for fs in field_strs:
                     try:
-                        return Format._from_field_strs(name, field_strs)
+                        f = FieldType.from_string(fs)
                     except ValueError as e:
-                        pass
-                        # errors.append((Format, e))
+                        e.add_note(f" -- tried to parse '{fs}' as any FieldType.")
+                        raise e
+                    else:
+                        field_types.append(f)
+                f = Format.from_parameters(field_types, name)
+                return f
+            else:
+                try:
+                    f = Field.from_string(s)
+                    return f
+                except ValueError as e:
+                    e.add_note(f" -- tried to parse '{s}' as a Field.")
+                    raise e
 
+            # TODO: We'll need logic like this once we have new FieldTypes.
             # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:
             #     try:
             #         return fieldtype.from_string(s)
             #     except ExpressionError as e:
-            #         errors.append((fieldtype, e))
+            #         raise ValueError(f"Error evaluating expression in '{s}': {str(e)}"
             #         # If we got as far as evaluating an Expression then we probably(?) have the correct
             #         # FieldType, so just return the error so it doesn't get hidden by later ones.
             #         break
             #     except ValueError as e:
-            #         errors.append((fieldtype, e))
-        if errors:
-            err_str = '\n'.join([f"When attempting conversion to {ft.__name__}:\n    {e.__class__.__name__}: {str(e)}" for ft, e in errors])
-            # Use the error type of the final error instead of always using ValueError, with the same
-            raise ValueError(f"Can't convert the string '{s}' to a FieldType.\n{err_str}")
-        else:
-            raise ValueError(f"Can't convert the string '{s}' to a FieldType.")
+            #         e.add_note(f"  Can't parse the string '{s}' as a {fieldtype.__name__}.")
+            #         raise
 
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
