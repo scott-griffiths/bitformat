@@ -112,6 +112,8 @@ class FieldType(abc.ABC):
         """
         Create a FieldType instance from a string.
 
+        The type is inferred from the string, so it can be a Field, Format, or other FieldType.
+
         :param s: The string to parse.
         :type s: str
         :return: The FieldType instance.
@@ -410,11 +412,12 @@ class Field(FieldType):
         else:
             dtype = self._dtype_expression.base_dtype
         if len(b) < dtype.bitlength:
-            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but only {len(b)} were available.")
-        self._bits = b[:dtype.bitlength]
+            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b)} were available.")
+        # Deal with a stretchy dtype
+        self._bits = b[:dtype.bitlength] if dtype.bitlength != 0 else b
         if self.name != '':
             vars_[self.name] = self.value
-        return dtype.bitlength
+        return len(self._bits)
 
     @override
     def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],

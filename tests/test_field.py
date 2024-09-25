@@ -231,3 +231,15 @@ def test_multiline_fields():
         f2 = Field.from_string('x: u8\n')
     with pytest.raises(ValueError):
         f3 = Field.from_string('x: \nu8')
+
+def test_stretchy_field():
+    s = Field('u')
+    v = s.unpack('0xff')
+    assert v == 255
+    assert Dtype('i').unpack('0xf') == -1
+    assert Field('i: i').unpack('0xf') == -1
+    f = Field('f')
+    assert f.unpack('0x0000') == 0.0
+    assert f.unpack('0x3f800000') == 1.0
+    with pytest.raises(ValueError):
+        _ = f.unpack('0x3f')

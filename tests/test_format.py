@@ -477,3 +477,17 @@ def test_format_str_equivalences():
     assert repr(f1) == repr(f2) == repr(f3)
     f4 = eval(repr(f1))
     assert f4 == f1
+
+def test_stretchy_field():
+    f = Format('[u8, u]')
+    f.unpack('0xff1')
+    assert f.value == [255, 1]
+
+    with pytest.raises(ValueError):
+        _ = Format('[u, u8]')
+
+    g = Format('[u5, bytes]')
+    g.parse(b'hello_world')
+    assert g[0].value == 13
+    with pytest.raises(ValueError):
+        _ = g[1].value

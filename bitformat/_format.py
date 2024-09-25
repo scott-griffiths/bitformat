@@ -47,11 +47,16 @@ class Format(FieldType):
             fieldtypes = []
         x.name = name
         x.vars = {}
+        stetchy_field = ''
         for fieldtype in fieldtypes:
+            if stetchy_field:
+                raise ValueError(f"A Field with no length can only occur at the end of a Format. Field '{stetchy_field}' is before the end.")
             if isinstance(fieldtype, str):
                 fieldtype = Field.from_string(fieldtype)
             if not isinstance(fieldtype, FieldType):
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+            if len(fieldtype) == 0:
+                stetchy_field = str(fieldtype)
             x.fieldtypes.append(fieldtype)
         return x
 
