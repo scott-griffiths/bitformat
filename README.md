@@ -165,8 +165,8 @@ The `parse` method is able to lazily parse the input bytes, and simply returns t
 
 ## More to come
 
-The `bitformat` library is still pre-alpha and is being actively developed.
-I'm hoping to make an alpha release or two in late 2024, with more features added in 2025.
+The `bitformat` library is still in alpha and is being actively developed.
+The first release was in September 2024, with more features being added steadily.
 
 There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
 

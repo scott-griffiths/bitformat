@@ -30,9 +30,9 @@ jobs:
           - name: 🐧
             runs-on: ubuntu-latest
         python:
-          - name: CPython 3.10
-            major_dot_minor: '3.10'
-            action: '3.10'
+          - name: CPython 3.11
+            major_dot_minor: '3.11'
+            action: '3.11'
     steps:
       - uses: actions/checkout@v3
 
@@ -83,18 +83,15 @@ jobs:
           - name: 🪟
             runs-on: windows-latest
         python:
-          - name: CPython 3.10
-            major_dot_minor: '3.10'
-            action: '3.10'
           - name: CPython 3.11
             major_dot_minor: '3.11'
             action: '3.11'
           - name: CPython 3.12
             major_dot_minor: '3.12'
             action: '3.12'
-          - name: PyPy 3.10
-            major_dot_minor: '3.10'
-            action: 'pypy-3.10'
+          - name: PyPy 3.11
+            major_dot_minor: '3.11'
+            action: 'pypy-3.11'
 
 
     steps:
