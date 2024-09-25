@@ -136,19 +136,18 @@ class FieldType(abc.ABC):
                     try:
                         f = FieldType.from_string(fs)
                     except ValueError as e:
-                        e.add_note(f" -- tried to parse '{fs}' as any FieldType.")
+                        no_of_notes =  len(getattr(e, '__notes__', []))
+                        max_notes = 2
+                        if no_of_notes < max_notes:
+                            e.add_note(f" -- when parsing Format '{s}'.")
+                        if no_of_notes == max_notes:
+                            e.add_note(" -- ...")
                         raise e
                     else:
                         field_types.append(f)
-                f = Format.from_parameters(field_types, name)
-                return f
+                return Format.from_parameters(field_types, name)
             else:
-                try:
-                    f = Field.from_string(s)
-                    return f
-                except ValueError as e:
-                    e.add_note(f" -- tried to parse '{s}' as a Field.")
-                    raise e
+                return Field.from_string(s)
 
             # TODO: We'll need logic like this once we have new FieldTypes.
             # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:

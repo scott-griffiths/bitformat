@@ -14,13 +14,13 @@ NAME_EXPRESSION_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)({.*})$
 
 def parse_name_expression_token(fmt: str) -> tuple[str, str]:
     if not (match := NAME_EXPRESSION_RE.match(fmt)):
-        raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
+        raise ValueError(f"Can't parse token '{fmt}' as 'name[length]'.")
     name, length_str = match.groups()
     return name, length_str if length_str else '0'
 
 def parse_name_size_token(fmt: str) -> tuple[str, int]:
     if not (match := NAME_INT_RE.match(fmt)):
-        raise ValueError(f"Can't parse 'name[length]' token '{fmt}'.")
+        raise ValueError(f"Can't parse token '{fmt}' as 'name[length]'.")
     name, length_str = match.groups()
     return name, int(length_str) if length_str else 0
 

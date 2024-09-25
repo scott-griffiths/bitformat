@@ -392,6 +392,14 @@ def test_recursive_from_string():
     fp = eval(repr(f))
     assert fp == f
 
+def test_recursive_error_message():
+    try:
+        f = Format('[u1, [u1, [u1, [u1, [u1, [u1, penguin]]]]]]')
+    except ValueError as e:
+        assert len(e.__notes__) == 3
+    else:
+        assert False
+
 def test_interesting_types_from_string():
     s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
     f = Format.from_string(s)
