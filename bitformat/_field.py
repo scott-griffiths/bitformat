@@ -126,26 +126,7 @@ class FieldType(abc.ABC):
             from ._format import Format
             if ',' in s:
                 # If it's legal it must be a Format.
-                try:
-                    name, field_strs, err_msg = Format._parse_format_str(s)
-                except ValueError as e:
-                    e.add_note(f" -- tried to parse'{s}' as a Format.")
-                    raise e
-                field_types = []
-                for fs in field_strs:
-                    try:
-                        f = FieldType.from_string(fs)
-                    except ValueError as e:
-                        no_of_notes =  len(getattr(e, '__notes__', []))
-                        max_notes = 2
-                        if no_of_notes < max_notes:
-                            e.add_note(f" -- when parsing Format '{s}'.")
-                        if no_of_notes == max_notes:
-                            e.add_note(" -- ...")
-                        raise e
-                    else:
-                        field_types.append(f)
-                return Format.from_parameters(field_types, name)
+                return Format.from_string(s)
             else:
                 return Field.from_string(s)
 
@@ -402,6 +383,8 @@ class Field(FieldType):
 
     @staticmethod
     def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
+        if '\n' in field_str:
+            raise ValueError(f"Field strings should not contain newline characters.")
         pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
         compiled_pattern = re.compile(pattern, re.DOTALL)
         match = compiled_pattern.match(field_str)

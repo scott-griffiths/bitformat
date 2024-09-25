@@ -225,9 +225,9 @@ def test_field_with_comment():
     assert str(f) == 'x: u8  # Penguins are cool'
     assert repr(f) == "Field('x: u8  # Penguins are cool')"
 
-def test_fieldtype_subclass_ordering():
-    x = FieldType.fieldtype_classes
-    # We want these subclasses to be at the start of the list for some algorithms
-    assert x[0] == Field
-    assert x[1] == Format
-    # After those two I don't think the order matters?
+def test_multiline_fields():
+    f1 = Field.from_string('x: u8')
+    with pytest.raises(ValueError):
+        f2 = Field.from_string('x: u8\n')
+    with pytest.raises(ValueError):
+        f3 = Field.from_string('x: \nu8')

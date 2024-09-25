@@ -79,37 +79,61 @@ class Format(FieldType):
                     if s := content[start:i].strip():
                         field_strs.append(s)
                     start = i + 1
-        if inside_brackets == 0 and start < len(content):
+        if inside_brackets == 0:
+            s = content[start:].strip()
             if len(field_strs) == 0:
-                raise ValueError(f"Format strings must contain a comma even when a single item. Try '[{content},]' instead.")
-            if s := content[start:].strip():
+                if s == '':
+                    raise ValueError("Format string lists must contain a comma even when empty. Try '[,]' instead.")
+                else:
+                    raise ValueError(f"Format string lists must contain a comma even with only one item. Try '[{content},]' instead.")
+            if s:
                 field_strs.append(s)
         if inside_brackets != 0:
             return '', [], f"Unbalanced brackets in Format string '[{content}]'."
         return name, field_strs, ''
 
     @classmethod
-    def _from_field_strs(cls, name: str, field_strs: Sequence[str]) -> Format:
-        fieldtypes = []
-        for field_str in field_strs:
-            fieldtypes.append(FieldType.from_string(field_str))
-        return Format.from_parameters(fieldtypes, name)
-
-    @classmethod
     @override
-    def from_string(cls, s: str) -> Format:
+    def from_string(cls, s: str, /) -> Format:
         """
-        Create a Format instance from a string.
+        Create a :cls::`Format` instance from a string.
+
+        The string should be of the form ``'[field1, field2, ...]'`` or ``'name = [field1, field2, ...]'``,
+        with commas separating strings that will be used to create other :cls::`FieldType` instances.
+
+        At least one comma must be present, even if less than two fields are present.
 
         :param s: The string to parse.
         :type s: str
         :return: The Format instance.
         :rtype: Format
+
+        .. code-block:: python
+
+            f1 = Format.from_string('[u8, bool=True, val: i7]')
+            f2 = Format.from_string('my_format = [float16,]')
+            f3 = Format.from_string('[u16, another_format = [[u8; 64], [bool; 8]]]')
+
         """
         name, field_strs, err_msg = cls._parse_format_str(s)
         if err_msg:
             raise ValueError(err_msg)
-        return cls._from_field_strs(name, field_strs)
+
+        fieldtypes = []
+        for fs in field_strs:
+            try:
+                f = FieldType.from_string(fs)
+            except ValueError as e:
+                no_of_notes = len(getattr(e, '__notes__', []))
+                max_notes = 2
+                if no_of_notes < max_notes:
+                    e.add_note(f" -- when parsing Format string '{s}'.")
+                if no_of_notes == max_notes:
+                    e.add_note(" -- ...")
+                raise e
+            else:
+                fieldtypes.append(f)
+        return cls.from_parameters(fieldtypes, name)
 
     @override
     def __len__(self):
