@@ -41,11 +41,7 @@ jobs:
           # This allows the matrix to specify just the major.minor version while still
           # expanding it to get the latest patch version including alpha releases.
           # This avoids the need to update for each new alpha, beta, release candidate,
-          # and then finally an actual release version.  actions/setup-python doesn't
-          # support this for PyPy presently so we get no help there.
-          #
-          # CPython -> 3.9.0-alpha - 3.9.X
-          # PyPy    -> pypy-3.7
+          # and then finally an actual release version.
           python-version: ${{ fromJSON(format('["{0}", "{1}"]', format('{0}.0-alpha - {0}.X', matrix.python.action), matrix.python.action))[startsWith(matrix.python.action, 'pypy')] }}
           architecture: x64
 
@@ -89,11 +85,6 @@ jobs:
           - name: CPython 3.12
             major_dot_minor: '3.12'
             action: '3.12'
-          - name: PyPy 3.11
-            major_dot_minor: '3.11'
-            action: 'pypy-3.11'
-
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -110,11 +101,7 @@ jobs:
           # This allows the matrix to specify just the major.minor version while still
           # expanding it to get the latest patch version including alpha releases.
           # This avoids the need to update for each new alpha, beta, release candidate,
-          # and then finally an actual release version.  actions/setup-python doesn't
-          # support this for PyPy presently so we get no help there.
-          #
-          # CPython -> 3.9.0-alpha - 3.9.X
-          # PyPy    -> pypy-3.7
+          # and then finally an actual release version.
           python-version: ${{ fromJSON(format('["{0}", "{1}"]', format('{0}.0-alpha - {0}.X', matrix.python.action), matrix.python.action))[startsWith(matrix.python.action, 'pypy')] }}
           architecture: x64
 
