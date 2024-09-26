@@ -126,7 +126,7 @@ Bits('0b000101101111110111111100101101')
 The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
 
 ```pycon
->>> f = Format('[width: u12; height: u12; flags: [bool; 4]]')
+>>> f = Format('(width: u12; height: u12; flags: [bool; 4])')
 >>> f.pack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
 >>> print(f)
@@ -173,7 +173,7 @@ There are a number of important features planned, some of which are from the `bi
 The (unordered) :todo: list includes:
 
 * **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`. This is available in `bitstring`, but I want to find a better way of doing it before adding it to `bitformat`.
-* **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'[w: u16, h: u16, [u8; {w * h}]]'` the size of the `'u8'` array would depend on the values parsed just before it.
+* **Field expressions.** Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
 * **New field types.** Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
 * **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.

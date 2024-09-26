@@ -10,7 +10,7 @@ from ._field import FieldType, Field
 
 __all__ = ['Format']
 
-format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\[(?P<content>.*)\]\s*$"
+format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\((?P<content>.*)\)\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
@@ -66,18 +66,18 @@ class Format(FieldType):
             name = match.group('name')
             content = match.group('content')
         else:
-            return '', [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'."
+            return '', [], f"Invalid Format string '{format_str}'. It should be in the form '(field1, field2, ...)' or 'name = (field1, field2, ...)'."
         name = '' if name is None else name.strip()
         field_strs = []
-        # split by ',' but ignore any ',' that are inside []
+        # split by ',' but ignore any ',' that are inside ()
         start = 0
         inside_brackets = 0
         for i, p in enumerate(content):
-            if p == '[':
+            if p == '(':
                 inside_brackets += 1
-            elif p == ']':
+            elif p == ')':
                 if inside_brackets == 0:
-                    return '', [], f"Unbalanced brackets in Format string '[{content}]'."
+                    return '', [], f"Unbalanced parenthesis in Format string '({content})'."
                 inside_brackets -= 1
             elif p == ',' or p == '\n':
                 if inside_brackets == 0:
@@ -88,23 +88,23 @@ class Format(FieldType):
             s = content[start:].strip()
             if len(field_strs) == 0:
                 if s == '':
-                    raise ValueError("Format string lists must contain a comma even when empty. Try '[,]' instead.")
+                    raise ValueError("Format strings must contain a comma even when empty. Try '(,)' instead.")
                 else:
-                    raise ValueError(f"Format string lists must contain a comma even with only one item. Try '[{content},]' instead.")
+                    raise ValueError(f"Format strings must contain a comma even with only one item. Try '({content},)' instead.")
             if s:
                 field_strs.append(s)
         if inside_brackets != 0:
-            return '', [], f"Unbalanced brackets in Format string '[{content}]'."
+            return '', [], f"Unbalanced parenthesis in Format string '[{content}]'."
         return name, field_strs, ''
 
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Format:
         """
-        Create a :cls::`Format` instance from a string.
+        Create a :cls:`Format` instance from a string.
 
-        The string should be of the form ``'[field1, field2, ...]'`` or ``'name = [field1, field2, ...]'``,
-        with commas separating strings that will be used to create other :cls::`FieldType` instances.
+        The string should be of the form ``'(field1, field2, ...)'`` or ``'name = (field1, field2, ...)'``,
+        with commas separating strings that will be used to create other :cls:`FieldType` instances.
 
         At least one comma must be present, even if less than two fields are present.
 
@@ -115,9 +115,9 @@ class Format(FieldType):
 
         .. code-block:: python
 
-            f1 = Format.from_string('[u8, bool=True, val: i7]')
-            f2 = Format.from_string('my_format = [float16,]')
-            f3 = Format.from_string('[u16, another_format = [[u8; 64], [bool; 8]]]')
+            f1 = Format.from_string('(u8, bool=True, val: i7)')
+            f2 = Format.from_string('my_format = (float16,)')
+            f3 = Format.from_string('(u16, another_format = ([u8; 64], [bool; 8]))')
 
         """
         name, field_strs, err_msg = cls._parse_format_str(s)
@@ -226,22 +226,22 @@ class Format(FieldType):
     @override
     def _str(self, indent: int) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
-        s = f"{_indent(indent)}{name_str}[\n"
+        s = f"{_indent(indent)}{name_str}(\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._str(indent + 1) + '\n'
-        s += f"{_indent(indent)}]"
+        s += f"{_indent(indent)})"
         return s
 
     @override
     def _repr(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{_indent(indent)}{self.__class__.__name__}.from_parameters([\n"
+        s = f"{_indent(indent)}{self.__class__.__name__}.from_parameters((\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._repr(indent + 1)
             if i != len(self.fieldtypes) - 1:
                 s += ','
             s += '\n'
-        s += f"{_indent(indent)}]{name_str})"
+        s += f"{_indent(indent)}){name_str})"
         return s
 
     def __iadd__(self, other: FieldType | str) -> Format:
