@@ -203,6 +203,10 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def _copy(self) -> FieldType:
+        ...
+
+    @abc.abstractmethod
     def flatten(self) -> list[FieldType]:
         """
         Return a flat list of all the fields in the object.
@@ -232,6 +236,9 @@ class FieldType(abc.ABC):
 
     def __eq__(self, other) -> bool:
         return self.flatten() == other.flatten()
+
+    def __copy__(self) -> FieldType:
+        return self._copy()
 
     def _get_name(self) -> str:
         return self._name
@@ -382,6 +389,10 @@ class Field(FieldType):
     @override
     def flatten(self) -> list[FieldType]:
         return [self]
+
+    def _copy(self) -> Field:
+        x = self.__class__.from_parameters(self.dtype, self.name, self.value, self.const, self.comment)
+        return x
 
     @staticmethod
     def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:

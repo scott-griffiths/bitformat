@@ -491,3 +491,24 @@ def test_stretchy_field():
     assert g[0].value == 13
     with pytest.raises(ValueError):
         _ = g[1].value
+
+def test_repeated_field_copy():
+    i = Field('hex4 = abcd')
+    f = Format.from_parameters([i, i])
+    assert f[0].value == 'abcd'
+    assert f[1].value == 'abcd'
+    f[0].value = '0xdead'
+    assert f[0].value == 'dead'
+    assert f[1].value == 'abcd'
+
+def test_format_copy():
+    f = Format('(x: u8 = 10, y: u8 = 20)')
+    g = Format.from_parameters([f, f])
+    assert g[0].value == [10, 20]
+    f[0].value = 5
+    assert f[0].value == 5
+    assert g[0].value == [10, 20]
+    g[0][0].value = 7
+    assert g[0].value == [7, 20]
+    assert g[1].value == [10, 20]
+    assert f[0].value == 5
