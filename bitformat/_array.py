@@ -5,7 +5,6 @@ import numbers
 from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
 
-import bitformat
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, Register
 from bitformat import _utils

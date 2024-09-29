@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import copy
 import struct
 from typing import Iterable, Iterator
