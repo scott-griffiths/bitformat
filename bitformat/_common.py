@@ -59,7 +59,7 @@ class Expression:
 
     node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
                       'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
-                      'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript'}
+                      'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript', 'Gt', 'Lt'}
 
     def _compile_safe_eval(self):
         """Compile the expression, but only allow a whitelist of operations."""
