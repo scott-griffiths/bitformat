@@ -1,6 +1,7 @@
 import os
 import sys
 
+__all__ = ['Options']
 
 def is_interactive() -> bool:
     return hasattr(sys, 'ps1')

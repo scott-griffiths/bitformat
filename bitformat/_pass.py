@@ -5,6 +5,8 @@ from ._common import _indent, override
 from typing import Sequence, Any
 from ._bits import Bits
 
+__all__ = ['Pass']
+
 
 class Pass(FieldType):
     """

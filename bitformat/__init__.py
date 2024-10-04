@@ -34,7 +34,8 @@ __author__ = "Scott Griffiths"
 from ._bits import Bits
 from ._array import Array, BitsProxy
 from ._dtypes import DtypeDefinition, Register, Dtype
-from ._field import Field, FieldType
+from ._fieldtype import FieldType
+from ._field import Field
 from ._format import Format
 from ._if import If
 from ._pass import Pass

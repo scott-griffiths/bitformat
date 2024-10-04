@@ -19,6 +19,8 @@ The others in this section build upon them to provide more specialised structure
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
 * :ref:`Field <field>` -- Represents an optionally named, well-defined amount of binary data with a single data type.
 * :ref:`Format <format>` -- A sequence of :class:`FieldType` objects, such as :class:`Field` or :class:`Format` instances.
+* :ref:`If <if>` -- A pair of :class:`FieldType` obejcts, one of which is selected based on a condition.
+* :ref:`Pass <pass>` -- An empty :class:`FieldType` used as a placeholder.
 
 Other Classes
 -------------
@@ -41,6 +43,8 @@ Miscellaneous
     array.rst
     field.rst
     format.rst
+    if.rst
+    pass.rst
     options.rst
     bitsproxy.rst
     fieldtype.rst

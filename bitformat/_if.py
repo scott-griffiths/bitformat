@@ -7,6 +7,8 @@ from typing import Sequence, Any
 from ._bits import Bits
 import re
 
+__all__ = ['If']
+
 
 class If(FieldType):
 
@@ -28,6 +30,18 @@ class If(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str, /) -> If:
+        """
+        Create an If field from a string.
+
+        The string should be in the format:
+
+        if {expression}:
+            then_field
+        else:
+            else_field
+
+        The else field is optional, and defaults to a Pass field if not provided.
+        """
         # This compiled re pattern expects
         # if {expression}: then_ \n else: else_
         pattern = re.compile(
@@ -40,7 +54,7 @@ class If(FieldType):
 
     @override
     def __len__(self):
-        if self.condition_value is not False:
+        if self.condition_value in [None, True]:
             try:
                 then_len = len(self.then_)
             except ValueError as e:
