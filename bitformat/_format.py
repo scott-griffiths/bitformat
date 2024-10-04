@@ -57,8 +57,11 @@ class Format(FieldType):
                 fieldtype = Field.from_string(fieldtype)
             else:
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-            if len(fieldtype) == 0:
-                stetchy_field = str(fieldtype)
+            try:
+                if len(fieldtype) == 0:
+                    stetchy_field = str(fieldtype)
+            except ValueError:
+                pass
             x.fieldtypes.append(fieldtype)
         return x
 

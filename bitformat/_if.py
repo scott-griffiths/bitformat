@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from ._field import FieldType, Field
+from ._pass import Pass
 from ._common import _indent, override, Expression, ExpressionError
 from typing import Sequence, Any
 from ._bits import Bits
@@ -16,11 +17,12 @@ class If(FieldType):
     def from_parameters(cls, condition: str | Expression, then_: FieldType | str, else_: FieldType | str | None = None) -> If:
         x = super().__new__(cls)
         x.condition = Expression(condition) if isinstance(condition, str) else condition
-        x.then_ = then_ if isinstance(then_, FieldType) else Field.from_string(then_)
+        x.condition_value: bool | None = None
+        x.then_ = then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
         if else_ is not None:
-            x.else_ = else_ if isinstance(else_, FieldType) else Field.from_string(else_)
+            x.else_ = else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
         else:
-            x.else_ = Field('pad0')
+            x.else_ = Pass()
         return x
 
     @classmethod
@@ -38,27 +40,36 @@ class If(FieldType):
 
     @override
     def __len__(self):
-        try:
-            len1 = len(self.then_)
-        except ValueError as e:
-            raise ValueError(f"Cannot calculate length of the If field as 'then' field has no length: {e}")
-        try:
-            len2 = len(self.else_)
-        except ValueError as e:
-            raise ValueError(f"Cannot calculate length of the If field as 'else' field has no length: {e}")
-        if len(self.then_) != len(self.else_):
+        if self.condition_value is not False:
+            try:
+                then_len = len(self.then_)
+            except ValueError as e:
+                raise ValueError(f"Cannot calculate length of the If field as 'then' field has no length: {e}")
+        if self.condition_value is not True:
+            try:
+                else_len = len(self.else_)
+            except ValueError as e:
+                raise ValueError(f"Cannot calculate length of the If field as 'else' field has no length: {e}")
+
+        if self.condition_value is True:
+            return then_len
+        if self.condition_value is False:
+            return else_len
+        if then_len != else_len:
             try:
                 cond = self.condition.evaluate()
             except ExpressionError:
                 raise ValueError(f"Cannot calculate length of the If field as it depends on the result of {self.condition}.\n"
-                                 f"If True the length would be {len1}, if False the length would be {len2}.")
-            return len1 if cond else len2
-        return len(self.then_)
+                                 f"If True the length would be {then_len}, if False the length would be {else_len}.")
+            return then_len if cond else else_len
+        else:
+            return then_len
 
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
-        if self.condition.evaluate(_vars, kwargs):
+        self.condition_value = self.condition.evaluate(_vars, kwargs)
+        if self.condition_value:
             _, v = self.then_._pack(values[index], index, _vars, kwargs)
         else:
             _, v = self.else_._pack(values[index], index, _vars, kwargs)
@@ -66,7 +77,8 @@ class If(FieldType):
 
     @override
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        if self.condition.evaluate(**vars_):
+        self.condition_value = self.condition.evaluate(**vars_)
+        if self.condition_value:
             return self.then_._parse(b, vars_)
         return self.else_._parse(b, vars_)
 
@@ -78,10 +90,13 @@ class If(FieldType):
     def clear(self) -> None:
         self.then_.clear()
         self.else_.clear()
+        self.condition_value = None
 
     @override
     def _getvalue(self) -> Any:
-        if self.condition.evaluate():
+        if self.condition_value is None:
+            raise ValueError("Cannot get value of If field before parsing or unpacking it.")
+        if self.condition_value:
             return self.then_._getvalue()
         else:
             return self.else_._getvalue()
@@ -107,7 +122,9 @@ class If(FieldType):
 
     @override
     def to_bits(self) -> Bits:
-        if self.condition.evaluate():
+        if self.condition_value is None:
+            raise ValueError("Cannot get value of If field before parsing.")
+        if self.condition_value:
             return self.then_.to_bits()
         else:
             return self.else_.to_bits()

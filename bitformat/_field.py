@@ -7,6 +7,7 @@ from ast import literal_eval
 from ._common import colour, Expression, ExpressionError, _indent, override, final
 from typing import Any, Sequence, Iterable
 
+
 __all__ = ['Field', 'FieldType']
 
 
@@ -28,7 +29,7 @@ class FieldType(abc.ABC):
         cls.fieldtype_classes.append(cls)
 
     @final
-    def parse(self, b: BitsType) -> int:
+    def parse(self, b: BitsType = Bits(), /, **kwargs) -> int:
         """
         Parse the field type from the supplied bits.
 
@@ -41,8 +42,9 @@ class FieldType(abc.ABC):
         :rtype: int
         """
         b = Bits.from_auto(b)
+        self.clear()
         try:
-            return self._parse(b, {})
+            return self._parse(b, kwargs)
         except ValueError as e:
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
@@ -119,18 +121,19 @@ class FieldType(abc.ABC):
         :return: The FieldType instance.
         :rtype: FieldType
         """
-        s = s.strip()
-        if s == '':
-            raise ValueError(f"Can't create a FieldType from an empty string.")
         try:  # A stupid way to get it to compile without a circular dependency.
             1 / 0
         except ZeroDivisionError:
             from ._format import Format
-            if ',' in s:
-                # If it's legal it must be a Format.
-                return Format.from_string(s)
-            else:
-                return Field.from_string(s)
+            from ._pass import Pass
+        s = s.strip()
+        if s == '':
+            return Pass()
+        if ',' in s:
+            # If it's legal it must be a Format.
+            return Format.from_string(s)
+        else:
+            return Field.from_string(s)
 
             # TODO: We'll need logic like this once we have new FieldTypes.
             # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:

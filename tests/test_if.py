@@ -22,7 +22,19 @@ def test_from_string():
 
 def test_simple_parse():
     f = Format.from_parameters(('x: u8',
-                                If.from_parameters('{x > 50}', 'u8 = 0', 'u8 = 255')))
-    assert len(f) == 16
-    b = f.parse(Bits('0x37fe'))
+                                If.from_parameters('{x > 50}', 'u8')))
+    b = f.parse('0xabfe')
     assert b == 16
+    assert f[0].value == 0xab
+    assert f[1].value == 0xfe
+    b = f.parse('0x0044')
+    assert b == 8
+    assert f[0].value == 0
+
+def test_explicit_pass():
+    f = If.from_parameters('{x > 0}', '', 'bool = True')
+    f.parse(x = 2)
+    assert len(f) == 0
+    f.parse('0b1', x = -1)
+    assert len(f) == 1
+    assert f.value is True
