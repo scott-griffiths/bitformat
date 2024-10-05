@@ -4,16 +4,15 @@ from bitformat import Bits
 from ._common import final
 from typing import Any, Sequence
 
-
 __all__ = ['FieldType']
 
+fieldtype_classes = {}
 
 class FieldType(abc.ABC):
 
-    fieldtype_classes = []
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.fieldtype_classes.append(cls)
+        fieldtype_classes[cls.__name__] = cls
 
     @final
     def parse(self, b: BitsType = Bits(), /, **kwargs) -> int:
@@ -108,33 +107,16 @@ class FieldType(abc.ABC):
         :return: The FieldType instance.
         :rtype: FieldType
         """
-        try:  # A stupid way to get it to compile without a circular dependency.
-            1 / 0
-        except ZeroDivisionError:
-            from ._format import Format
-            from ._pass import Pass
-            from ._field import Field
         s = s.strip()
         if s == '':
-            return Pass()
-        if ',' in s:
+            return fieldtype_classes['Pass']()
+        elif s.startswith('if'): # TODO: this isn't a good enough test
+            return fieldtype_classes['If'].from_string(s)
+        elif ',' in s:
             # If it's legal it must be a Format.
-            return Format.from_string(s)
+            return fieldtype_classes['Format'].from_string(s)
         else:
-            return Field.from_string(s)
-
-            # TODO: We'll need logic like this once we have new FieldTypes.
-            # for fieldtype in [f for f in cls.fieldtype_classes if f is not in (Format, Field)]:
-            #     try:
-            #         return fieldtype.from_string(s)
-            #     except ExpressionError as e:
-            #         raise ValueError(f"Error evaluating expression in '{s}': {str(e)}"
-            #         # If we got as far as evaluating an Expression then we probably(?) have the correct
-            #         # FieldType, so just return the error so it doesn't get hidden by later ones.
-            #         break
-            #     except ValueError as e:
-            #         e.add_note(f"  Can't parse the string '{s}' as a {fieldtype.__name__}.")
-            #         raise
+            return fieldtype_classes['Field'].from_string(s)
 
     @abc.abstractmethod
     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:

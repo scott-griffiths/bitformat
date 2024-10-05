@@ -38,3 +38,15 @@ def test_explicit_pass():
     f.parse('0b1', x = -1)
     assert len(f) == 1
     assert f.value is True
+    f.parse(x = 4)
+    assert len(f) == 0
+
+# def test_slightly_more_complex_things():
+#     f = Format("""my_format = (
+#     header: hex2 = 0x47
+#     flag: bool
+#     if {flag}:
+#         data: [u8; 6]
+#     """)
+#     b = f.pack([True, [5, 4, 3, 2, 1, 0]])
+#     assert b == '0x47050403020100'

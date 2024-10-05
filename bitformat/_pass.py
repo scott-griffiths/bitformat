@@ -10,10 +10,17 @@ __all__ = ['Pass']
 
 class Pass(FieldType):
     """
-    An empty placeholder FieldType.
+    An empty placeholder :cls:`FieldType`.
 
     A Pass field has no length and no value. It can be used in conditionals when no action is required.
     When used elsewhere in a Format it may be removed as an optimisation.
+
+    It is usually created implicitly, for example in an :cls:`If` field when no ``else`` is provided.
+
+    .. code-block:: python
+
+    cond = If.from_parameters('{ x > 0 }', Pass(), 'bool')
+
 
     """
 
