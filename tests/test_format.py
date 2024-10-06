@@ -14,6 +14,7 @@ class TestCreation:
         b = f.pack([])
         assert len(b) == 0
         assert f.name == ''
+        assert len(f) == 0
 
     def test_create_from_dtype(self):
         d = Dtype.from_string('u12')
@@ -22,6 +23,7 @@ class TestCreation:
         assert f.name == 'x'
         assert x == 'u12=1000'
         assert len(x) == 12
+        assert len(f) == 1
 
     def test_create_from_bits_string(self):
         f = Format.from_params([Field.from_params('f16', 'foo', 12.5)], 'x')
@@ -141,7 +143,10 @@ class TestAddition:
         f = Format()
         f += Field.from_bits('0xff')
         assert f.to_bytes() == b'\xff'
+        assert f[0].to_bytes() == b'\xff'
+        assert len(f) == 1
         f += Field.from_string('penguin:i9 =-8')
+        assert len(f) == 2
         x = f['penguin']
         assert x.value == -8
         f['penguin'].value += 6

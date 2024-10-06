@@ -156,7 +156,6 @@ class Format(FieldType):
 
     bitlength = property(_getbitlength)
 
-
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
@@ -201,6 +200,8 @@ class Format(FieldType):
         for fieldtype, v in zip(self.fieldtypes, val):
             fieldtype._setvalue(v)
 
+    value = property(_getvalue, _setvalue)
+
     @override
     def to_bits(self) -> Bits:
         return Bits().join(fieldtype.to_bits() for fieldtype in self.fieldtypes)
@@ -212,6 +213,9 @@ class Format(FieldType):
         for fieldtype in self.fieldtypes:
             flattened_fields.extend(fieldtype.flatten())
         return flattened_fields
+
+    def __len__(self) -> int:
+        return len(self.fieldtypes)
 
     def __getitem__(self, key) -> Any:
         if isinstance(key, int):
@@ -244,8 +248,6 @@ class Format(FieldType):
                 self.fieldtypes[i] = field
                 return
         raise KeyError(f"Field '{key}' not found.")
-
-    value = property(_getvalue, _setvalue)
 
     @override
     def _str(self, indent: int) -> str:
