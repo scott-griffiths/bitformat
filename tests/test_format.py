@@ -352,7 +352,8 @@ def test_to_bits():
     assert f[0].value == 1
     assert f[1].value is None
     assert f[2].value == 3
-    assert f.value == [1, None, 3]
+    with pytest.raises(ValueError):
+        _ = f.value
     assert f[0].to_bits() == 'u8=1'
     with pytest.raises(ValueError):
         _ = f[1].to_bits()

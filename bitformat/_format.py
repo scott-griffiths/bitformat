@@ -180,7 +180,12 @@ class Format(FieldType):
 
     @override
     def _getvalue(self) -> list[Any]:
-        return [f.value for f in self.fieldtypes]
+        vals = []
+        for i, f in enumerate(self.fieldtypes):
+            if f.value is None:
+                raise ValueError(f"Field {i + 1} in Format has no value.")
+            vals.append(f.value)
+        return vals
 
     @override
     def _setvalue(self, val: Sequence[Any]) -> None:

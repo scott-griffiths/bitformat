@@ -58,11 +58,11 @@ class Pass(FieldType):
 
     @override
     def _getvalue(self) -> Any:
-        return None
+        raise ValueError("A Pass field has no value to get.")
 
     @override
     def _setvalue(self, val: Any) -> None:
-        raise NotImplementedError
+        raise ValueError("A Pass field cannot be set to a value.")
 
     @override
     def flatten(self) -> list[FieldType]:

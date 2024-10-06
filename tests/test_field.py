@@ -243,3 +243,13 @@ def test_stretchy_field():
     assert f.unpack('0x3f800000') == 1.0
     with pytest.raises(ValueError):
         _ = f.unpack('0x3f')
+
+def test_disallowed_names():
+    with pytest.raises(ValueError):
+        f = Field('if: u8')
+    with pytest.raises(ValueError):
+        f = Field('else: u8')
+    with pytest.raises(ValueError):
+        f = Field('__starting_with_underscores: u8')
+    with pytest.raises(ValueError):
+        f = Field('containing__double_underscores: u8')

@@ -21,7 +21,7 @@ if Options()._use_pure_python:
 else:
     from ._bitstore import BitStore
 
-__all__ = ['Bits']
+__all__ = ['Bits', 'BitsType']
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]

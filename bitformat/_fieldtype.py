@@ -1,8 +1,10 @@
 from __future__ import annotations
 import abc
 from bitformat import Bits
+from ._bits import BitsType
 from ._common import final
 from typing import Any, Sequence
+import keyword
 
 __all__ = ['FieldType']
 
@@ -15,7 +17,7 @@ class FieldType(abc.ABC):
         fieldtype_classes[cls.__name__] = cls
 
     @final
-    def parse(self, b: BitsType = Bits(), /, **kwargs) -> int:
+    def parse(self, b: BitsType | None = None, /, **kwargs) -> int:
         """
         Parse the field type from the supplied bits.
 
@@ -27,7 +29,7 @@ class FieldType(abc.ABC):
         :return: The number of bits used.
         :rtype: int
         """
-        b = Bits.from_auto(b)
+        b = Bits() if b is None else Bits.from_auto(b)
         self.clear()
         try:
             return self._parse(b, kwargs)
@@ -58,7 +60,7 @@ class FieldType(abc.ABC):
         return bits
 
     @final
-    def unpack(self, b: Bits | bytes | bytearray | None = None) -> Any | list[Any]:
+    def unpack(self, b: BitsType | None = None) -> Any | list[Any]:
         """
         Unpack the field type from bits.
 
@@ -69,12 +71,10 @@ class FieldType(abc.ABC):
         """
         if b is not None:
             self.parse(b)
-        try:  # TODO: This is hacky. Why is bits needed here?
-            bits = self.to_bits()
-        except ValueError as e:
-            raise ValueError(f"Cannot unpack '{self!r}' as not all fields have binary data to unpack: {e}") from None
-        else:
-            return self.value
+        v = self.value
+        if v is None:
+            raise ValueError("Cannot unpack field as it has no value.")
+        return v
 
     @final
     def __str__(self) -> str:
@@ -220,6 +220,8 @@ class FieldType(abc.ABC):
         if val != '':
             if not val.isidentifier():
                 raise ValueError(f"The FieldType name '{val}' is not a valid Python identifier.")
+            if keyword.iskeyword(val):
+                raise ValueError(f"The FieldType name '{val}' is a Python keyword.")
             if '__' in val:
                 raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
         self._name = val

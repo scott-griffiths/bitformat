@@ -38,7 +38,10 @@ def test_field_consistency(dtype_name, length, const, int_value):
     f.parse(b)
     assert f.to_bits() == b
     v = f.value
-    f2.value = v
+    if v is not None:
+        f2.value = v
+    else:
+        f2.clear()
     if dtype_name != 'pad' and not (isinstance(v, float) and math.isnan(v)):
         assert f.to_bits() == f2.to_bits()
         f.const = const

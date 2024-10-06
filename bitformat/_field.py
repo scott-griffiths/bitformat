@@ -69,7 +69,8 @@ class Field(FieldType):
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a bool.")
-        x._setvalue_no_const_check(value)
+        if value is not None:
+            x._setvalue_no_const_check(value)
         if x.dtype.size == 0:
             if x.dtype.name in ['bits', 'bytes'] and x.value is not None:
                 x._dtype_expression = DtypeWithExpression(x.dtype.name, len(x.value), x.dtype.is_array, x.dtype.items, x.dtype.endianness)
@@ -129,7 +130,7 @@ class Field(FieldType):
     @override
     def clear(self) -> None:
         if not self.const:
-            self._setvalue(None)
+            self._bits = None
 
     @override
     def flatten(self) -> list[FieldType]:
@@ -194,12 +195,13 @@ class Field(FieldType):
 
     @override
     def _getvalue(self) -> Any:
-        return self.dtype.unpack(self._bits) if self._bits is not None else None
+        if self._bits is None:
+            return None
+        return self.dtype.unpack(self._bits)
 
     def _setvalue_no_const_check(self, value: Any) -> None:
         if value is None:
-            self._bits = None
-            return
+            raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
         try:
             self._bits = self.dtype.pack(value)
         except ValueError as e:
