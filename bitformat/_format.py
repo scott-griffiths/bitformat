@@ -7,6 +7,7 @@ import re
 
 from ._common import colour, _indent, override
 from ._field import FieldType, Field
+from ._pass import Pass
 
 __all__ = ['Format']
 
@@ -54,9 +55,12 @@ class Format(FieldType):
             if isinstance(fieldtype, FieldType):
                 fieldtype = fieldtype._copy()
             elif isinstance(fieldtype, str):
-                fieldtype = Field.from_string(fieldtype)
+                fieldtype = FieldType.from_string(fieldtype)
             else:
                 raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
+            if fieldtype is Pass():
+                # Don't bother appending if it's the Pass singleton.
+                continue
             try:
                 if len(fieldtype) == 0:
                     stetchy_field = str(fieldtype)

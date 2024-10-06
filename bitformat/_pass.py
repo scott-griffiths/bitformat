@@ -23,10 +23,13 @@ class Pass(FieldType):
 
 
     """
+    # All Pass fields are the same, so we make it a singleton.
+    _instance = None
 
     def __new__(cls) -> Pass:
-        x = super().__new__(cls)
-        return x
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
 
     @classmethod
     @override

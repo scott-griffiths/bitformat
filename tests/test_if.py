@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Bits, Format, If
+from bitformat import Format, If
 
 
 def test_creation():
