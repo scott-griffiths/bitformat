@@ -39,8 +39,10 @@ class Pass(FieldType):
         return cls()
 
     @override
-    def __len__(self):
+    def _getbitlength(self):
         return 0
+
+    bitlength = property(_getbitlength)
 
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,

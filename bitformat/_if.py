@@ -26,7 +26,7 @@ class If(FieldType):
         """
         x = super().__new__(cls)
         x.condition = Expression(condition) if isinstance(condition, str) else condition
-        x.condition_value: bool | None = None
+        x.condition_value = None
         x.then_ = then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
         if else_ is not None:
             x.else_ = else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
@@ -59,15 +59,15 @@ class If(FieldType):
         return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
 
     @override
-    def __len__(self):
+    def _getbitlength(self):
         if self.condition_value in [None, True]:
             try:
-                then_len = len(self.then_)
+                then_len = self.then_.bitlength
             except ValueError as e:
                 raise ValueError(f"Cannot calculate length of the If field as 'then' field has no length: {e}")
         if self.condition_value is not True:
             try:
-                else_len = len(self.else_)
+                else_len = self.else_.bitlength
             except ValueError as e:
                 raise ValueError(f"Cannot calculate length of the If field as 'else' field has no length: {e}")
 
@@ -84,6 +84,8 @@ class If(FieldType):
             return then_len if cond else else_len
         else:
             return then_len
+
+    bitlength = property(_getbitlength)
 
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
@@ -132,7 +134,7 @@ class If(FieldType):
     @override
     def _str(self, indent: int) -> str:
         s = f"{_indent(indent)}if {self.condition}:\n{self.then_._str(indent + 1)}\n"
-        if len(self.else_) != 0:
+        if self.else_.bitlength != 0:
             s += f"{_indent(indent)}else:\n{self.else_._str(indent + 1)}"
         return s
 

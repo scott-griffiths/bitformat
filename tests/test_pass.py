@@ -4,7 +4,7 @@ from bitformat import Pass, Format, Bits
 
 def test_pass_creation():
     p = Pass()
-    assert len(p) == 0
+    assert p.bitlength == 0
     p.clear()
     assert p.to_bits() == Bits()
     assert p.to_bytes() == b''

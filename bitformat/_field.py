@@ -77,8 +77,10 @@ class Field(FieldType):
         return x
 
     @override
-    def __len__(self) -> int:
+    def _getbitlength(self) -> int:
         return self.dtype.bitlength
+
+    bitlength = property(_getbitlength)
 
     @classmethod
     @override

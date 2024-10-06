@@ -204,7 +204,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def __len__(self) -> int:
+    def _getbitlength(self) -> int:
         """
         Return the length of the FieldType in bits.
 
