@@ -12,6 +12,12 @@ fieldtype_classes = {}
 
 class FieldType(abc.ABC):
 
+    def __new__(cls, *args, **kwargs) -> FieldType:
+        x = super().__new__(cls)
+        x._name = ''
+        x._comment = ''
+        return x
+
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         fieldtype_classes[cls.__name__] = cls
