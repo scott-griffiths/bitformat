@@ -81,13 +81,13 @@ class TestCreation:
         assert (s.unpack(Dtype('i')), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.pack(Dtype.from_parameters('i', length), value)
+                s = Bits.pack(Dtype.from_params('i', length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.pack(Dtype.from_parameters('int', length), int_)
+            _ = Bits.pack(Dtype.from_params('int', length), int_)
 
     def test_creation_from_bool(self):
         a = Bits.pack('bool', False)
@@ -529,7 +529,7 @@ def test_unpack_single():
     assert a.unpack('u8') == 0x12
 
 def test_pack_array():
-    d = Dtype.from_parameters('u', 33, True, 5)
+    d = Dtype.from_params('u', 33, True, 5)
     a = Bits.pack(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
     assert d.return_type == tuple
@@ -587,7 +587,7 @@ def test_float_errors():
         _ = a.f
     for le in (8, 10, 12, 18, 30, 128, 200):
         with pytest.raises(ValueError):
-            _ = Bits.pack(Dtype.from_parameters('f', le), 1.0)
+            _ = Bits.pack(Dtype.from_params('f', le), 1.0)
 
 def test_little_endian_uint():
     s = Bits('u16 = 100')
@@ -636,10 +636,10 @@ def test_native_endian_floats():
         assert a.f_le == 0.55
         assert a.f_ne == 0.55
         d = Dtype('f_ne64')
-        d2 = Dtype.from_parameters('f', 64, endianness=Endianness.NATIVE)
+        d2 = Dtype.from_params('f', 64, endianness=Endianness.NATIVE)
         assert d == d2
         assert d.endianness == Endianness.NATIVE
-        d3 = Dtype.from_parameters('f', 64, endianness=Endianness.LITTLE)
+        d3 = Dtype.from_params('f', 64, endianness=Endianness.LITTLE)
         assert d != d3
 
 

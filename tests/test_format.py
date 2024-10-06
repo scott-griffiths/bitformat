@@ -17,15 +17,15 @@ class TestCreation:
 
     def test_create_from_dtype(self):
         d = Dtype.from_string('u12')
-        f = Format.from_parameters([Field.from_parameters(d)], 'x')
+        f = Format.from_params([Field.from_params(d)], 'x')
         x = f.pack([1000])
         assert f.name == 'x'
         assert x == 'u12=1000'
         assert len(x) == 12
 
     def test_create_from_bits_string(self):
-        f = Format.from_parameters([Field.from_parameters('f16', 'foo', 12.5)], 'x')
-        g = Format.from_parameters(['foo: f16=12.5'], 'y')
+        f = Format.from_params([Field.from_params('f16', 'foo', 12.5)], 'x')
+        g = Format.from_params(['foo: f16=12.5'], 'y')
         assert f.to_bits() == g.to_bits()
         assert f.name == 'x'
 
@@ -34,7 +34,7 @@ class TestCreation:
             _ = Format('(x: f16)')  # No comma
         f = Format('(x: f16,)')
         assert f.fieldtypes[0].name == 'x'
-        assert f.fieldtypes[0].dtype == Dtype.from_parameters('f', 16)
+        assert f.fieldtypes[0].dtype == Dtype.from_params('f', 16)
 
     @given(name=st.sampled_from(['f16', 'u12', 'bool', 'f64']))
     def test_building_field(self, name):
@@ -44,39 +44,39 @@ class TestCreation:
 
     def test_create_from_bits(self):
         b = Bits.from_string('0xabc')
-        f = Format.from_parameters([Field.from_bits(b)])
+        f = Format.from_params([Field.from_bits(b)])
         x = f.pack([])
         assert f.name == ''
         assert x == '0xabc'
         assert isinstance(x, Bits)
 
     def test_create_from_bits_with_name(self):
-        f = Format.from_parameters([Field.from_bits('0xabc', 'some_bits')])
+        f = Format.from_params([Field.from_bits('0xabc', 'some_bits')])
         x = f.pack([])
         assert x, '0xabc'
 
     def test_create_from_list(self):
-        f = Format.from_parameters(['const bits = 0xabc', 'u5', 'u5'])
+        f = Format.from_params(['const bits = 0xabc', 'u5', 'u5'])
         x = f.pack([3, 10])
         assert x == 'bits = 0xabc, u5=3, u5=10'
         f.parse(x)
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
-        f = Format.from_parameters(('const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'), 'header')
+        f = Format.from_params(('const bits = 0x000001b3', 'u12', 'height:const u12  = 288', 'flag: const bool  =True'), 'header')
         g = Format('header= (const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True)')
         assert f == g
         assert f.name == 'header'
         b = f.pack([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
-        f2 = Format.from_parameters([f, 'bytes5'], 'main')
+        f2 = Format.from_params([f, 'bytes5'], 'main')
         f3 = f2.pack([[352], b'12345'])
         assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
-        header = Format.from_parameters(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
-        main = Format.from_parameters(['bits = 0b1', 'v1:i7', 'v2:i9'], 'main')
-        f = Format.from_parameters([header, main, 'bits = 0x47'], 'all')
+        header = Format.from_params(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
+        main = Format.from_params(['bits = 0b1', 'v1:i7', 'v2:i9'], 'main')
+        f = Format.from_params([header, main, 'bits = 0x47'], 'all')
         b = Bits.from_string('bits = 0x000001b3, u12=100, u12=200, bits = 0b1, bits = 0b0, bits = 0b1, i7=5, i9=-99, bits = 0x47')
         f.parse(b)
         t = f['header']
@@ -104,27 +104,27 @@ def test_building():
     f2.pack([1, 2, 3])
     assert f2.value == (1, 2, 3)
 
-    f3 = Format.from_parameters(['u8'])
+    f3 = Format.from_params(['u8'])
     f3.pack([4])
     assert f3.value == [4]
 
-    f4 = Format.from_parameters(['[u8; 3]'])
+    f4 = Format.from_params(['[u8; 3]'])
     f4.pack([[1, 2, 3]])
     assert f4.value == [(1, 2, 3)]
 
-    f5 = Format.from_parameters(['u8', '[u8; 3]'])
+    f5 = Format.from_params(['u8', '[u8; 3]'])
     f5.pack([4, [1, 2, 3]])
     assert f5.value == [4, (1, 2, 3)]
 
-    f6 = Format.from_parameters(['u8', '[u8; 3]', 'u8'])
+    f6 = Format.from_params(['u8', '[u8; 3]', 'u8'])
     f6.pack([4, [1, 2, 3], 5])
     assert f6.value == [4, (1, 2, 3), 5]
 
-    f7 = Format.from_parameters([f1, f2])
+    f7 = Format.from_params([f1, f2])
     f7.pack([6, [4, 5, 6]])
     assert f7.value == [6, (4, 5, 6)]
 
-    f8 = Format.from_parameters([f1, f7])
+    f8 = Format.from_params([f1, f7])
     f8.pack([7, [8, (9, 10, 11)]])
     assert f8.value == [7, (8, (9, 10, 11))]
 
@@ -151,12 +151,12 @@ class TestAddition:
 class TestArray:
 
     def test_simple_array(self):
-        array_field = Field.from_parameters('[u8; 20]', 'my_array')
-        f = Format.from_parameters([array_field], 'a')
+        array_field = Field.from_params('[u8; 20]', 'my_array')
+        f = Format.from_params([array_field], 'a')
         assert f.fieldtypes[0].dtype.items == 20
         a = f.pack([list(range(20))])
 
-        f2 = Format.from_parameters(['new_array: [u8;20]'], 'b')
+        f2 = Format.from_params(['new_array: [u8;20]'], 'b')
         assert f2.fieldtypes[0].dtype.items == 20
         assert f2.fieldtypes[0].value is None
         f2['new_array'].value = a
@@ -200,13 +200,13 @@ def test_example_from_docs():
 
 @pytest.mark.skip
 def test_creating_with_keyword_value():
-    f = Format.from_parameters(['x: u10', 'u10={2*x}'])
+    f = Format.from_params(['x: u10', 'u10={2*x}'])
     b = f.pack([6])
     assert b == 'u10=6, u10=12'
 
 @pytest.mark.skip
 def test_items():
-    f = Format.from_parameters(['q:i5', '[u3; {q + 1}]'])
+    f = Format.from_params(['q:i5', '[u3; {q + 1}]'])
     b = Bits.from_string('i5=1, u3=2, u3=0')
     f.parse(b)
     assert f[0].value == 1
@@ -222,20 +222,20 @@ def test_items():
 class TestMethods:
 
     def test_clear(self):
-        f = Format.from_parameters(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
+        f = Format.from_params(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
         g = Format.from_string('empty_header = (const bits = 0x000001b3, u12, u12, bool)')
         assert f == g
 
     def test_get_item(self):
-        f = Format.from_parameters(['f16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
+        f = Format.from_params(['f16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
         assert f[0].value == 7
         assert f[1].value is None
         assert f['pop'].value == 144
 
     def test_set_item(self):
-        f = Format.from_parameters(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
+        f = Format.from_params(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
         with pytest.raises(ValueError):
             f[0].value = 2
         f[0].const = False
@@ -339,12 +339,12 @@ def test_field_array_str():
     assert str(f) == 'test: [f32; 3]'
 
 def test_format_repr_string():
-    f = Format.from_parameters(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
+    f = Format.from_params(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format.from_parameters((\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n), 'dave')"
+    assert r == "Format.from_params((\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n), 'dave')"
 
 def test_to_bits():
-    f = Format.from_parameters(['u8', 'u8', 'u8'])
+    f = Format.from_params(['u8', 'u8', 'u8'])
     f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == 'u8=1, u8=2, u8=3'
@@ -361,7 +361,7 @@ def test_to_bits():
         _ = f.to_bits()
 
 def test_partial_parse():
-    f = Format.from_parameters(['bool',
+    f = Format.from_params(['bool',
                                 '[f16;3]'])
     b = Bits.from_string('0b1, f16=1.0, f16=2.0, f16=3.0')
     f.parse(b)
@@ -495,7 +495,7 @@ def test_stretchy_field():
 
 def test_repeated_field_copy():
     i = Field('hex4 = abcd')
-    f = Format.from_parameters([i, i])
+    f = Format.from_params([i, i])
     assert f[0].value == 'abcd'
     assert f[1].value == 'abcd'
     f[0].value = '0xdead'
@@ -504,7 +504,7 @@ def test_repeated_field_copy():
 
 def test_format_copy():
     f = Format('(x: u8 = 10, y: u8 = 20)')
-    g = Format.from_parameters([f, f])
+    g = Format.from_params([f, f])
     assert g[0].value == [10, 20]
     f[0].value = 5
     assert f[0].value == 5

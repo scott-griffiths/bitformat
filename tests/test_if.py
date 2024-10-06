@@ -3,7 +3,7 @@ from bitformat import Bits, Format, If
 
 
 def test_creation():
-    i = If.from_parameters('{1 > 0}', 'u2', 'i2')
+    i = If.from_params('{1 > 0}', 'u2', 'i2')
     assert len(i) == 2
     v = i.parse('0b11')
     assert v == 2
@@ -21,8 +21,8 @@ def test_from_string():
         _ = len(j)
 
 def test_simple_parse():
-    f = Format.from_parameters(('x: u8',
-                                If.from_parameters('{x > 50}', 'u8')))
+    f = Format.from_params(('x: u8',
+                            If.from_params('{x > 50}', 'u8')))
     b = f.parse('0xabfe')
     assert b == 16
     assert f[0].value == 0xab
@@ -32,7 +32,7 @@ def test_simple_parse():
     assert f[0].value == 0
 
 def test_explicit_pass():
-    f = If.from_parameters('{x > 0}', '', 'bool = True')
+    f = If.from_params('{x > 0}', '', 'bool = True')
     f.parse(x = 2)
     assert len(f) == 0
     f.parse('0b1', x = -1)

@@ -19,7 +19,7 @@ class Pass(FieldType):
 
     .. code-block:: python
 
-    cond = If.from_parameters('{ x > 0 }', Pass(), 'bool')
+    cond = If.from_params('{ x > 0 }', Pass(), 'bool')
 
 
     """

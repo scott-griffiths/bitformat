@@ -16,7 +16,14 @@ class If(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_parameters(cls, condition: str | Expression, then_: FieldType | str, else_: FieldType | str | None = None) -> If:
+    def from_params(cls, condition: str | Expression, then_: FieldType | str, else_: FieldType | str | None = None, /) -> If:
+        """
+        The ``else_`` parameter is optional, and defaults to a :cls:`Pass` field if not provided.
+
+        Note that only a single :cls:`FieldType` can be provided for each of the ``then_`` and ``else_`` clauses.
+        If you need to provide multiple fields, use a :cls:`Format`.
+
+        """
         x = super().__new__(cls)
         x.condition = Expression(condition) if isinstance(condition, str) else condition
         x.condition_value: bool | None = None
@@ -40,7 +47,6 @@ class If(FieldType):
         else:
             else_field
 
-        The else field is optional, and defaults to a Pass field if not provided.
         """
         # This compiled re pattern expects
         # if {expression}: then_ \n else: else_
@@ -50,7 +56,7 @@ class If(FieldType):
         if not (match := pattern.match(s)):
             raise ValueError(f"Can't parse If field from '{s}'")
         groups = match.groupdict()
-        return cls.from_parameters('{' + groups['expression'] + '}', groups['then'], groups['else'])
+        return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
 
     @override
     def __len__(self):
@@ -98,7 +104,7 @@ class If(FieldType):
 
     @override
     def _copy(self) -> If:
-        return If.from_parameters(self.condition, self.then_._copy(), self.else_._copy())
+        return If.from_params(self.condition, self.then_._copy(), self.else_._copy())
 
     @override
     def clear(self) -> None:

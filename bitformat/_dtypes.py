@@ -39,7 +39,7 @@ class Dtype:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_parameters(cls, name: str, size: int = 0, is_array: bool = False, items: int = 1, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
+    def from_params(cls, name: str, size: int = 0, is_array: bool = False, items: int = 1, endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -491,7 +491,7 @@ class DtypeWithExpression:
             items = 1
         else:
             self.items_expression = None
-        self.base_dtype = Dtype.from_parameters(name, size, is_array, items, endianness)
+        self.base_dtype = Dtype.from_params(name, size, is_array, items, endianness)
 
     @classmethod
     def from_string(cls, token: str, /) -> DtypeWithExpression:

@@ -21,7 +21,7 @@ class TestBasicFunctionality:
         # self.assertTrue(b is b2)
 
     def test_setting_with_length(self):
-        d = Dtype.from_parameters('u', 12)
+        d = Dtype.from_params('u', 12)
         assert str(d) == 'u12'
         assert d.size == 12
         assert d.name == 'u'
@@ -158,9 +158,9 @@ def test_len_errors():
             _ = len(d)
 
 def test_endianness():
-    d_le = Dtype.from_parameters('u', 16, endianness=Endianness.LITTLE)
-    d_be = Dtype.from_parameters('u', 16, endianness=Endianness.BIG)
-    d_ne = Dtype.from_parameters('u', 16, endianness=Endianness.NATIVE)
+    d_le = Dtype.from_params('u', 16, endianness=Endianness.LITTLE)
+    d_be = Dtype.from_params('u', 16, endianness=Endianness.BIG)
+    d_ne = Dtype.from_params('u', 16, endianness=Endianness.NATIVE)
 
     be = d_be.pack(0x1234)
     le = d_le.pack(0x1234)
@@ -172,9 +172,9 @@ def test_endianness():
     assert le == '0x3412'
 
 def test_endianness_type_str():
-    d_le = Dtype.from_parameters('u', 16, endianness=Endianness.LITTLE)
-    d_be = Dtype.from_parameters('u', 16, endianness=Endianness.BIG)
-    d_ne = Dtype.from_parameters('u', 16, endianness=Endianness.NATIVE)
+    d_le = Dtype.from_params('u', 16, endianness=Endianness.LITTLE)
+    d_be = Dtype.from_params('u', 16, endianness=Endianness.BIG)
+    d_ne = Dtype.from_params('u', 16, endianness=Endianness.NATIVE)
 
     d_le2 = Dtype('u_le16')
     d_be2 = Dtype('u_be16')
@@ -186,8 +186,8 @@ def test_endianness_type_str():
 
 def test_endianness_errors():
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('u', 15, endianness=Endianness.BIG)
+        _ = Dtype.from_params('u', 15, endianness=Endianness.BIG)
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('bool', endianness=Endianness.LITTLE)
+        _ = Dtype.from_params('bool', endianness=Endianness.LITTLE)
     with pytest.raises(ValueError):
-        _ = Dtype.from_parameters('bytes', 16, endianness=Endianness.LITTLE)
+        _ = Dtype.from_params('bytes', 16, endianness=Endianness.LITTLE)

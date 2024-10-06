@@ -47,7 +47,7 @@ def token_to_bitstore(token: str) -> BitStore:
         name, modifier = _utils.parse_name_to_name_and_modifier(name)
 
         length = int(length_str) if length_str else 0
-        dtype = Dtype.from_parameters(name, length, endianness=Endianness(modifier))
+        dtype = Dtype.from_params(name, length, endianness=Endianness(modifier))
         value_str = value
         if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
             try:
@@ -1142,13 +1142,13 @@ class Bits:
                 f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
         has_length_in_fmt = True
         name1, length1 = _utils.parse_name_size_token(token_list[0])
-        dtype1 = Dtype.from_parameters(name1, length1)
+        dtype1 = Dtype.from_params(name1, length1)
         bits_per_group = dtype1.bits_per_item
         dtype2 = None
 
         if len(token_list) == 2:
             name2, length2 = _utils.parse_name_size_token(token_list[1])
-            dtype2 = Dtype.from_parameters(name2, length2)
+            dtype2 = Dtype.from_params(name2, length2)
             if 0 not in {dtype1.bits_per_item, dtype2.bits_per_item} and dtype1.bits_per_item != dtype2.bits_per_item:
                 raise ValueError(
                     f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item} in format string '{fmt}'.")

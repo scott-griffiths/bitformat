@@ -6,21 +6,21 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        d = Dtype.from_parameters('bytes', 2)
+        d = Dtype.from_params('bytes', 2)
         assert d.size == 2
         assert d.bitlength == 16
         assert d.bits_per_item
 
         ds = [Dtype.from_string(x) for x in ['bytes3', 'u9', 'i4', 'f32', 'bits11']]
         for d in ds:
-            f = Field.from_parameters(d)
+            f = Field.from_params(d)
             assert f.dtype == d
             f2 = Field(str(d))
             assert f2.dtype == f.dtype
 
     @given(st.integers(0, 255))
     def test_creation_from_dtype_with_value(self, x):
-        f = Field.from_parameters(Dtype.from_string('u8'), value=x)
+        f = Field.from_params(Dtype.from_string('u8'), value=x)
         assert f.value == x
         f2 = Field(f'const u8 = {x}')
         assert f2.value == x
@@ -40,15 +40,15 @@ class TestCreation:
     def test_creation_with_names(self, name):
         assume(name != '')
         if name.isidentifier() and '__' not in name:
-            f = Field.from_parameters('u8', name)
+            f = Field.from_params('u8', name)
             assert f.name == name
             f2 = Field.from_string(f'{name}: u8')
             assert f2.name == name
             with pytest.raises(ValueError):
-                _ = Field.from_parameters(f'{name}: u8', name=name)
+                _ = Field.from_params(f'{name}: u8', name=name)
         else:
             with pytest.raises(ValueError):
-                _ = Field.from_parameters('u8', name)
+                _ = Field.from_params('u8', name)
 
     def test_creation_from_strings(self):
         f = Field.from_string(' flag_12 : bool')
@@ -63,7 +63,7 @@ class TestCreation:
 
     @given(st.binary())
     def test_creation_from_bytes(self, b):
-        f = Field.from_parameters('bytes', name='hello', value=b)
+        f = Field.from_params('bytes', name='hello', value=b)
         assert f.value == b
         assert f.name == 'hello'
         assert f.dtype.name == 'bytes'
@@ -137,13 +137,13 @@ class TestBuilding:
         assert f.value is None
 
 def test_field_str():
-    f = Field.from_parameters('u8', name='x')
+    f = Field.from_params('u8', name='x')
     assert str(f) == 'x: u8'
     f = Field('u8')
     assert str(f) == 'u8'
-    f = Field.from_parameters('u8', value=8)
+    f = Field.from_params('u8', value=8)
     assert str(f) == 'u8 = 8'
-    f = Field.from_parameters('u8', value=8, name='x')
+    f = Field.from_params('u8', value=8, name='x')
     assert str(f) == 'x: u8 = 8'
 
 
@@ -218,7 +218,7 @@ def test_unpack():
         _ = f.unpack()
 
 def test_field_with_comment():
-    f = Field.from_parameters('u8', name='x', comment='  This is a comment ')
+    f = Field.from_params('u8', name='x', comment='  This is a comment ')
     assert f.comment == 'This is a comment'
     f.comment = '   Penguins are cool  '
     assert f.comment == 'Penguins are cool'

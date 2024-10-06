@@ -30,9 +30,9 @@ class Format(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_parameters(cls, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
+    def from_params(cls, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
         """
-        Create a Format instance from parameters.
+        Create a Format instance.
 
         :param fieldtypes: The field types to include in the format, optional.
         :type fieldtypes: Sequence[FieldType or str] or None
@@ -143,7 +143,7 @@ class Format(FieldType):
                 raise e
             else:
                 fieldtypes.append(f)
-        return cls.from_parameters(fieldtypes, name)
+        return cls.from_params(fieldtypes, name)
 
     @override
     def __len__(self):
@@ -252,7 +252,7 @@ class Format(FieldType):
     @override
     def _repr(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{_indent(indent)}{self.__class__.__name__}.from_parameters((\n"
+        s = f"{_indent(indent)}{self.__class__.__name__}.from_params((\n"
         for i, fieldtype in enumerate(self.fieldtypes):
             s += fieldtype._repr(indent + 1)
             if i != len(self.fieldtypes) - 1:

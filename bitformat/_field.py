@@ -18,7 +18,7 @@ class Field(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_parameters(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False, comment: str = '') -> Field:
+    def from_params(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False, comment: str = '') -> Field:
         """
         Create a Field instance from parameters.
 
@@ -86,7 +86,7 @@ class Field(FieldType):
         s, comment = s.split('#', 1) if '#' in s else (s, '')
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
-        return cls.from_parameters(dtype_str, name, value, const, comment)
+        return cls.from_params(dtype_str, name, value, const, comment)
 
     @classmethod
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
@@ -103,7 +103,7 @@ class Field(FieldType):
         b = Bits.from_auto(b)
         if len(b) == 0:
             raise ValueError(f"Can't create a Field from an empty Bits object.")
-        return cls.from_parameters(Dtype.from_parameters('bits', len(b)), name, b, const=True)
+        return cls.from_params(Dtype.from_params('bits', len(b)), name, b, const=True)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = '', const: bool = False) -> Field:
@@ -119,7 +119,7 @@ class Field(FieldType):
         :return: The Field instance.
         :rtype: Field
         """
-        return cls.from_parameters(Dtype.from_parameters('bytes', len(b)), name, b, const)
+        return cls.from_params(Dtype.from_params('bytes', len(b)), name, b, const)
 
     @override
     def to_bits(self) -> Bits:
@@ -137,7 +137,7 @@ class Field(FieldType):
         return [self]
 
     def _copy(self) -> Field:
-        x = self.__class__.from_parameters(self.dtype, self.name, self.value, self.const, self.comment)
+        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
         return x
 
     @staticmethod
