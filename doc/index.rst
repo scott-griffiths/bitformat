@@ -37,39 +37,6 @@ To download the module, as well as for defect reports, enhancement requests and 
 
 ----
 
-bitformat vs. bitstring
------------------------
-
-bitformat is from the same author as the `bitstring <https://github.com/scott-griffiths/bitstring>`_ package, which is widely used and has been actively maintained since 2006.
-It covers much of the same ground, but is designed to have a stronger emphasis on performance, a simpler API and a more expressive syntax for binary formats.
-
-``bitstring``
-
-* Simple and flexible syntax for binary data manipulation.
-* Reasonable performance, but difficult to improve further.
-* Very mature and stable - maintained since 2006.
-* Hundreds of dependant projects and millions of downloads per month.
-
-
-``bitformat``
-
-* Expressive syntax for complex binary formats.
-* Emphasis on performance.
-* Several major features still to be added.
-* In alpha stage - still quite unstable.
-
-When deciding which one to use the TLDR; for most people is that you should use ``bitstring`` for anything at all serious, at least for now.
-I am hoping that ``bitformat`` will become a worthy successor, and I'd be very happy for you to try it out and give feedback.
-Even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely - at the time of writing their respective download counts are 88 million for bitstring and 882 for bitformat!
-
-.. note::
-
-    There are many similarities between bitformat and bitstring, but there has been no attempt to make them compatible.
-    Much of the reason for making a new package was to revisit many of the design decisions that were made almost two
-    decades ago when George W. Bush was president, the Nintendo Wii was the latest must-have tech, and Python 2.4 was the latest version.
-
-----
-
 Documentation
 -------------
 
@@ -77,7 +44,7 @@ A tour of the features of bitformat is given in notebook form:
 
 * `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_
 
-The API documentation is available here:
+The main documentation is available here:
 
 .. toctree::
    :hidden:
@@ -85,8 +52,9 @@ The API documentation is available here:
    self
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
+    introduction
     api
 
 ----

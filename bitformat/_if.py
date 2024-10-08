@@ -18,10 +18,10 @@ class If(FieldType):
     @classmethod
     def from_params(cls, condition: str | Expression, then_: FieldType | str, else_: FieldType | str | None = None, /) -> If:
         """
-        The ``else_`` parameter is optional, and defaults to a :cls:`Pass` field if not provided.
+        The ``else_`` parameter is optional, and defaults to a :class:`Pass` field if not provided.
 
-        Note that only a single :cls:`FieldType` can be provided for each of the ``then_`` and ``else_`` clauses.
-        If you need to provide multiple fields, use a :cls:`Format`.
+        Note that only a single :class:`FieldType` can be provided for each of the ``then_`` and ``else_`` clauses.
+        If you need to provide multiple fields, use a :class:`Format`.
 
         """
         x = super().__new__(cls)

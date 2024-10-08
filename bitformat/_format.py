@@ -110,10 +110,10 @@ class Format(FieldType):
     @override
     def from_string(cls, s: str, /) -> Format:
         """
-        Create a :cls:`Format` instance from a string.
+        Create a :class:`Format` instance from a string.
 
         The string should be of the form ``'(field1, field2, ...)'`` or ``'name = (field1, field2, ...)'``,
-        with commas separating strings that will be used to create other :cls:`FieldType` instances.
+        with commas separating strings that will be used to create other :class:`FieldType` instances.
 
         At least one comma must be present, even if less than two fields are present.
 

@@ -10,17 +10,17 @@ __all__ = ['Pass']
 
 class Pass(FieldType):
     """
-    An empty placeholder :cls:`FieldType`.
+    An empty placeholder :class:`FieldType`.
 
-    A Pass field has no length and no value. It can be used in conditionals when no action is required.
-    When used elsewhere in a Format it may be removed as an optimisation.
+    A Pass field has zero bitlength and no value. It can be used in conditionals when no action is required.
+    When used elsewhere in a :class:`Format` it may be removed as an optimisation.
+    All Pass fields are identical, so they are implemented as a singleton.
 
-    It is usually created implicitly, for example in an :cls:`If` field when no ``else`` is provided.
+    It is usually created implicitly, for example in an :class:`If` field when no ``else`` field is provided.
 
     .. code-block:: python
 
-    cond = If.from_params('{ x > 0 }', Pass(), 'bool')
-
+        cond = If.from_params('{ x > 0 }', Pass(), 'bool')
 
     """
     # All Pass fields are the same, so we make it a singleton.
