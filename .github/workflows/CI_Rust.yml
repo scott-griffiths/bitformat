@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: bitrust
+          path: ./bitrust
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
@@ -50,13 +50,11 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
-        working-directory: bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
           name: wheels-linux-${{ matrix.platform.target }}
           path: dist
-        working-directory: bitrust
 
   musllinux:
     runs-on: ${{ matrix.platform.runner }}
