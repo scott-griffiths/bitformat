@@ -48,7 +48,6 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
-        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -80,7 +79,6 @@ jobs:
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
-        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -108,7 +106,6 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -135,7 +132,6 @@ jobs:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
-        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
