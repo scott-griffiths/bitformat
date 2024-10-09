@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github
 #
-name: CI
+name: CI_Rust
 
 on:
   push:
@@ -38,6 +38,8 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: bitformat
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
