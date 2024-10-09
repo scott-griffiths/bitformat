@@ -39,7 +39,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          path: bitformat
+          path: bitrust
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
