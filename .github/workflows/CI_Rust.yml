@@ -3,7 +3,7 @@
 #
 #    maturin generate-ci github
 #
-name: CI_Rust
+name: CI
 
 on:
   push:
@@ -38,19 +38,17 @@ jobs:
             target: ppc64le
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bitformat
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
       - name: Build wheels
-        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: auto
+        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -72,19 +70,17 @@ jobs:
             target: armv7
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bitformat
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
       - name: Build wheels
-        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
           manylinux: musllinux_1_2
+        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -102,19 +98,17 @@ jobs:
             target: x86
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bitformat
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
-        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -132,18 +126,16 @@ jobs:
             target: aarch64
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bitformat
       - uses: actions/setup-python@v5
         with:
           python-version: 3.x
       - name: Build wheels
-        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
           args: --release --out dist --find-interpreter
           sccache: 'true'
+        working-directory: bitformat/bitrust
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
@@ -154,8 +146,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: bitformat
       - name: Build sdist
         uses: PyO3/maturin-action@v1
         with:
