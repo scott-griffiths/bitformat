@@ -42,6 +42,7 @@ from ._pass import Pass
 from ._options import Options
 from ._common import Expression, byteorder, Endianness
 from typing import Literal
+from bitrust import sum_as_string
 
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
@@ -112,7 +113,7 @@ for dt in dtype_definitions:
 
 
 __all__ = ('Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options',
-           'Register', 'Endianness', 'If', 'Pass')
+           'Register', 'Endianness', 'If', 'Pass', 'sum_as_string')
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:
