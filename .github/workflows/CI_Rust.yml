@@ -44,6 +44,7 @@ jobs:
         with:
           python-version: 3.x
       - name: Build wheels
+        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
@@ -77,6 +78,7 @@ jobs:
         with:
           python-version: 3.x
       - name: Build wheels
+        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
@@ -107,6 +109,7 @@ jobs:
           python-version: 3.x
           architecture: ${{ matrix.platform.target }}
       - name: Build wheels
+        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
@@ -135,6 +138,7 @@ jobs:
         with:
           python-version: 3.x
       - name: Build wheels
+        working-directory: bitformat/bitrust
         uses: PyO3/maturin-action@v1
         with:
           target: ${{ matrix.platform.target }}
