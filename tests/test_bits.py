@@ -139,7 +139,7 @@ class TestInitialisation:
 class TestCut:
     def test_cut(self):
         s = Bits().join(['0b000111']*10)
-        for t in s.cut(6):
+        for t in s.chunks(6):
             assert t == '0b000111'
 
 def test_unorderable():

@@ -887,34 +887,34 @@ class TestManyDifferentThings:
 
     def test_cut(self):
         a = Bits('0x00112233445')
-        b = list(a.cut(8))
+        b = list(a.chunks(8))
         assert b == ['0x00', '0x11', '0x22', '0x33', '0x44', '0x5']
-        b = list(a.cut(4, 8, 16))
+        b = list(a.chunks(4, 8, 16))
         assert b == ['0x1', '0x1']
-        b = list(a.cut(4, 0, 44, 4))
+        b = list(a.chunks(4, 0, 44, 4))
         assert b == ['0x0', '0x0', '0x1', '0x1']
         a = Bits()
-        b = list(a.cut(10))
+        b = list(a.chunks(10))
         assert not b
 
     def test_cut_errors(self):
         a = Bits('0b1')
-        b = a.cut(1, 1, 2)
+        b = a.chunks(1, 1, 2)
         with pytest.raises(ValueError):
             _ = next(b)
-        b = a.cut(1, -2, 1)
+        b = a.chunks(1, -2, 1)
         with pytest.raises(ValueError):
             _ = next(b)
-        b = a.cut(0)
+        b = a.chunks(0)
         with pytest.raises(ValueError):
             _ = next(b)
-        b = a.cut(1, count=-1)
+        b = a.chunks(1, count=-1)
         with pytest.raises(ValueError):
             _ = next(b)
 
     def test_cut_problem(self):
         s = Bits('0x1234')
-        for n in list(s.cut(4)):
+        for n in list(s.chunks(4)):
             s = n + s
         assert s == '0x43211234'
 
@@ -1350,7 +1350,7 @@ class TestBugs:
 
         # cut
         s = Bits('0x12345')
-        li = list(s.cut(4, start=-12, end=-4))
+        li = list(s.chunks(4, start=-12, end=-4))
         assert li == ['0x3', '0x4']
 
         # startswith

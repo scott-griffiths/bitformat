@@ -318,8 +318,8 @@ class Bits:
         count = self._bitstore.count(1)
         return count if value else len(self) - count
 
-    def cut(self, bits: int, start: int | None = None, end: int | None = None,
-            count: int | None = None) -> Iterator[Bits]:
+    def chunks(self, bits: int, start: int | None = None, end: int | None = None,
+               count: int | None = None) -> Iterator[Bits]:
         """
         Return Bits generator by cutting into bits sized chunks.
 
@@ -1053,9 +1053,9 @@ class Bits:
             if Register()[dtype.name].bitlength2chars_fn is not None:
                 chars_per_group = Register()[dtype.name].bitlength2chars_fn(bits_per_group)
             if dtype.name == 'bits':
-                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
+                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
-                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.cut(bits_per_group))
+                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
 
         chars_used = len(x)
         padding_spaces = 0 if width is None else max(width - len(x), 0)
@@ -1113,7 +1113,7 @@ class Bits:
 
         bitpos = 0
         first_fb_width = second_fb_width = None
-        for bits in self.cut(max_bits_per_line):
+        for bits in self.chunks(max_bits_per_line):
             offset_str = ''
             if show_offset:
                 offset = bitpos // offset_factor

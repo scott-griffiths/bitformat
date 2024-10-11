@@ -10,7 +10,7 @@ def test_cutting(benchmark):
         s = bitformat.Bits.from_string('0xef1356a6200b3, 0b0')
         s = bitformat.Bits.join(itertools.repeat(s, 6000))
         c = 0
-        for triplet in s.cut(3):
+        for triplet in s.chunks(3):
             if triplet == '0b001':
                 c += 1
         return c
