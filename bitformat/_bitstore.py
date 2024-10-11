@@ -99,17 +99,17 @@ class BitStore:
         return self._bitarray == other._bitarray
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(BitStore)
+        x = super().__new__(self.__class__)
         x._bitarray = self._bitarray & other._bitarray
         return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(BitStore)
+        x = super().__new__(self.__class__)
         x._bitarray = self._bitarray | other._bitarray
         return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(BitStore)
+        x = super().__new__(self.__class__)
         x._bitarray = self._bitarray ^ other._bitarray
         return x
 
@@ -170,9 +170,6 @@ class BitStore:
     def count(self, value, /) -> int:
         return self._bitarray.count(value)
 
-    def clear(self) -> None:
-        self._bitarray.clear()
-
     def reverse(self) -> None:
         self._bitarray.reverse()
 
@@ -194,12 +191,12 @@ class BitStore:
         return bool(self._bitarray.__getitem__(index))
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        x = super().__new__(BitStore)
+        x = super().__new__(self.__class__)
         x._bitarray = self._bitarray.__getitem__(key)
         return x
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        x = super().__new__(BitStore)
+        x = super().__new__(self.__class__)
         x._bitarray = self._bitarray[start:stop]
         return x
 
@@ -218,8 +215,18 @@ class BitStore:
     def __len__(self) -> int:
         return len(self._bitarray)
 
+
+class MutableBitStore(BitStore):
+    """A mutable version of BitStore with an additional setitem method."""
+    def __new__(cls, bs: BitStore | None = None):
+        x = super().__new__(cls)
+        if bs is not None:
+            x._bitarray = bs._bitarray
+        return x
+
     def setitem(self, key, value, /):
         if isinstance(value, BitStore):
             self._bitarray.__setitem__(key, value._bitarray)
         else:
             self._bitarray.__setitem__(key, value)
+

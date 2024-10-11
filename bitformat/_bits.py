@@ -19,7 +19,7 @@ from ._options import Options
 if Options()._use_pure_python:
     from ._bitstore_pure import BitStore
 else:
-    from ._bitstore import BitStore
+    from ._bitstore import BitStore, MutableBitStore
 
 __all__ = ['Bits', 'BitsType']
 
@@ -707,18 +707,26 @@ class Bits:
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        s = self._copy()
         v = 1 if value else 0
         if pos is None:
             # Set all bits to either 1 or 0
-            s._bitstore = BitStore.from_int(-v, len(self), True)
+            s = Bits.ones(len(self)) if v else Bits.zeros(len(self))
         elif not isinstance(pos, abc.Iterable):
-            s._bitstore.setitem(pos, v)
+            bs = MutableBitStore(self._bitstore.copy())
+            bs.setitem(pos, v)
+            s = Bits()
+            s._bitstore._bitarray = bs._bitarray  # Bit hacky but we don't want to copy again.
         elif isinstance(pos, range):
-            s._bitstore.setitem(slice(pos.start, pos.stop, pos.step), v)
+            bs = MutableBitStore(self._bitstore.copy())
+            bs.setitem(slice(pos.start, pos.stop, pos.step), v)
+            s = Bits()
+            s._bitstore._bitarray = bs._bitarray
         else:
+            bs = MutableBitStore(self._bitstore.copy())
             for p in pos:
-                s._bitstore.setitem(p, v)
+                bs.setitem(p, v)
+            s = Bits()
+            s._bitstore._bitarray = bs._bitarray
         return s
 
     def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
