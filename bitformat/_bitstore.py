@@ -11,8 +11,10 @@ class BitStore:
 
     __slots__ = ('_bitarray',)
 
-    def __init__(self) -> None:
-        self._bitarray = bitarray.bitarray()
+    def __new__(cls):
+        x = super().__new__(cls)
+        x._bitarray = bitarray.bitarray()
+        return x
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
@@ -93,15 +95,6 @@ class BitStore:
     def slice_to_oct(self, start: int | None = None, end: int | None = None) -> str:
         return bitarray.util.ba2base(8, self.getslice(start, end)._bitarray)
 
-    def __iadd__(self, other: BitStore, /) -> BitStore:
-        self._bitarray += other._bitarray
-        return self
-
-    def __add__(self, other: BitStore, /) -> BitStore:
-        bs = self.copy()
-        bs += other
-        return bs
-
     def __eq__(self, other: BitStore, /) -> bool:
         return self._bitarray == other._bitarray
 
@@ -119,18 +112,6 @@ class BitStore:
         x = super().__new__(BitStore)
         x._bitarray = self._bitarray ^ other._bitarray
         return x
-
-    def __iand__(self, other: BitStore, /) -> BitStore:
-        self._bitarray &= other._bitarray
-        return self
-
-    def __ior__(self, other: BitStore, /) -> BitStore:
-        self._bitarray |= other._bitarray
-        return self
-
-    def __ixor__(self, other: BitStore, /) -> BitStore:
-        self._bitarray ^= other._bitarray
-        return self
 
     def find(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> int:
         if not bytealigned:

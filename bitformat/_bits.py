@@ -97,7 +97,7 @@ class Bits:
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
-            x._bitstore = BitStore()
+            x._bitstore = BitStore.from_zeros(0)
         else:
             x._bitstore = str_to_bitstore(s)
         return x
@@ -596,9 +596,7 @@ class Bits:
         # Final replacement
         replacement_list.append(new._bitstore)
         replacement_list.append(s._bitstore.getslice(starting_points[-1] + len(old), None))
-        s._bitstore.clear()
-        for r in replacement_list:
-            s._bitstore += r
+        s._bitstore = BitStore.join(replacement_list)
         return s
 
     def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
@@ -989,7 +987,7 @@ class Bits:
 
     def _addright(self, bs: Bits, /) -> None:
         """Add a Bits to the RHS of the current Bits."""
-        self._bitstore += bs._bitstore
+        self._bitstore = BitStore.join([self._bitstore, bs._bitstore])
 
     def _invert(self, pos: int, /) -> None:
         """Flip bit at pos 1<->0."""
