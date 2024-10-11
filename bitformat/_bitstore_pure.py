@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import copy
 import struct
 from typing import Iterable, Iterator
@@ -31,6 +33,7 @@ class BitStore:
     @classmethod
     def from_hex(cls, hexstring: str, /) -> BitStore:
         x = super().__new__(cls)
+        hexstring = ''.join(hexstring.split())
         if hexstring == '':
             x.bytearray_ = bytearray()
         else:
@@ -40,6 +43,7 @@ class BitStore:
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
         x = super().__new__(cls)
+        octstring = ''.join(octstring.split())
         if octstring == '':
             x.bytearray_ = bytearray()
         else:
@@ -49,6 +53,7 @@ class BitStore:
     @classmethod
     def from_bin(cls, binstring: str) -> BitStore:
         x = super().__new__(cls)
+        binstring = ''.join(binstring.split())
         if binstring == '':
             x.bytearray_ = bytearray()
         else:
@@ -119,6 +124,8 @@ class BitStore:
         if bitstr == '':
             return ''
         start, end, _ = slice(start, end).indices(len(self))
+        if len(bitstr) % 4 != 0:
+            raise ValueError(f"Cannot convert {bitstr} to hex as it is not a multiple of 4 bits.")
         return hex(int(bitstr, 2))[2:].zfill((end - start + 3) // 4)
 
     def slice_to_bin(self, start: int | None = None, end: int | None = None) -> str:
@@ -129,6 +136,8 @@ class BitStore:
         if bitstr == '':
             return ''
         start, end, _ = slice(start, end).indices(len(self))
+        if len(bitstr) % 3 != 0:
+            raise ValueError(f"Cannot convert {bitstr} to oct as it is not a multiple of 3 bits.")
         return oct(int(bitstr, 2))[2:].zfill((end - start + 2) // 3)
 
     def __iadd__(self, other: BitStore, /) -> BitStore:
