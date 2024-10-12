@@ -9,38 +9,45 @@ from typing import Iterable, Iterator
 class BitStore:
     """A light wrapper around bitarray"""
 
-    __slots__ = ('_bitarray',)
+    __slots__ = ('_bitarray', 'bitoffset')
 
     def __new__(cls):
         x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray()
+        x.bitoffset = 0
+        x._bitarray = bitarray.frozenbitarray()
         return x
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(i)
+        x.bitoffset = 0
+        x._bitarray = bitarray.frozenbitarray(i)
         return x
 
     @classmethod
     def from_ones(cls, i: int) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray(i)
-        x._bitarray.setall(True)
+        x.bitoffset = 0
+        ba = bitarray.bitarray(i)
+        ba.setall(True)
+        x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray()
-        x._bitarray.frombytes(b)
+        x.bitoffset = 0
+        ba = bitarray.bitarray()
+        ba.frombytes(b)
+        x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
     @classmethod
     def from_bin(cls, binstring: str, /) -> BitStore:
         x = super().__new__(cls)
+        x.bitoffset = 0
         try:
-            x._bitarray = bitarray.bitarray(binstring)
+            x._bitarray = bitarray.frozenbitarray(binstring)
         except (TypeError, ValueError):
             raise ValueError(f"Invalid symbol in binary initialiser '{binstring}'")
         return x
@@ -48,8 +55,9 @@ class BitStore:
     @classmethod
     def from_hex(cls, hexstring: str, /) -> BitStore:
         x = super().__new__(cls)
+        x.bitoffset = 0
         try:
-            x._bitarray = bitarray.util.hex2ba(hexstring)
+            x._bitarray = bitarray.frozenbitarray(bitarray.util.hex2ba(hexstring))
         except (TypeError, ValueError):
             raise ValueError(f"Invalid symbol in hex initialiser '{hexstring}'")
         return x
@@ -57,8 +65,9 @@ class BitStore:
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
         x = super().__new__(cls)
+        x.bitoffset = 0
         try:
-            x._bitarray = bitarray.util.base2ba(8, octstring)
+            x._bitarray = bitarray.frozenbitarray(bitarray.util.base2ba(8, octstring))
         except (TypeError, ValueError):
             raise ValueError(f"Invalid symbol in oct initialiser '{octstring}'.")
         return x
@@ -66,34 +75,40 @@ class BitStore:
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = bitarray.util.int2ba(i, length=length, endian='big', signed=signed)
+        x.bitoffset = 0
+        x._bitarray = bitarray.frozenbitarray(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
         return x
 
     @classmethod
     def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
         x = super().__new__(cls)
-        x._bitarray = bitarray.bitarray()
+        ba = bitarray.bitarray()
+        x.bitoffset = 0
         for i in iterable:
-            x._bitarray += i._bitarray
+            if i.bitoffset == 0:
+                ba += i._bitarray
+            else:
+                ba += i._bitarray[i.bitoffset:]
+        x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
     def to_bytes(self) -> bytes:
         return self._bitarray.tobytes()
 
     def slice_to_uint(self, start: int | None = None, end: int | None = None) -> int:
-        return bitarray.util.ba2int(self.getslice(start, end)._bitarray, signed=False)
+        return bitarray.util.ba2int(self._bitarray[start:end], signed=False)
 
     def slice_to_int(self, start: int | None = None, end: int | None = None) -> int:
-        return bitarray.util.ba2int(self.getslice(start, end)._bitarray, signed=True)
+        return bitarray.util.ba2int(self._bitarray[start:end], signed=True)
 
     def slice_to_hex(self, start: int | None = None, end: int | None = None) -> str:
-        return bitarray.util.ba2hex(self.getslice(start, end)._bitarray)
+        return bitarray.util.ba2hex(self._bitarray[start:end])
 
     def slice_to_bin(self, start: int | None = None, end: int | None = None) -> str:
-        return self.getslice(start, end)._bitarray.to01()
+        return self._bitarray[start:end].to01()
 
     def slice_to_oct(self, start: int | None = None, end: int | None = None) -> str:
-        return bitarray.util.ba2base(8, self.getslice(start, end)._bitarray)
+        return bitarray.util.ba2base(8, self._bitarray[start:end])
 
     def __eq__(self, other: BitStore, /) -> bool:
         return self._bitarray == other._bitarray
@@ -170,8 +185,12 @@ class BitStore:
     def count(self, value, /) -> int:
         return self._bitarray.count(value)
 
-    def reverse(self) -> None:
-        self._bitarray.reverse()
+    def reverse(self) -> BitStore:
+        x = self.__class__()
+        ba = bitarray.bitarray(self._bitarray)
+        ba.reverse()
+        x._bitarray = bitarray.frozenbitarray(ba)
+        return x
 
     def __iter__(self) -> Iterable[bool]:
         for i in range(len(self)):
@@ -192,19 +211,25 @@ class BitStore:
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
         x = super().__new__(self.__class__)
+        x.bitoffset = 0
         x._bitarray = self._bitarray.__getitem__(key)
         return x
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
         x = super().__new__(self.__class__)
+        x.bitoffset = 0
         x._bitarray = self._bitarray[start:stop]
         return x
 
-    def invert(self, index: int | None = None, /) -> None:
+    def invert(self, index: int | None = None, /) -> BitStore:
+        x = self.__class__()
+        ba = bitarray.bitarray(self._bitarray)
         if index is not None:
-            self._bitarray.invert(index)
+            ba.invert(index)
         else:
-            self._bitarray.invert()
+            ba.invert()
+        x._bitarray = bitarray.frozenbitarray(ba)
+        return x
 
     def any_set(self) -> bool:
         return self._bitarray.any()
@@ -217,27 +242,38 @@ class BitStore:
 
     def set(self, value: int, pos: int | slice) -> BitStore:
         x = self.copy()
-        x._bitarray.__setitem__(pos, value)
+        ba = bitarray.bitarray(x._bitarray)
+        ba.__setitem__(pos, value)
+        x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
     def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
         x = self.copy()
+        ba = bitarray.bitarray(x._bitarray)
         for p in pos:
-            x._bitarray.__setitem__(p, value)
+            ba.__setitem__(p, value)
+        x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
 
 class MutableBitStore(BitStore):
-    """A mutable version of BitStore with an additional setitem method."""
+    """A mutable version of BitStore with an additional setitem method.
+
+    This is used in the Array class to allow it to be changed after creation.
+    """
     def __new__(cls, bs: BitStore | None = None):
         x = super().__new__(cls)
+        x.bitoffset = 0
         if bs is not None:
             x._bitarray = bs._bitarray
         return x
 
-    def setitem(self, key, value, /):
+    def setitem(self, key: int | slice, value: int | BitStore, /):
+        ba = bitarray.bitarray(self._bitarray)
         if isinstance(value, BitStore):
-            self._bitarray.__setitem__(key, value._bitarray)
+            ba.__setitem__(key, value._bitarray)
         else:
-            self._bitarray.__setitem__(key, value)
+            ba.__setitem__(key, value)
+        self._bitarray = bitarray.frozenbitarray(ba)
+
 

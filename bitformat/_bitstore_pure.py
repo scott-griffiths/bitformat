@@ -265,7 +265,7 @@ class MutableBitStore(BitStore):
             x.bytearray_ = bs.bytearray_
         return x
 
-    def setitem(self, key, value, /):
+    def setitem(self, key: int | slice, value: int | BitStore):
         if isinstance(value, BitStore):
             self.bytearray_.__setitem__(key, value.bytearray_)
         else:

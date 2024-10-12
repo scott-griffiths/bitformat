@@ -1,13 +1,12 @@
 import sys
 sys.path.insert(0, '..')
-import bitformat
 from bitformat import Bits
 import random
 import math
 import itertools
 
-def test_cutting(benchmark):
-    def cut():
+def test_chunking(benchmark):
+    def chunks():
         s = Bits.from_string('0xef1356a6200b3, 0b0')
         s = Bits.join(itertools.repeat(s, 6000))
         c = 0
@@ -15,7 +14,7 @@ def test_cutting(benchmark):
             if triplet == '0b001':
                 c += 1
         return c
-    c = benchmark(cut)
+    c = benchmark(chunks)
     assert c == 12000, c
 
 def test_count(benchmark):

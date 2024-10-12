@@ -97,7 +97,7 @@ class Bits:
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
-            x._bitstore = BitStore.from_zeros(0)
+            x._bitstore = BitStore()
         else:
             x._bitstore = str_to_bitstore(s)
         return x
@@ -614,7 +614,8 @@ class Bits:
         """
         start, end = self._validate_slice(start, end)
         s = self._slice_copy(start, end)
-        s._bitstore.reverse()
+        bs = s._bitstore.reverse()
+        s._bitstore = bs
         return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
 
     def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
@@ -993,11 +994,11 @@ class Bits:
     def _invert(self, pos: int, /) -> None:
         """Flip bit at pos 1<->0."""
         assert 0 <= pos < len(self)
-        self._bitstore.invert(pos)
+        self._bitstore = self._bitstore.invert(pos)
 
     def _invert_all(self) -> None:
         """Invert every bit."""
-        self._bitstore.invert()
+        self._bitstore = self._bitstore.invert()
 
     def _imul(self, n: int, /) -> Bits:
         """Concatenate n copies of self in place. Return self."""
