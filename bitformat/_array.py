@@ -151,7 +151,7 @@ class Array:
             self._bitstore = MutableBitStore.from_zeros(initializer * self._dtype.bits_per_item)
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
-            self._bitstore = initializer._bitstore.copy()
+            self._bitstore = MutableBitStore(initializer._bitstore)
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
             self._bitstore = MutableBitStore.from_bytes(initializer)
         elif initializer is not None:

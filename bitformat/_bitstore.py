@@ -95,20 +95,20 @@ class BitStore:
     def to_bytes(self) -> bytes:
         return self._bitarray.tobytes()
 
-    def slice_to_uint(self, start: int | None = None, end: int | None = None) -> int:
-        return bitarray.util.ba2int(self._bitarray[start:end], signed=False)
+    def to_uint(self) -> int:
+        return bitarray.util.ba2int(self._bitarray, signed=False)
 
-    def slice_to_int(self, start: int | None = None, end: int | None = None) -> int:
-        return bitarray.util.ba2int(self._bitarray[start:end], signed=True)
+    def to_int(self) -> int:
+        return bitarray.util.ba2int(self._bitarray, signed=True)
 
-    def slice_to_hex(self, start: int | None = None, end: int | None = None) -> str:
-        return bitarray.util.ba2hex(self._bitarray[start:end])
+    def to_hex(self) -> str:
+        return bitarray.util.ba2hex(self._bitarray)
 
-    def slice_to_bin(self, start: int | None = None, end: int | None = None) -> str:
-        return self._bitarray[start:end].to01()
+    def to_bin(self) -> str:
+        return self._bitarray.to01()
 
-    def slice_to_oct(self, start: int | None = None, end: int | None = None) -> str:
-        return bitarray.util.ba2base(8, self._bitarray[start:end])
+    def to_oct(self) -> str:
+        return bitarray.util.ba2base(8, self._bitarray)
 
     def __eq__(self, other: BitStore, /) -> bool:
         return self._bitarray == other._bitarray
@@ -197,10 +197,7 @@ class BitStore:
             yield self.getindex(i)
 
     def copy(self) -> BitStore:
-        """Always creates a copy, even if instance is immutable."""
-        s_copy = self.__class__()
-        s_copy._bitarray = copy.copy(self._bitarray)
-        return s_copy
+        return self
 
     def __getitem__(self, item: int | slice, /) -> int | BitStore:
         # Use getindex or getslice instead
@@ -265,7 +262,10 @@ class MutableBitStore(BitStore):
         x = super().__new__(cls)
         x.bitoffset = 0
         if bs is not None:
-            x._bitarray = bs._bitarray
+            ba = copy.copy(bs._bitarray)
+            x._bitarray = bitarray.frozenbitarray(ba)
+        else:
+            x._bitarray = bitarray.frozenbitarray()
         return x
 
     def setitem(self, key: int | slice, value: int | BitStore, /):
@@ -276,4 +276,7 @@ class MutableBitStore(BitStore):
             ba.__setitem__(key, value)
         self._bitarray = bitarray.frozenbitarray(ba)
 
-
+    def copy(self) -> BitStore:
+        s_copy = self.__class__()
+        s_copy._bitarray = copy.copy(self._bitarray)
+        return s_copy

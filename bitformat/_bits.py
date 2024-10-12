@@ -882,7 +882,7 @@ class Bits:
         """Return data as an unsigned int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return self._bitstore.slice_to_uint()
+        return self._bitstore.to_uint()
 
     def _setint(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
@@ -901,7 +901,7 @@ class Bits:
         """Return data as a two's complement signed int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return self._bitstore.slice_to_int()
+        return self._bitstore.to_int()
 
     def _setfloat(self, f: float | str, length: int | None) -> None:
         f = float(f)
@@ -942,7 +942,7 @@ class Bits:
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
-        return self._bitstore.slice_to_bin()
+        return self._bitstore.to_bin()
 
     def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
@@ -955,7 +955,7 @@ class Bits:
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
-        return self._bitstore.slice_to_oct()
+        return self._bitstore.to_oct()
 
     def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
@@ -972,13 +972,13 @@ class Bits:
         Raises an InterpretError if the Bits's length is not a multiple of 4.
 
         """
-        return self._bitstore.slice_to_hex()
+        return self._bitstore.to_hex()
 
     def _copy(self: Bits) -> Bits:
         """Create and return a new copy of the Bits (always in memory)."""
         # Note that __copy__ may choose to return self if it's immutable. This method always makes a copy.
         s_copy = self.__class__()
-        s_copy._bitstore = self._bitstore.copy()
+        s_copy._bitstore = self._bitstore
         return s_copy
 
     def _slice_copy(self: Bits, start: int, end: int) -> Bits:
