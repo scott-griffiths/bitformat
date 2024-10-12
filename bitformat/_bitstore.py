@@ -196,9 +196,6 @@ class BitStore:
         for i in range(len(self)):
             yield self.getindex(i)
 
-    def copy(self) -> BitStore:
-        return self
-
     def __getitem__(self, item: int | slice, /) -> int | BitStore:
         # Use getindex or getslice instead
         raise NotImplementedError
@@ -238,17 +235,17 @@ class BitStore:
         return len(self._bitarray)
 
     def set(self, value: int, pos: int | slice) -> BitStore:
-        x = self.copy()
-        ba = bitarray.bitarray(x._bitarray)
+        ba = bitarray.bitarray(self._bitarray)
         ba.__setitem__(pos, value)
+        x = self.__class__()
         x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
     def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
-        x = self.copy()
-        ba = bitarray.bitarray(x._bitarray)
+        ba = bitarray.bitarray(self._bitarray)
         for p in pos:
             ba.__setitem__(p, value)
+        x = self.__class__()
         x._bitarray = bitarray.frozenbitarray(ba)
         return x
 
