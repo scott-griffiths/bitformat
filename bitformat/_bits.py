@@ -562,18 +562,13 @@ class Bits:
         Raises ValueError if old is empty or if start or end are out of range.
 
         """
-        s = self._copy()
         if count == 0:
-            return s
+            return self
         old = self.from_auto(old)
         new = self.from_auto(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
-
-        if new is self:
-            # Prevent self assignment woes
-            new = self._copy()
         if bytealigned is None:
             bytealigned = Options().bytealigned
         # First find all the places where we want to do the replacements
@@ -587,17 +582,18 @@ class Bits:
             if count != 0 and len(starting_points) == count:
                 break
         if not starting_points:
-            return s
-        replacement_list = [s._bitstore.getslice(0, starting_points[0])]
+            return self
+        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new._bitstore)
             replacement_list.append(
-                s._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
+                self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
         # Final replacement
         replacement_list.append(new._bitstore)
-        replacement_list.append(s._bitstore.getslice(starting_points[-1] + len(old), None))
-        s._bitstore = BitStore.join(replacement_list)
-        return s
+        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
+        x = self.__class__()
+        x._bitstore = BitStore.join(replacement_list)
+        return x
 
     def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
         """Reverse bits.
@@ -974,13 +970,6 @@ class Bits:
         """
         return self._bitstore.to_hex()
 
-    def _copy(self: Bits) -> Bits:
-        """Create and return a new copy of the Bits (always in memory)."""
-        # Note that __copy__ may choose to return self if it's immutable. This method always makes a copy.
-        s_copy = self.__class__()
-        s_copy._bitstore = self._bitstore
-        return s_copy
-
     def _slice_copy(self: Bits, start: int, end: int) -> Bits:
         """Used internally to get a copy of a slice, without error checking."""
         bs = self.__class__()
@@ -988,7 +977,7 @@ class Bits:
         return bs
 
     def _getbits(self: Bits):
-        return self._copy()
+        return self
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""
@@ -1375,8 +1364,8 @@ class Bits:
             raise ValueError("Cannot shift by a negative amount.")
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
-        if not n:
-            return self._copy()
+        if n == 0:
+            return self
         n = min(n, len(self))
         return Bits.join([Bits.zeros(n), self._slice_copy(0, len(self) - n)])
 
@@ -1394,8 +1383,7 @@ class Bits:
     def __copy__(self: Bits) -> Bits:
         """Return a new copy of the Bits for the copy module.
 
-        Note that if you want a new copy (different ID), use _copy instead.
-        This copy will return self as it's immutable.
+        This can just return self as it's immutable.
 
         """
         return self
