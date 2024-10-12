@@ -462,18 +462,19 @@ class Bits:
             x = self.__class__()
             x._bitstore = self._bitstore.invert()
             return x
+
         if not isinstance(pos, abc.Iterable):
             pos = (pos,)
         length = len(self)
-
-        s = self._copy()
+        x = self.__class__()
+        x._bitstore = BitStore.join([self._bitstore])
         for p in pos:
             if p < 0:
                 p += length
             if not 0 <= p < length:
                 raise IndexError(f"Bit position {p} out of range.")
-            s._invert(p)
-        return s
+            x._bitstore = x._bitstore.invert(p)
+        return x
 
     def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs overwritten at bit position pos.
@@ -985,11 +986,6 @@ class Bits:
         bs = self.__class__()
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
-
-    def _invert(self, pos: int, /) -> None:
-        """Flip bit at pos 1<->0."""
-        assert 0 <= pos < len(self)
-        self._bitstore = self._bitstore.invert(pos)
 
     def _getbits(self: Bits):
         return self._copy()
