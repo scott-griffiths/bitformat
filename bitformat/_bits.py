@@ -193,9 +193,7 @@ class Bits:
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore()
-        for item in sequence:
-            x._addright(Bits.from_auto(item))
+        x._bitstore = BitStore.join([Bits.from_auto(item)._bitstore for item in sequence])
         return x
 
     @classmethod
@@ -460,14 +458,15 @@ class Bits:
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        s = self._copy()
         if pos is None:
-            s._invert_all()
-            return s
+            x = self.__class__()
+            x._bitstore = self._bitstore.invert()
+            return x
         if not isinstance(pos, abc.Iterable):
             pos = (pos,)
         length = len(self)
 
+        s = self._copy()
         for p in pos:
             if p < 0:
                 p += length
@@ -987,31 +986,10 @@ class Bits:
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def _addright(self, bs: Bits, /) -> None:
-        """Add a Bits to the RHS of the current Bits."""
-        self._bitstore = BitStore.join([self._bitstore, bs._bitstore])
-
     def _invert(self, pos: int, /) -> None:
         """Flip bit at pos 1<->0."""
         assert 0 <= pos < len(self)
         self._bitstore = self._bitstore.invert(pos)
-
-    def _invert_all(self) -> None:
-        """Invert every bit."""
-        self._bitstore = self._bitstore.invert()
-
-    def _imul(self, n: int, /) -> Bits:
-        """Concatenate n copies of self in place. Return self."""
-        assert n > 0
-        m = 1
-        old_len = len(self)
-        # Keep doubling the length for as long as we can
-        while m * 2 < n:
-            self._addright(self)
-            m *= 2
-        # Then finish off with the remaining copies
-        self._addright(self[0:(n - m) * old_len])
-        return self
 
     def _getbits(self: Bits):
         return self._copy()
@@ -1310,10 +1288,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__.from_auto(bs)
-        s = self._copy()
-        s._addright(bs)
-        return s
+        return Bits.join([self, Bits.from_auto(bs)])
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits:
@@ -1340,9 +1315,9 @@ class Bits:
         """
         if len(self) == 0:
             raise ValueError("Cannot invert empty Bits.")
-        s = self._copy()
-        s._invert_all()
-        return s
+        x = self.__class__()
+        x._bitstore = self._bitstore.invert()
+        return x
 
     def __lshift__(self: Bits, n: int, /) -> Bits:
         """Return Bits shifted by n to the left.
@@ -1355,9 +1330,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        s = self._slice_copy(n, len(self))
-        s._addright(Bits.zeros(n))
-        return s
+        return Bits.join([self._slice_copy(n, len(self)), Bits.zeros(n)])
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -1368,11 +1341,19 @@ class Bits:
         """
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
+        x = self.__class__()
         if n == 0:
-            return self.__class__()
-        s = self._copy()
-        s._imul(n)
-        return s
+            return x
+        x._bitstore = BitStore.join([self._bitstore])
+        m = 1
+        old_len = len(self)
+        # Keep doubling the length for as long as we can
+        while m * 2 < n:
+            x._bitstore = BitStore.join([x._bitstore, x._bitstore])
+            m *= 2
+        # Then finish off with the remaining copies
+        x._bitstore = BitStore.join([x._bitstore, x[0:(n - m) * old_len]._bitstore])
+        return x
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
@@ -1400,10 +1381,8 @@ class Bits:
             raise ValueError("Cannot shift an empty Bits.")
         if not n:
             return self._copy()
-        s = self.__class__.zeros(min(n, len(self)))
         n = min(n, len(self))
-        s._addright(self._slice_copy(0, len(self) - n))
-        return s
+        return Bits.join([Bits.zeros(n), self._slice_copy(0, len(self) - n)])
 
     # ----- Other
 
