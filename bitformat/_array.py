@@ -15,7 +15,7 @@ import sys
 
 
 if Options()._use_pure_python:
-    from ._bitstore_pure import BitStore
+    from ._bitstore_pure import MutableBitStore
 else:
     from ._bitstore import MutableBitStore
 

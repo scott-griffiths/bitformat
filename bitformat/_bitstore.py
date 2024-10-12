@@ -215,6 +215,17 @@ class BitStore:
     def __len__(self) -> int:
         return len(self._bitarray)
 
+    def set(self, value: int, pos: int | slice) -> BitStore:
+        x = self.copy()
+        x._bitarray.__setitem__(pos, value)
+        return x
+
+    def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
+        x = self.copy()
+        for p in pos:
+            x._bitarray.__setitem__(p, value)
+        return x
+
 
 class MutableBitStore(BitStore):
     """A mutable version of BitStore with an additional setitem method."""

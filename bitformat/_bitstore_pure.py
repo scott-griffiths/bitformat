@@ -8,8 +8,10 @@ from typing import Iterable, Iterator
 class BitStore:
     """A pure Python implementation of a BitStore. Horribly inefficient but useful for testing."""
 
-    def __init__(self) -> None:
-        self.bytearray_ = bytearray()
+    def __new__(cls, ) -> None:
+        x = super().__new__(cls)
+        x.bytearray_ = bytearray()
+        return x
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
@@ -140,57 +142,29 @@ class BitStore:
             raise ValueError(f"Cannot convert {bitstr} to oct as it is not a multiple of 3 bits.")
         return oct(int(bitstr, 2))[2:].zfill((end - start + 2) // 3)
 
-    def __iadd__(self, other: BitStore, /) -> BitStore:
-        self.bytearray_.extend(other.bytearray_)
-        return self
-
-    def __add__(self, other: BitStore, /) -> BitStore:
-        x = BitStore()
-        x.bytearray_ = self.bytearray_[:]
-        x.bytearray_.extend(other.bytearray_)
-        return x
-
     def __eq__(self, other: BitStore, /) -> bool:
         return self.bytearray_ == other.bytearray_
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        x = BitStore()
+        x = super().__new__(self.__class__)
         if len(self.bytearray_) != len(other.bytearray_):
             raise ValueError
         x.bytearray_ = bytearray(int(a) & int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        x = BitStore()
+        x = super().__new__(self.__class__)
         if len(self.bytearray_) != len(other.bytearray_):
             raise ValueError
         x.bytearray_ = bytearray(int(a) | int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        x = BitStore()
+        x = super().__new__(self.__class__)
         if len(self.bytearray_) != len(other.bytearray_):
             raise ValueError
         x.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
-
-    def __iand__(self, other: BitStore, /) -> BitStore:
-        if len(self.bytearray_) != len(other.bytearray_):
-            raise ValueError
-        self.bytearray_ = bytearray(int(a) & int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return self
-
-    def __ior__(self, other: BitStore, /) -> BitStore:
-        if len(self.bytearray_) != len(other.bytearray_):
-            raise ValueError
-        self.bytearray_ = bytearray(int(a) | int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return self
-
-    def __ixor__(self, other: BitStore, /) -> BitStore:
-        if len(self.bytearray_) != len(other.bytearray_):
-            raise ValueError
-        self.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return self
 
     def find(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> int:
         to_find = bs.slice_to_bin()
@@ -222,9 +196,6 @@ class BitStore:
     def count(self, value, /) -> int:
         return self.bytearray_.count(value)
 
-    def clear(self) -> None:
-        self.bytearray_ = bytearray()
-
     def reverse(self) -> None:
         self.bytearray_ = self.bytearray_[::-1]
 
@@ -246,12 +217,12 @@ class BitStore:
         return bool(self.bytearray_[index])
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        x = BitStore()
+        x = super().__new__(self.__class__)
         x.bytearray_ = self.bytearray_.__getitem__(key)
         return x
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        x = BitStore()
+        x = super().__new__(self.__class__)
         x.bytearray_ = self.bytearray_[start:stop]
         return x
 
@@ -269,6 +240,30 @@ class BitStore:
 
     def __len__(self) -> int:
         return len(self.bytearray_)
+
+    def set(self, value: int, pos: int | slice) -> BitStore:
+        x = self.copy()
+        if isinstance(pos, slice):
+            for i in range(*pos.indices(len(self))):
+                x.bytearray_[i] = value
+        else:
+            x.bytearray_[pos] = value
+        return x
+
+    def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
+        x = self.copy()
+        for p in pos:
+            x.bytearray_[p] = value
+        return x
+
+
+class MutableBitStore(BitStore):
+    """A mutable version of BitStore with an additional setitem method."""
+    def __new__(cls, bs: BitStore | None = None):
+        x = super().__new__(cls)
+        if bs is not None:
+            x.bytearray_ = bs.bytearray_
+        return x
 
     def setitem(self, key, value, /):
         if isinstance(value, BitStore):
