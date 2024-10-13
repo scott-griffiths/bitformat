@@ -47,14 +47,14 @@ class TestFind:
         s = Bits('0b000111000111')
         assert s.find('0b000') == 0
         assert s.find('0b0111000111') == 2
-        assert s.find('0b000', start=2) == 6
+        assert s[2:].find('0b000') == 4
 
     def test_find_bytes(self):
         s = Bits.from_string('0x010203040102ff')
         assert s.find('0x05', bytealigned=True) is None
         assert s.find('0x02', bytealigned=True) == 8
-        assert s.find('0x02', start=16, bytealigned=True) == 40
-        assert s.find('0x02', start=1, bytealigned=True) == 8
+        assert s[16:].find('0x02', bytealigned=True) == 24
+        assert s[1:].find('0x02', bytealigned=True) == 0
 
     def test_find_bytes_aligned_corner_cases(self):
         s = Bits('0xff')
@@ -65,12 +65,9 @@ class TestFind:
     def test_find_byte_aligned(self):
         s = Bits.pack('hex', '0x12345678')
         assert s.find(Bits('0x56'), bytealigned=True) == 16
-        assert not s.find(Bits('0x45'), start=16, bytealigned=True)
+        assert not s[16:].find(Bits('0x45'), bytealigned=True)
         s = Bits('0x1234')
         assert s.find('0x1234') == 0
-        s += '0b111'
-        s.find('0b1', start=17, bytealigned=True)
-        assert s.find('0b1', start=17, bytealigned=True) is None
 
     def test_find_byte_aligned_with_offset(self):
         s = Bits('0x112233')[4:]
@@ -100,28 +97,20 @@ class TestRfind:
 
     def test_rfind_startbit(self):
         a = Bits('0x0000ffffff')
-        b = a.rfind('0x0000', start=1, bytealigned=True)
+        b = a[1:].rfind('0x0000', bytealigned=True)
         assert b is None
-        b = a.rfind('0x00', start=1, bytealigned=True)
-        assert b == 8
 
     def test_rfind_endbit(self):
         a = Bits('0x000fff')
-        b = a.rfind('0b011', start=0, end=14, bytealigned=False)
+        b = a[0:14].rfind('0b011', bytealigned=False)
         assert b is not None
-        b = a.rfind('0b011', 0, 13, False)
+        b = a[0:13].rfind('0b011', False)
         assert b is None
 
     def test_rfind_errors(self):
         a = Bits('0x43234234')
         with pytest.raises(ValueError):
             a.rfind('', bytealigned=True)
-        with pytest.raises(ValueError):
-            a.rfind('0b1', start=-99, bytealigned=True)
-        with pytest.raises(ValueError):
-            a.rfind('0b1', end=33, bytealigned=True)
-        with pytest.raises(ValueError):
-            a.rfind('0b1', start=10, end=9, bytealigned=True)
 
 
 class TestShift:
@@ -192,9 +181,9 @@ class TestReplace:
         assert a.hex == '1123ef3234'
         a = a.replace('0x11', '', start=1, bytealigned=True)
         assert a.hex == '1123ef3234'
-        a = a.replace('0x11', '0xfff', end=7, bytealigned=True)
+        a = a.replace('0x11', '0xfff', start=7, bytealigned=True)
         assert a.hex == '1123ef3234'
-        a = a.replace('0x11', '0xfff', end=8, bytealigned=True)
+        a = a.replace('0x11', '0xfff', start=0, bytealigned=True)
         assert a.hex == 'fff23ef3234'
 
     def test_replace5(self):
@@ -230,10 +219,7 @@ class TestReplace:
         a = Bits('0o123415')
         with pytest.raises(ValueError):
             a.replace('', Bits('0o7'), bytealigned=True)
-        with pytest.raises(ValueError):
-            a.replace('0b1', '0b1', start=-100, bytealigned=True)
-        with pytest.raises(ValueError):
-            a.replace('0b1', '0b1', end=19, bytealigned=True)
+
 
 class TestSimpleConversions:
     def test_convert_to_uint(self):
@@ -712,55 +698,37 @@ class TestManyDifferentThings:
 
     def test_find_startbit_not_byte_aligned(self):
         a = Bits('0b0010000100')
-        found = a.find('0b1', start=4)
-        assert found == 7
-        found = a.find('0b1', start=2)
-        assert found == 2
-        found = a.find('0b1', bytealigned=False, start=8)
+        found = a[4:].find('0b1')
+        assert found == 3
+        found = a[2:].find('0b1')
+        assert found == 0
+        found = a[8:].find('0b1', bytealigned=False)
         assert found is None
 
     def test_find_endbit_not_byte_aligned(self):
         a = Bits('0b0010010000')
-        found = a.find('0b1', bytealigned=False, end=2)
+        found = a[:2].find('0b1', bytealigned=False)
         assert found is None
-        found = a.find('0b1', end=3)
+        found = a[:3].find('0b1')
         assert found == 2
-        found = a.find('0b1', bytealigned=False, start=3, end=5)
+        found = a[3:5].find('0b1', bytealigned=False)
         assert found is None
-        found = a.find('0b1', start=3, end=6)
-        assert found == 5
+        found = a[3:6].find('0b1')
+        assert found == 2
 
     def test_find_startbit_byte_aligned(self):
         a = Bits('0xff001122ff0011ff')
-        found = a.find('0x22', start=23, bytealigned=True)
-        assert found == 24
-        found = a.find('0x22', start=24, bytealigned=True)
-        assert found == 24
-        found = a.find('0x22', start=25, bytealigned=True)
-        assert found is None
-        found = a.find('0b111', start=40, bytealigned=True)
-        assert found == 56
+        found = a[24:].find('0x22', bytealigned=True)
+        assert found == 0
+        found = a[40:].find('0b111', bytealigned=True)
+        assert found == 16
 
     def test_find_endbit_byte_aligned(self):
         a = Bits('0xff001122ff0011ff')
-        found = a.find('0x22', end=31, bytealigned=True)
+        found = a[:31].find('0x22', bytealigned=True)
         assert found is None
-        found = a.find('0x22', end=32, bytealigned=True)
+        found = a[:32].find('0x22', bytealigned=True)
         assert found == 24
-
-    def test_find_start_endbit_errors(self):
-        a = Bits('0b00100')
-        with pytest.raises(ValueError):
-            _ = a.find('0b1', bytealigned=False, start=-100)
-        with pytest.raises(ValueError):
-            _ = a.find('0b1', end=6)
-        with pytest.raises(ValueError):
-            _ = a.find('0b1', start=4, end=3)
-        b = Bits('0x0011223344')
-        with pytest.raises(ValueError):
-            _ = b.find('0x22', bytealigned=True, start=-100)
-        with pytest.raises(ValueError):
-            _ = b.find('0x22', end=41, bytealigned=True)
 
     def test_find_all(self):
         a = Bits('0b11111')
@@ -1316,30 +1284,28 @@ class TestBugs:
         assert t == '0x77ab998666bf'
 
         # find
-        found = t.find('0x998', bytealigned=True, start=-31)
+        found = t[-32:].find('0x998', bytealigned=True)
+        assert found == 0
+        found = t[:-21].find('0x988', bytealigned=True)
         assert found is None
-        found = t.find('0x998', bytealigned=True, start=-32)
-        assert found == 16
-        found = t.find('0x988', bytealigned=True, end=-21)
-        assert found is None
-        found = t.find('0x998', bytealigned=True, end=-20)
+        found = t[:-20].find('0x998', bytealigned=True)
         assert found == 16
 
         # find_all
         s = Bits('0x1234151f')
-        li = list(s.find_all('0x1', bytealigned=True, start=-15))
-        assert li == [24]
-        li = list(s.find_all('0x1', bytealigned=True, start=-16))
-        assert li == [16, 24]
-        li = list(s.find_all('0x1', bytealigned=True, end=-5))
+        li = list(s[-15:].find_all('0x1'))
+        assert li == [7]
+        li = list(s[-16:].find_all('0x1', bytealigned=True))
+        assert li == [0, 8]
+        li = list(s[:-5].find_all('0x1', bytealigned=True))
         assert li == [0, 16]
-        li = list(s.find_all('0x1', bytealigned=True, end=-4))
+        li = list(s[:-4].find_all('0x1', bytealigned=True))
         assert li == [0, 16, 24]
 
         # rfind
-        found = s.rfind('0x1f', end=-1)
+        found = s[:-1].rfind('0x1f')
         assert found is None
-        found = s.rfind('0x12', start=-31)
+        found = s[-31:].rfind('0x12')
         assert found is None
 
         # chunks

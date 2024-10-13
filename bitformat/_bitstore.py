@@ -140,32 +140,30 @@ class BitStore:
         x.endbit = len(x._bitarray)
         return x
 
-    def find(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> int:
+    def find(self, bs: BitStore, bytealigned: bool) -> int:
         if not bytealigned:
-            return self._bitarray.find(bs._bitarray, start + self.startbit, end + self.startbit)
+            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit)
         try:
-            return next(self.findall(bs, start, end, bytealigned))
+            return next(self.findall(bs, bytealigned))
         except StopIteration:
             return -1
 
-    def rfind(self, bs: BitStore, start: int, end: int, bytealigned: bool):
+    def rfind(self, bs: BitStore, bytealigned: bool):
         if not bytealigned:
-            return self._bitarray.find(bs._bitarray, start + self.startbit, end + self.startbit, right=True)
+            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit, right=True)
         try:
-            return next(self.rfindall(bs, start, end, bytealigned))
+            return next(self.rfindall(bs, bytealigned))
         except StopIteration:
             return -1
 
-    def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> Iterator[int]:
-        start += self.startbit
-        end += self.startbit
+    def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
         if bytealigned is True and len(bs) % 8 == 0:
             # Special case, looking for whole bytes on whole byte boundaries
             bytes_ = bs.to_bytes()
             # Round up start byte to next byte, and round end byte down.
             # We're only looking for whole bytes, so can ignore bits at either end.
-            start_byte = (start + 7) // 8
-            end_byte = end // 8
+            start_byte = (self.startbit + 7) // 8
+            end_byte = self.endbit // 8
             b = self._bitarray[start_byte * 8: end_byte * 8].tobytes()
             byte_pos = 0
             bytes_to_search = end_byte - start_byte
@@ -177,7 +175,7 @@ class BitStore:
                 byte_pos = byte_pos + 1
             return
         # General case
-        i = self._bitarray.itersearch(bs._bitarray, start, end)
+        i = self._bitarray.itersearch(bs._bitarray, self.startbit, self.endbit)
         if not bytealigned:
             for p in i:
                 yield p
@@ -186,10 +184,8 @@ class BitStore:
                 if (p % 8) == 0:
                     yield p
 
-    def rfindall(self, bs: BitStore, start: int, end: int, bytealigned: bool) -> Iterator[int]:
-        start += self.startbit
-        end += self.startbit
-        i = self._bitarray.itersearch(bs._bitarray, start, end, right=True)
+    def rfindall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
+        i = self._bitarray.itersearch(bs._bitarray, self.startbit, self.endbit, right=True)
         if not bytealigned:
             for p in i:
                 yield p

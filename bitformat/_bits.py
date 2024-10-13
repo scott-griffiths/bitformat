@@ -359,8 +359,7 @@ class Bits:
             return self._slice_copy(len(self) - len(suffix), len(self)) == suffix
         return False
 
-    def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
-             bytealigned: bool | None = None) -> int | None:
+    def find(self, bs: BitsType, /, bytealigned: bool | None = None) -> int | None:
         """
         Find first occurrence of substring bs.
 
@@ -368,10 +367,6 @@ class Bits:
 
         :param bs: The Bits to find.
         :type bs: BitsType
-        :param start: The bit position to start the search. Defaults to 0.
-        :type start: int, optional
-        :param end: The bit position one past the last bit to search.
-        :type end: int, optional
         :param bytealigned: If True, the Bits will only be found on byte boundaries.
         :type bytealigned: bool, optional
         :return: The bit position if found, or None if not found.
@@ -385,21 +380,15 @@ class Bits:
         bs = Bits.from_auto(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        start, end = self._validate_slice(start, end)
         ba = Options().bytealigned if bytealigned is None else bytealigned
-        p = self._bitstore.find(bs._bitstore, start, end, ba)
+        p = self._bitstore.find(bs._bitstore, ba)
         return None if p == -1 else p
 
-    def find_all(self, bs: BitsType, start: int | None = None, end: int | None = None, count: int | None = None,
-                 bytealigned: bool | None = None) -> Iterable[int]:
+    def find_all(self, bs: BitsType, count: int | None = None, bytealigned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         :param bs: The Bits to find.
         :type bs: BitsType
-        :param start: The bit position to start the search. Defaults to 0.
-        :type start: int, optional
-        :param end: The bit position one past the last bit to search.
-        :type end: int, optional
         :param count: The maximum number of occurrences to find.
         :type count: int, optional
         :param bytealigned: If True, the Bits will only be found on byte boundaries.
@@ -414,11 +403,10 @@ class Bits:
 
         """
         if count is not None and count < 0:
-            raise ValueError("In findall, count must be >= 0.")
+            raise ValueError("In find_all, count must be >= 0.")
         bs = Bits.from_auto(bs)
-        start, end = self._validate_slice(start, end)
         ba = Options().bytealigned if bytealigned is None else bytealigned
-        return self._findall(bs, start, end, count, ba)
+        return self._findall(bs, count, ba)
 
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
@@ -574,7 +562,10 @@ class Bits:
             bytealigned = Options().bytealigned
         # First find all the places where we want to do the replacements
         starting_points: list[int] = []
-        for x in self.find_all(old, start, end, bytealigned=bytealigned):
+        if bytealigned:
+            start += (8 - start % 8) % 8
+        for x in self[start:end].find_all(old, bytealigned=bytealigned):
+            x += start
             if not starting_points:
                 starting_points.append(x)
             elif x >= starting_points[-1] + len(old):
@@ -615,18 +606,13 @@ class Bits:
         s._bitstore = bs
         return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
 
-    def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
-              bytealigned: bool | None = None) -> int | None:
+    def rfind(self, bs: BitsType, /, bytealigned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.
 
         Returns a the bit position if found, or None if not found.
 
         :param bs: The Bits to find.
         :type bs: BitsType
-        :param start: The bit position to end the reverse search. Defaults to 0.
-        :type start: int, optional
-        :param end: The bit position one past the first bit to reverse search. Defaults to len(self).
-        :type end: int, optional
         :param bytealigned: If True, the Bits will only be found on byte boundaries.
         :type bytealigned: bool, optional
         :return: The bit position if found, or None if not found.
@@ -637,11 +623,10 @@ class Bits:
 
         """
         bs = Bits.from_auto(bs)
-        start, end = self._validate_slice(start, end)
         ba = Options().bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._bitstore.rfind(bs._bitstore, start, end, ba)
+        p = self._bitstore.rfind(bs._bitstore, ba)
         return None if p == -1 else p
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
@@ -803,10 +788,10 @@ class Bits:
 
     # ----- Private Methods -----
 
-    def _findall(self, bs: Bits, start: int, end: int, count: int | None,
+    def _findall(self, bs: Bits, count: int | None,
                  bytealigned: bool) -> Iterable[int]:
         c = 0
-        for i in self._bitstore.findall(bs._bitstore, start, end, bytealigned):
+        for i in self._bitstore.findall(bs._bitstore, bytealigned):
             if count is not None and c >= count:
                 return
             c += 1
