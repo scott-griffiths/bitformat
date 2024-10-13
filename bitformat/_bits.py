@@ -698,22 +698,19 @@ class Bits:
             s._bitstore = self._bitstore.set_from_iterable(v, pos)
         return s
 
-    def starts_with(self, prefix: BitsType, start: int | None = None, end: int | None = None) -> bool:
+    def starts_with(self, prefix: BitsType) -> bool:
         """Return whether the current Bits starts with prefix.
 
         :param prefix: The Bits to search for.
         :type prefix: BitsType
-        :param start: The bit position to start from. Defaults to 0.
-        :type start: int, optional
-        :param end: The bit position to end at. Defaults to len(self).
-        :type end: int, optional
         :return: True if the Bits starts with the prefix, otherwise False.
         :rtype: bool
 
         """
         prefix = self.from_auto(prefix)
-        start, end = self._validate_slice(start, end)
-        return self._slice_copy(start, start + len(prefix)) == prefix if end >= start + len(prefix) else False
+        if len(prefix) <= len(self):
+            return self._slice_copy(0, len(prefix)) == prefix
+        return False
 
     def to_bytes(self) -> bytes:
         """Return the Bits as bytes, padding with zero bits if needed.
@@ -781,8 +778,7 @@ class Bits:
 
     # ----- Private Methods -----
 
-    def _findall(self, bs: Bits, count: int | None,
-                 bytealigned: bool) -> Iterable[int]:
+    def _findall(self, bs: Bits, count: int | None, bytealigned: bool) -> Iterable[int]:
         c = 0
         for i in self._bitstore.findall(bs._bitstore, bytealigned):
             if count is not None and c >= count:
@@ -851,7 +847,6 @@ class Bits:
             if i < 0:
                 raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
             raise e
-
 
     def _getuint(self) -> int:
         """Return data as an unsigned int."""

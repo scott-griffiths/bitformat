@@ -909,13 +909,13 @@ class TestManyDifferentThings:
 
     def test_startswith_start_end(self):
         s = Bits('0x123456')
-        assert s.starts_with('0x234', 4)
-        assert not s.starts_with('0x123', end=11)
-        assert s.starts_with('0x123', end=12)
-        assert s.starts_with('0x34', 8, 16)
-        assert not s.starts_with('0x34', 7, 16)
-        assert not s.starts_with('0x34', 9, 16)
-        assert not s.starts_with('0x34', 8, 15)
+        assert s[4:].starts_with('0x234')
+        assert not s[:11].starts_with('0x123')
+        assert s[:12].starts_with('0x123')
+        assert s[8:16].starts_with('0x34')
+        assert not s[7:16].starts_with('0x34')
+        assert not s[9:16].starts_with('0x34')
+        assert not s[8:15].starts_with('0x34')
 
     def test_endswith(self):
         a = Bits()
@@ -1299,9 +1299,9 @@ class TestBugs:
 
         # startswith
         s = Bits('0xfe0012fe1200fe')
-        assert s.starts_with('0x00f', start=-16)
-        assert s.starts_with('0xfe00', end=-40)
-        assert not s.starts_with('0xfe00', end=-41)
+        assert s[-16:].starts_with('0x00f')
+        assert s[:-40].starts_with('0xfe00')
+        assert not s[:-41].starts_with('0xfe00')
 
         # endswith
         assert s[-16:].ends_with('0x00fe')
