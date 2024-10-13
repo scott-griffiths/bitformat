@@ -587,24 +587,17 @@ class Bits:
         x._bitstore = BitStore.join(replacement_list)
         return x
 
-    def reverse(self, start: int | None = None, end: int | None = None) -> Bits:
+    def reverse(self) -> Bits:
         """Reverse bits.
 
-        :param start: Position of first bit to reverse. Defaults to 0.
-        :type start: int, optional
-        :param end: One past the position of the last bit to reverse. Defaults to len(self).
-        :type end: int, optional
         :return: A new Bits object with the reversed bits.
         :rtype: Bits
 
-        Raises ValueError if start < 0, end > len(self) or end < start.
-
         """
-        start, end = self._validate_slice(start, end)
-        s = self._slice_copy(start, end)
-        bs = s._bitstore.reverse()
-        s._bitstore = bs
-        return Bits.join([self._slice_copy(0, start) + s + self._slice_copy(end, len(self))])
+        x = self.__class__()
+        bs = self._bitstore.reverse()
+        x._bitstore = bs
+        return x
 
     def rfind(self, bs: BitsType, /, bytealigned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.

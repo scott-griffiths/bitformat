@@ -841,17 +841,8 @@ class TestManyDifferentThings:
         a = Bits('0x0012ff')
         a = a.reverse()
         assert a == '0xff4800'
-        a = a.reverse(8, 16)
-        assert a == '0xff1200'
-
-    def test_reverse_with_slice_errors(self):
-        a = Bits('0x123')
-        with pytest.raises(ValueError):
-            _ = a.reverse(-1, 4)
-        with pytest.raises(ValueError):
-            _ = a.reverse(10, 9)
-        with pytest.raises(ValueError):
-            _ = a.reverse(1, 10000)
+        a = a[8:16].reverse()
+        assert a == '0x12'
 
     def test_cut(self):
         a = Bits('0x00112233445')
@@ -1270,13 +1261,6 @@ class TestBugs:
         assert s == '0b01101'
         with pytest.raises(ValueError):
             _ = s.insert(-1000, '0b0')
-
-        # reverse
-        s = s.reverse(-2)
-        assert s == '0b01110'
-        t = Bits('0x778899abcdef')
-        t = t.reverse(-12, -4)
-        assert t == '0x778899abc7bf'
 
         # overwrite
         t = Bits('0x77ab9988c7bf')
