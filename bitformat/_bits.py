@@ -445,7 +445,11 @@ class Bits:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        return Bits.join([self._slice_copy(0, pos), bs, self._slice_copy(pos, len(self))])
+        x = self.__class__()
+        x._bitstore = BitStore.join([self._bitstore.getslice(0, pos),
+                                     bs._bitstore,
+                                     self._bitstore.getslice(pos, None)])
+        return x
 
     def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
         """Return new Bits with one or many bits inverted between 0 and 1.
@@ -494,7 +498,11 @@ class Bits:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        return Bits.join([self._slice_copy(0, pos), bs, self._slice_copy(pos + len(bs), len(self))])
+        x = self.__class__()
+        x._bitstore = BitStore.join([self._bitstore.getslice(0, pos),
+                                     bs._bitstore,
+                                     self._bitstore.getslice(pos + len(bs), None)])
+        return x
 
     def pp(self, fmt: str | None = None, width: int = 120, sep: str = ' ',
            show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -992,9 +1000,9 @@ class Bits:
         if length == 0:
             s = ''
         elif length % 4 == 0:
-            s = '0x' + self.hex
+            s = '0x' + self.unpack('hex')
         else:
-            s = '0b' + self.bin
+            s = '0b' + self.unpack('bin')
         return s
 
     @staticmethod

@@ -3,7 +3,7 @@ from __future__ import annotations
 import bitarray
 import bitarray.util
 import copy
-from typing import Iterable, Iterator
+from typing import Sequence, Iterator
 
 
 class BitStore:
@@ -88,7 +88,7 @@ class BitStore:
         return x
 
     @classmethod
-    def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
+    def join(cls, iterable: Sequence[BitStore], /) -> BitStore:
         x = super().__new__(cls)
         ba = bitarray.bitarray()
         x.startbit = 0
@@ -233,11 +233,22 @@ class BitStore:
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
         x = super().__new__(self.__class__)
-        x.startbit = 0
-        start = start + self.startbit if start is not None else self.startbit
-        stop = stop + self.startbit if stop is not None else self.endbit
-        x._bitarray = self._bitarray[start:stop]
-        x.endbit = len(x._bitarray)
+        if start is None:
+            x.startbit = self.startbit
+        else:
+            if start < 0:
+                start = len(self) + start
+            x.startbit = start + self.startbit
+        if stop is None:
+            x.endbit = self.endbit
+        else:
+            if stop < 0:
+                stop = len(self) + stop
+            x.endbit = stop + self.startbit
+        if x.endbit > len(self._bitarray):
+            raise ValueError(f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}")
+        # This is just a view onto the other bitarray, so no copy needed.
+        x._bitarray = self._bitarray
         return x
 
     def invert(self, index: int | None = None, /) -> BitStore:
@@ -260,7 +271,6 @@ class BitStore:
 
     def __len__(self) -> int:
         return self.endbit - self.startbit
-        # return len(self._bitarray)
 
     def set(self, value: int, pos: int | slice) -> BitStore:
         ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
