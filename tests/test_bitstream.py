@@ -889,9 +889,9 @@ class TestManyDifferentThings:
         a = Bits('0x00112233445')
         b = list(a.chunks(8))
         assert b == ['0x00', '0x11', '0x22', '0x33', '0x44', '0x5']
-        b = list(a.chunks(4, 8, 16))
+        b = list(a[8:16].chunks(4))
         assert b == ['0x1', '0x1']
-        b = list(a.chunks(4, 0, 44, 4))
+        b = list(a[0:44].chunks(4, 4))
         assert b == ['0x0', '0x0', '0x1', '0x1']
         a = Bits()
         b = list(a.chunks(10))
@@ -899,12 +899,6 @@ class TestManyDifferentThings:
 
     def test_cut_errors(self):
         a = Bits('0b1')
-        b = a.chunks(1, 1, 2)
-        with pytest.raises(ValueError):
-            _ = next(b)
-        b = a.chunks(1, -2, 1)
-        with pytest.raises(ValueError):
-            _ = next(b)
         b = a.chunks(0)
         with pytest.raises(ValueError):
             _ = next(b)
@@ -1348,9 +1342,9 @@ class TestBugs:
         found = s.rfind('0x12', start=-31)
         assert found is None
 
-        # cut
+        # chunks
         s = Bits('0x12345')
-        li = list(s.chunks(4, start=-12, end=-4))
+        li = list(s[-12:-4].chunks(4))
         assert li == ['0x3', '0x4']
 
         # startswith
