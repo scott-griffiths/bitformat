@@ -971,13 +971,13 @@ class TestManyDifferentThings:
 
     def test_endswith_start_end(self):
         s = Bits('0x123456')
-        assert s.ends_with('0x234', end=16)
-        assert not s.ends_with('0x456', start=13)
-        assert s.ends_with('0x456', start=12)
-        assert s.ends_with('0x34', 8, 16)
-        assert s.ends_with('0x34', 7, 16)
-        assert not s.ends_with('0x34', 9, 16)
-        assert not s.ends_with('0x34', 8, 15)
+        assert s[:16].ends_with('0x234')
+        assert not s[13:].ends_with('0x456')
+        assert s[12:].ends_with('0x456')
+        assert s[8:16].ends_with('0x34')
+        assert s[7:16].ends_with('0x34')
+        assert not s[9:16].ends_with('0x34')
+        assert not s[8:15].ends_with('0x34')
 
     def test_const_bit_stream_set_creation(self):
         sl = [Bits.pack('u7', i) for i in range(15)]
@@ -1354,10 +1354,10 @@ class TestBugs:
         assert not s.starts_with('0xfe00', end=-41)
 
         # endswith
-        assert s.ends_with('0x00fe', start=-16)
-        assert not s.ends_with('0x00fe', start=-15)
-        assert not s.ends_with('0x00fe', end=-1)
-        assert s.ends_with('0x00f', end=-4)
+        assert s[-16:].ends_with('0x00fe')
+        assert not s[-15:].ends_with('0x00fe')
+        assert not s[-1:].ends_with('0x00fe')
+        assert s[:-4].ends_with('0x00f')
 
         # replace
         s = s.replace('0xfe', '', end=-1)

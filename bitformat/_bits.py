@@ -345,22 +345,19 @@ class Bits:
             start += bits
         return
 
-    def ends_with(self, suffix: BitsType, /, start: int | None = None, end: int | None = None) -> bool:
+    def ends_with(self, suffix: BitsType, /) -> bool:
         """
         Return whether the current Bits ends with suffix.
 
         :param suffix: The Bits to search for.
         :type suffix: BitsType
-        :param start: The bit position to start from. Defaults to 0.
-        :type start: int, optional
-        :param end: The bit position to end at. Defaults to len(self).
-        :type end: int, optional
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
         suffix = self.from_auto(suffix)
-        start, end = self._validate_slice(start, end)
-        return self._slice_copy(end - len(suffix), end) == suffix if start + len(suffix) <= end else False
+        if len(suffix) <= len(self):
+            return self._slice_copy(len(self) - len(suffix), len(self)) == suffix
+        return False
 
     def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None,
              bytealigned: bool | None = None) -> int | None:
