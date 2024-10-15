@@ -38,7 +38,7 @@ class FieldType(abc.ABC):
         b = Bits() if b is None else Bits.from_auto(b)
         self.clear()
         try:
-            return self._parse(b, kwargs)
+            return self._parse(b, 0, kwargs)
         except ValueError as e:
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
@@ -125,7 +125,7 @@ class FieldType(abc.ABC):
             return fieldtype_classes['Field'].from_string(s)
 
     @abc.abstractmethod
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         """
         Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
 

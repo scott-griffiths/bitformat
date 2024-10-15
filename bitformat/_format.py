@@ -166,11 +166,11 @@ class Format(FieldType):
         return self.to_bits(), values_used
 
     @override
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-        pos = 0
+    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+        pos = startbit
         for fieldtype in self.fieldtypes:
-            pos += fieldtype._parse(b[pos:], vars_)
-        return pos
+            pos += fieldtype._parse(b, pos, vars_)
+        return pos - startbit
 
     @override
     def _copy(self) -> Format:

@@ -50,7 +50,7 @@ class Pass(FieldType):
         return Bits(), 0
 
     @override
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         return 0
 
     @override

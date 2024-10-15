@@ -160,9 +160,9 @@ class Field(FieldType):
         return dtype_str, name, value, const
 
     @override
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if self.const:
-            value = b[:len(self._bits)]
+            value = b[startbit:len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)
@@ -170,10 +170,10 @@ class Field(FieldType):
             dtype = self._dtype_expression.evaluate(vars_)
         else:
             dtype = self._dtype_expression.base_dtype
-        if len(b) < dtype.bitlength:
-            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b)} were available.")
+        if len(b) - startbit < dtype.bitlength:
+            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b) - startbit} were available.")
         # Deal with a stretchy dtype
-        self._bits = b[:dtype.bitlength] if dtype.bitlength != 0 else b
+        self._bits = b[startbit:startbit + dtype.bitlength] if dtype.bitlength != 0 else b[startbit:]
         if self.name != '':
             vars_[self.name] = self.value
         return len(self._bits)

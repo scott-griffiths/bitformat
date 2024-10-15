@@ -98,11 +98,11 @@ class If(FieldType):
         return self.to_bits(), v
 
     @override
-    def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         self.condition_value = self.condition.evaluate(**vars_)
         if self.condition_value:
-            return self.then_._parse(b, vars_)
-        return self.else_._parse(b, vars_)
+            return self.then_._parse(b, startbit, vars_)
+        return self.else_._parse(b, startbit, vars_)
 
     @override
     def _copy(self) -> If:
