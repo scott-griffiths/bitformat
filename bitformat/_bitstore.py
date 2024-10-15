@@ -3,7 +3,7 @@ from __future__ import annotations
 import bitarray
 import bitarray.util
 import copy
-from typing import Sequence, Iterator
+from typing import Sequence, Iterator, Iterable
 
 
 class BitStore:
@@ -88,56 +88,59 @@ class BitStore:
         return x
 
     @classmethod
-    def join(cls, iterable: Sequence[BitStore], /) -> BitStore:
+    def join(cls, seq: Sequence[BitStore], /) -> BitStore:
         x = super().__new__(cls)
         ba = bitarray.bitarray()
         x.startbit = 0
-        for i in iterable:
-            ba += i._bitarray[i.startbit:i.endbit]
+        for i in seq:
+            ba += i._to_bitarray()
         x._bitarray = bitarray.frozenbitarray(ba)
         x.endbit = len(x._bitarray)
         return x
 
+    def _to_bitarray(self) -> bitarray.frozenbitarray:
+        return self._bitarray[self.startbit:self.endbit]
+
     def to_bytes(self) -> bytes:
-        return self._bitarray[self.startbit:self.endbit].tobytes()
+        return self._to_bitarray().tobytes()
 
     def to_uint(self) -> int:
-        return bitarray.util.ba2int(self._bitarray[self.startbit:self.endbit], signed=False)
+        return bitarray.util.ba2int(self._to_bitarray(), signed=False)
 
     def to_int(self) -> int:
-        return bitarray.util.ba2int(self._bitarray[self.startbit:self.endbit], signed=True)
+        return bitarray.util.ba2int(self._to_bitarray(), signed=True)
 
     def to_hex(self) -> str:
-        return bitarray.util.ba2hex(self._bitarray[self.startbit:self.endbit])
+        return bitarray.util.ba2hex(self._to_bitarray())
 
     def to_bin(self) -> str:
-        return self._bitarray[self.startbit:self.endbit].to01()
+        return self._to_bitarray().to01()
 
     def to_oct(self) -> str:
-        return bitarray.util.ba2base(8, self._bitarray[self.startbit:self.endbit])
+        return bitarray.util.ba2base(8, self._to_bitarray())
 
     def __eq__(self, other: BitStore, /) -> bool:
-        return self._bitarray[self.startbit:self.endbit] == other._bitarray[other.startbit:other.endbit]
+        return self._to_bitarray() == other._to_bitarray()
 
     def __and__(self, other: BitStore, /) -> BitStore:
         x = super().__new__(self.__class__)
-        x._bitarray = self._bitarray[self.startbit:self.endbit] & other._bitarray[other.startbit:other.endbit]
+        x._bitarray = self._to_bitarray() & other._to_bitarray()
         x.startbit = 0
-        x.endbit = len(x._bitarray)
+        x.endbit = len(self)
         return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
         x = super().__new__(self.__class__)
-        x._bitarray = self._bitarray[self.startbit:self.endbit] | other._bitarray[other.startbit:other.endbit]
+        x._bitarray = self._to_bitarray() | other._to_bitarray()
         x.startbit = 0
-        x.endbit = len(x._bitarray)
+        x.endbit = len(self)
         return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
         x = super().__new__(self.__class__)
-        x._bitarray = self._bitarray[self.startbit:self.endbit] ^ other._bitarray[other.startbit:other.endbit]
+        x._bitarray = self._to_bitarray() ^ other._to_bitarray()
         x.startbit = 0
-        x.endbit = len(x._bitarray)
+        x.endbit = len(self)
         return x
 
     def find(self, bs: BitStore, bytealigned: bool) -> int:
@@ -195,11 +198,11 @@ class BitStore:
                     yield p
 
     def count(self, value, /) -> int:
-        return self._bitarray[self.startbit:self.endbit].count(value)
+        return self._to_bitarray().count(value)
 
     def reverse(self) -> BitStore:
         x = self.__class__()
-        ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
+        ba = bitarray.bitarray(self._to_bitarray())
         ba.reverse()
         x._bitarray = bitarray.frozenbitarray(ba)
         x.startbit = 0
@@ -227,20 +230,12 @@ class BitStore:
         x.endbit = len(x._bitarray)
         return x
 
-    def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        if start is None:
-            x.startbit = self.startbit
-        else:
-            if start < 0:
-                start = len(self) + start
-            x.startbit = start + self.startbit
-        if stop is None:
-            x.endbit = self.endbit
-        else:
-            if stop < 0:
-                stop = len(self) + stop
-            x.endbit = stop + self.startbit
+    def getslice(self, start: int, stop: int | None, /) -> BitStore:
+        assert start >= 0
+        assert stop is None or stop >= 0
+        x = self.__class__()
+        x.startbit = start + self.startbit
+        x.endbit = stop + self.startbit if stop is not None else self.endbit
         if x.endbit > len(self._bitarray):
             raise ValueError(f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}")
         # This is just a view onto the other bitarray, so no copy needed.
@@ -249,27 +244,27 @@ class BitStore:
 
     def invert(self, index: int | None = None, /) -> BitStore:
         x = self.__class__()
-        ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
+        ba = bitarray.bitarray(self._to_bitarray())
         if index is not None:
             ba.invert(index)
         else:
             ba.invert()
         x._bitarray = bitarray.frozenbitarray(ba)
         x.startbit = 0
-        x.endbit = len(x._bitarray)
+        x.endbit = len(self)
         return x
 
     def any_set(self) -> bool:
-        return self._bitarray[self.startbit:self.endbit].any()
+        return self._to_bitarray().any()
 
     def all_set(self) -> bool:
-        return self._bitarray[self.startbit:self.endbit].all()
+        return self._to_bitarray().all()
 
     def __len__(self) -> int:
         return self.endbit - self.startbit
 
     def set(self, value: int, pos: int | slice) -> BitStore:
-        ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
+        ba = bitarray.bitarray(self._to_bitarray())
         ba.__setitem__(pos, value)
         x = self.__class__()
         x._bitarray = bitarray.frozenbitarray(ba)
@@ -278,7 +273,7 @@ class BitStore:
         return x
 
     def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
-        ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
+        ba = bitarray.bitarray(self._to_bitarray())
         for p in pos:
             ba.__setitem__(p, value)
         x = self.__class__()
@@ -297,26 +292,23 @@ class MutableBitStore(BitStore):
         x = super().__new__(cls)
         x.startbit = 0
         if bs is not None:
-            ba = copy.copy(bs._bitarray[bs.startbit:bs.endbit])
+            ba = copy.copy(bs._to_bitarray())
             x._bitarray = bitarray.frozenbitarray(ba)
         else:
             x._bitarray = bitarray.frozenbitarray()
         x.endbit = len(x._bitarray)
         return x
 
-    def setitem(self, key: int | slice, value: int | BitStore, /):
-        ba = bitarray.bitarray(self._bitarray[self.startbit:self.endbit])
-        if isinstance(value, BitStore):
-            ba.__setitem__(key, value._bitarray)
-        else:
-            ba.__setitem__(key, value)
+    def setitem(self, key: int | slice, value: BitStore, /):
+        ba = bitarray.bitarray(self._to_bitarray())
+        ba.__setitem__(key, value._bitarray)
         self._bitarray = bitarray.frozenbitarray(ba)
         self.startbit = 0
         self.endbit = len(self._bitarray)
 
     def copy(self) -> BitStore:
         s_copy = self.__class__()
-        s_copy._bitarray = copy.copy(self._bitarray[self.startbit:self.endbit])
+        s_copy._bitarray = copy.copy(self._to_bitarray())
         s_copy.startbit = 0
         s_copy.endbit = len(s_copy._bitarray)
         return s_copy

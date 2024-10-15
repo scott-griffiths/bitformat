@@ -293,7 +293,7 @@ class Bits:
             raise ValueError(f"The bits should be a whole number of bytelength bytes long.")
         chunks = []
         for startbit in range(0, len(self), bytelength * 8):
-            x = self._slice_copy(startbit, startbit + bytelength * 8).to_bytes()
+            x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
             chunks.append(Bits.from_bytes(x[::-1]))
         return Bits.join(chunks)
 
@@ -336,7 +336,7 @@ class Bits:
         end = len(self)
         while count is None or c < count:
             c += 1
-            nextchunk = self._slice_copy(start, min(start + bits, end))
+            nextchunk = self._slice(start, min(start + bits, end))
             if len(nextchunk) == 0:
                 return
             yield nextchunk
@@ -356,7 +356,7 @@ class Bits:
         """
         suffix = self.from_auto(suffix)
         if len(suffix) <= len(self):
-            return self._slice_copy(len(self) - len(suffix), len(self)) == suffix
+            return self._slice(len(self) - len(suffix), len(self)) == suffix
         return False
 
     def find(self, bs: BitsType, /, bytealigned: bool | None = None) -> int | None:
@@ -643,8 +643,8 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= (end - start)
-        return Bits.join([self._slice_copy(0, start), self._slice_copy(start + n, end),
-                          self._slice_copy(start, start + n), self._slice_copy(end, len(self))])
+        return Bits.join([self._slice(0, start), self._slice(start + n, end),
+                          self._slice(start, start + n), self._slice(end, len(self))])
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Return new Bits with bit pattern rotated to the right.
@@ -667,8 +667,8 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= (end - start)
-        return Bits.join([self._slice_copy(0, start), self._slice_copy(end - n, end),
-                          self._slice_copy(start, end - n), self._slice_copy(end, len(self))])
+        return Bits.join([self._slice(0, start), self._slice(end - n, end),
+                          self._slice(start, end - n), self._slice(end, len(self))])
 
     def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
         """Return new Bits with one or many bits set to 1 or 0.
@@ -709,7 +709,7 @@ class Bits:
         """
         prefix = self.from_auto(prefix)
         if len(prefix) <= len(self):
-            return self._slice_copy(0, len(prefix)) == prefix
+            return self._slice(0, len(prefix)) == prefix
         return False
 
     def to_bytes(self) -> bytes:
@@ -772,7 +772,7 @@ class Bits:
                 if dtype.size == 0:
                     raise ValueError(f"No size given for dtype '{dtype}'. A size must be specified for each dtype"
                                      " when a list of dtypes is being unpacked.")
-                ret_val.append(dtype.unpack(self._slice_copy(pos, pos + dtype.bitlength)))
+                ret_val.append(dtype.unpack(self._slice(pos, pos + dtype.bitlength)))
             pos += dtype.bitlength
         return ret_val
 
@@ -944,8 +944,8 @@ class Bits:
         """
         return self._bitstore.to_hex()
 
-    def _slice_copy(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a copy of a slice, without error checking."""
+    def _slice(self: Bits, start: int, end: int) -> Bits:
+        """Used internally to get a  slice, without error checking. No copy of data is made - it's just a view."""
         bs = self.__class__()
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
@@ -1289,7 +1289,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        return Bits.join([self._slice_copy(n, len(self)), Bits.zeros(n)])
+        return Bits.join([self._slice(n, len(self)), Bits.zeros(n)])
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -1341,7 +1341,7 @@ class Bits:
         if n == 0:
             return self
         n = min(n, len(self))
-        return Bits.join([Bits.zeros(n), self._slice_copy(0, len(self) - n)])
+        return Bits.join([Bits.zeros(n), self._slice(0, len(self) - n)])
 
     # ----- Other
 
@@ -1373,7 +1373,7 @@ class Bits:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            return hash(((self._slice_copy(0, 800) + self._slice_copy(len(self) - 800, len(self))).to_bytes(), len(self)))
+            return hash(((self._slice(0, 800) + self._slice(len(self) - 800, len(self))).to_bytes(), len(self)))
 
     def __iter__(self) -> Iterable[bool]:
         """Iterate over the bits."""

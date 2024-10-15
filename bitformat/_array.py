@@ -172,7 +172,7 @@ class Array:
     def data(self, value: BitsType) -> None:
         self._bitstore = Bits.from_auto(value)._bitstore
 
-    def _getbitslice(self, start: int | None, stop: int | None) -> Bits:
+    def _getbitslice(self, start: int, stop: int | None) -> Bits:
         x = Bits()
         x._bitstore = self._bitstore.getslice(start, stop)
         return x
@@ -185,8 +185,11 @@ class Array:
     @property
     def trailing_bits(self) -> Bits:
         """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
-        trailing_bit_length = len(self._bitstore) % self._dtype.bits_per_item
-        return Bits() if trailing_bit_length == 0 else self._getbitslice(-trailing_bit_length, None)
+        bitstore_length = len(self._bitstore)
+        trailing_bit_length = bitstore_length % self._dtype.bits_per_item
+        if trailing_bit_length == 0:
+            return Bits()
+        return self._getbitslice(bitstore_length - trailing_bit_length, bitstore_length)
 
     @property
     def dtype(self) -> Dtype:
@@ -311,9 +314,10 @@ class Array:
 
     def __repr__(self) -> str:
         list_str = f"{self.unpack()}"
-        trailing_bit_length = len(self._bitstore) % self._dtype.bitlength
+        bitstore_length = len(self._bitstore)
+        trailing_bit_length = bitstore_length % self._dtype.bitlength
         final_str = "" if trailing_bit_length == 0 else ", trailing_bits=" + repr(
-            self._getbitslice(-trailing_bit_length, None)).splitlines()[0]
+            self._getbitslice(bitstore_length - trailing_bit_length, bitstore_length)).splitlines()[0]
         return f"Array('{self._dtype}', {list_str}{final_str})"
 
     def astype(self, dtype: str | Dtype, /) -> Array:
@@ -400,6 +404,8 @@ class Array:
         :type x: ElementType
         :return: None
         """
+        if pos < 0:
+            pos += len(self)
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
         self._bitstore = MutableBitStore.join([self._bitstore.getslice(0, pos * self._dtype.bitlength), v._bitstore,
