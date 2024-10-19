@@ -110,18 +110,18 @@ class BitStore:
         ]
         return bytes(byte_list)
 
-    def slice_to_uint(self, start: int | None = None, end: int | None = None) -> int:
+    def to_uint(self, start: int | None = None, end: int | None = None) -> int:
         bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
         return int(bitstr, 2)
 
-    def slice_to_int(self, start: int | None = None, end: int | None = None) -> int:
+    def to_int(self, start: int | None = None, end: int | None = None) -> int:
         bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
         start, end, _ = slice(start, end).indices(len(self))
         if self.bytearray_[start] == 0:
             return int(bitstr, 2)
         return int(bitstr, 2) - (1 << (end - start))
 
-    def slice_to_hex(self, start: int | None = None, end: int | None = None) -> str:
+    def to_hex(self, start: int | None = None, end: int | None = None) -> str:
         bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
         if bitstr == '':
             return ''
@@ -130,10 +130,10 @@ class BitStore:
             raise ValueError(f"Cannot convert {bitstr} to hex as it is not a multiple of 4 bits.")
         return hex(int(bitstr, 2))[2:].zfill((end - start + 3) // 4)
 
-    def slice_to_bin(self, start: int | None = None, end: int | None = None) -> str:
+    def to_bin(self, start: int | None = None, end: int | None = None) -> str:
         return ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
 
-    def slice_to_oct(self, start: int | None = None, end: int | None = None) -> str:
+    def to_oct(self, start: int | None = None, end: int | None = None) -> str:
         bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
         if bitstr == '':
             return ''
@@ -166,38 +166,42 @@ class BitStore:
         x.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
         return x
 
-    def find(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> int:
-        to_find = bs.slice_to_bin()
-        while True:
-            bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
-            f = bitstr.find(to_find)
-            if f == -1:
-                return -1
-            if not bytealigned:
-                return f + start
-            if ((f + start) % 8) == 0:
-                return f + start
-            start = f + start + 1
+    def find(self, bs: BitStore, bytealigned: bool = False, bytealign_offset: int = 0) -> int:
+        to_find = bs.to_bin()
+        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_)
+        if not bytealigned:
+            return bitstr.find(to_find)
+        start = 0
+        f = bitstr.find(to_find, start)
+        while (f + bytealign_offset) % 8 != 0 and f != -1:
+            start = f + 1
+            f = bitstr.find(to_find, start)
+        return f
 
-    def rfind(self, bs: BitStore, start: int, end: int, bytealigned: bool = False):
-        all_pos = list(self.findall(bs, start, end, bytealigned))
+    def rfind(self, bs: BitStore, bytealigned: bool = False) -> int:
+        all_pos = list(self.findall(bs, bytealigned))
         if not all_pos:
             return -1
         return all_pos[-1]
 
-    def findall(self, bs: BitStore, start: int, end: int, bytealigned: bool = False) -> Iterator[int]:
+    def findall(self, bs: BitStore, bytealigned: bool = False) -> Iterator[int]:
         # Use self.find() to find all the positions of a BitStore in another BitStore
-        f = self.find(bs, start, end, bytealigned)
+        f = self.find(bs, bytealigned)
+        start = 0
         while f != -1:
-            yield f
-            start = f + 1
-            f = self.find(bs, start, end, bytealigned)
+            yield f + start
+            start += f + 1
+            slice_ = self.getslice(start, None)
+            bytealign_offset = start % 8
+            f = slice_.find(bs, bytealigned, bytealign_offset)
 
     def count(self, value, /) -> int:
         return self.bytearray_.count(value)
 
-    def reverse(self) -> None:
-        self.bytearray_ = self.bytearray_[::-1]
+    def reverse(self) -> BitStore:
+        x = self.__class__()
+        x.bytearray_ = self.bytearray_[::-1]
+        return x
 
     def __iter__(self) -> Iterable[bool]:
         for i in range(len(self)):
@@ -226,11 +230,14 @@ class BitStore:
         x.bytearray_ = self.bytearray_[start:stop]
         return x
 
-    def invert(self, index: int | None = None, /) -> None:
+    def invert(self, index: int | None = None, /) -> BitStore:
+        x = self.__class__()
+        x.bytearray_ = self.bytearray_[:]
         if index is not None:
-            self.bytearray_[index] = 1 - self.bytearray_[index]
+            x.bytearray_[index] = 1 - x.bytearray_[index]
         else:
-            self.bytearray_ = bytearray(1 - b for b in self.bytearray_)
+            x.bytearray_ = bytearray(1 - b for b in x.bytearray_)
+        return x
 
     def any_set(self) -> bool:
         return 1 in self.bytearray_
