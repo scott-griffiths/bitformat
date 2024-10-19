@@ -209,6 +209,8 @@ class Bits:
         """
         if n == 0:
             return Bits()
+        if n < 0:
+            raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
         x._bitstore = BitStore.from_ones(n)
         return x
@@ -245,6 +247,8 @@ class Bits:
         """
         if n == 0:
             return Bits()
+        if n < 0:
+            raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
         x._bitstore = BitStore.from_zeros(n)
         return x

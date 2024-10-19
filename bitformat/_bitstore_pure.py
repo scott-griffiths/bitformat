@@ -8,16 +8,31 @@ from typing import Iterable, Iterator
 class BitStore:
     """A pure Python implementation of a BitStore. Horribly inefficient but useful for testing."""
 
-    def __new__(cls, ) -> None:
+    @classmethod
+    def _from_bytes_with_offsets(cls, b: bytes | bytearray | memoryview, offset: int = 0, padding: int = 0) -> BitStore:
+        assert 0 <= offset <= 7
+        assert 0 <= padding <= 7
+        padding = None if padding == 0 else -padding
         x = super().__new__(cls)
-        x.bytearray_ = bytearray()
+        binstr = ''.join(format(byte, '08b') for byte in b)
+        x.bytearray_ = bytearray(int(b) for b in binstr[offset:padding])
+        x.data = bytearray(b)
+        x.offset = offset
+        x.padding = padding
         return x
+
+    def __new__(cls, ) -> None:
+        return cls._from_bytes_with_offsets(b'')
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
-        x = super().__new__(cls)
-        x.bytearray_ = bytearray(i)
-        return x
+        if i == 0:
+            return cls._from_bytes_with_offsets(b'')
+        b = b'\x00' * ((i + 7) // 8)
+        offset = 8 - (i % 8)
+        if offset == 8:
+            offset = 0
+        return cls._from_bytes_with_offsets(b, offset)
 
     @classmethod
     def from_ones(cls, i: int) -> BitStore:
@@ -27,40 +42,42 @@ class BitStore:
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
-        x = super().__new__(cls)
-        binstr = ''.join(format(byte, '08b') for byte in b)
-        x.bytearray_ = bytearray(int(b) for b in binstr)
-        return x
+        return cls._from_bytes_with_offsets(b)
 
     @classmethod
     def from_hex(cls, hexstring: str, /) -> BitStore:
-        x = super().__new__(cls)
         hexstring = ''.join(hexstring.split())
-        if hexstring == '':
-            x.bytearray_ = bytearray()
-        else:
-            x.bytearray_ = bytearray(int(b) for b in bin(int(hexstring, 16))[2:].zfill(len(hexstring) * 4))
-        return x
+        odd_length = len(hexstring) % 2
+        if odd_length:
+            hexstring += '0'
+        b = bytes.fromhex(hexstring)
+        return cls._from_bytes_with_offsets(b, offset=0, padding=odd_length * 4)
 
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
-        x = super().__new__(cls)
         octstring = ''.join(octstring.split())
         if octstring == '':
-            x.bytearray_ = bytearray()
-        else:
-            x.bytearray_ = bytearray(int(b) for b in bin(int(octstring, 8))[2:].zfill(len(octstring) * 3))
-        return x
+            return cls()
+        integer_value = int(octstring, 8)
+        num_bytes = (len(octstring)*3 + 7) // 8
+        b = integer_value.to_bytes(num_bytes, byteorder='big')
+        offset = 8 - ((len(octstring) * 3) % 8)
+        if offset == 8:
+            offset = 0
+        return cls._from_bytes_with_offsets(b, offset)
 
     @classmethod
     def from_bin(cls, binstring: str) -> BitStore:
-        x = super().__new__(cls)
         binstring = ''.join(binstring.split())
         if binstring == '':
-            x.bytearray_ = bytearray()
-        else:
-            x.bytearray_ = bytearray(int(b) for b in binstring)
-        return x
+            return cls()
+        padding = 8 - (len(binstring) % 8)
+        if padding == 8:
+            padding = 0
+        integer_value = int(binstring, 2) << padding
+        num_bytes = (len(binstring) + 7) // 8
+        b = integer_value.to_bytes(num_bytes, byteorder='big')
+        return cls._from_bytes_with_offsets(b, 0, padding)
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
@@ -74,10 +91,11 @@ class BitStore:
                                  f"The allowed range is [0, {(1 << length) - 1}].")
             if i < 0:
                 raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
-        x = super().__new__(cls)
-        binstr = bin(i & ((1 << length) - 1))[2:].zfill(length)
-        x.bytearray_ = bytearray(int(b) for b in binstr)
-        return x
+        b = i.to_bytes((length + 7) // 8, byteorder='big', signed=signed)
+        offset = 8 - (length % 8)
+        if offset == 8:
+            offset = 0
+        return cls._from_bytes_with_offsets(b, offset)
 
     @classmethod
     def from_float(cls, f: float, length: int) -> BitStore:
@@ -87,15 +105,15 @@ class BitStore:
         except OverflowError:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
             b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
-        return BitStore.from_bytes(b)
+        return BitStore._from_bytes_with_offsets(b, 0, 0)
 
     @classmethod
     def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
-        x = super().__new__(cls)
-        x.bytearray_ = bytearray()
+        ba = bytearray()
         for i in iterable:
-            x.bytearray_.extend(i.bytearray_)
-        return x
+            ba.extend(i.bytearray_)
+        bin = ''.join('0' if i == 0 else '1' for i in ba)
+        return cls.from_bin(bin)
 
     def to_bytes(self) -> bytes:
         # Ensure the length of the bytearray is a multiple of 8
