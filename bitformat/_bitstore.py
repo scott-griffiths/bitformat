@@ -178,7 +178,7 @@ class BitStore:
                 byte_pos = byte_pos + 1
             return
         # General case
-        i = self._bitarray.itersearch(bs._bitarray, self.startbit, self.endbit)
+        i = self._bitarray.search(bs._bitarray, self.startbit, self.endbit)
         if not bytealigned:
             for p in i:
                 yield p
@@ -188,7 +188,7 @@ class BitStore:
                     yield p
 
     def rfindall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
-        i = self._bitarray.itersearch(bs._bitarray, self.startbit, self.endbit, right=True)
+        i = self._bitarray.search(bs._bitarray, self.startbit, self.endbit, right=True)
         if not bytealigned:
             for p in i:
                 yield p
