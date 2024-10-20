@@ -1,7 +1,7 @@
 
 import pytest
 import sys
-from bitformat import Dtype, Bits, Endianness
+from bitformat import Dtype, Bits, Endianness, DtypeList
 from bitformat._dtypes import DtypeDefinition, Register
 
 sys.path.insert(0, '..')
@@ -191,3 +191,30 @@ def test_endianness_errors():
         _ = Dtype.from_params('bool', endianness=Endianness.LITTLE)
     with pytest.raises(ValueError):
         _ = Dtype.from_params('bytes', 16, endianness=Endianness.LITTLE)
+
+
+def test_dtype_list_creation():
+    d = DtypeList('u8, u16, u32, bool')
+    assert len(d) == 4
+    assert d.bitlength == 8 + 16 + 32 + 1
+
+    d2 = DtypeList.from_params(d)
+    assert d == d2
+    d = DtypeList.from_params(['i5', *d[1:]])
+    assert d[0] == 'i5'
+    assert d.bitlength == 5 + 16 + 32 + 1
+    assert d != d2
+
+def test_dtype_list_packing():
+    d = DtypeList('bool, u8, f16')
+    a = d.pack([1, 254, 0.5])
+    assert a == '0b1, 0xfe, 0x3800'
+    with pytest.raises(ValueError):
+        _ = d.pack([0, 0, 0, 0])
+    with pytest.raises(ValueError):
+        _ = d.pack([0, 0])
+
+def test_dtype_list_unpacking():
+    d = DtypeList('bool, u8, f16')
+    a = d.unpack('0b1, 0xfe, 0x3800')
+    assert a == [1, 254, 0.5]

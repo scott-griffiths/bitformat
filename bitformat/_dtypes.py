@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Iterable
+from typing import Any, Callable, Iterable, Sequence
 import inspect
 import bitformat
 from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
 
 
-__all__ = ['Dtype', 'DtypeDefinition', 'Register']
+__all__ = ['Dtype', 'DtypeList', 'DtypeDefinition', 'Register']
 
 CACHE_SIZE = 256
 
@@ -272,6 +272,8 @@ class Dtype:
         return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{size_str};{items_str}]')"
 
     def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            other = Dtype.from_string(other)
         if isinstance(other, Dtype):
             return (self._name == other._name and
                     self._size == other._size and
@@ -562,3 +564,79 @@ class DtypeWithExpression:
         hide_items = self.base_dtype.items == 0 and self.items_expression is None
         items_str = '' if hide_items else (self.items_expression if self.items_expression else str(self.base_dtype.items))
         return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}; {items_str}]"
+
+
+class DtypeList:
+    """A data type class, representing a list of concrete interpretations of binary data.
+
+    DtypeList instances are immutable. They are often created implicitly elsewhere via a token string.
+
+    >>> a = DtypeList('u12, u8, bool')
+    >>> b = DtypeList.from_params(['u12', 'u8', 'bool'])
+
+    """
+
+    def __new__(cls, s: str) -> DtypeList:
+        return cls.from_string(s)
+
+    @classmethod
+    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeList:
+        x = super().__new__(cls)
+        x._dtypes = [dtype if isinstance(dtype, Dtype) else Dtype.from_string(dtype) for dtype in dtypes]
+        x._bitlength = sum(dtype.bitlength for dtype in x._dtypes)
+        return x
+
+    @classmethod
+    def from_string(cls, s: str, /) -> DtypeList:
+        tokens = [t.strip() for t in s.split(',')]
+        dtypes = [Dtype.from_string(token) for token in tokens]
+        return cls.from_params(dtypes)
+
+    def pack(self, values: Sequence[Any]) -> bitformat.Bits:
+        if len(values) != len(self):
+            raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
+        return bitformat.Bits.join(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
+
+    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> list[Any | tuple[Any]]:
+        """Unpack a Bits to find its value.
+
+        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+
+        """
+        b = bitformat.Bits.from_auto(b)
+        if self.bitlength not in (0, len(b)):
+            raise ValueError(f"{self!r} is {self.bitlength} bits long, but got {len(b)} bits to unpack.")
+        vals = []
+        pos = 0
+        for dtype in self:
+            vals.append(dtype.unpack(b[pos:pos + dtype.bitlength]))
+            pos += dtype.bitlength
+        return vals
+
+    def _getbitlength(self) -> int:
+        return self._bitlength
+
+    bitlength = property(_getbitlength, doc="The total length of all the dtypes in bits.")
+
+    def __len__(self) -> int:
+        return len(self._dtypes)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, DtypeList):
+            return self._dtypes == other._dtypes
+        return False
+
+    def __getitem__(self, key: int) -> Dtype:
+        return self._dtypes[key]
+
+    def __iter__(self):
+        return iter(self._dtypes)
+
+    # def __setitem__(self, key: int, value: Dtype | str):
+    #     self._dtypes[key] = value if isinstance(value, Dtype) else Dtype.from_string(value)
+
+    def __str__(self) -> str:
+        return ', '.join(str(dtype) for dtype in self._dtypes)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{str(self)}')"

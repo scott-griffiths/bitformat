@@ -33,7 +33,7 @@ __author__ = "Scott Griffiths"
 
 from ._bits import Bits
 from ._array import Array, BitsProxy
-from ._dtypes import DtypeDefinition, Register, Dtype
+from ._dtypes import DtypeDefinition, Register, Dtype, DtypeList
 from ._fieldtype import FieldType
 from ._field import Field
 from ._format import Format
@@ -111,7 +111,7 @@ for dt in dtype_definitions:
     Register().add_dtype(dt, aliases.get(dt.name, None))
 
 
-__all__ = ('Bits', 'Dtype', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options',
+__all__ = ('Bits', 'Dtype', 'DtypeList', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options',
            'Register', 'Endianness', 'If', 'Pass')
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
