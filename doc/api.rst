@@ -42,6 +42,7 @@ Miscellaneous
 
     bits.rst
     dtype.rst
+    dtypelist.rst
     array.rst
     field.rst
     format.rst
