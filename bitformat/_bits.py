@@ -97,7 +97,7 @@ class Bits:
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
-            x._bitstore = BitStore()
+            x._bitstore = BitStore.from_zeros(0)
         else:
             x._bitstore = str_to_bitstore(s)
         return x

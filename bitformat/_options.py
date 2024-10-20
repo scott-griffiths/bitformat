@@ -30,7 +30,7 @@ class Options:
             cls._no_color = True if no_color else not is_interactive()
             # This is an experimental feature to use pure Python only (not bitarray)
             # It affects imports so you need to change its value here in the code.
-            cls._use_pure_python = True
+            cls._use_pure_python = False
         return cls._instance
 
     def __init__(self):

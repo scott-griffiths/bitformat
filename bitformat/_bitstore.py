@@ -11,13 +11,6 @@ class BitStore:
 
     __slots__ = ('_bitarray', 'startbit', 'endbit')
 
-    def __new__(cls):
-        x = super().__new__(cls)
-        x.startbit = 0
-        x.endbit = 0
-        x._bitarray = bitarray.frozenbitarray()
-        return x
-
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
         x = super().__new__(cls)
@@ -288,14 +281,13 @@ class MutableBitStore(BitStore):
 
     This is used in the Array class to allow it to be changed after creation.
     """
-    def __new__(cls, bs: BitStore | None = None):
+
+    @classmethod
+    def from_bitstore(cls, bs: BitStore) -> MutableBitStore:
         x = super().__new__(cls)
         x.startbit = 0
-        if bs is not None:
-            ba = copy.copy(bs._to_bitarray())
-            x._bitarray = bitarray.frozenbitarray(ba)
-        else:
-            x._bitarray = bitarray.frozenbitarray()
+        ba = copy.copy(bs._to_bitarray())
+        x._bitarray = bitarray.frozenbitarray(ba)
         x.endbit = len(x._bitarray)
         return x
 

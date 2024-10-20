@@ -151,7 +151,7 @@ class Array:
             self._bitstore = MutableBitStore.from_zeros(initializer * self._dtype.bits_per_item)
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
-            self._bitstore = MutableBitStore(initializer._bitstore)
+            self._bitstore = MutableBitStore.from_bitstore(initializer._bitstore)
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
             self._bitstore = MutableBitStore.from_bytes(initializer)
         elif initializer is not None:
@@ -612,7 +612,7 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        self._bitstore = MutableBitStore(new_data._bitstore)
+        self._bitstore = MutableBitStore.from_bitstore(new_data._bitstore)
         return self
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:

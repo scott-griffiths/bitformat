@@ -21,7 +21,7 @@ class BitStore:
         x.padding = padding
         return x
 
-    def __new__(cls, ) -> None:
+    def __new__(cls) -> None:
         return cls._from_bytes_with_offsets(b'')
 
     @classmethod
@@ -284,10 +284,11 @@ class BitStore:
 
 class MutableBitStore(BitStore):
     """A mutable version of BitStore with an additional setitem method."""
-    def __new__(cls, bs: BitStore | None = None):
+
+    @classmethod
+    def from_bitstore(cls, bs: BitStore) -> MutableBitStore:
         x = super().__new__(cls)
-        if bs is not None:
-            x.bytearray_ = bs.bytearray_
+        x.bytearray_ = bs.bytearray_
         return x
 
     def setitem(self, key: int | slice, value: int | BitStore):
