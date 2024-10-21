@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits, Field, Endianness
+from bitformat import Dtype, Bits, Field, Endianness, DtypeList
 
 
 def test_build():
@@ -652,3 +652,10 @@ def test_unpack_field():
     a = Bits('0x000001b3, u12=352, u12=288, bool=1')
     v = a.unpack(['hex8', '[u12; 2]' , 'bool'])
     assert v == ['000001b3', (352, 288), True]
+
+def test_unpack_dtype_list():
+    f = 'u8, u8, u8, bool'
+    d = DtypeList(f)
+    b = d.pack([55, 33, 11, 0])
+    assert b.unpack(d) == [55, 33, 11, False]
+    assert b.unpack(f) == [55, 33, 11, False]

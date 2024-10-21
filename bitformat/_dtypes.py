@@ -245,13 +245,14 @@ class Dtype:
 
         """
         b = bitformat.Bits.from_auto(b)
-        if self.bitlength not in (0, len(b)):
-            raise ValueError(f"{self!r} is {self.bitlength} bits long, but got {len(b)} bits to unpack.")
+        if self.bitlength > len(b):
+            raise ValueError(f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack.")
         if not self._is_array:
             if self.bitlength == 0:
+                # Try to unpack everything
                 return self._get_fn(b)
             else:
-                return self._get_fn(b)
+                return self._get_fn(b[:self.bitlength])
         else:
             return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
 

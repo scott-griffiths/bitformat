@@ -755,15 +755,12 @@ class Bits:
         """
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.
-        if isinstance(fmt, Dtype):
-            return fmt.unpack(self)
         if isinstance(fmt, str):
-            d = Dtype.from_string(fmt)
-            if d.bitlength != 0 and len(self) > d.bitlength:
-                return d.unpack(self[:d.bitlength])
-            return d.unpack(self)
-
-        if isinstance(fmt, list):
+            if ',' in fmt:
+                fmt = DtypeList.from_string(fmt)
+            else:
+                fmt = Dtype.from_string(fmt)
+        elif isinstance(fmt, list):
             fmt = DtypeList.from_params(fmt)
         return fmt.unpack(self)
 
