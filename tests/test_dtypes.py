@@ -218,3 +218,14 @@ def test_dtype_list_unpacking():
     d = DtypeList('bool, u8, f16')
     a = d.unpack('0b1, 0xfe, 0x3800')
     assert a == [1, 254, 0.5]
+
+def test_dtype_list_unpacking_with_pad():
+    s = Bits.from_string('0b111000111')
+    d = DtypeList('bits3, pad3, bits3')
+    x, y = d.unpack(s)
+    assert (x, y.unpack('u')) == ('0b111', 7)
+
+def test_dtype_list_slicing():
+    d = DtypeList('u1, u2, u3, u4, u5')
+    d2 = d[1:4]
+    assert d2 == DtypeList('u2, u3, u4')

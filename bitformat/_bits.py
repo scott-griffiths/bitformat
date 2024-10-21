@@ -10,7 +10,7 @@ from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat import _utils
-from bitformat._dtypes import Dtype, Register
+from bitformat._dtypes import Dtype, Register, DtypeList
 from bitformat._common import colour
 from typing import Pattern
 from ._common import Endianness
@@ -727,7 +727,7 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
+    def unpack(self, fmt: Dtype | str | DtypeList | list[Dtype | str], /) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
 
@@ -762,23 +762,10 @@ class Bits:
             if d.bitlength != 0 and len(self) > d.bitlength:
                 return d.unpack(self[:d.bitlength])
             return d.unpack(self)
-        from ._field import FieldType
-        if isinstance(fmt, FieldType):
-            return fmt.unpack(self)
 
-        dtypes = [Dtype.from_string(f) if isinstance(f, str) else f for f in fmt]
-
-        # For multiple dtypes lengths need to be given even for hex, bin etc.
-        pos = 0
-        ret_val = []
-        for dtype in dtypes:
-            if dtype.name != 'pad':
-                if dtype.size == 0:
-                    raise ValueError(f"No size given for dtype '{dtype}'. A size must be specified for each dtype"
-                                     " when a list of dtypes is being unpacked.")
-                ret_val.append(dtype.unpack(self._slice(pos, pos + dtype.bitlength)))
-            pos += dtype.bitlength
-        return ret_val
+        if isinstance(fmt, list):
+            fmt = DtypeList.from_params(fmt)
+        return fmt.unpack(self)
 
     # ----- Private Methods -----
 

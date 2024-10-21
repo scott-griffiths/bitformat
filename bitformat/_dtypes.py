@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence, overload
 import inspect
 import bitformat
 from bitformat import _utils
@@ -604,12 +604,13 @@ class DtypeList:
 
         """
         b = bitformat.Bits.from_auto(b)
-        if self.bitlength not in (0, len(b)):
-            raise ValueError(f"{self!r} is {self.bitlength} bits long, but got {len(b)} bits to unpack.")
+        if self.bitlength > len(b):
+            raise ValueError(f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack.")
         vals = []
         pos = 0
         for dtype in self:
-            vals.append(dtype.unpack(b[pos:pos + dtype.bitlength]))
+            if dtype.name != 'pad':
+                vals.append(dtype.unpack(b[pos:pos + dtype.bitlength]))
             pos += dtype.bitlength
         return vals
 
@@ -626,14 +627,21 @@ class DtypeList:
             return self._dtypes == other._dtypes
         return False
 
+    @overload
     def __getitem__(self, key: int) -> Dtype:
-        return self._dtypes[key]
+        ...
+
+    @overload
+    def __getitem__(self, key: slice) -> DtypeList:
+        ...
+
+    def __getitem__(self, key: int | slice) -> Dtype | DtypeList:
+        if isinstance(key, int):
+            return self._dtypes[key]
+        return DtypeList.from_params(self._dtypes[key])
 
     def __iter__(self):
         return iter(self._dtypes)
-
-    # def __setitem__(self, key: int, value: Dtype | str):
-    #     self._dtypes[key] = value if isinstance(value, Dtype) else Dtype.from_string(value)
 
     def __str__(self) -> str:
         return ', '.join(str(dtype) for dtype in self._dtypes)

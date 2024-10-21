@@ -17,8 +17,12 @@ The others in this section build upon them to provide more specialised structure
 
 * :ref:`Bits <bits>` -- An immutable container for storing binary data.
 * :ref:`Dtype <dtype>` -- A data type used to interpret binary data.
-* :ref:`DtypeList <dtypelist>` -- A sequence of Dtypes.
+* :ref:`DtypeList <dtypelist>` -- A sequence of :class:`Dtype` objects.
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
+
+Structured Types
+----------------
+
 * :ref:`Field <field>` -- Represents an optionally named, well-defined amount of binary data with a single data type.
 * :ref:`Format <format>` -- A sequence of :class:`FieldType` objects, such as :class:`Field` or :class:`Format` instances.
 * :ref:`If <if>` -- A pair of :class:`FieldType` obejcts, one of which is selected based on a condition.
