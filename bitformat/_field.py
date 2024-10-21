@@ -88,6 +88,9 @@ class Field(FieldType):
         s, comment = s.split('#', 1) if '#' in s else (s, '')
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
+        if ',' in dtype_str:
+            raise ValueError(f"Field strings can only have one Dtype and should not contain commas. "
+                             f"Perhaps you meant to use Format('({s})') instead?")
         return cls.from_params(dtype_str, name, value, const, comment)
 
     @classmethod

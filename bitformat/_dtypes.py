@@ -78,7 +78,13 @@ class Dtype:
             endianness = Endianness(modifier)
             return Register().get_array_dtype(name, size, items, endianness)
         else:
-            name, size = _utils.parse_name_size_token(token)
+            try:
+                name, size = _utils.parse_name_size_token(token)
+            except ValueError as e:
+                if ',' in token:
+                    raise ValueError(f"Can't parse token '{token}' as a single 'name[length]'. Did you mean to use a DtypeList instead?")
+                else:
+                    raise e
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             return Register().get_single_dtype(name, size, endianness)

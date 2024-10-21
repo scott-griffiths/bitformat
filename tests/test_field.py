@@ -253,3 +253,7 @@ def test_disallowed_names():
         f = Field('__starting_with_underscores: u8')
     with pytest.raises(ValueError):
         f = Field('containing__double_underscores: u8')
+
+def test_create_from_dtype_list():
+    with pytest.raises(ValueError):
+        f = Field('u8, u8')
