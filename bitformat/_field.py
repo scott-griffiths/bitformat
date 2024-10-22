@@ -141,6 +141,7 @@ class Field(FieldType):
     def flatten(self) -> list[FieldType]:
         return [self]
 
+    @override
     def _copy(self) -> Field:
         x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
         return x
@@ -199,7 +200,7 @@ class Field(FieldType):
         return self._bits, 1
 
     @override
-    def _getvalue(self) -> Any:
+    def _getvalue(self) -> Any | None:
         if self._bits is None:
             return None
         return self.dtype.unpack(self._bits)
