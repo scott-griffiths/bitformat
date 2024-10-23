@@ -24,32 +24,32 @@ class Format(FieldType):
     def __new__(cls,  s: str | None = None) -> Format:
         if s is None:
             x = super().__new__(cls)
-            x.fieldtypes = []
+            x.fields = []
             x.name = ''
             x.vars = {}
             return x
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, fieldtypes: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
+    def from_params(cls, fields: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
         """
         Create a Format instance.
 
-        :param fieldtypes: The field types to include in the format, optional.
-        :type fieldtypes: Sequence[FieldType or str] or None
+        :param fields: The field types to include in the format, optional.
+        :type fields: Sequence[FieldType or str] or None
         :param name: The name of the format, optional.
         :type name: str
         :return: The Format instance.
         :rtype: Format
         """
         x = super().__new__(cls)
-        x.fieldtypes = []
-        if fieldtypes is None:
-            fieldtypes = []
+        x.fields = []
+        if fields is None:
+            fields = []
         x.name = name
         x.vars = {}
         stetchy_field = ''
-        for fieldtype in fieldtypes:
+        for fieldtype in fields:
             if stetchy_field:
                 raise ValueError(f"A Field with no length can only occur at the end of a Format. Field '{stetchy_field}' is before the end.")
             if isinstance(fieldtype, FieldType):
@@ -66,7 +66,7 @@ class Format(FieldType):
                     stetchy_field = str(fieldtype)
             except ValueError:
                 pass
-            x.fieldtypes.append(fieldtype)
+            x.fields.append(fieldtype)
         return x
 
     @staticmethod
@@ -152,7 +152,7 @@ class Format(FieldType):
     @override
     def _getbitlength(self):
         """Return the total length of the Format in bits."""
-        return sum(f.bitlength for f in self.fieldtypes)
+        return sum(f.bitlength for f in self.fields)
 
     bitlength = property(_getbitlength)
 
@@ -160,7 +160,7 @@ class Format(FieldType):
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
-        for fieldtype in self.fieldtypes:
+        for fieldtype in self.fields:
             _, v = fieldtype._pack(values[index], index + values_used, _vars, kwargs)
             values_used += v
         return self.to_bits(), values_used
@@ -168,7 +168,7 @@ class Format(FieldType):
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         pos = startbit
-        for fieldtype in self.fieldtypes:
+        for fieldtype in self.fields:
             pos += fieldtype._parse(b, pos, vars_)
         return pos - startbit
 
@@ -176,18 +176,18 @@ class Format(FieldType):
     def _copy(self) -> Format:
         x = Format()
         x.name = self.name
-        x.fieldtypes = [f._copy() for f in self.fieldtypes]
+        x.fields = [f._copy() for f in self.fields]
         return x
 
     @override
     def clear(self) -> None:
-        for fieldtype in self.fieldtypes:
+        for fieldtype in self.fields:
             fieldtype.clear()
 
     @override
     def _getvalue(self) -> list[Any]:
         vals = []
-        for i, f in enumerate(self.fieldtypes):
+        for i, f in enumerate(self.fields):
             if f.value is None:
                 raise ValueError(f"When getting Format value, cannot find value of this field:\n{f}")
             vals.append(f.value)
@@ -195,31 +195,31 @@ class Format(FieldType):
 
     @override
     def _setvalue(self, val: Sequence[Any]) -> None:
-        if len(val) != len(self.fieldtypes):
-            raise ValueError(f"Can't set {len(self.fieldtypes)} fields from {len(val)} values.")
-        for fieldtype, v in zip(self.fieldtypes, val):
+        if len(val) != len(self.fields):
+            raise ValueError(f"Can't set {len(self.fields)} fields from {len(val)} values.")
+        for fieldtype, v in zip(self.fields, val):
             fieldtype._setvalue(v)
 
     value = property(_getvalue, _setvalue)
 
     @override
     def to_bits(self) -> Bits:
-        return Bits().join(fieldtype.to_bits() for fieldtype in self.fieldtypes)
+        return Bits().join(fieldtype.to_bits() for fieldtype in self.fields)
 
     @override
     def flatten(self) -> list[FieldType]:
         # Just return a flat list of fields
         flattened_fields = []
-        for fieldtype in self.fieldtypes:
+        for fieldtype in self.fields:
             flattened_fields.extend(fieldtype.flatten())
         return flattened_fields
 
     def __len__(self) -> int:
-        return len(self.fieldtypes)
+        return len(self.fields)
 
     def __getitem__(self, name: str) -> Any:
         # TODO: Should be a dict
-        for fieldtype in self.fieldtypes:
+        for fieldtype in self.fields:
             if fieldtype.name == name:
                 return fieldtype
         raise KeyError(f"Field with name '{name}' not found.")
@@ -234,9 +234,9 @@ class Format(FieldType):
             field = value
         else:
             raise ValueError(f"Can't create and set field from type '{type(value)}'.")
-        for i in range(len(self.fieldtypes)):
-            if self.fieldtypes[i].name == name:
-                self.fieldtypes[i] = field
+        for i in range(len(self.fields)):
+            if self.fields[i].name == name:
+                self.fields[i] = field
                 return
         raise KeyError(f"Field with name '{name}' not found.")
 
@@ -244,7 +244,7 @@ class Format(FieldType):
     def _str(self, indent: int) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
         s = f"{_indent(indent)}{name_str}(\n"
-        for i, fieldtype in enumerate(self.fieldtypes):
+        for i, fieldtype in enumerate(self.fields):
             s += fieldtype._str(indent + 1) + '\n'
         s += f"{_indent(indent)})"
         return s
@@ -253,9 +253,9 @@ class Format(FieldType):
     def _repr(self, indent: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
         s = f"{_indent(indent)}{self.__class__.__name__}.from_params((\n"
-        for i, fieldtype in enumerate(self.fieldtypes):
+        for i, fieldtype in enumerate(self.fields):
             s += fieldtype._repr(indent + 1)
-            if i != len(self.fieldtypes) - 1:
+            if i != len(self.fields) - 1:
                 s += ','
             s += '\n'
         s += f"{_indent(indent)}){name_str})"
@@ -264,14 +264,14 @@ class Format(FieldType):
     def __iadd__(self, other: FieldType | str) -> Format:
         if isinstance(other, str):
             other = FieldType.from_string(other)
-        self.fieldtypes.append(copy.copy(other))
+        self.fields.append(copy.copy(other))
         return self
 
     def __copy__(self) -> Format:
         x = Format()
         x.name = self.name
         x.vars = self.vars
-        x.fieldtypes = [copy.copy(f) for f in self.fieldtypes]
+        x.fields = [copy.copy(f) for f in self.fields]
         return x
 
     def __add__(self, other: FieldType | str) -> Format:

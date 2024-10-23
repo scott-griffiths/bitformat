@@ -35,8 +35,8 @@ class TestCreation:
         with pytest.raises(ValueError):
             _ = Format('(x: f16)')  # No comma
         f = Format('(x: f16,)')
-        assert f.fieldtypes[0].name == 'x'
-        assert f.fieldtypes[0].dtype == Dtype.from_params('f', 16)
+        assert f.fields[0].name == 'x'
+        assert f.fields[0].dtype == Dtype.from_params('f', 16)
 
     @given(name=st.sampled_from(['f16', 'u12', 'bool', 'f64']))
     def test_building_field(self, name):
@@ -143,7 +143,7 @@ class TestAddition:
         f = Format()
         f += Field.from_bits('0xff')
         assert f.to_bytes() == b'\xff'
-        assert f.fieldtypes[0].to_bytes() == b'\xff'
+        assert f.fields[0].to_bytes() == b'\xff'
         assert len(f) == 1
         f += Field.from_string('penguin:i9 =-8')
         assert len(f) == 2
@@ -158,12 +158,12 @@ class TestArray:
     def test_simple_array(self):
         array_field = Field.from_params('[u8; 20]', 'my_array')
         f = Format.from_params([array_field], 'a')
-        assert f.fieldtypes[0].dtype.items == 20
+        assert f.fields[0].dtype.items == 20
         a = f.pack([list(range(20))])
 
         f2 = Format.from_params(['new_array: [u8;20]'], 'b')
-        assert f2.fieldtypes[0].dtype.items == 20
-        assert f2.fieldtypes[0].value is None
+        assert f2.fields[0].dtype.items == 20
+        assert f2.fields[0].value is None
         f2['new_array'].value = a
         assert a == f2.to_bits()
 
@@ -235,20 +235,20 @@ class TestMethods:
 
     def test_get_item(self):
         f = Format.from_params(['f16=7', 'bool', 'bytes5', 'pop :u100  = 144'])
-        assert f.fieldtypes[0].value == 7
-        assert f.fieldtypes[1].value is None
+        assert f.fields[0].value == 7
+        assert f.fields[1].value is None
         assert f['pop'].value == 144
 
     def test_set_item(self):
         f = Format.from_params(['const f16=7', 'bool', 'bytes5', 'pop : u100 = 144'])
         with pytest.raises(ValueError):
-            f.fieldtypes[0].value = 2
-        f.fieldtypes[0].const = False
+            f.fields[0].value = 2
+        f.fields[0].const = False
         with pytest.raises(ValueError):
             f[0] = 2
-        f.fieldtypes[0].value = 2
-        f.fieldtypes[0].const = True
-        assert f.fieldtypes[0].value == 2
+        f.fields[0].value = 2
+        f.fields[0].const = True
+        assert f.fields[0].value == 2
         f['pop'].value = 999999
         assert f['pop'].value == 999999
 
@@ -287,15 +287,15 @@ def test_format_repr_and_str():
 
 def test_format_get_and_set():
     f = Format('(u8, u8, u8)')
-    for field in f.fieldtypes:
+    for field in f.fields:
         field.value = 12
     assert f.value == [12, 12, 12]
-    f.fieldtypes[0].value = 0
+    f.fields[0].value = 0
     assert f.value == [0, 12, 12]
-    g = Format.from_params(f.fieldtypes)
+    g = Format.from_params(f.fields)
     assert g.value == [0, 12, 12]
-    f.fieldtypes[-1].value = 7
-    assert g.fieldtypes[-1].value == 12
+    f.fields[-1].value = 7
+    assert g.fields[-1].value == 12
 
 @pytest.mark.skip
 def test_repeating_from_expression():
@@ -353,15 +353,15 @@ def test_to_bits():
     f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == 'u8=1, u8=2, u8=3'
-    f.fieldtypes[1].clear()
-    assert f.fieldtypes[0].value == 1
-    assert f.fieldtypes[1].value is None
-    assert f.fieldtypes[2].value == 3
+    f.fields[1].clear()
+    assert f.fields[0].value == 1
+    assert f.fields[1].value is None
+    assert f.fields[2].value == 3
     with pytest.raises(ValueError):
         _ = f.value
-    assert f.fieldtypes[0].to_bits() == 'u8=1'
+    assert f.fields[0].to_bits() == 'u8=1'
     with pytest.raises(ValueError):
-        _ = f.fieldtypes[1].to_bits()
+        _ = f.fields[1].to_bits()
     with pytest.raises(ValueError):
         _ = f.to_bits()
 
@@ -370,8 +370,8 @@ def test_partial_parse():
                                 '[f16;3]'])
     b = Bits.from_string('0b1, f16=1.0, f16=2.0, f16=3.0')
     f.parse(b)
-    assert f.fieldtypes[0].value == True
-    assert f.fieldtypes[1].value == (1.0, 2.0, 3.0)
+    assert f.fields[0].value == True
+    assert f.fields[1].value == (1.0, 2.0, 3.0)
     f.clear()
     with pytest.raises(ValueError):
         _ = f.parse(b[:-16])
@@ -381,7 +381,7 @@ def test_from_string():
     s = 'header = (u8,u4, bool)'
     f = Format.from_string(s)
     assert f.name == 'header'
-    assert f.fieldtypes[0].dtype == Dtype.from_string('u8')
+    assert f.fields[0].dtype == Dtype.from_string('u8')
     assert str(f) == str(Format(str(f)))
 
 
@@ -389,9 +389,9 @@ def test_recursive_from_string():
     s = "header = (u8, u4, bool,body=(u8=23, [u4; 3], bool))"
     f = FieldType.from_string(s)
     assert f.name == 'header'
-    assert f.fieldtypes[3].fieldtypes[0].value == 23
+    assert f.fields[3].fields[0].value == 23
     b = f['body']
-    assert b.fieldtypes[0].value == 23
+    assert b.fields[0].value == 23
     assert str(f) == str(Format(str(s)))
     assert str(b) == str(Format("body = (u8=23, [u4; 3], bool)"))
 
@@ -409,7 +409,7 @@ def test_recursive_error_message():
 def test_interesting_types_from_string():
     s = "  (const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',) "
     f = Format.from_string(s)
-    assert f.fieldtypes[0].value == -375
+    assert f.fields[0].value == -375
     assert f['_fred'].value == b'abc\x04'
 
 # def test_expression_dtypes():
@@ -428,7 +428,7 @@ def test_unpack():
     f = Format.from_string('header = (u8, u4, bool)')
     b = Bits.from_string('u8=1, u4=2, 0b1')
     assert f.unpack(b) == [1, 2, True]
-    f.fieldtypes[1].clear()
+    f.fields[1].clear()
     with pytest.raises(ValueError):
         _ = f.unpack()
 
@@ -494,30 +494,30 @@ def test_stretchy_field():
 
     g = Format('(u5, bytes)')
     g.parse(b'hello_world')
-    assert g.fieldtypes[0].value == 13
+    assert g.fields[0].value == 13
     with pytest.raises(ValueError):
-        _ = g.fieldtypes[1].value
+        _ = g.fields[1].value
 
 def test_repeated_field_copy():
     i = Field('hex4 = abcd')
     f = Format.from_params([i, i])
-    assert f.fieldtypes[0].value == 'abcd'
-    assert f.fieldtypes[1].value == 'abcd'
-    f.fieldtypes[0].value = '0xdead'
-    assert f.fieldtypes[0].value == 'dead'
-    assert f.fieldtypes[1].value == 'abcd'
+    assert f.fields[0].value == 'abcd'
+    assert f.fields[1].value == 'abcd'
+    f.fields[0].value = '0xdead'
+    assert f.fields[0].value == 'dead'
+    assert f.fields[1].value == 'abcd'
 
 def test_format_copy():
     f = Format('(x: u8 = 10, y: u8 = 20)')
     g = Format.from_params([f, f])
-    assert g.fieldtypes[0].value == [10, 20]
-    f.fieldtypes[0].value = 5
-    assert f.fieldtypes[0].value == 5
-    assert g.fieldtypes[0].value == [10, 20]
-    g.fieldtypes[0].fieldtypes[0].value = 7
-    assert g.fieldtypes[0].value == [7, 20]
-    assert g.fieldtypes[1].value == [10, 20]
-    assert f.fieldtypes[0].value == 5
+    assert g.fields[0].value == [10, 20]
+    f.fields[0].value = 5
+    assert f.fields[0].value == 5
+    assert g.fields[0].value == [10, 20]
+    g.fields[0].fields[0].value = 7
+    assert g.fields[0].value == [7, 20]
+    assert g.fields[1].value == [10, 20]
+    assert f.fields[0].value == 5
 
 def test_format_with_repeat():
     s = """
@@ -540,5 +540,5 @@ def test_format_with_repeat():
     assert f['y'].value == 2
     assert f['z'].value == 3
     assert f['data'].value == (4, 5, 6)
-    assert f.fieldtypes[4].value == [[7, 8], [9, 10]]
+    assert f.fields[4].value == [[7, 8], [9, 10]]
     # assert f['a'].value == [7, 9]
