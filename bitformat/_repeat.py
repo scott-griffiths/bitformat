@@ -14,20 +14,20 @@ class Repeat(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, count: int, fieldtype: FieldType | str, name: str = '') -> Repeat:
+    def from_params(cls, count: int, field: FieldType | str, name: str = '') -> Repeat:
         x = super().__new__(cls)
         x.count = count
         x.name = name
-        if isinstance(fieldtype, str):
-            fieldtype = FieldType.from_string(fieldtype)
-        elif not isinstance(fieldtype, FieldType):
-            raise ValueError(f"Invalid Field of type {type(fieldtype)}.")
-        x.fieldtype = fieldtype
+        if isinstance(field, str):
+            field = FieldType.from_string(field)
+        elif not isinstance(field, FieldType):
+            raise ValueError(f"Invalid field of type {type(field)}.")
+        x.field = field
         return x
 
     @override
     def _getbitlength(self) -> int:
-        return self.fieldtype.bitlength * self.count
+        return self.field.bitlength * self.count
 
     bitlength = property(_getbitlength)
 
@@ -49,7 +49,7 @@ class Repeat(FieldType):
         # TODO: name is not handled yet.
         count_str = str(self.count)
         s = f"{_indent(indent)}Repeat({count_str},\n"
-        s += self.fieldtype._str(indent + 1)
+        s += self.field._str(indent + 1)
         s += f"\n{_indent(indent)})"
         return s
 
@@ -58,7 +58,7 @@ class Repeat(FieldType):
         # TODO
         count = self.count if self.count is not None else self.count_expression
         s = f"{_indent(indent)}{self.__class__.__name__}({count!r},\n"
-        s += self.fieldtype._repr(indent + 1)
+        s += self.field._repr(indent + 1)
         s += f"\n{_indent(indent)})"
         return s
 
@@ -68,7 +68,7 @@ class Repeat(FieldType):
             raise ValueError(f"Repeat field '{str(self)}' needs {self.bitlength} bits to parse, but {len(b) - startbit} were available.")
         self._bits = b[startbit:startbit + self.bitlength]
         for i in range(self.count):
-            startbit += self.fieldtype._parse(b, startbit, vars_)
+            startbit += self.field._parse(b, startbit, vars_)
         return self.bitlength
 
     @override
@@ -77,7 +77,7 @@ class Repeat(FieldType):
         self._bits = Bits()
         values_used = 0
         for i in range(self.count):
-            bits, v = self.fieldtype._pack(values[0], index + values_used, vars_, kwargs)
+            bits, v = self.field._pack(values[0], index + values_used, vars_, kwargs)
             self._bits += bits
             values_used += v
         return self._bits, values_used
@@ -87,12 +87,12 @@ class Repeat(FieldType):
         # TODO: This needs values in it. This won't work.
         flattened_fields = []
         for _ in self.count:
-            flattened_fields.extend(self.fieldtype.flatten())
+            flattened_fields.extend(self.field.flatten())
         return flattened_fields
 
     @override
     def _copy(self) -> Repeat:
-        x = self.__class__.from_params(self.count, self.fieldtype._copy(), self.name)
+        x = self.__class__.from_params(self.count, self.field._copy(), self.name)
         return x
 
     @override
@@ -108,7 +108,7 @@ class Repeat(FieldType):
             return None
         values = []
         for i in range(self.count):
-            value = self.fieldtype.unpack(self._bits[i * self.fieldtype.bitlength:(i + 1) * self.fieldtype.bitlength])
+            value = self.field.unpack(self._bits[i * self.field.bitlength:(i + 1) * self.field.bitlength])
             values.append(value)
         return values
 

@@ -5,12 +5,12 @@ from bitformat import Repeat, Format, Bits, Field
 def test_creation():
     p = Repeat.from_params(3, 'u8')
     assert p.count == 3
-    assert p.fieldtype == Field('u8')
+    assert p.field == Field('u8')
 
 def test_from_string():
     p = Repeat.from_string('Repeat(3, u8)')
     assert p.count == 3
-    assert p.fieldtype == Field('u8')
+    assert p.field == Field('u8')
     s = """
     Repeat(2,
         fred = (
