@@ -25,11 +25,11 @@ def test_simple_parse():
                             If.from_params('{x > 50}', 'u8')))
     b = f.parse('0xabfe')
     assert b == 16
-    assert f[0].value == 0xab
-    assert f[1].value == 0xfe
+    assert f.fieldtypes[0].value == 0xab
+    assert f.fieldtypes[1].value == 0xfe
     b = f.parse('0x0044')
     assert b == 8
-    assert f[0].value == 0
+    assert f.fieldtypes[0].value == 0
 
 def test_explicit_pass():
     f = If.from_params('{x > 0}', '', 'bool = True')

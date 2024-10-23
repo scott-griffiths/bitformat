@@ -217,21 +217,14 @@ class Format(FieldType):
     def __len__(self) -> int:
         return len(self.fieldtypes)
 
-    def __getitem__(self, key) -> Any:
-        if isinstance(key, int):
-            fieldtype = self.fieldtypes[key]
-            return fieldtype
-        elif isinstance(key, slice):
-            a = self.__class__()
-            a.extend(self.fieldtypes[key])
-            return a
+    def __getitem__(self, name: str) -> Any:
+        # TODO: Should be a dict
         for fieldtype in self.fieldtypes:
-            if fieldtype.name == key:
+            if fieldtype.name == name:
                 return fieldtype
         raise KeyError(f"Field with name '{name}' not found.")
 
-
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, name: str, value: str | FieldType) -> None:
         if isinstance(value, str):
             try:
                 field = FieldType.from_string(value)
@@ -241,14 +234,11 @@ class Format(FieldType):
             field = value
         else:
             raise ValueError(f"Can't create and set field from type '{type(value)}'.")
-        if isinstance(key, int):
-            self.fieldtypes[key] = field
-            return
         for i in range(len(self.fieldtypes)):
-            if self.fieldtypes[i].name == key:
+            if self.fieldtypes[i].name == name:
                 self.fieldtypes[i] = field
                 return
-        raise KeyError(f"Field '{key}' not found.")
+        raise KeyError(f"Field with name '{name}' not found.")
 
     @override
     def _str(self, indent: int) -> str:
