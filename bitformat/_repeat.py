@@ -67,6 +67,8 @@ class Repeat(FieldType):
         if len(b) - startbit < self.bitlength:
             raise ValueError(f"Repeat field '{str(self)}' needs {self.bitlength} bits to parse, but {len(b) - startbit} were available.")
         self._bits = b[startbit:startbit + self.bitlength]
+        for i in range(self.count):
+            startbit += self.fieldtype._parse(b, startbit, vars_)
         return self.bitlength
 
     @override

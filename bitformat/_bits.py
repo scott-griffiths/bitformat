@@ -507,8 +507,8 @@ class Bits:
 
         .. code-block:: pycon
 
-            >>> s.pp('hex16')
-            >>> s.pp('bin, hex', sep='_', show_offset=False)
+            s.pp('hex16')
+            s.pp('bin, hex', sep='_', show_offset=False)
 
         """
         if fmt is None:
@@ -528,7 +528,7 @@ class Bits:
                  output_stream, 1)
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = 0b" + self[-trailing_bit_length:].bin)
+            output_stream.write(" + trailing_bits = 0b" + Dtype('bin').unpack(self[-trailing_bit_length:]))
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return

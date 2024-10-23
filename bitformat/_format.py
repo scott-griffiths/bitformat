@@ -189,7 +189,7 @@ class Format(FieldType):
         vals = []
         for i, f in enumerate(self.fieldtypes):
             if f.value is None:
-                raise ValueError(f"Field {i + 1} in Format has no value.")
+                raise ValueError(f"When getting Format value, cannot find value of this field:\n{f}")
             vals.append(f.value)
         return vals
 
@@ -228,7 +228,8 @@ class Format(FieldType):
         for fieldtype in self.fieldtypes:
             if fieldtype.name == key:
                 return fieldtype
-        raise KeyError(f"Field '{key}' not found.")
+        raise KeyError(f"Field with name '{name}' not found.")
+
 
     def __setitem__(self, key, value) -> None:
         if isinstance(value, str):

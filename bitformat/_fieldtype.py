@@ -118,6 +118,8 @@ class FieldType(abc.ABC):
             return fieldtype_classes['Pass']()
         elif s.startswith('if'): # TODO: this isn't a good enough test
             return fieldtype_classes['If'].from_string(s)
+        elif s.startswith('Repeat('):
+            return fieldtype_classes['Repeat'].from_string(s)
         elif s.endswith(')'):
             # If it's legal it must be a Format.
             return fieldtype_classes['Format'].from_string(s)
