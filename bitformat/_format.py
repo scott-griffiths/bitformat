@@ -6,7 +6,7 @@ import copy
 import re
 
 from ._common import colour, _indent, override
-from ._field import FieldType, Field
+from ._field import FieldType
 from ._pass import Pass
 
 __all__ = ['Format']
@@ -27,6 +27,7 @@ class Format(FieldType):
             x.fields = []
             x.name = ''
             x.vars = {}
+            x._field_names = {}
             return x
         return cls.from_string(s)
 
@@ -48,6 +49,7 @@ class Format(FieldType):
             fields = []
         x.name = name
         x.vars = {}
+        x._field_names = {}
         stetchy_field = ''
         for fieldtype in fields:
             if stetchy_field:
@@ -67,6 +69,8 @@ class Format(FieldType):
             except ValueError:
                 pass
             x.fields.append(fieldtype)
+            if fieldtype.name != '':
+                x._field_names[fieldtype.name] = fieldtype
         return x
 
     @staticmethod
@@ -177,6 +181,10 @@ class Format(FieldType):
         x = Format()
         x.name = self.name
         x.fields = [f._copy() for f in self.fields]
+        x._field_names = {}
+        for field in x.fields:
+            if field.name != '':
+                x._field_names[field.name] = field
         return x
 
     @override
@@ -218,11 +226,10 @@ class Format(FieldType):
         return len(self.fields)
 
     def __getitem__(self, name: str) -> Any:
-        # TODO: Should be a dict
-        for fieldtype in self.fields:
-            if fieldtype.name == name:
-                return fieldtype
-        raise KeyError(f"Field with name '{name}' not found.")
+        try:
+            return self._field_names[name]
+        except KeyError:
+            raise KeyError(f"Field with name '{name}' not found.")
 
     def __setitem__(self, name: str, value: str | FieldType) -> None:
         if isinstance(value, str):
@@ -264,6 +271,8 @@ class Format(FieldType):
     def __iadd__(self, other: FieldType | str) -> Format:
         if isinstance(other, str):
             other = FieldType.from_string(other)
+        if other.name != '':
+            self._field_names[other.name] = other
         self.fields.append(copy.copy(other))
         return self
 
