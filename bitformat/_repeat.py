@@ -29,8 +29,6 @@ class Repeat(FieldType):
     def _getbitlength(self) -> int:
         return self.field.bitlength * self.count
 
-    bitlength = property(_getbitlength)
-
     @classmethod
     @override
     def from_string(cls, s: str) -> Repeat:

@@ -80,8 +80,6 @@ class Field(FieldType):
     def _getbitlength(self) -> int:
         return self.dtype.bitlength
 
-    bitlength = property(_getbitlength)
-
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:

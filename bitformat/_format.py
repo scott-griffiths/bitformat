@@ -158,8 +158,6 @@ class Format(FieldType):
         """Return the total length of the Format in bits."""
         return sum(f.bitlength for f in self.fields)
 
-    bitlength = property(_getbitlength)
-
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:

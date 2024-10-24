@@ -215,6 +215,10 @@ class FieldType(abc.ABC):
         """
         ...
 
+    @property
+    def bitlength(self) -> int:
+        return self._getbitlength()
+
     def __eq__(self, other) -> bool:
         return self.flatten() == other.flatten()
 

@@ -85,8 +85,6 @@ class If(FieldType):
         else:
             return then_len
 
-    bitlength = property(_getbitlength)
-
     @override
     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
