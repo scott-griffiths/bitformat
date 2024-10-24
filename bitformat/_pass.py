@@ -43,7 +43,7 @@ class Pass(FieldType):
         return 0
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         return Bits(), 0
 

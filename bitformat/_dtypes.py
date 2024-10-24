@@ -545,20 +545,20 @@ class DtypeWithExpression:
             x.base_dtype = Register().get_single_dtype(name, size, endianness)
             return x
 
-    def evaluate(self, vars) -> Dtype:
+    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
         if self.size_expression is None and self.items_expression is None:
             return self.base_dtype
-        if not vars:
+        if not vars_:
             return self.base_dtype
         if self.base_dtype.is_array:
             name = self.base_dtype.name
-            size = self.size_expression.evaluate(**vars) if (self.size_expression and vars) else self.base_dtype.size
-            items = self.items_expression.evaluate(**vars) if (self.items_expression and vars) else self.base_dtype.items
+            size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
+            items = self.items_expression.evaluate(vars_) if (self.items_expression and vars_) else self.base_dtype.items
             endianness = self.base_dtype.endianness
             return Register().get_array_dtype(name, size, items, endianness)
         else:
             name = self.base_dtype.name
-            size = self.size_expression.evaluate(**vars) if (self.size_expression and vars) else self.base_dtype.size
+            size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
             endianness = self.base_dtype.endianness
             return Register().get_single_dtype(name, size, endianness)
 
@@ -582,6 +582,8 @@ class DtypeList:
     >>> b = DtypeList.from_params(['u12', 'u8', 'bool'])
 
     """
+    _dtypes: list[Dtype]
+    _bitlength: int
 
     def __new__(cls, s: str) -> DtypeList:
         return cls.from_string(s)

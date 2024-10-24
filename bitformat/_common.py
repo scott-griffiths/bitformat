@@ -80,7 +80,7 @@ class Expression:
             raise ExpressionError(f"Failed to compile Expression '{self}': {e}")
         return code
 
-    def evaluate(self, **kwargs) -> Any:
+    def evaluate(self, kwargs: dict[str, Any] | None = None) -> Any:
         """Evaluate the expression, disallowing all builtins."""
         try:
             value = eval(self.code, {"__builtins__": {}}, kwargs)

@@ -6,7 +6,7 @@ import copy
 import re
 
 from ._common import colour, _indent, override
-from ._field import FieldType
+from ._fieldtype import FieldType
 from ._pass import Pass
 
 __all__ = ['Format']

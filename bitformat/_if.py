@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._field import FieldType, Field
+from ._fieldtype import FieldType
 from ._pass import Pass
 from ._common import _indent, override, Expression, ExpressionError
 from typing import Sequence, Any
@@ -11,6 +11,11 @@ __all__ = ['If']
 
 
 class If(FieldType):
+
+    condition: Expression
+    condition_value: bool | None
+    then_: FieldType
+    else_: FieldType
 
     def __new__(cls, s: str) -> If:
         return cls.from_string(s)
@@ -86,18 +91,18 @@ class If(FieldType):
             return then_len
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any] | None = None,
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
-        self.condition_value = self.condition.evaluate(_vars, kwargs)
+        self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
-            _, v = self.then_._pack(values[index], index, _vars, kwargs)
+            _, v = self.then_._pack(values[index], index, vars_, kwargs)
         else:
-            _, v = self.else_._pack(values[index], index, _vars, kwargs)
+            _, v = self.else_._pack(values[index], index, vars_, kwargs)
         return self.to_bits(), v
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        self.condition_value = self.condition.evaluate(**vars_)
+        self.condition_value = self.condition.evaluate(vars_)
         if self.condition_value:
             return self.then_._parse(b, startbit, vars_)
         return self.else_._parse(b, startbit, vars_)
