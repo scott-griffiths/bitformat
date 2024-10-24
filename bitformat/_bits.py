@@ -317,12 +317,12 @@ class Bits:
         count = self._bitstore.count(1)
         return count if value else len(self) - count
 
-    def chunks(self, bits: int, count: int | None = None) -> Iterator[Bits]:
+    def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """
         Return Bits generator by cutting into bits sized chunks.
 
-        :param bits: The size in bits of the Bits chunks to generate.
-        :type bits: int
+        :param chunk_size: The size in bits of the chunks to generate.
+        :type chunk_size: int
         :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
         :type count: int, optional
         :return: A generator yielding Bits chunks.
@@ -330,20 +330,20 @@ class Bits:
         """
         if count is not None and count < 0:
             raise ValueError("Cannot cut - count must be >= 0.")
-        if bits <= 0:
+        if chunk_size <= 0:
             raise ValueError("Cannot cut - bits must be >= 0.")
         c = 0
         start = 0
         end = len(self)
         while count is None or c < count:
             c += 1
-            nextchunk = self._slice(start, min(start + bits, end))
+            nextchunk = self._slice(start, min(start + chunk_size, end))
             if len(nextchunk) == 0:
                 return
             yield nextchunk
-            if len(nextchunk) != bits:
+            if len(nextchunk) != chunk_size:
                 return
-            start += bits
+            start += chunk_size
         return
 
     def ends_with(self, suffix: BitsType, /) -> bool:
