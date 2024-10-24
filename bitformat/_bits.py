@@ -26,9 +26,6 @@ __all__ = ['Bits', 'BitsType']
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 
-# Maximum number of digits to use in __str__ and __repr__.
-MAX_CHARS: int = 1000
-
 # name[length]=value
 NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))$')
 
@@ -1169,17 +1166,10 @@ class Bits:
         return self.to_bytes()
 
     def __str__(self) -> str:
-        """Return string representations of Bits for printing.
-
-        Very long strings will be truncated with '...'.
-
-        """
+        """Return string representations of Bits for printing."""
         length = len(self)
         if length == 0:
             return ''
-        if length > MAX_CHARS * 4:
-            # Too long for hex. Truncate...
-            return '0x' + self[0:MAX_CHARS*4].hex + f'...  # {length} bits'
         return self._simple_str()
 
     def __repr__(self) -> str:

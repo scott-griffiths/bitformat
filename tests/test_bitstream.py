@@ -770,7 +770,6 @@ class TestManyDifferentThings:
         assert not '0xfeed' in a
 
     def test_repr(self):
-        max_ = bitformat._bits.MAX_CHARS
         bls = ['', '0b1', '0o5', '0x43412424f41', '0b00101001010101']
         for bs in bls:
             a = Bits(bs)
@@ -782,10 +781,6 @@ class TestManyDifferentThings:
         assert repr(a).splitlines()[0] == "Bits('0b111')"
         a += '0b1'
         assert repr(a).splitlines()[0] == "Bits('0xf')"
-        a *= max_
-        assert repr(a).splitlines()[0] == "Bits('0x" + "f" * max_ + "')"
-        # a += '0xf'
-        # assert repr(a) == "Bits('0x" + "f" * max_ + "...')  # length=%d" % (max_ * 4 + 4)
 
     def test_iter(self):
         a = Bits('0b001010')
