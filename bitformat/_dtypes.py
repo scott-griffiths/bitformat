@@ -33,6 +33,7 @@ class Dtype:
     _is_array: bool
     _size: int
     _endianness: Endianness
+    _bits_per_character: int | None
 
     def __new__(cls, token: str, /) -> Dtype:
         return cls.from_string(token)
@@ -182,6 +183,16 @@ class Dtype:
         """Returns bool indicating if the data type represents a signed quantity."""
         return self._is_signed
 
+    @property
+    def bits_per_character(self) -> int | None:
+        """The number of bits represented by a single character of the underlying data type.
+
+        For binary this is 1, for octal 3, hex 4 and for bytes this is 8. Most types won't
+        have a direct relationship between bits and characters, so this will be None.
+
+        """
+        return self._bits_per_character
+
     def __hash__(self) -> int:
         return hash((self._name, self._bits_per_item))  # TODO: Not enough info here - at least needs items?
 
@@ -197,6 +208,7 @@ class Dtype:
         x._is_array = is_array
         x._items = items
         x._bits_per_item = x._size = size
+        x._bits_per_character = definition.bits_per_character
         if definition.bits_per_character is not None:
             x._bits_per_item *= definition.bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (endianness == Endianness.NATIVE and bitformat.byteorder == 'little')

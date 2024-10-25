@@ -991,13 +991,6 @@ class Bits:
         """How many characters are needed to represent a number of bits with a given Dtype."""
         return Register()[dtype.name].bitlength2chars_fn(bits_per_group)
 
-    @staticmethod
-    def _bits_per_char(dtype: Dtype) -> int:
-        bpc = Register()[dtype.name].bits_per_character
-        if bpc is None:
-            raise ValueError
-        return bpc
-
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
@@ -1021,7 +1014,7 @@ class Bits:
             width_available = width - offset_width - len(format_sep) * (dtype2 is not None)
             width_available = max(width_available, 1)
             if dtype2 is None:
-                max_bits_per_line = width_available * Bits._bits_per_char(dtype1)
+                max_bits_per_line = width_available * dtype1.bits_per_character
             else:
                 chars_per_24_bits = Register()[dtype1.name].bitlength2chars_fn(24) + Register()[dtype2.name].bitlength2chars_fn(24)
                 max_bits_per_line = 24 * (width_available // chars_per_24_bits)
@@ -1081,7 +1074,7 @@ class Bits:
                     raise ValueError(f"No length or default length available for pp() format '{fmt}'.")
             else:
                 try:
-                    bits_per_group = 2 * Bits._bits_per_char(dtype1) * Bits._bits_per_char(dtype2)
+                    bits_per_group = 2 * dtype1.bits_per_character * dtype2.bits_per_character
                 except ValueError:
                     raise ValueError(f"Can't find a default bitlength to use for pp() format '{fmt}'.")
                 if bits_per_group >= 24:
