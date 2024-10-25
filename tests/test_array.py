@@ -374,11 +374,11 @@ class TestArrayMethods:
         assert b.unpack() == [9, -1, 0, 9, 0]
 
     def test_deleting(self):
-        a = Array('u99', list(range(1000)))
+        a = Array('u99', list(range(100)))
         del a[::2]
-        assert len(a) == 500
-        del a[-100:]
-        assert len(a) == 400
+        assert len(a) == 50
+        del a[-10:]
+        assert len(a) == 40
         assert a[:10].unpack() == [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
         with pytest.raises(IndexError):
             del a[len(a)]
