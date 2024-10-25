@@ -584,6 +584,7 @@ class DtypeList:
     """
     _dtypes: list[Dtype]
     _bitlength: int
+    is_array: bool = False
 
     def __new__(cls, s: str) -> DtypeList:
         return cls.from_string(s)
@@ -627,6 +628,7 @@ class DtypeList:
         return self._bitlength
 
     bitlength = property(_getbitlength, doc="The total length of all the dtypes in bits.")
+    bits_per_item = bitlength  # You can't do an array-like DtypeList so this is the same as bitlength
 
     def __len__(self) -> int:
         return len(self._dtypes)

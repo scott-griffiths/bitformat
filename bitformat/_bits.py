@@ -987,32 +987,28 @@ class Bits:
         return x, chars_used
 
     @staticmethod
-    def _chars_per_group(bits_per_group: int, fmt: str | None):
-        """How many characters are needed to represent a number of bits with a given format."""
-        if fmt is None or Register()[fmt].bitlength2chars_fn is None:
-            return 0
-        return Register()[fmt].bitlength2chars_fn(bits_per_group)
+    def _chars_per_dtype(dtype: Dtype, bits_per_group: int):
+        """How many characters are needed to represent a number of bits with a given Dtype."""
+        return Register()[dtype.name].bitlength2chars_fn(bits_per_group)
 
     @staticmethod
-    def _bits_per_char(fmt: str):
-        """How many bits are represented by each character of a given format."""
-        if fmt not in ['bin', 'oct', 'hex', 'bytes']:
+    def _bits_per_char(dtype: Dtype) -> int:
+        bpc = Register()[dtype.name].bits_per_character
+        if bpc is None:
             raise ValueError
-        return 24 // Register()[fmt].bitlength2chars_fn(24)
+        return bpc
 
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
-        name1 = dtype1.name
-        name2 = dtype2.name if dtype2 is not None else None
         offset_width = 0
         offset_sep = ': '
         if show_offset:
             # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
             offset_width = len(str(len(self))) + len(offset_sep)
         if bits_per_group > 0:
-            group_chars1 = Bits._chars_per_group(bits_per_group, name1)
-            group_chars2 = Bits._chars_per_group(bits_per_group, name2)
+            group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
+            group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
             # The number of characters that get added when we add an extra group (after the first one)
             total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
             width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
@@ -1022,12 +1018,12 @@ class Bits:
             max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
         else:
             assert bits_per_group == 0  # Don't divide into groups
-            width_available = width - offset_width - len(format_sep) * (name2 is not None)
+            width_available = width - offset_width - len(format_sep) * (dtype2 is not None)
             width_available = max(width_available, 1)
-            if name2 is None:
-                max_bits_per_line = width_available * Bits._bits_per_char(name1)
+            if dtype2 is None:
+                max_bits_per_line = width_available * Bits._bits_per_char(dtype1)
             else:
-                chars_per_24_bits = Register()[name1].bitlength2chars_fn(24) + Register()[name2].bitlength2chars_fn(24)
+                chars_per_24_bits = Register()[dtype1.name].bitlength2chars_fn(24) + Register()[dtype2.name].bitlength2chars_fn(24)
                 max_bits_per_line = 24 * (width_available // chars_per_24_bits)
                 if max_bits_per_line == 0:
                     max_bits_per_line = 24  # We can't fit into the width asked for. Show something small.
@@ -1085,7 +1081,7 @@ class Bits:
                     raise ValueError(f"No length or default length available for pp() format '{fmt}'.")
             else:
                 try:
-                    bits_per_group = 2 * Bits._bits_per_char(dtype1.name) * Bits._bits_per_char(dtype2.name)
+                    bits_per_group = 2 * Bits._bits_per_char(dtype1) * Bits._bits_per_char(dtype2)
                 except ValueError:
                     raise ValueError(f"Can't find a default bitlength to use for pp() format '{fmt}'.")
                 if bits_per_group >= 24:

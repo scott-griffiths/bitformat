@@ -6,7 +6,7 @@ from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
 
 from bitformat._bits import Bits, BitsType
-from bitformat._dtypes import Dtype, Register
+from bitformat._dtypes import Dtype, Register, DtypeList
 from bitformat import _utils
 from bitformat._options import Options
 from bitformat._common import Colour
@@ -142,7 +142,7 @@ class Array:
       gives the leftovers at the end of the data.
     """
 
-    def __init__(self, dtype: str | Dtype, initializer: int | Array | Iterable | Bits | bytes | bytearray| memoryview | None = None,
+    def __init__(self, dtype: str | Dtype | DtypeList, initializer: int | Array | Iterable | Bits | bytes | bytearray| memoryview | None = None,
                  trailing_bits: BitsType | None = None) -> None:
         self._proxy = BitsProxy(self)
         self._set_dtype(dtype)
@@ -200,17 +200,22 @@ class Array:
     def dtype(self, new_dtype: str | Dtype) -> None:
         self._set_dtype(new_dtype)
 
-    def _set_dtype(self, new_dtype: str | Dtype) -> None:
+    def _set_dtype(self, new_dtype: str | Dtype | DtypeList) -> None:
         if isinstance(new_dtype, Dtype):
+            self._dtype = new_dtype
+        elif isinstance(new_dtype, DtypeList):
             self._dtype = new_dtype
         else:
             try:
-                dtype = Dtype.from_string(new_dtype)
+                if ',' in new_dtype:
+                    dtype = DtypeList.from_string(new_dtype)
+                else:
+                    dtype = Dtype.from_string(new_dtype)
             except ValueError as e:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}': {e}")
             self._dtype = dtype
-        if self._dtype.bits_per_item <= 0:
-            raise ValueError(f"A fixed length format is needed for an Array, received '{new_dtype}'.")
+        if self._dtype.bitlength == 0:
+            raise ValueError(f"A fixed length data type is needed for an Array, received '{new_dtype}'.")
 
 
     def _create_element(self, value: ElementType) -> Bits:
@@ -347,9 +352,18 @@ class Array:
         new_array = self.__class__(dtype, self.unpack())
         return new_array
 
-    def unpack(self) -> list[ElementType]:
-        return [self._dtype.unpack(self._proxy[start:start + self._dtype.bitlength])
-                for start in range(0, len(self._proxy) - self._dtype.bitlength + 1, self._dtype.bitlength)]
+    def unpack(self, dtype: str | Dtype | DtypeList | None = None) -> list[ElementType]:
+        if dtype is None:
+            dtype = self._dtype
+        elif isinstance(dtype, str):
+            if ',' in dtype:
+                dtype = DtypeList.from_string(dtype)
+            else:
+                dtype = Dtype.from_string(dtype)
+        elif not isinstance(dtype, Dtype):
+            raise TypeError(f"Invalid dtype parameter: {dtype}")
+        return [dtype.unpack(self._proxy[start:start + dtype.bitlength])
+                for start in range(0, len(self._proxy) - dtype.bitlength + 1, dtype.bitlength)]
 
     def append(self, x: ElementType, /) -> None:
         """
@@ -569,6 +583,8 @@ class Array:
 
     def _apply_op_to_all_elements(self, op, value: int | float | None, is_comparison: bool = False) -> Array:
         """Apply op with value to each element of the Array and return a new Array"""
+        if isinstance(self._dtype, DtypeList):
+            raise ValueError(f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeList dtype.")
         new_array = self.__class__('bool' if is_comparison else self._dtype)
         new_data = Bits()
         failures = index = 0
@@ -597,6 +613,8 @@ class Array:
     def _apply_op_to_all_elements_inplace(self, op, value: int | float) -> Array:
         """Apply op with value to each element of the Array in place."""
         # This isn't really being done in-place, but it's simpler and faster for now?
+        if isinstance(self._dtype, DtypeList):
+            raise ValueError(f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeList dtype.")
         new_data = Bits()
         failures = index = 0
         msg = ''
