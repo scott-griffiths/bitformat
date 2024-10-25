@@ -67,7 +67,12 @@ def token_to_bitstore(token: str) -> BitStore:
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
     s = ''.join(s.split())  # Remove whitespace
-    return BitStore.join(token_to_bitstore(token) for token in (t for t in s.split(',') if t))
+    tokens = [token for token in s.split(',') if token]
+    if len(tokens) == 1:
+        return token_to_bitstore(tokens[0])
+    if not tokens:
+        return BitStore.from_zeros(0)
+    return BitStore.join(token_to_bitstore(token) for token in tokens)
 
 
 class Bits:
