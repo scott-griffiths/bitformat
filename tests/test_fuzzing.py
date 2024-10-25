@@ -6,7 +6,7 @@ import hypothesis.strategies as st
 import math
 
 def get_allowed_length(dtype_name, length):
-    al = Register()[dtype_name].allowed_sizes
+    al = Register().name_to_def[dtype_name].allowed_sizes
     if al and al.values:
         if al.values[-1] is Ellipsis:
             return al.values[1] * length
