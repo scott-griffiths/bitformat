@@ -275,7 +275,7 @@ class Dtype:
             return tuple(self._get_fn(b[i * self._bits_per_item:(i + 1) * self._bits_per_item]) for i in range(self.items))
 
     def __str__(self) -> str:
-        hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self.size == 0
+        hide_length = Register().name_to_def[self._name].allowed_sizes.only_one_value() or self.size == 0
         size_str = '' if hide_length else str(self.size)
         if not self._is_array:
             return f"{self._name}{self._endianness.value}{size_str}"
@@ -283,7 +283,7 @@ class Dtype:
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 
     def __repr__(self) -> str:
-        hide_length = Register().names[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
+        hide_length = Register().name_to_def[self._name].allowed_sizes.only_one_value() or self._bits_per_item == 0
         size_str = '' if hide_length else str(self.size)
         if not self._is_array:
             return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{size_str}')"
@@ -418,7 +418,7 @@ class Register:
     """
 
     _instance: Register | None = None
-    names: dict[str, DtypeDefinition] = {}
+    name_to_def: dict[str, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
         # Singleton. Only one Register instance can ever exist.
@@ -430,7 +430,7 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition, alias: str | None = None):
         names = [definition.name] if alias is None else [definition.name, alias]
         for name in names:
-            cls.names[name] = definition
+            cls.name_to_def[name] = definition
             if definition.get_fn is not None:
                 setattr(bitformat.Bits, name,
                         property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
@@ -459,11 +459,11 @@ class Register:
     def get_single_dtype(cls, name: str, size: int | None,
                   endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
-            definition = cls.names[name]
+            definition = cls.name_to_def[name]
         except KeyError:
             aliases = {'int': 'i', 'uint': 'u', 'float': 'f'}
             extra = f"Did you mean '{aliases[name]}'? " if name in aliases else ''
-            raise ValueError(f"Unknown Dtype name '{name}'. {extra}Names available: {list(cls.names.keys())}.")
+            raise ValueError(f"Unknown Dtype name '{name}'. {extra}Names available: {list(cls.name_to_def.keys())}.")
         else:
             return definition.get_single_dtype(size, endianness)
 
@@ -472,26 +472,18 @@ class Register:
     def get_array_dtype(cls, name: str, size: int, items: int,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> Dtype:
         try:
-            definition = cls.names[name]
+            definition = cls.name_to_def[name]
         except KeyError:
-            raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.names.keys())}.")
+            raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.name_to_def.keys())}.")
         else:
             d = definition.get_array_dtype(size, items, endianness)
             return d
 
-    @classmethod
-    def __getitem__(cls, name: str) -> DtypeDefinition:
-        return cls.names[name]
-
-    @classmethod
-    def __delitem__(cls, name: str) -> None:
-        del cls.names[name]
-
     def __repr__(self) -> str:
         s = [f"{'key':<12}:{'name':^12}{'signed':^8}{'allowed_lengths':^16}{'bits_per_character':^12}{'return_type':<13}"]
         s.append('-' * 72)
-        for key in self.names:
-            m = self.names[key]
+        for key in self.name_to_def:
+            m = self.name_to_def[key]
             allowed = '' if not m.allowed_sizes else m.allowed_sizes
             ret = 'None' if m.return_type is None else m.return_type.__name__
             s.append(f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}")
@@ -575,7 +567,7 @@ class DtypeWithExpression:
             return Register().get_single_dtype(name, size, endianness)
 
     def __str__(self) -> str:
-        hide_size = (Register().names[self.base_dtype.name].allowed_sizes.only_one_value() or
+        hide_size = (Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value() or
                        (self.base_dtype.size == 0 and self.size_expression is None))
         size_str = '' if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
         if not self.base_dtype.is_array:

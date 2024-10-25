@@ -73,11 +73,11 @@ class TestChangingTheRegister:
 
     def test_retrieving_meta_dtype(self):
         r = Register()
-        u = r['u']
-        u2 = r['u']
+        u = r.name_to_def['u']
+        u2 = r.name_to_def['u']
         assert u == u2
         with pytest.raises(KeyError):
-            i = r['integer']
+            i = r.name_to_def['integer']
 
     # def test_removing_type(self):
     #     del Register()['bool']

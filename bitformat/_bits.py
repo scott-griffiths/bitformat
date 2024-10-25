@@ -972,8 +972,8 @@ class Bits:
         else:
             align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
             chars_per_group = 0
-            if Register()[dtype.name].bitlength2chars_fn is not None:
-                chars_per_group = Register()[dtype.name].bitlength2chars_fn(bits_per_group)
+            if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
+                chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
             if dtype.name == 'bits':
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
@@ -989,7 +989,7 @@ class Bits:
     @staticmethod
     def _chars_per_dtype(dtype: Dtype, bits_per_group: int):
         """How many characters are needed to represent a number of bits with a given Dtype."""
-        return Register()[dtype.name].bitlength2chars_fn(bits_per_group)
+        return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
 
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:

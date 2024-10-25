@@ -20,7 +20,7 @@ def compare_fields(f, f2):
     assert f == f2, f"Fields are not equal: {f} != {f2}"
 
 
-@given(dtype_name=st.sampled_from(sorted(Register().names.keys())),
+@given(dtype_name=st.sampled_from(sorted(Register().name_to_def.keys())),
        length=st.integers(1, 100),
        const=st.booleans(),
        int_value=st.integers(0, 2**800 - 1))
@@ -31,7 +31,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
     compare_fields(f, f2)
 
     # Create some bits of the right length
-    bits_per_character = Register()[dtype_name].bits_per_character
+    bits_per_character = Register().name_to_def[dtype_name].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
     b = Bits.pack('u800', int_value)[0:length]
@@ -48,7 +48,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
         f3 = eval(repr(f))
         compare_fields(f, f3)
 
-@given(dtype_name=st.sampled_from(sorted(Register().names.keys())),
+@given(dtype_name=st.sampled_from(sorted(Register().name_to_def.keys())),
        length=st.integers(1, 5),
        int_value=st.integers(0, 2**160 - 1),
        items=st.integers(1, 4))
@@ -60,7 +60,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     assert f == f2
 
     # Create some bits of the right length
-    bits_per_character = Register()[dtype_name].bits_per_character
+    bits_per_character = Register().name_to_def[dtype_name].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
     b = Bits.pack('u320', int_value)[0:length * items]
@@ -72,13 +72,13 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
         assert f.value == f2.value
 
 
-@given(dtype_names=st.lists(st.sampled_from(sorted(Register().names.keys())), min_size=5, max_size=5),
+@given(dtype_names=st.lists(st.sampled_from(sorted(Register().name_to_def.keys())), min_size=5, max_size=5),
        lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5))
 def test_format_consistency(dtype_names, lengths):
-    bits_per_characters = [Register()[dtype_name].bits_per_character for dtype_name in dtype_names]
+    bits_per_characters = [Register().name_to_def[dtype_name].bits_per_character for dtype_name in dtype_names]
     bits_per_characters = [b if b is not None else 1 for b in bits_per_characters]
     als = []
-    for al, length in zip([Register()[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
+    for al, length in zip([Register().name_to_def[dtype_name].allowed_sizes for dtype_name in dtype_names], lengths):
         if al.values:
             if al.values[-1] is Ellipsis:
                 als.append(al.values[1] * length)
