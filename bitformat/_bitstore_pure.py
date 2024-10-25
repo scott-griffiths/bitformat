@@ -6,16 +6,19 @@ from typing import Iterable, Iterator
 
 
 class BitStore:
-    """A pure Python implementation of a BitStore. Horribly inefficient but useful for testing."""
+    """A pure Python implementation of a BitStore. Inefficient but useful for testing."""
+
+    data: bytearray
+    offset: int
+    padding: int
 
     @classmethod
     def _from_bytes_with_offsets(cls, b: bytes | bytearray | memoryview, offset: int = 0, padding: int = 0) -> BitStore:
         assert 0 <= offset <= 7
         assert 0 <= padding <= 7
-        padding = None if padding == 0 else -padding
         x = super().__new__(cls)
         binstr = ''.join(format(byte, '08b') for byte in b)
-        x.bytearray_ = bytearray(int(b) for b in binstr[offset:padding])
+        x.bytearray_ = bytearray(int(b) for b in binstr[offset:None if padding == 0 else -padding])
         x.data = bytearray(b)
         x.offset = offset
         x.padding = padding
@@ -36,9 +39,13 @@ class BitStore:
 
     @classmethod
     def from_ones(cls, i: int) -> BitStore:
-        x = super().__new__(cls)
-        x.bytearray_ = bytearray([1] * i)
-        return x
+        if i == 0:
+            return cls._from_bytes_with_offsets(b'')
+        b = b'\xff' * ((i + 7) // 8)
+        offset = 8 - (i % 8)
+        if offset == 8:
+            offset = 0
+        return cls._from_bytes_with_offsets(b, offset)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
@@ -109,11 +116,8 @@ class BitStore:
 
     @classmethod
     def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
-        ba = bytearray()
-        for i in iterable:
-            ba.extend(i.bytearray_)
-        bin = ''.join('0' if i == 0 else '1' for i in ba)
-        return cls.from_bin(bin)
+        bin_str = ''.join(x.to_bin() for x in iterable)
+        return cls.from_bin(bin_str)
 
     def to_bytes(self) -> bytes:
         # Ensure the length of the bytearray is a multiple of 8
@@ -164,25 +168,19 @@ class BitStore:
         return self.bytearray_ == other.bytearray_
 
     def __and__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        if len(self.bytearray_) != len(other.bytearray_):
+        if len(self) != len(other):
             raise ValueError
-        x.bytearray_ = bytearray(int(a) & int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return x
+        return BitStore.from_int(self.to_uint() & other.to_uint(), len(self), False)
 
     def __or__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        if len(self.bytearray_) != len(other.bytearray_):
+        if len(self) != len(other):
             raise ValueError
-        x.bytearray_ = bytearray(int(a) | int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return x
+        return BitStore.from_int(self.to_uint() | other.to_uint(), len(self), False)
 
     def __xor__(self, other: BitStore, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        if len(self.bytearray_) != len(other.bytearray_):
+        if len(self) != len(other):
             raise ValueError
-        x.bytearray_ = bytearray(int(a) ^ int(b) for a, b in zip(self.bytearray_, other.bytearray_))
-        return x
+        return BitStore.from_int(self.to_uint() ^ other.to_uint(), len(self), False)
 
     def find(self, bs: BitStore, bytealigned: bool = False, bytealign_offset: int = 0) -> int:
         to_find = bs.to_bin()
@@ -229,6 +227,9 @@ class BitStore:
         """Always creates a copy, even if instance is immutable."""
         s_copy = self.__class__()
         s_copy.bytearray_ = copy.copy(self.bytearray_)
+        s_copy.data = copy.copy(self.data)
+        s_copy.offset = self.offset
+        s_copy.padding = self.padding
         return s_copy
 
     def __getitem__(self, item: int | slice, /) -> int | BitStore:
@@ -239,14 +240,29 @@ class BitStore:
         return bool(self.bytearray_[index])
 
     def getslice_withstep(self, key: slice, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        x.bytearray_ = self.bytearray_.__getitem__(key)
-        return x
+        ba = self.bytearray_.__getitem__(key)
+        # Convert to new bytearray. Each element of ba contributes just one bit to the byte.
+        b = bytearray(
+            sum((bit << (7 - i)) for i, bit in enumerate(ba[j:j + 8]))
+            for j in range(0, len(ba), 8)
+        )
+        padding = 8 - (len(ba) % 8)
+        if padding == 8:
+            padding = 0
+        return self.__class__._from_bytes_with_offsets(b, 0, padding)
+
 
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        x.bytearray_ = self.bytearray_[start:stop]
-        return x
+        ba = self.bytearray_[start:stop]
+        # Convert to new bytearray. Each element of ba contributes just one bit to the byte.
+        b = bytearray(
+            sum((bit << (7 - i)) for i, bit in enumerate(ba[j:j + 8]))
+            for j in range(0, len(ba), 8)
+        )
+        padding = 8 - (len(ba) % 8)
+        if padding == 8:
+            padding = 0
+        return self.__class__._from_bytes_with_offsets(b, 0, padding)
 
     def invert(self, index: int | None = None, /) -> BitStore:
         x = self.__class__()
