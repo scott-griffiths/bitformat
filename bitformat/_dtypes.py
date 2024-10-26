@@ -8,7 +8,7 @@ from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
 
 
-__all__ = ['Dtype', 'DtypeList', 'DtypeDefinition', 'Register']
+__all__ = ['Dtype', 'DtypeList', 'DtypeDefinition', 'Register', 'DtypeWithExpression']
 
 CACHE_SIZE = 256
 

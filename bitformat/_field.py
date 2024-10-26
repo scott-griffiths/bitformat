@@ -14,6 +14,9 @@ __all__ = ['Field']
 
 class Field(FieldType):
 
+    const: bool
+    _bits: Bits | None
+
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
 
@@ -171,6 +174,7 @@ class Field(FieldType):
         if self._dtype_expression is not None:
             dtype = self._dtype_expression.evaluate(vars_)
         else:
+            # TODO: This makes no sense as _dtype_expression is None ?!
             dtype = self._dtype_expression.base_dtype
         if len(b) - startbit < dtype.bitlength:
             raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b) - startbit} were available.")
@@ -269,49 +273,3 @@ class Field(FieldType):
         if self.const != other.const:
             return False
         return True
-
-#
-# class Find(FieldType):
-#
-#     def __init__(self, bits: Bits | str, bytealigned: bool = True, name: str = '') -> None:
-#         super().__init__()
-#         self.bits_to_find = Bits.from_string(bits)
-#         self.bytealigned = bytealigned
-#         self.name = name
-#         self._value = None
-#
-#     def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
-#               kwargs: dict[str, Any]) -> tuple[Bits, int]:
-#         return Bits(), 0
-#
-#     def to_bits(self) -> Bits:
-#         return Bits()
-#
-#     def clear(self) -> None:
-#         self._value = None
-#
-#     def _parse(self, b: Bits, vars_: dict[str, Any]) -> int:
-#         p = b.find(self.bits_to_find, bytealigned=self.bytealigned)
-#         if p:
-#             self._value = p[0]
-#             return p[0]
-#         self._value = None
-#         return 0
-#
-#     def flatten(self) -> list[FieldType]:
-#         # TODO
-#         return []
-#
-#     def _str(self, indent: int) -> str:
-#         name_str = '' if self.name == '' else f"'{colour.blue}{self.name}{colour.off}',"
-#         find_str = f"'{colour.green}{str(self.bits_to_find)}{colour.off}'"
-#         s = f"{_indent(indent)}{self.__class__.__name__}({name_str}{find_str})"
-#         return s
-#
-#     def _repr(self, indent: int) -> str:
-#         return self._str(indent)
-#
-#     def _getvalue(self) -> int | None:
-#         return self._value
-#
-#     value = property(_getvalue, None)
