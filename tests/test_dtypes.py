@@ -229,3 +229,11 @@ def test_dtype_list_slicing():
     d = DtypeList('u1, u2, u3, u4, u5')
     d2 = d[1:4]
     assert d2 == DtypeList('u2, u3, u4')
+
+def test_dtype_str_with_le():
+    d = Dtype('u_le16')
+    assert str(d) == 'u_le16'
+    d = Dtype('f_be16')
+    assert str(d) == 'f_be16'
+    d = Dtype('i_ne16')
+    assert str(d) == 'i_ne16'

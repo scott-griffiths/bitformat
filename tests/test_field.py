@@ -1,3 +1,5 @@
+import keyword
+
 import pytest
 from bitformat import Dtype, Bits, Field, Expression, FieldType, Format
 from hypothesis import given, assume
@@ -39,7 +41,7 @@ class TestCreation:
     @given(name=st.text())
     def test_creation_with_names(self, name):
         assume(name != '')
-        if name.isidentifier() and '__' not in name:
+        if name.isidentifier() and '__' not in name and not keyword.iskeyword(name):
             f = Field.from_params('u8', name)
             assert f.name == name
             f2 = Field.from_string(f'{name}: u8')

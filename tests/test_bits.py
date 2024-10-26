@@ -244,7 +244,7 @@ class TestPrettyPrinting:
     def test_small_width(self):
         a = Bits.pack('u20', 0)
         s = io.StringIO()
-        a.pp(fmt='bin', stream=s, width=5)
+        a.pp(dtype1='bin', stream=s, width=5)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin', length=20 bits> [
  0: 00000000
  8: 00000000
@@ -274,13 +274,13 @@ class TestPrettyPrinting:
     def test_multiformat(self):
         a = Bits.from_string('0b1111000011110000')
         s = io.StringIO()
-        a.pp(stream=s, fmt='bin, hex')
+        a.pp(stream=s, dtype1='bin', dtype2='hex')
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin, hex', length=16 bits> [
  0: 11110000 11110000 : f0 f0
 ]
 """
         s = io.StringIO()
-        a.pp(stream=s, fmt='hex, bin12')
+        a.pp('hex', 'bin12', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='hex, bin12', length=16 bits> [
  0: f0f : 111100001111
 ] + trailing_bits = 0b0000
@@ -289,7 +289,7 @@ class TestPrettyPrinting:
     def test_multi_line_multi_format(self):
         a = Bits.ones(112)
         s = io.StringIO()
-        a.pp(stream=s, fmt='bin8, hex2', width=42)
+        a.pp('bin8', 'hex2', stream=s, width=42)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin8, hex2', length=112 bits> [
   0: 11111111 11111111 11111111 : ff ff ff
  24: 11111111 11111111 11111111 : ff ff ff
@@ -299,7 +299,7 @@ class TestPrettyPrinting:
 ]
 """
         s = io.StringIO()
-        a.pp(stream=s, fmt='bin, hex', width=41)
+        a.pp(stream=s, dtype1='bin', dtype2='hex', width=41)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='bin, hex', length=112 bits> [
   0: 11111111 11111111 : ff ff
  16: 11111111 11111111 : ff ff
@@ -314,7 +314,7 @@ class TestPrettyPrinting:
         a = bytearray(range(0, 256))
         b = Bits.pack('bytes', a)
         s = io.StringIO()
-        b.pp(stream=s, fmt='bytes')
+        b.pp('bytes', stream=s)
         assert remove_unprintable(s.getvalue()) == r"""<Bits, fmt='bytes', length=2048 bits> [
    0: ĀāĂă ĄąĆć ĈĉĊċ ČčĎď ĐđĒē ĔĕĖė ĘęĚě ĜĝĞğ  !"# $%&' ()*+ ,-./ 0123 4567 89:; <=>? @ABC DEFG HIJK LMNO PQRS TUVW XYZ[
  736: \]^_ `abc defg hijk lmno pqrs tuvw xyz{ |}~ſ ƀƁƂƃ ƄƅƆƇ ƈƉƊƋ ƌƍƎƏ ƐƑƒƓ ƔƕƖƗ Ƙƙƚƛ ƜƝƞƟ ƠơƢƣ ƤƥƦƧ ƨƩƪƫ ƬƭƮƯ ưƱƲƳ ƴƵƶƷ
@@ -343,7 +343,7 @@ class TestPrettyPrinting:
 
         a = Bits.zeros(400)
         s = io.StringIO()
-        a.pp(stream=s, fmt='hex', show_offset=False)
+        a.pp(stream=s, dtype1='hex', show_offset=False)
         expected_output = """<Bits, fmt='hex', length=400 bits> [
 00000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000                                                            
@@ -354,7 +354,7 @@ class TestPrettyPrinting:
 
         s = io.StringIO()
         a = Bits.from_string('u48 = 10')
-        a.pp(stream=s, width=20, fmt='hex6, oct8', show_offset=False)
+        a.pp(stream=s, width=20, dtype1='hex6', dtype2='oct8', show_offset=False)
         expected_output = """<Bits, fmt='hex6, oct8', length=48 bits> [
 000000 : 00000000
 00000a : 00000012
@@ -365,7 +365,7 @@ class TestPrettyPrinting:
     def test_oct(self):
         a = Bits.from_string('0o' + '01234567'*20)
         s = io.StringIO()
-        a.pp(stream=s, fmt='oct', show_offset=False, width=20)
+        a.pp(stream=s, dtype1='oct', show_offset=False, width=20)
         expected_output = """<Bits, fmt='oct', length=480 bits> [
 0123 4567 0123 4567
 0123 4567 0123 4567
@@ -382,7 +382,7 @@ class TestPrettyPrinting:
         assert remove_unprintable(s.getvalue()) == expected_output
 
         t = io.StringIO()
-        a.pp('hex6, oct', width=1, show_offset=False, stream=t)
+        a.pp('hex6', 'oct', width=1, show_offset=False, stream=t)
         expected_output = """<Bits, fmt='hex6, oct', length=480 bits> [
 053977 : 01234567
 053977 : 01234567
@@ -411,7 +411,7 @@ class TestPrettyPrinting:
     def test_bytes(self):
         a = Bits.from_bytes(b'helloworld!!' * 5)
         s = io.StringIO()
-        a.pp(stream=s, fmt='bytes', show_offset=False, width=48)
+        a.pp(stream=s, dtype1='bytes', show_offset=False, width=48)
         expected_output = (
 """<Bits, fmt='bytes', length=480 bits> [
 hell owor ld!! hell owor ld!! hell owor ld!!
@@ -420,7 +420,7 @@ hell owor ld!! hell owor ld!!
 """)
         assert remove_unprintable(s.getvalue()) == expected_output
         s = io.StringIO()
-        a.pp(stream=s, fmt='bytes0', show_offset=False, width=40)
+        a.pp(stream=s, dtype1='bytes0', show_offset=False, width=40)
         expected_output = (
 """<Bits, fmt='bytes', length=480 bits> [
 helloworld!!helloworld!!helloworld!!hell
@@ -434,7 +434,7 @@ oworld!!helloworld!!
     def test_bool(self):
         a = Bits.from_string('0b1100')
         s = io.StringIO()
-        a.pp(stream=s, fmt='bool', show_offset=False, width=20)
+        a.pp('bool', stream=s, show_offset=False, width=20)
         expected_output = """<Bits, fmt='bool', length=4 bits> [
 1 1 0 0
 ]
@@ -474,14 +474,14 @@ class TestPrettyPrinting_NewFormats:
         s = io.StringIO()
         a.pp('f_be16', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='f_be16', length=32 bits> [
- 0:                2.578125                     0.0
+ 0:                     0.0       0.033233642578125
 ]
 """
 
     def test_uint(self):
         a = Bits().join([Bits.pack('u12', x) for x in range(40, 105)])
         s = io.StringIO()
-        a.pp('u, hex3', stream=s)
+        a.pp('u', 'hex3', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='u, hex3', length=780 bits> [
   0:   40   41   42   43   44   45   46   47   48   49   50   51 : 028 029 02a 02b 02c 02d 02e 02f 030 031 032 033
 144:   52   53   54   55   56   57   58   59   60   61   62   63 : 034 035 036 037 038 039 03a 03b 03c 03d 03e 03f
@@ -492,10 +492,10 @@ class TestPrettyPrinting_NewFormats:
 ]
 """
 
-    def test_float(self):
+    def test_float2(self):
         a = Bits.pack('f64', 76.25) + '0b11111'
         s = io.StringIO()
-        a.pp('i64, f', stream=s)
+        a.pp('i64', 'f', stream=s)
         assert remove_unprintable(s.getvalue()) == """<Bits, fmt='i64, f', length=69 bits> [
  0:  4635066033680416768 :                    76.25
 ] + trailing_bits = 0b11111

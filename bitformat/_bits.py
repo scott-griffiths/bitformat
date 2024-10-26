@@ -492,8 +492,8 @@ class Bits:
                                      self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def pp(self, fmt: str | None = None, width: int = 120, sep: str = ' ',
-           show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
+           width: int = 120, sep: str = ' ', show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
         :param fmt: Printed data format. One or two of 'bin', 'oct', 'hex' or 'bytes'.
@@ -511,13 +511,21 @@ class Bits:
         .. code-block:: pycon
 
             s.pp('hex16')
-            s.pp('bin, hex', sep='_', show_offset=False)
+            s.pp('bin', 'hex', sep='_', show_offset=False)
 
         """
-        if fmt is None:
-            fmt = 'bin, hex' if len(self) % 8 == 0 and len(self) >= 8 else 'bin'
-        token_list = [token.strip() for token in fmt.split(',')]
-        dtype1, dtype2, bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(token_list, fmt)
+        if dtype1 is None and dtype2 is not None:
+            dtype1, dtype2 = dtype2, dtype1
+        if dtype1 is None:
+            dtype1 = 'bin'
+            if len(self) % 8 == 0 and len(self) >= 8:
+                dtype2 = 'hex'
+        if isinstance(dtype1, str):
+            dtype1 = Dtype.from_string(dtype1)
+        if isinstance(dtype2, str):
+            dtype2 = Dtype.from_string(dtype2)
+
+        bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]
         format_sep = " : "  # String to insert on each line between multiple formats
@@ -1053,39 +1061,30 @@ class Bits:
         return
 
     @staticmethod
-    def _process_pp_tokens(token_list, fmt):
-        if len(token_list) not in [1, 2]:
-            raise ValueError(
-                f"Only one or two tokens can be used in an pp() format - '{fmt}' has {len(token_list)} tokens.")
+    def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
         has_length_in_fmt = True
-        name1, length1 = _utils.parse_name_size_token(token_list[0])
-        dtype1 = Dtype.from_params(name1, length1)
         bits_per_group = dtype1.bits_per_item
-        dtype2 = None
 
-        if len(token_list) == 2:
-            name2, length2 = _utils.parse_name_size_token(token_list[1])
-            dtype2 = Dtype.from_params(name2, length2)
+        if dtype2 is not None:
             if 0 not in {dtype1.bits_per_item, dtype2.bits_per_item} and dtype1.bits_per_item != dtype2.bits_per_item:
-                raise ValueError(
-                    f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item} in format string '{fmt}'.")
+                raise ValueError(f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item}.")
             if bits_per_group == 0:
                 bits_per_group = dtype2.bits_per_item
 
         if bits_per_group == 0:
             has_length_in_fmt = False
-            if len(token_list) == 1:
-                bits_per_group = {'bin': 8, 'hex': 8, 'oct': 12, 'bytes': 32}.get(dtype1.name)
+            if dtype2 is None:
+                bits_per_group = {'bin': 8, 'hex': 8, 'oct': 12, 'bytes': 32}.get(dtype1.name, 0)
                 if bits_per_group == 0:
-                    raise ValueError(f"No length or default length available for pp() format '{fmt}'.")
+                    raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
             else:
                 try:
                     bits_per_group = 2 * dtype1.bits_per_character * dtype2.bits_per_character
                 except ValueError:
-                    raise ValueError(f"Can't find a default bitlength to use for pp() format '{fmt}'.")
+                    raise ValueError(f"Can't find a default bitlength to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
                 if bits_per_group >= 24:
                     bits_per_group //= 2
-        return dtype1, dtype2, bits_per_group, has_length_in_fmt
+        return bits_per_group, has_length_in_fmt
 
     # ----- Special Methods -----
 

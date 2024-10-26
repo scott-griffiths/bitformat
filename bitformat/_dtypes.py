@@ -277,8 +277,9 @@ class Dtype:
     def __str__(self) -> str:
         hide_length = Register().name_to_def[self._name].allowed_sizes.only_one_value() or self.size == 0
         size_str = '' if hide_length else str(self.size)
+        endianness = '' if self._endianness == Endianness.UNSPECIFIED else '_' + self._endianness.value
         if not self._is_array:
-            return f"{self._name}{self._endianness.value}{size_str}"
+            return f"{self._name}{endianness}{size_str}"
         items_str = '' if self._items == 0 else f" {self._items}"
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 

@@ -248,4 +248,3 @@ class FieldType(abc.ABC):
         self._comment = comment.strip()
 
     comment = property(_get_comment, _set_comment)
-
