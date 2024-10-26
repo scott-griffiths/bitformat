@@ -458,7 +458,8 @@ class Bits:
             pos = (pos,)
         length = len(self)
         x = self.__class__()
-        x._bitstore = BitStore.join([self._bitstore])
+        # No need to copy as the BitStore is immutable!
+        x._bitstore = self._bitstore
         for p in pos:
             if p < 0:
                 p += length
@@ -1275,7 +1276,8 @@ class Bits:
         x = self.__class__()
         if n == 0:
             return x
-        x._bitstore = BitStore.join([self._bitstore])
+        # No need to copy as the BitStore is immutable.
+        x._bitstore = self._bitstore
         m = 1
         old_len = len(self)
         # Keep doubling the length for as long as we can

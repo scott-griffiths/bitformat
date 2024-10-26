@@ -477,6 +477,7 @@ class Array:
         return self._proxy.to_bytes()
 
     def to_bits(self) -> Bits:
+        """Return as a Bits object. As Arrays are mutable we need to return a copy."""
         x = Bits()
         x._bitstore = self._bitstore.copy()
         return x
