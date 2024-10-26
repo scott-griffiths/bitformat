@@ -496,8 +496,10 @@ class Bits:
            width: int = 120, sep: str = ' ', show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
-        :param fmt: Printed data format. One or two of 'bin', 'oct', 'hex' or 'bytes'.
-        :type fmt: str or None
+        :param dtype1: Data type to use for to display data.
+        :type dtype1: str or Dtype
+        :param dtype2: Data type to use for addition display data.
+        :type dtype2: str or Dtype
         :param width: Max width of printed lines. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
         :type width: int
         :param sep: A separator string to insert between groups. Defaults to a single space.
@@ -517,9 +519,9 @@ class Bits:
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
-            dtype1 = 'bin'
+            dtype1 = Dtype.from_params('bin')
             if len(self) % 8 == 0 and len(self) >= 8:
-                dtype2 = 'hex'
+                dtype2 = Dtype.from_params('hex')
         if isinstance(dtype1, str):
             dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
@@ -804,7 +806,7 @@ class Bits:
             else:
                 u_str = f'u{length} == {u:_}'
                 i_str = f'i{length} == {i:_}'
-        if length in Register()['f'].allowed_sizes:
+        if length in Register().name_to_def['f'].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -978,20 +980,14 @@ class Bits:
             get_fn = Bits._getbytes_printable
         if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
             get_fn = Register().get_single_dtype('u', bits_per_group).unpack
-        if bits_per_group == 0:
-            if dtype.name == 'bits':
-                x = bits._simple_str()
-            else:
-                x = str(get_fn(bits))
+        align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
+        chars_per_group = 0
+        if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
+            chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
+        if dtype.name == 'bits':
+            x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
         else:
-            align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
-            chars_per_group = 0
-            if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
-                chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
-            if dtype.name == 'bits':
-                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
-            else:
-                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+            x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
 
         chars_used = len(x)
         padding_spaces = 0 if width is None else max(width - len(x), 0)
@@ -1013,27 +1009,15 @@ class Bits:
         if show_offset:
             # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
             offset_width = len(str(len(self))) + len(offset_sep)
-        if bits_per_group > 0:
-            group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
-            group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
-            # The number of characters that get added when we add an extra group (after the first one)
-            total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
-            width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
-                format_sep) * bool(group_chars2)
-            width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
-            groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
-            max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
-        else:
-            assert bits_per_group == 0  # Don't divide into groups
-            width_available = width - offset_width - len(format_sep) * (dtype2 is not None)
-            width_available = max(width_available, 1)
-            if dtype2 is None:
-                max_bits_per_line = width_available * dtype1.bits_per_character
-            else:
-                chars_per_24_bits = Register()[dtype1.name].bitlength2chars_fn(24) + Register()[dtype2.name].bitlength2chars_fn(24)
-                max_bits_per_line = 24 * (width_available // chars_per_24_bits)
-                if max_bits_per_line == 0:
-                    max_bits_per_line = 24  # We can't fit into the width asked for. Show something small.
+        group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
+        group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
+        # The number of characters that get added when we add an extra group (after the first one)
+        total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
+        width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
+            format_sep) * bool(group_chars2)
+        width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
+        groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
+        max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
         assert max_bits_per_line > 0
 
         bitpos = 0
