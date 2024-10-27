@@ -531,12 +531,13 @@ class Bits:
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]
         format_sep = " : "  # String to insert on each line between multiple formats
-        tidy_fmt = colour.purple + str(dtype1) + colour.off
+        dtype1_str = colour.purple + str(dtype1) + colour.off
+        dtype2_str = ''
         if dtype2 is not None:
-            tidy_fmt += ', ' + colour.blue + str(dtype2) + colour.off
+            dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
         output_stream = io.StringIO()
         len_str = colour.green + str(len(self)) + colour.off
-        output_stream.write(f"<{self.__class__.__name__}, fmt='{tidy_fmt}', length={len_str} bits> [\n")
+        output_stream.write(f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n")
         data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset,
                  output_stream, 1)
         output_stream.write("]")
