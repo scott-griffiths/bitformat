@@ -252,22 +252,13 @@ class TestPrettyPrinting:
 ]
 """
 
-    def test_separator(self):
-        a = Bits.from_string('0x' + '0f0f'*9)
-        s = io.StringIO()
-        a.pp('hex8', sep='!-!', stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Bits, dtype1='hex8', length=144 bits> [
-  0: 0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f!-!0f0f0f0f
-] + trailing_bits = 0b0000111100001111
-"""
-
     def test_multi_line(self):
         a = Bits.zeros(100)
         s = io.StringIO()
-        a.pp('bin', sep='', stream=s, width=80)
+        a.pp('bin', stream=s, width=80)
         assert remove_unprintable(s.getvalue()) == """<Bits, dtype1='bin', length=100 bits> [
-  0: 000000000000000000000000000000000000000000000000000000000000000000000000
- 72: 0000000000000000000000000000                                            
+  0: 00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+ 64: 00000000 00000000 00000000 00000000 0000                               
 ]
 """
 

@@ -493,17 +493,15 @@ class Bits:
         return x
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
-           width: int = 120, sep: str = ' ', show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+           width: int = 120, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
         :param dtype1: Data type to use for to display data.
-        :type dtype1: str or Dtype
+        :type dtype1: str or Dtype or None
         :param dtype2: Data type to use for addition display data.
-        :type dtype2: str or Dtype
+        :type dtype2: str or Dtype or None
         :param width: Max width of printed lines. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
         :type width: int
-        :param sep: A separator string to insert between groups. Defaults to a single space.
-        :type sep: str
         :param show_offset: If True (the default) shows the bit offset in the first column of each line.
         :type show_offset: bool
         :param stream: A TextIO object with a write() method. Defaults to sys.stdout.
@@ -530,6 +528,7 @@ class Bits:
         bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]
+        sep = ' '  # String to insert between groups
         format_sep = " : "  # String to insert on each line between multiple formats
         dtype1_str = colour.purple + str(dtype1) + colour.off
         dtype2_str = ''
