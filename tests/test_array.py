@@ -472,7 +472,7 @@ class TestArrayMethods:
         a = Array('u32', [12, 100, 99])
         s = io.StringIO()
         a.pp(stream=s)
-        assert remove_unprintable(s.getvalue()) == """<Array dtype='u32', length=3, item_size=32 bits, total data size=12 bytes> [
+        assert remove_unprintable(s.getvalue()) == """<Array dtype1='u32', length=3, item_size=32 bits, total data size=12 bytes> [
  0:         12        100         99
 ]\n"""
 
@@ -480,7 +480,7 @@ class TestArrayMethods:
         a = Array('bits2', b'89')
         s = io.StringIO()
         a.pp(stream=s, width=0, show_offset=True)
-        assert remove_unprintable(s.getvalue()) == """<Array dtype='bits2', length=8, item_size=2 bits, total data size=2 bytes> [
+        assert remove_unprintable(s.getvalue()) == """<Array dtype1='bits2', length=8, item_size=2 bits, total data size=2 bytes> [
  0: 0b00
  1: 0b11
  2: 0b10
@@ -506,8 +506,8 @@ class TestArrayMethods:
     def test_pp_two_formats_no_length(self):
         a = Array('f16', bytearray(range(50, 56)))
         s = io.StringIO()
-        a.pp(stream=s, fmt='u, bin')
-        assert remove_unprintable(s.getvalue()) == """<Array fmt='u, bin', length=3, item_size=16 bits, total data size=6 bytes> [
+        a.pp(stream=s, dtype1='u', dtype2='bin')
+        assert remove_unprintable(s.getvalue()) == """<Array dtype1='u', dtype2='bin', length=3, item_size=16 bits, total data size=6 bytes> [
  0: 12851 13365 13879 : 0011001000110011 0011010000110101 0011011000110111
 ]\n"""
 

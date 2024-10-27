@@ -489,16 +489,18 @@ class Array:
                              f"is not a multiple of the format length ({self._dtype.bitlength} bits).")
         self._bitstore = Bits.join([self._getbitslice(s - self._dtype.bitlength, s) for s in range(len(self._proxy), 0, -self._dtype.bitlength)])._bitstore
 
-    def pp(self, fmt: str | None = None, width: int = 120,
-           show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
+           width: int = 120, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """
         Pretty-print the Array contents.
 
         This method provides a formatted output of the Array's contents, allowing for easy inspection of the data.
         The output can be customized with various parameters to control the format, width, and display options.
 
-        :param fmt: Data format string. Defaults to the current Array dtype.
-        :type fmt: str or None
+        :param dtype1: Data type to display. Defaults to the current Array dtype.
+        :type dtype1: str or Dtype or None
+        :param dtype2: Data type for addition display data.
+        :type dtype2: str or Dtype or None
         :param width: Maximum width of printed lines in characters. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
         :type width: int
         :param show_offset: If True, shows the element offset in the first column of each line.
@@ -509,27 +511,20 @@ class Array:
         """
         colour = Colour(not Options().no_color)
         sep = ' '
-        dtype2 = None
-        tidy_fmt = None
-        if fmt is None:
-            fmt = self.dtype
+        if dtype1 is None and dtype2 is not None:
+            dtype1, dtype2 = dtype2, dtype1
+        if dtype1 is None:
             dtype1 = self.dtype
-            tidy_fmt = "dtype='" + colour.purple + str(self.dtype) + "'" + colour.off
-        else:
-            token_list = [token.strip() for token in fmt.split(',')]
-            if len(token_list) not in [1, 2]:
-                raise ValueError(f"Only one or two tokens can be used in an Array.pp() format - '{fmt}' has {len(token_list)} tokens.")
-            name1, length1 = _utils.parse_name_size_token(token_list[0])
-            dtype1 = Dtype.from_params(name1, length1)
-            if len(token_list) == 2:
-                name2, length2 = _utils.parse_name_size_token(token_list[1])
-                dtype2 = Dtype.from_params(name2, length2)
+        if isinstance(dtype1, str):
+            dtype1 = Dtype.from_string(dtype1)
+        if isinstance(dtype2, str):
+            dtype2 = Dtype.from_string(dtype2)
 
         token_length = dtype1.bits_per_item
         if dtype2 is not None:
             # For two types we're OK as long as they don't have different lengths given.
             if dtype1.bits_per_item is not None and dtype2.bits_per_item is not None and dtype1.bits_per_item != dtype2.bits_per_item:
-                raise ValueError(f"Two different format lengths specified ('{fmt}'). Either specify just one, or two the same length.")
+                raise ValueError(f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item}.")
             if token_length == 0:
                 token_length = dtype2.bits_per_item
         if token_length == 0:
@@ -540,15 +535,14 @@ class Array:
 
         trailing_bit_length = len(self._proxy) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
-        if tidy_fmt is None:
-            tidy_fmt = colour.purple + str(dtype1) + colour.off
-            if dtype2 is not None:
-                tidy_fmt += ', ' + colour.blue + str(dtype2) + colour.off
-            tidy_fmt = "fmt='" + tidy_fmt + "'"
+        dtype1_str = colour.purple + str(dtype1) + colour.off
+        dtype2_str = ''
+        if dtype2 is not None:
+            dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
         data = self._proxy if trailing_bit_length == 0 else self._getbitslice(0, -trailing_bit_length)
         length = len(self._proxy) // token_length
         len_str = colour.green + str(length) + colour.off
-        stream.write(f"<{self.__class__.__name__} {tidy_fmt}, length={len_str}, item_size={token_length} bits, total data size={(len(self._proxy) + 7) // 8} bytes> [\n")
+        stream.write(f"<{self.__class__.__name__} dtype1='{dtype1_str}'{dtype2_str}, length={len_str}, item_size={token_length} bits, total data size={(len(self._proxy) + 7) // 8} bytes> [\n")
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
         stream.write("]")
         if trailing_bit_length != 0:
