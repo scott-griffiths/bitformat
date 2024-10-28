@@ -39,7 +39,7 @@ class Pass(FieldType):
         return cls()
 
     @override
-    def _getbitlength(self):
+    def _getbitlength(self) -> int:
         return 0
 
     @override

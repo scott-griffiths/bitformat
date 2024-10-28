@@ -154,7 +154,7 @@ class Format(FieldType):
         return cls.from_params(fieldtypes, name)
 
     @override
-    def _getbitlength(self):
+    def _getbitlength(self) -> int:
         """Return the total length of the Format in bits."""
         return sum(f.bitlength for f in self.fields)
 

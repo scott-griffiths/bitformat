@@ -212,6 +212,8 @@ class FieldType(abc.ABC):
 
         :return: The length in bits.
         :rtype: int
+
+        Raises ValueError if length cannot be calculated or known.
         """
         ...
 

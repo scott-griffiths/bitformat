@@ -64,7 +64,7 @@ class If(FieldType):
         return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
 
     @override
-    def _getbitlength(self):
+    def _getbitlength(self) -> int:
         if self.condition_value in [None, True]:
             try:
                 then_len = self.then_.bitlength
