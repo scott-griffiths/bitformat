@@ -432,6 +432,17 @@ oworld!!helloworld!!
 """
         assert remove_unprintable(s.getvalue()) == expected_output
 
+def test_pp_with_dtypelist():
+    a = Bits('0b1, 0xfe, f32=3.5')
+    s = io.StringIO()
+    a.pp('bool, hex2, f32', show_offset=False, stream=s)
+    expected_output = """<Bits, dtype1='bool, hex2, f32', length=41 bits> [
+[True, 'fe', 3.5]
+]
+"""
+    assert remove_unprintable(s.getvalue()) == expected_output
+
+
 
 class TestPrettyPrintingErrors:
 

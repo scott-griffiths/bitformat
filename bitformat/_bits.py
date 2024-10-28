@@ -492,7 +492,7 @@ class Bits:
                                      self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
+    def pp(self, dtype1: str | Dtype | DtypeList | None = None, dtype2: str | Dtype | DtypeList | None = None,
            width: int = 120, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
@@ -521,9 +521,15 @@ class Bits:
             if len(self) % 8 == 0 and len(self) >= 8:
                 dtype2 = Dtype.from_params('hex')
         if isinstance(dtype1, str):
-            dtype1 = Dtype.from_string(dtype1)
+            if ',' in dtype1:
+                dtype1 = DtypeList.from_string(dtype1)
+            else:
+                dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
-            dtype2 = Dtype.from_string(dtype2)
+            if ',' in dtype2:
+                dtype2 = DtypeList.from_string(dtype2)
+            else:
+                dtype2 = Dtype.from_string(dtype2)
 
         bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
@@ -997,11 +1003,30 @@ class Bits:
         return x, chars_used
 
     @staticmethod
-    def _chars_per_dtype(dtype: Dtype, bits_per_group: int):
-        """How many characters are needed to represent a number of bits with a given Dtype."""
-        return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
+    def _format_bits_dtypelist(bits: Bits, bits_per_group: int, sep: str, dtype: DtypeList,
+                     colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
+        get_fn = dtype.unpack
+        align = '>'
+        chars_per_group = 0
+        x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
 
-    def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int, width: int, sep: str, format_sep: str,
+        chars_used = len(x)
+        padding_spaces = 0 if width is None else max(width - len(x), 0)
+        x = colour_start + x + colour_end
+        # Pad final line with spaces to align it
+        x += ' ' * padding_spaces
+        return x, chars_used
+
+    @staticmethod
+    def _chars_per_dtype(dtype: Dtype | DtypeList, bits_per_group: int):
+        """How many characters are needed to represent a number of bits with a given Dtype."""
+        if isinstance(dtype, Dtype):
+            return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
+        # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
+        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2*(len(dtype) - 1)
+        return chars
+
+    def _pp(self, dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
         offset_width = 0
@@ -1028,14 +1053,19 @@ class Bits:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
                 offset_str = colour.green + f'{offset: >{offset_width - len(offset_sep)}}' + offset_sep + colour.off
-
-            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
+            if isinstance(dtype1, Dtype):
+                fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
+            else:
+                fb1, chars_used = Bits._format_bits_dtypelist(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
             if first_fb_width is None:
                 first_fb_width = chars_used
 
             fb2 = ''
             if dtype2 is not None:
-                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
+                if isinstance(dtype2, Dtype):
+                    fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
+                else:
+                    fb2, chars_used = Bits._format_bits_dtypelist(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
                 if second_fb_width is None:
                     second_fb_width = chars_used
                 fb2 = format_sep + fb2
@@ -1045,15 +1075,21 @@ class Bits:
         return
 
     @staticmethod
-    def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
+    def _bits_per_item(d: Dtype | DtypeList) -> int:
+        if isinstance(d, Dtype):
+            return d.bits_per_item
+        return sum(x.bits_per_item for x in d)
+
+    @staticmethod
+    def _process_pp_tokens(dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None) -> tuple[int, bool]:
         has_length_in_fmt = True
-        bits_per_group = dtype1.bits_per_item
+        bits_per_group = Bits._bits_per_item(dtype1)
 
         if dtype2 is not None:
-            if 0 not in {dtype1.bits_per_item, dtype2.bits_per_item} and dtype1.bits_per_item != dtype2.bits_per_item:
-                raise ValueError(f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item}.")
+            if 0 not in {Bits._bits_per_item(dtype1), Bits._bits_per_item(dtype2)} and Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2):
+                raise ValueError(f"Differing bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)}.")
             if bits_per_group == 0:
-                bits_per_group = dtype2.bits_per_item
+                bits_per_group = Bits._bits_per_item(dtype2)
 
         if bits_per_group == 0:
             has_length_in_fmt = False
