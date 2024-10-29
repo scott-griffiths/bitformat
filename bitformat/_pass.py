@@ -72,8 +72,8 @@ class Pass(FieldType):
         return []
 
     @override
-    def _str(self, indent: int) -> str:
-        s = f"{_indent(indent)}Pass"
+    def _str(self, indent_level: int) -> str:
+        s = f"{_indent(indent_level)}Pass"
         return s
 
     @override

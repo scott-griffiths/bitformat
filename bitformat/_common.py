@@ -4,7 +4,6 @@ import ast
 from typing import Any
 import enum
 
-indent_size = 4
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
 if sys.version_info >= (3, 12):
@@ -14,8 +13,8 @@ else:
     def final(f): return f
 
 
-def _indent(level: int) -> str:
-    return ' ' * (level * indent_size)
+def _indent(indent_level: int, indent_size: int = 4) -> str:
+    return ' ' * (indent_level * indent_size)
 
 
 class ExpressionError(ValueError):

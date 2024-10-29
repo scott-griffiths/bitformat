@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sys
+
 from ._bits import Bits
-from typing import Sequence, Any, Iterable
+from typing import Sequence, Any, Iterable, TextIO
 import copy
 import re
 
@@ -246,24 +248,24 @@ class Format(FieldType):
         raise KeyError(f"Field with name '{name}' not found.")
 
     @override
-    def _str(self, indent: int) -> str:
+    def _str(self, indent_level: int) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
-        s = f"{_indent(indent)}{name_str}(\n"
+        s = f"{_indent(indent_level)}{name_str}(\n"
         for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._str(indent + 1) + '\n'
-        s += f"{_indent(indent)})"
+            s += fieldtype._str(indent_level + 1) + '\n'
+        s += f"{_indent(indent_level)})"
         return s
 
     @override
-    def _repr(self, indent: int) -> str:
+    def _repr(self, indent_level: int) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{_indent(indent)}{self.__class__.__name__}.from_params((\n"
+        s = f"{_indent(indent_level)}{self.__class__.__name__}.from_params((\n"
         for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._repr(indent + 1)
+            s += fieldtype._repr(indent_level + 1)
             if i != len(self.fields) - 1:
                 s += ','
             s += '\n'
-        s += f"{_indent(indent)}){name_str})"
+        s += f"{_indent(indent_level)}){name_str})"
         return s
 
     def __iadd__(self, other: FieldType | str) -> Format:
@@ -312,3 +314,17 @@ class Format(FieldType):
         """
         for value in values:
             self.__iadd__(value)
+
+    def pp(self, stream: TextIO = sys.stdout, indent: int = 4, depth: int | None = None) -> None:
+        """
+        Pretty-print the format to a stream.
+
+        :param stream: The stream to write to.
+        :type stream: TextIO
+        :param indent: The number of extra spaces for each level of indentation. Defaults to 4.
+        :type indent: int
+        :param depth: The maximum depth to print, or None for no limit.
+        :type depth: int or None
+        """
+        stream.write(self._str(indent))
+        stream.write('\n')

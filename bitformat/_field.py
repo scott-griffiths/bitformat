@@ -230,23 +230,23 @@ class Field(FieldType):
     dtype = property(_getdtype)
 
     @override
-    def _str(self, indent: int) -> str:
+    def _str(self, indent_level: int) -> str:
         const_str = 'const ' if self.const else ''
         dtype_str = str(self._dtype_expression)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
         v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
         comment = '' if self.comment == '' else f"  # {self.comment}"
-        return f"{_indent(indent)}{n}{d}{v}{comment}"
+        return f"{_indent(indent_level)}{n}{d}{v}{comment}"
 
     # This simple repr used when field is part of a larger object
     @override
-    def _repr(self, indent: int) -> str:
+    def _repr(self, indent_level: int) -> str:
         const_str = 'const ' if self.const else ''
         n = '' if self.name == '' else f"{self.name}: "
         dtype = f"{const_str}{self._dtype_expression}"
         v = '' if self.value is None else f" = {self.value}"
-        return f"{_indent(indent)}'{n}{dtype}{v}'"
+        return f"{_indent(indent_level)}'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

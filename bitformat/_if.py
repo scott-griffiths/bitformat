@@ -135,10 +135,10 @@ class If(FieldType):
         raise NotImplementedError
 
     @override
-    def _str(self, indent: int) -> str:
-        s = f"{_indent(indent)}if {self.condition}:\n{self.then_._str(indent + 1)}\n"
+    def _str(self, indent_level: int) -> str:
+        s = f"{_indent(indent_level)}if {self.condition}:\n{self.then_._str(indent_level + 1)}\n"
         if self.else_.bitlength != 0:
-            s += f"{_indent(indent)}else:\n{self.else_._str(indent + 1)}"
+            s += f"{_indent(indent_level)}else:\n{self.else_._str(indent_level + 1)}"
         return s
 
     @override

@@ -43,21 +43,21 @@ class Repeat(FieldType):
         return cls.from_params(count, fieldtype)
 
     @override
-    def _str(self, indent: int) -> str:
+    def _str(self, indent_level: int) -> str:
         # TODO: name is not handled yet.
         count_str = str(self.count)
-        s = f"{_indent(indent)}Repeat({count_str},\n"
-        s += self.field._str(indent + 1)
-        s += f"\n{_indent(indent)})"
+        s = f"{_indent(indent_level)}Repeat({count_str},\n"
+        s += self.field._str(indent_level + 1)
+        s += f"\n{_indent(indent_level)})"
         return s
 
     @override
-    def _repr(self, indent: int) -> str:
+    def _repr(self, indent_level: int) -> str:
         # TODO
         count = self.count if self.count is not None else self.count_expression
-        s = f"{_indent(indent)}{self.__class__.__name__}({count!r},\n"
-        s += self.field._repr(indent + 1)
-        s += f"\n{_indent(indent)})"
+        s = f"{_indent(indent_level)}{self.__class__.__name__}({count!r},\n"
+        s += self.field._repr(indent_level + 1)
+        s += f"\n{_indent(indent_level)})"
         return s
 
     @override
