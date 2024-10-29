@@ -316,7 +316,7 @@ class TestPrettyPrinting:
     def test_group_size_errors(self):
         a = Bits.zeros(120)
         with pytest.raises(ValueError):
-            a.pp('hex1, oct')
+            a.pp('hex1', 'oct')
 
     def test_zero_group_size(self):
         a = Bits.zeros(600)
@@ -450,8 +450,6 @@ class TestPrettyPrintingErrors:
         a = Bits.from_string('0x12341234')
         with pytest.raises(ValueError):
             a.pp('binary')
-        with pytest.raises(ValueError):
-            a.pp('bin, bin, bin')
 
     def test_interpret_problems(self):
         a = Bits.zeros(7)
@@ -460,7 +458,7 @@ class TestPrettyPrintingErrors:
         with pytest.raises(ValueError):
             a.pp('hex')
         with pytest.raises(ValueError):
-            a.pp('bin, bytes')
+            a.pp('bin', 'bytes')
 
 
 class TestPrettyPrinting_NewFormats:
