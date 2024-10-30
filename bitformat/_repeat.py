@@ -47,9 +47,8 @@ class Repeat(FieldType):
         # TODO: name is not handled yet.
         count_str = str(self.count)
         s = indent(f"Repeat({count_str},\n")
-        indent.increase_level()
-        s += self.field._str(indent)
-        indent.decrease_level()
+        with indent:
+            s += self.field._str(indent)
         s += indent(')')
         return s
 
@@ -57,9 +56,8 @@ class Repeat(FieldType):
     def _repr(self, indent: Indenter) -> str:
         count = self.count if self.count is not None else self.count_expression
         s = indent(f"Repeat.from_params({count!r},\n")
-        indent.increase_level()
-        s += self.field._repr(indent)
-        indent.decrease_level()
+        with indent:
+            s += self.field._repr(indent)
         s += indent(f"\n)")
         return s
 

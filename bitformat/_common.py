@@ -13,22 +13,35 @@ else:
     def override(f): return f
     def final(f): return f
 
+
 class Indenter:
-    def __init__(self, indent_size: int | None = None):
+    def __init__(self, indent_size: int | None = None, max_depth: int | None = None):
+        """
+        Create an Indenter object. The indent level is increased by using the object
+        as a context manager.
+
+        :param indent_size: The number of spaces to indent. If None, use the value of Options().indent_size.
+        :type indent_size: int | None
+        """
         if indent_size is None:
             indent_size = Options().indent_size
         self.indent_size = indent_size
         self.indent_level = 0
+        self.max_depth = max_depth
 
     def __call__(self, s: str) -> str:
-        return ' ' * (self.indent_level * self.indent_size) + s
+        if self.max_depth is None or self.indent_level <= self.max_depth:
+            return ' ' * (self.indent_level * self.indent_size) + s
+        if self.indent_level == self.max_depth + 1:
+            return ' ' * (self.indent_level * self.indent_size) + '...'
+        return ''
 
-    def increase_level(self):
+    def __enter__(self):
         self.indent_level += 1
+        return self
 
-    def decrease_level(self):
+    def __exit__(self, type_, value, traceback):
         self.indent_level -= 1
-
 
 
 class ExpressionError(ValueError):

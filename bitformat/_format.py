@@ -251,10 +251,9 @@ class Format(FieldType):
     def _str(self, indent: Indenter) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
         s = indent(f"{name_str}(\n")
-        indent.increase_level()
-        for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._str(indent) + '\n'
-        indent.decrease_level()
+        with indent:
+            for i, fieldtype in enumerate(self.fields):
+                s += fieldtype._str(indent) + '\n'
         s += indent(')\n')
         return s
 
@@ -262,13 +261,12 @@ class Format(FieldType):
     def _repr(self, indent: Indenter) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
         s = indent(f"{self.__class__.__name__}.from_params((\n")
-        indent.increase_level()
-        for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._repr(indent)
-            if i != len(self.fields) - 1:
-                s += ','
-            s += '\n'
-        indent.decrease_level()
+        with indent:
+            for i, fieldtype in enumerate(self.fields):
+                s += fieldtype._repr(indent)
+                if i != len(self.fields) - 1:
+                    s += ','
+                s += '\n'
         s += indent(f"){name_str})")
         return s
 
@@ -319,16 +317,16 @@ class Format(FieldType):
         for value in values:
             self.__iadd__(value)
 
-    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, depth: int | None = None) -> None:
+    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, max_depth: int | None = None) -> None:
         """
         Pretty-print the format to a stream.
 
         :param stream: The stream to write to.
         :type stream: TextIO
-        :param indent: The number of extra spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
+        :param indent: The number of spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
         :type indent: int
-        :param depth: The maximum depth to print, or None for no limit.
-        :type depth: int or None
+        :param max_depth: The maximum depth to print, or None for no limit.
+        :type max_depth: int or None
         """
-        stream.write(self._str(Indenter(indent_size=indent)))
+        stream.write(self._str(Indenter(indent_size=indent, max_depth=max_depth)))
         stream.write('\n')
