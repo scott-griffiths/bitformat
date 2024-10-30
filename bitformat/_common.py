@@ -12,9 +12,20 @@ else:
     def override(f): return f
     def final(f): return f
 
+class Indenter:
+    def __init__(self, indent_size: int = 4):
+        self.indent_size = indent_size
+        self.indent_level = 0
 
-def _indent(indent_level: int, indent_size: int = 4) -> str:
-    return ' ' * (indent_level * indent_size)
+    def __call__(self, s: str) -> str:
+        return ' ' * (self.indent_level * self.indent_size) + s
+
+    def increase_level(self):
+        self.indent_level += 1
+
+    def decrease_level(self):
+        self.indent_level -= 1
+
 
 
 class ExpressionError(ValueError):

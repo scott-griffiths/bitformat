@@ -2,7 +2,7 @@ from __future__ import annotations
 import abc
 from bitformat import Bits
 from ._bits import BitsType
-from ._common import final
+from ._common import final, Indenter
 from typing import Any, Sequence
 import keyword
 
@@ -90,7 +90,7 @@ class FieldType(abc.ABC):
         :return: The string representation.
         :rtype: str
         """
-        return self._str(0)
+        return self._str(Indenter())
 
     def __repr__(self) -> str:
         """
@@ -99,7 +99,7 @@ class FieldType(abc.ABC):
         :return: The detailed string representation.
         :rtype: str
         """
-        return self._repr(0)
+        return self._repr(Indenter())
 
     @classmethod
     def from_string(cls, s: str) -> FieldType:
@@ -176,11 +176,11 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _str(self, indent: int) -> str:
+    def _str(self, indent: Indenter) -> str:
         ...
 
     @abc.abstractmethod
-    def _repr(self, indent: int) -> str:
+    def _repr(self, indent: Indenter) -> str:
         ...
 
     @abc.abstractmethod

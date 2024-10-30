@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ._fieldtype import FieldType
 from ._pass import Pass
-from ._common import _indent, override, Expression, ExpressionError
+from ._common import override, Expression, ExpressionError, Indenter
 from typing import Sequence, Any
 from ._bits import Bits
 import re
@@ -135,14 +135,20 @@ class If(FieldType):
         raise NotImplementedError
 
     @override
-    def _str(self, indent_level: int) -> str:
-        s = f"{_indent(indent_level)}if {self.condition}:\n{self.then_._str(indent_level + 1)}\n"
+    def _str(self, indent: Indenter) -> str:
+        s = indent(f"if {self.condition}:\n")
+        indent.increase_level()
+        s += self.then_._str(indent) + '\n'
+        indent.decrease_level()
         if self.else_.bitlength != 0:
-            s += f"{_indent(indent_level)}else:\n{self.else_._str(indent_level + 1)}"
+            s += indent('else:\n')
+            indent.increase_level()
+            s += self.else_._str(indent) + '\n'
+            indent.decrease_level()
         return s
 
     @override
-    def _repr(self, indent: int) -> str:
+    def _repr(self, indent: Indenter) -> str:
         return self._str(indent)
 
     @override

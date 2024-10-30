@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ._field import FieldType
-from ._common import _indent, override
+from ._common import override, Indenter
 from typing import Sequence, Any
 from ._bits import Bits
 
@@ -72,13 +72,13 @@ class Pass(FieldType):
         return []
 
     @override
-    def _str(self, indent_level: int) -> str:
-        s = f"{_indent(indent_level)}Pass"
+    def _str(self, indent: Indenter) -> str:
+        s = indent("Pass")
         return s
 
     @override
-    def _repr(self, indent: int) -> str:
-        return f"{self._str(indent)}Pass()"
+    def _repr(self, indent: Indenter) -> str:
+        return indent("Pass")
 
     @override
     def to_bits(self) -> Bits:

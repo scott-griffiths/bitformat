@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ._field import FieldType
-from ._common import _indent, override
+from ._common import override, Indenter
 from typing import Sequence, Any
 from ._bits import Bits
 
@@ -43,21 +43,25 @@ class Repeat(FieldType):
         return cls.from_params(count, fieldtype)
 
     @override
-    def _str(self, indent_level: int) -> str:
+    def _str(self, indent: Indenter) -> str:
         # TODO: name is not handled yet.
         count_str = str(self.count)
-        s = f"{_indent(indent_level)}Repeat({count_str},\n"
-        s += self.field._str(indent_level + 1)
-        s += f"\n{_indent(indent_level)})"
+        s = indent(f"Repeat({count_str},\n")
+        indent.increase_level()
+        s += self.field._str(indent)
+        indent.decrease_level()
+        s += indent(') # end of Repeat')
         return s
 
     @override
-    def _repr(self, indent_level: int) -> str:
+    def _repr(self, indent: Indenter) -> str:
         # TODO
         count = self.count if self.count is not None else self.count_expression
-        s = f"{_indent(indent_level)}{self.__class__.__name__}({count!r},\n"
-        s += self.field._repr(indent_level + 1)
-        s += f"\n{_indent(indent_level)})"
+        s = indent(f"{self.__class__.__name__}({count!r},\n")
+        indent.increase_level()
+        s += self.field._repr(indent)
+        indent.decrease_level()
+        s += indent(f"\n)")
         return s
 
     @override

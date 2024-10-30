@@ -7,7 +7,7 @@ from typing import Sequence, Any, Iterable, TextIO
 import copy
 import re
 
-from ._common import colour, _indent, override
+from ._common import colour, override, Indenter
 from ._fieldtype import FieldType
 from ._pass import Pass
 
@@ -248,24 +248,28 @@ class Format(FieldType):
         raise KeyError(f"Field with name '{name}' not found.")
 
     @override
-    def _str(self, indent_level: int) -> str:
+    def _str(self, indent: Indenter) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
-        s = f"{_indent(indent_level)}{name_str}(\n"
+        s = indent(f"{name_str}(\n")
+        indent.increase_level()
         for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._str(indent_level + 1) + '\n'
-        s += f"{_indent(indent_level)})"
+            s += fieldtype._str(indent) + '\n'
+        indent.decrease_level()
+        s += indent(')\n')
         return s
 
     @override
-    def _repr(self, indent_level: int) -> str:
+    def _repr(self, indent: Indenter) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{_indent(indent_level)}{self.__class__.__name__}.from_params((\n"
+        s = indent(f"{self.__class__.__name__}.from_params((\n")
+        indent.increase_level()
         for i, fieldtype in enumerate(self.fields):
-            s += fieldtype._repr(indent_level + 1)
+            s += fieldtype._repr(indent)
             if i != len(self.fields) - 1:
                 s += ','
             s += '\n'
-        s += f"{_indent(indent_level)}){name_str})"
+        indent.decrease_level()
+        s += indent(f"){name_str})")
         return s
 
     def __iadd__(self, other: FieldType | str) -> Format:
@@ -326,5 +330,5 @@ class Format(FieldType):
         :param depth: The maximum depth to print, or None for no limit.
         :type depth: int or None
         """
-        stream.write(self._str(indent))
+        stream.write(self._str(Indenter(indent_size=indent)))
         stream.write('\n')

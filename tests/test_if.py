@@ -9,12 +9,12 @@ def test_creation():
     assert v == 2
     assert i.value == 3
 
-    assert(str(i) == 'if {1 > 0}:\n    u2 = 3\nelse:\n    i2')
+    assert(str(i) == 'if {1 > 0}:\n    u2 = 3\nelse:\n    i2\n')
 
 def test_from_string():
     i = If.from_string('if {1 > 0}: u2 else: i2')
     assert i.bitlength == 2
-    assert str(i) == 'if {1 > 0}:\n    u2\nelse:\n    i2'
+    assert str(i) == 'if {1 > 0}:\n    u2\nelse:\n    i2\n'
 
     j = If('if {x < 5}: bool')
     with pytest.raises(ValueError):
