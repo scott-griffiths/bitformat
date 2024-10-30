@@ -50,14 +50,13 @@ class Repeat(FieldType):
         indent.increase_level()
         s += self.field._str(indent)
         indent.decrease_level()
-        s += indent(') # end of Repeat')
+        s += indent(')')
         return s
 
     @override
     def _repr(self, indent: Indenter) -> str:
-        # TODO
         count = self.count if self.count is not None else self.count_expression
-        s = indent(f"{self.__class__.__name__}({count!r},\n")
+        s = indent(f"Repeat.from_params({count!r},\n")
         indent.increase_level()
         s += self.field._repr(indent)
         indent.decrease_level()

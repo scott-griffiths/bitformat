@@ -3,6 +3,7 @@ import sys
 import ast
 from typing import Any
 import enum
+from ._options import Options
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
@@ -13,7 +14,9 @@ else:
     def final(f): return f
 
 class Indenter:
-    def __init__(self, indent_size: int = 4):
+    def __init__(self, indent_size: int | None = None):
+        if indent_size is None:
+            indent_size = Options().indent_size
         self.indent_size = indent_size
         self.indent_level = 0
 

@@ -28,6 +28,7 @@ class Options:
             cls._verbose_bits_repr = is_interactive()
             no_color = os.getenv('NO_COLOR')
             cls._no_color = True if no_color else not is_interactive()
+            cls._indent_size = 4
             # This is an experimental feature to use pure Python only (not bitarray)
             # It affects imports so you need to change its value here in the code.
             cls._use_pure_python = False
@@ -73,3 +74,19 @@ class Options:
     @no_color.setter
     def no_color(self, value: bool) -> None:
         self._no_color = bool(value)
+
+    @property
+    def indent_size(self) -> int:
+        """The number of spaces used for indentation. Defaults to 4."""
+        return self._indent_size
+
+    @indent_size.setter
+    def indent_size(self, value: int) -> None:
+        value = int(value)
+        if value < 0:
+            raise ValueError('Indent size cannot be negative.')
+        self._indent_size = value
+
+    @property
+    def use_pure_python(self) -> bool:
+        """If True then pure Python implementation will be used instead of bitarray."""
