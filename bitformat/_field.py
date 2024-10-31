@@ -241,12 +241,12 @@ class Field(FieldType):
 
     # This simple repr used when field is part of a larger object
     @override
-    def _repr(self, indent: Indenter) -> str:
+    def _repr(self) -> str:
         const_str = 'const ' if self.const else ''
         n = '' if self.name == '' else f"{self.name}: "
         dtype = f"{const_str}{self._dtype_expression}"
         v = '' if self.value is None else f" = {self.value}"
-        return indent(f"'{n}{dtype}{v}'")
+        return f"'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

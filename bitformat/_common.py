@@ -15,25 +15,38 @@ else:
 
 
 class Indenter:
-    def __init__(self, indent_size: int | None = None, max_depth: int | None = None):
+    def __init__(self, indent: int | None = None, max_depth: int | None = None):
         """
         Create an Indenter object. The indent level is increased by using the object
         as a context manager.
 
-        :param indent_size: The number of spaces to indent. If None, use the value of Options().indent_size.
-        :type indent_size: int | None
+        :param indent: The number of spaces to indent. If None, use the value of Options().indent_size.
+        :type indent: int | None
         """
-        if indent_size is None:
-            indent_size = Options().indent_size
-        self.indent_size = indent_size
+        if indent is None:
+            indent = Options().indent_size
+        self.indent_size = indent
         self.indent_level = 0
         self.max_depth = max_depth
+        self.at_max_depth = False
+        self.skipped_field_count = 0
 
     def __call__(self, s: str) -> str:
+        """Indent the string and return it.
+        Takes max_depth into account."""
         if self.max_depth is None or self.indent_level <= self.max_depth:
-            return ' ' * (self.indent_level * self.indent_size) + s
+            self.at_max_depth = False
+            skipped_str = ''
+            if self.skipped_field_count > 0:
+                skipped_str = ' ' * ((self.indent_level + 1) * self.indent_size) + f'... ({self.skipped_field_count} fields)\n'
+                self.skipped_field_count = 0
+            return skipped_str + ' ' * (self.indent_level * self.indent_size) + s
+        if not self.at_max_depth and self.indent_level == self.max_depth + 1:
+            self.at_max_depth = True
+            self.skipped_field_count += 1
+            return ''
         if self.indent_level == self.max_depth + 1:
-            return ' ' * (self.indent_level * self.indent_size) + '...'
+            self.skipped_field_count += 1
         return ''
 
     def __enter__(self):

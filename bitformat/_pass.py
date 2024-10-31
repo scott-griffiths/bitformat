@@ -77,8 +77,8 @@ class Pass(FieldType):
         return s
 
     @override
-    def _repr(self, indent: Indenter) -> str:
-        return indent("Pass")
+    def _repr(self) -> str:
+        return "Pass"
 
     @override
     def to_bits(self) -> Bits:

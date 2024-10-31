@@ -99,7 +99,7 @@ class FieldType(abc.ABC):
         :return: The detailed string representation.
         :rtype: str
         """
-        return self._repr(Indenter())
+        return self._repr()
 
     @classmethod
     def from_string(cls, s: str) -> FieldType:
@@ -180,7 +180,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _repr(self, indent: Indenter) -> str:
+    def _repr(self) -> str:
         ...
 
     @abc.abstractmethod

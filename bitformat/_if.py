@@ -146,8 +146,8 @@ class If(FieldType):
         return s
 
     @override
-    def _repr(self, indent: Indenter) -> str:
-        return self._str(indent)
+    def _repr(self) -> str:
+        return self._str(Indenter())
 
     @override
     def to_bits(self) -> Bits:

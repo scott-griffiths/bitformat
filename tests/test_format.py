@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Array, FieldType
+from bitformat import Format, Dtype, Bits, Field, Array, FieldType, Repeat
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -346,7 +346,7 @@ def test_field_array_str():
 def test_format_repr_string():
     f = Format.from_params(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format.from_params((\n    'x: const u8 = 12',\n    'u: bool = False',\n    '[u3; 44]'\n), 'dave')"
+    assert r == "Format.from_params(('x: const u8 = 12', 'u: bool = False', '[u3; 44]'), 'dave')"
 
 def test_to_bits():
     f = Format.from_params(['u8', 'u8', 'u8'])
@@ -519,20 +519,21 @@ def test_format_copy():
     assert g.fields[1].value == [10, 20]
     assert f.fields[0].value == 5
 
+s = """
+header = (
+    x: u8,
+    y: u8,
+    z: u8,
+    data: [u8; 3],
+    Repeat(2, (
+        a: u8,
+        b: u8
+    ))
+    bool
+)
+"""
+
 def test_format_with_repeat():
-    s = """
-    header = (
-        x: u8,
-        y: u8,
-        z: u8,
-        data: [u8; 3],
-        Repeat(2, (
-            a: u8,
-            b: u8
-        ))
-        bool
-    )
-    """
     f = Format(s)
     b = Bits.from_bytes(b'\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d')
     f.parse(b)
@@ -542,3 +543,15 @@ def test_format_with_repeat():
     assert f['data'].value == (4, 5, 6)
     assert f.fields[4].value == [[7, 8], [9, 10]]
     # assert f['a'].value == [7, 9]
+
+# def test_repr_eval_with_repeat():
+#     f = Format(s)
+#     r = repr(f)
+#     f2 = eval(r)
+#     assert f == f2
+
+def test_pp():
+    f = Format(s)
+    f.pp(indent=8, max_depth=2)
+    # f.pp(max_depth=0)
+    # print(f.fields)
