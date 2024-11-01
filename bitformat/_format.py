@@ -250,11 +250,11 @@ class Format(FieldType):
     @override
     def _str(self, indent: Indenter) -> str:
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
-        s = indent(f"{name_str}(") + '\n'
+        s = ''
+        s += indent(f"{name_str}(\n")
         with indent:
             for i, fieldtype in enumerate(self.fields):
-                if fs := fieldtype._str(indent):
-                    s += fs + '\n'
+                s += fieldtype._str(indent)
         s += indent(')')
         return s
 
@@ -316,7 +316,7 @@ class Format(FieldType):
         for value in values:
             self.__iadd__(value)
 
-    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, max_depth: int | None = None) -> None:
+    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, depth: int | None = None) -> None:
         """
         Pretty-print the format to a stream.
 
@@ -324,8 +324,8 @@ class Format(FieldType):
         :type stream: TextIO
         :param indent: The number of spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
         :type indent: int
-        :param max_depth: The maximum depth to print, or None for no limit.
-        :type max_depth: int or None
+        :param depth: The maximum depth to print, or None for no limit.
+        :type depth: int or None
         """
-        stream.write(self._str(Indenter(indent=indent, max_depth=max_depth)))
+        stream.write(self._str(Indenter(indent=indent, max_depth=depth)))
         stream.write('\n')

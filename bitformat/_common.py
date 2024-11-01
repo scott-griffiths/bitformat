@@ -40,7 +40,9 @@ class Indenter:
             if self.skipped_field_count > 0:
                 skipped_str = ' ' * ((self.indent_level + 1) * self.indent_size) + f'... ({self.skipped_field_count} fields)\n'
                 self.skipped_field_count = 0
-            return skipped_str + ' ' * (self.indent_level * self.indent_size) + s
+            # Add a new line if part of a larger structure and it doesn't already have one.
+            end = '\n' if self.indent_level > 0 and not s.endswith('\n') else ''
+            return skipped_str + ' ' * (self.indent_level * self.indent_size) + s + end
         if not self.at_max_depth and self.indent_level == self.max_depth + 1:
             self.at_max_depth = True
             self.skipped_field_count += 1

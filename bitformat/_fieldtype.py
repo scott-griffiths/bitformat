@@ -5,6 +5,8 @@ from ._bits import BitsType
 from ._common import final, Indenter
 from typing import Any, Sequence
 import keyword
+from ._options import Options
+
 
 __all__ = ['FieldType']
 
@@ -90,7 +92,7 @@ class FieldType(abc.ABC):
         :return: The string representation.
         :rtype: str
         """
-        return self._str(Indenter())
+        return self._str(Indenter(Options().indent_size))
 
     def __repr__(self) -> str:
         """
