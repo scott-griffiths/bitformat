@@ -935,6 +935,8 @@ class Bits:
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
+        if len(self) % 3 != 0:
+            raise ValueError(f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits.")
         return self._bitstore.to_oct()
 
     def _sethex(self, hexstring: str, _length: None = None) -> None:
@@ -947,11 +949,9 @@ class Bits:
         self._bitstore = BitStore.from_hex(hexstring.replace('_', ''))
 
     def _gethex(self) -> str:
-        """Return the hexadecimal representation as a string.
-
-        Raises an InterpretError if the Bits's length is not a multiple of 4.
-
-        """
+        """Return the hexadecimal representation as a string."""
+        if len(self) % 4 != 0:
+            raise ValueError(f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits.")
         return self._bitstore.to_hex()
 
     def _slice(self: Bits, start: int, end: int) -> Bits:
@@ -982,43 +982,40 @@ class Bits:
         return s
 
     @staticmethod
-    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype,
+    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype | DtypeList,
                      colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
-        if dtype.name == 'bytes':  # Special case for bytes to print one character each.
-            get_fn = Bits._getbytes_printable
-        if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-            get_fn = Register().get_single_dtype('u', bits_per_group).unpack
-        align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
         chars_per_group = 0
-        if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
-            chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
-        if dtype.name == 'bits':
-            x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
-        else:
+        if isinstance(dtype, Dtype):
+            if dtype.name == 'bytes':  # Special case for bytes to print one character each.
+                get_fn = Bits._getbytes_printable
+            if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+                get_fn = Register().get_single_dtype('u', bits_per_group).unpack
+            align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
+            if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
+                chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
+            if dtype.name == 'bits':
+                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+            else:
+                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+
+            chars_used = len(x)
+            padding_spaces = 0 if width is None else max(width - len(x), 0)
+            x = colour_start + x + colour_end
+            # Pad final line with spaces to align it
+            x += ' ' * padding_spaces
+            return x, chars_used
+        else:  # DtypeList
+            align = '>'
             x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
 
-        chars_used = len(x)
-        padding_spaces = 0 if width is None else max(width - len(x), 0)
-        x = colour_start + x + colour_end
-        # Pad final line with spaces to align it
-        x += ' ' * padding_spaces
-        return x, chars_used
+            chars_used = len(x)
+            padding_spaces = 0 if width is None else max(width - len(x), 0)
+            x = colour_start + x + colour_end
+            # Pad final line with spaces to align it
+            x += ' ' * padding_spaces
+            return x, chars_used
 
-    @staticmethod
-    def _format_bits_dtypelist(bits: Bits, bits_per_group: int, sep: str, dtype: DtypeList,
-                     colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
-        get_fn = dtype.unpack
-        align = '>'
-        chars_per_group = 0
-        x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
-
-        chars_used = len(x)
-        padding_spaces = 0 if width is None else max(width - len(x), 0)
-        x = colour_start + x + colour_end
-        # Pad final line with spaces to align it
-        x += ' ' * padding_spaces
-        return x, chars_used
 
     @staticmethod
     def _chars_per_dtype(dtype: Dtype | DtypeList, bits_per_group: int):
@@ -1030,8 +1027,19 @@ class Bits:
         return chars
 
     def _pp(self, dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None, bits_per_group: int, width: int, sep: str, format_sep: str,
-            show_offset: bool, stream: TextIO, offset_factor: int, groups: int | None = None) -> None:
+            show_offset: bool, stream: TextIO, offset_factor: int, groups: int | None) -> None:
         """Internal pretty print method."""
+        if dtype2 is not None:
+            if dtype1.bitlength != 0:
+                try:
+                    _ = dtype2.unpack(Bits.zeros(dtype1.bitlength))
+                except ValueError:
+                    raise ValueError(f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length.")
+            if dtype2.bitlength != 0:
+                try:
+                    _ = dtype1.unpack(Bits.zeros(dtype2.bitlength))
+                except ValueError:
+                    raise ValueError(f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length.")
         colour = Colour(not Options().no_color)
         offset_width = 0
         offset_sep = ': '
@@ -1060,19 +1068,12 @@ class Bits:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
                 offset_str = colour.green + f'{offset: >{offset_width - len(offset_sep)}}' + offset_sep + colour.off
-            if isinstance(dtype1, Dtype):
-                fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
-            else:
-                fb1, chars_used = Bits._format_bits_dtypelist(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
+            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
             if first_fb_width is None:
                 first_fb_width = chars_used
-
             fb2 = ''
             if dtype2 is not None:
-                if isinstance(dtype2, Dtype):
-                    fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
-                else:
-                    fb2, chars_used = Bits._format_bits_dtypelist(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
+                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
                 if second_fb_width is None:
                     second_fb_width = chars_used
                 fb2 = format_sep + fb2
@@ -1094,7 +1095,8 @@ class Bits:
 
         if dtype2 is not None:
             if 0 not in {Bits._bits_per_item(dtype1), Bits._bits_per_item(dtype2)} and Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2):
-                raise ValueError(f"Differing bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)}.")
+                raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
+                                 f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively.")
             if bits_per_group == 0:
                 bits_per_group = Bits._bits_per_item(dtype2)
 
