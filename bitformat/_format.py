@@ -214,14 +214,6 @@ class Format(FieldType):
     def to_bits(self) -> Bits:
         return Bits().join(fieldtype.to_bits() for fieldtype in self.fields)
 
-    @override
-    def flatten(self) -> list[FieldType]:
-        # Just return a flat list of fields
-        flattened_fields = []
-        for fieldtype in self.fields:
-            flattened_fields.extend(fieldtype.flatten())
-        return flattened_fields
-
     def __len__(self) -> int:
         return len(self.fields)
 

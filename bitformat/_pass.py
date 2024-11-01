@@ -68,10 +68,6 @@ class Pass(FieldType):
         raise ValueError("A Pass field cannot be set to a value.")
 
     @override
-    def flatten(self) -> list[FieldType]:
-        return []
-
-    @override
     def _str(self, indent: Indenter) -> str:
         s = indent("Pass")
         return s

@@ -81,14 +81,6 @@ class Repeat(FieldType):
         return self._bits, values_used
 
     @override
-    def flatten(self) -> list[FieldType]:
-        # TODO: This needs values in it. This won't work.
-        flattened_fields = []
-        for _ in self.count:
-            flattened_fields.extend(self.field.flatten())
-        return flattened_fields
-
-    @override
     def _copy(self) -> Repeat:
         x = self.__class__.from_params(self.count, self.field._copy(), self.name)
         return x

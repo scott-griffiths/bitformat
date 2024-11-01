@@ -131,10 +131,6 @@ class If(FieldType):
         raise NotImplementedError
 
     @override
-    def flatten(self) -> list[FieldType]:
-        raise NotImplementedError
-
-    @override
     def _str(self, indent: Indenter) -> str:
         s = indent(f"if {self.condition}:\n")
         with indent:

@@ -206,16 +206,6 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def flatten(self) -> list[FieldType]:
-        """
-        Return a flat list of all the fields in the object.
-
-        :return: A flat list of all the fields.
-        :rtype: list[FieldType]
-        """
-        ...
-
-    @abc.abstractmethod
     def _getvalue(self) -> Any:
         ...
 
