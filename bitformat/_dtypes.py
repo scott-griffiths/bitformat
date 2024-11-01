@@ -608,8 +608,11 @@ class DtypeList:
         return cls.from_params(dtypes)
 
     def pack(self, values: Sequence[Any]) -> bitformat.Bits:
-        if len(values) != len(self):
-            raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
+        try:
+            if len(values) != len(self):
+                raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
+        except TypeError:
+            raise TypeError(f"Expected a sequence of {len(self)} values to pack DtypeList '{self}'. Received '{values}'.")
         return bitformat.Bits.join(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
 
     def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> list[Any | tuple[Any]]:
