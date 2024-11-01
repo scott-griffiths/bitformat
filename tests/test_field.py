@@ -259,3 +259,16 @@ def test_disallowed_names():
 def test_create_from_dtype_list():
     with pytest.raises(ValueError):
         f = Field('u8, u8')
+
+def test_eq():
+    f = Field('u8')
+    assert f == Field('u8')
+    assert f != Field('i8')
+    assert f != Field('u8 = 12')
+    g = Field('i8 = 12')
+    assert g != Field('const i8 = 12')
+    h = Field('sparrow: bool')
+    assert h != Field('heron: bool')
+    a = Field('bool = True')
+    b = Field('bool = False')
+    assert a != b

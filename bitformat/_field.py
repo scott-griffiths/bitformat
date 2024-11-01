@@ -255,15 +255,8 @@ class Field(FieldType):
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
 
+    @override
     def __eq__(self, other: Any) -> bool:
-        """
-         Check if two fields are equal.
-
-         :param other: The other field to compare.
-         :type other: Any
-         :return: True if the fields are equal, False otherwise.
-         :rtype: bool
-         """
         if not isinstance(other, Field):
             return False
         if self.dtype != other.dtype:
@@ -271,5 +264,7 @@ class Field(FieldType):
         if self.dtype.name != 'pad' and self._bits != other._bits:
             return False
         if self.const != other.const:
+            return False
+        if self.name != other.name:
             return False
         return True

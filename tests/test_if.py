@@ -50,3 +50,9 @@ def test_explicit_pass():
 #     """)
 #     b = f.pack([True, [5, 4, 3, 2, 1, 0]])
 #     assert b == '0x47050403020100'
+
+def test_eq():
+    i = If.from_params('{1 > 0}', 'u2', 'i2')
+    assert i == If.from_params('{1 > 0}', 'u2', 'i2')
+    assert i != If.from_params('{1 > 0}', 'u2', 'i3')
+    assert i != If.from_params('{2 > 0}', 'u2', 'i2')

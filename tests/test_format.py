@@ -230,7 +230,7 @@ class TestMethods:
         f = Format.from_params(['const bits = 0x000001b3', 'u12', 'height:u12', '  flag : bool '], 'header')
         f['height'].value = 288
         f.clear()
-        g = Format.from_string('empty_header = (const bits = 0x000001b3, u12, u12, bool)')
+        g = Format.from_string('header = (const bits = 0x000001b3, u12, height:u12, flag:bool)')
         assert f == g
 
     def test_get_item(self):
@@ -550,8 +550,11 @@ def test_format_with_repeat():
 #     f2 = eval(r)
 #     assert f == f2
 
-def test_pp():
-    f = Format(s)
-    f.pp(indent=8, max_depth=2)
-    # f.pp(max_depth=0)
-    # print(f.fields)
+def test_eq():
+    f = Format('(u8, u8)')
+    assert f == Format('(u8, u8)')
+    assert f != Format('(u8, u8, u8)')
+    assert f != Format('(u8, const u8 = 10)')
+    assert f != Format('(u8, x: u8)')
+    assert Format('(u8 = 3,)') == Format('(u8 = 3,)')
+    assert Format('(u8 = 3,)') != Format('(u8 = 4,)')

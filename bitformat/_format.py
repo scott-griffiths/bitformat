@@ -315,3 +315,17 @@ class Format(FieldType):
         """
         for value in values:
             self.__iadd__(value)
+
+    @override
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Format):
+            return False
+        if self.name != other.name:
+            return False
+        if self.vars != other.vars:
+            return False
+        if self.fields != other.fields:
+            return False
+        return True
+
+

@@ -115,3 +115,15 @@ class Repeat(FieldType):
         self._values = val
 
     value = property(_getvalue, _setvalue)
+
+    @override
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Repeat):
+            return False
+        if self.count != other.count:
+            return False
+        if self.field != other.field:
+            return False
+        return True
+
+

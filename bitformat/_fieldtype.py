@@ -239,8 +239,9 @@ class FieldType(abc.ABC):
     def bitlength(self) -> int:
         return self._getbitlength()
 
+    @abc.abstractmethod
     def __eq__(self, other) -> bool:
-        return self.flatten() == other.flatten()
+        ...
 
     def __copy__(self) -> FieldType:
         return self._copy()

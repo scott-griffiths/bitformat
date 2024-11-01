@@ -20,3 +20,7 @@ def test_singleton():
 def test_using_in_format():
     f = Format.from_params([Pass(), 'u8', Pass(), 'i3', Pass(), ''])
     assert len(f.fields) == 2
+
+def test_eq():
+    p = Pass()
+    assert p == Pass()

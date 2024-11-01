@@ -86,3 +86,7 @@ class Pass(FieldType):
 
     value = property(_getvalue, _setvalue)
 
+    @override
+    def __eq__(self, other) -> bool:
+        return isinstance(other, Pass)
+

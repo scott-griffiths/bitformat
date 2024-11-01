@@ -160,3 +160,15 @@ class If(FieldType):
 
     value = property(_getvalue, _setvalue)
 
+    @override
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, If):
+            return False
+        if self.condition != other.condition:
+            return False
+        if self.then_ != other.then_:
+            return False
+        if self.else_ != other.else_:
+            return False
+        return True
+
