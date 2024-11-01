@@ -315,17 +315,3 @@ class Format(FieldType):
         """
         for value in values:
             self.__iadd__(value)
-
-    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, depth: int | None = None) -> None:
-        """
-        Pretty-print the format to a stream.
-
-        :param stream: The stream to write to.
-        :type stream: TextIO
-        :param indent: The number of spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
-        :type indent: int
-        :param depth: The maximum depth to print, or None for no limit.
-        :type depth: int or None
-        """
-        stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
-        stream.write('\n')

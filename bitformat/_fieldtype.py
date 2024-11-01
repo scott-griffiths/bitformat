@@ -1,9 +1,11 @@
 from __future__ import annotations
 import abc
+import sys
+
 from bitformat import Bits
 from ._bits import BitsType
 from ._common import final, Indenter
-from typing import Any, Sequence
+from typing import Any, Sequence, TextIO
 import keyword
 from ._options import Options
 
@@ -102,6 +104,20 @@ class FieldType(abc.ABC):
         :rtype: str
         """
         return self._repr()
+
+    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, depth: int | None = None) -> None:
+        """
+        Pretty-print the fieldtype to a stream (or stdout by default).
+
+        :param stream: The stream to write to.
+        :type stream: TextIO
+        :param indent: The number of spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
+        :type indent: int
+        :param depth: The maximum depth to print, or None for no limit.
+        :type depth: int or None
+        """
+        stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
+        stream.write('\n')
 
     @classmethod
     def from_string(cls, s: str) -> FieldType:
