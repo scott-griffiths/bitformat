@@ -305,7 +305,7 @@ class TestPrettyPrinting:
         a = bytearray(range(0, 256))
         b = Bits.pack('bytes', a)
         s = io.StringIO()
-        b.pp('bytes', stream=s)
+        b.pp('bytes', stream=s, width=120)
         assert remove_unprintable(s.getvalue()) == r"""<Bits, dtype1='bytes', length=2048 bits> [
    0: ĀāĂă ĄąĆć ĈĉĊċ ČčĎď ĐđĒē ĔĕĖė ĘęĚě ĜĝĞğ  !"# $%&' ()*+ ,-./ 0123 4567 89:; <=>? @ABC DEFG HIJK LMNO PQRS TUVW XYZ[
  736: \]^_ `abc defg hijk lmno pqrs tuvw xyz{ |}~ſ ƀƁƂƃ ƄƅƆƇ ƈƉƊƋ ƌƍƎƏ ƐƑƒƓ ƔƕƖƗ Ƙƙƚƛ ƜƝƞƟ ƠơƢƣ ƤƥƦƧ ƨƩƪƫ ƬƭƮƯ ưƱƲƳ ƴƵƶƷ
@@ -481,7 +481,7 @@ class TestPrettyPrinting_NewFormats:
     def test_uint(self):
         a = Bits().join([Bits.pack('u12', x) for x in range(40, 105)])
         s = io.StringIO()
-        a.pp('u', 'hex3', stream=s)
+        a.pp('u', 'hex3', stream=s, width=120)
         assert remove_unprintable(s.getvalue()) == """<Bits, dtype1='u', dtype2='hex3', length=780 bits> [
   0:   40   41   42   43   44   45   46   47   48   49   50   51 : 028 029 02a 02b 02c 02d 02e 02f 030 031 032 033
 144:   52   53   54   55   56   57   58   59   60   61   62   63 : 034 035 036 037 038 039 03a 03b 03c 03d 03e 03f

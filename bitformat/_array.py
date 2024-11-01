@@ -490,7 +490,7 @@ class Array:
         self._bitstore = Bits.join([self._getbitslice(s - self._dtype.bitlength, s) for s in range(len(self._proxy), 0, -self._dtype.bitlength)])._bitstore
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
-           width: int = 120, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+           width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """
         Pretty-print the Array contents.
 
@@ -501,7 +501,7 @@ class Array:
         :type dtype1: str or Dtype or None
         :param dtype2: Data type for addition display data.
         :type dtype2: str or Dtype or None
-        :param width: Maximum width of printed lines in characters. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
+        :param width: Maximum width of printed lines in characters. Defaults to 80. A single group will always be printed per line even if it exceeds the max width.
         :type width: int
         :param show_offset: If True, shows the element offset in the first column of each line.
         :type show_offset: bool

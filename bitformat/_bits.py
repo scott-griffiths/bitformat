@@ -492,14 +492,17 @@ class Bits:
         return x
 
     def pp(self, dtype1: str | Dtype | DtypeList | None = None, dtype2: str | Dtype | DtypeList | None = None,
-           width: int = 120, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+           groups: int | None = None, width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
-        :param dtype1: Data type to use for to display data.
+        :param dtype1: First data type to display.
         :type dtype1: str or Dtype or None
-        :param dtype2: Data type to use for addition display data.
+        :param dtype2: Optional second data type.
         :type dtype2: str or Dtype or None
-        :param width: Max width of printed lines. Defaults to 120. A single group will always be printed per line even if it exceeds the max width.
+        :param groups: How many groups of bits to display on each line. This overrides any value given for width.
+        :type groups: int or None
+        :param width: Max width of printed lines. Defaults to 80, but ignored if groups parameter is set.
+            A single group will always be printed per line even if it exceeds the max width.
         :type width: int
         :param show_offset: If True (the default) shows the bit offset in the first column of each line.
         :type show_offset: bool
@@ -509,7 +512,7 @@ class Bits:
 
         .. code-block:: pycon
 
-            s.pp('hex4')
+            s.pp('hex4', groups=6)
             s.pp('bin', 'hex', show_offset=False)
 
         """
@@ -544,7 +547,7 @@ class Bits:
         len_str = colour.green + str(len(self)) + colour.off
         output_stream.write(f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n")
         data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset,
-                 output_stream, 1)
+                 output_stream, 1, groups)
         output_stream.write("]")
         if trailing_bit_length != 0:
             output_stream.write(" + trailing_bits = 0b" + Dtype('bin').unpack(self[-trailing_bit_length:]))
@@ -1027,7 +1030,7 @@ class Bits:
         return chars
 
     def _pp(self, dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None, bits_per_group: int, width: int, sep: str, format_sep: str,
-            show_offset: bool, stream: TextIO, offset_factor: int) -> None:
+            show_offset: bool, stream: TextIO, offset_factor: int, groups: int | None = None) -> None:
         """Internal pretty print method."""
         colour = Colour(not Options().no_color)
         offset_width = 0
@@ -1042,7 +1045,10 @@ class Bits:
         width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
             format_sep) * bool(group_chars2)
         width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
-        groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
+        if groups is None:
+            groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
+        else:
+            groups_per_line = groups
         max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
         assert max_bits_per_line > 0
 
