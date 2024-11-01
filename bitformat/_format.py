@@ -327,5 +327,5 @@ class Format(FieldType):
         :param depth: The maximum depth to print, or None for no limit.
         :type depth: int or None
         """
-        stream.write(self._str(Indenter(indent=indent, max_depth=depth)))
+        stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
         stream.write('\n')

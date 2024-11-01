@@ -253,7 +253,7 @@ class Field(FieldType):
         if self.dtype.name == 'bytes':
             const_str = ', const=True' if self.const else ''
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
-        return f"{self.__class__.__name__}('{self.__str__()}')"
+        return f"{self.__class__.__name__}({self._repr()})"
 
     def __eq__(self, other: Any) -> bool:
         """

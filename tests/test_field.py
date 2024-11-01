@@ -225,7 +225,7 @@ def test_field_with_comment():
     f.comment = '   Penguins are cool  '
     assert f.comment == 'Penguins are cool'
     assert str(f) == 'x: u8  # Penguins are cool'
-    assert repr(f) == "Field('x: u8  # Penguins are cool')"
+    assert repr(f) == "Field('x: u8')"
 
 def test_multiline_fields():
     f1 = Field.from_string('x: u8')
