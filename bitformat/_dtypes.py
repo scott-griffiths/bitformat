@@ -246,7 +246,7 @@ class Dtype:
             # Single item to pack
             b = self._create_fn(value)
             if self.bits_per_item != 0 and len(b) != self.bits_per_item:
-                raise ValueError(f"Dtype has a bitlength of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits.")
+                raise ValueError(f"Dtype '{self}' has a bitlength of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits.")
             return b
         if isinstance(value, bitformat.Bits):
             if len(value) != self.bitlength:
@@ -303,6 +303,9 @@ class Dtype:
 
 
 class AllowedSizes:
+
+    values: tuple[int, ...] | tuple [int, int, ellipsis]
+
     """Used to specify either concrete values or ranges of values that are allowed lengths for data types."""
     def __init__(self, value: tuple[int, ...] = tuple()) -> None:
         if len(value) >= 3 and value[-1] is Ellipsis:
@@ -492,6 +495,10 @@ class Register:
 class DtypeWithExpression:
     """Used internally. A Dtype that can contain an Expression instead of fixed values for size or items."""
 
+    items_expression: Expression | None
+    size_expression: Expression | None
+    base_dtype: Dtype
+
     def __init__(self, name: str, size: int | Expression, is_array: bool, items: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
         if isinstance(size, Expression):
             self.size_expression = size
@@ -524,24 +531,24 @@ class DtypeWithExpression:
             except ValueError:
                 x.items_expression = Expression(t)
                 items = 1
-            name, size = _utils.parse_name_expression_token(token[1:p])
+            name, size_str = _utils.parse_name_expression_token(token[1:p])
             try:
-                size = int(size)
+                size = int(size_str)
                 x.size_expression = None
             except ValueError:
-                x.size_expression = Expression(size)
+                x.size_expression = Expression(size_str)
                 size = 0
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
             return x
         else:
-            name, size = _utils.parse_name_expression_token(token)
+            name, size_str = _utils.parse_name_expression_token(token)
             try:
-                size = int(size)
+                size = int(size_str)
                 x.size_expression = None
             except ValueError:
-                x.size_expression = Expression(size)
+                x.size_expression = Expression(size_str)
                 size = 0
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
