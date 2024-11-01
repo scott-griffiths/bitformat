@@ -80,10 +80,6 @@ class Colour:
         return x
 
 
-is_interactive_shell = hasattr(sys, 'ps1')
-colour = Colour(is_interactive_shell)
-
-
 class Expression:
     """
     A compiled expression that can be evaluated with a dictionary of variables.

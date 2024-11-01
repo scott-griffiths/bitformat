@@ -90,3 +90,4 @@ class Options:
     @property
     def use_pure_python(self) -> bool:
         """If True then pure Python implementation will be used instead of bitarray."""
+        return self._use_pure_python

@@ -4,9 +4,10 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
-from ._common import colour, override, Indenter
+from ._common import override, Indenter, Colour
 from typing import Any, Sequence, Iterable
 from ._fieldtype import FieldType
+from ._options import Options
 
 
 __all__ = ['Field']
@@ -227,6 +228,7 @@ class Field(FieldType):
 
     @override
     def _str(self, indent: Indenter) -> str:
+        colour = Colour(not Options().no_color)
         const_str = 'const ' if self.const else ''
         dtype_str = str(self._dtype_expression)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"

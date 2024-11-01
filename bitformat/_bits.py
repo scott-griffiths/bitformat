@@ -11,10 +11,9 @@ from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat import _utils
 from bitformat._dtypes import Dtype, Register, DtypeList
-from bitformat._common import colour
+from bitformat._common import Colour, Endianness
 from typing import Pattern
-from ._common import Endianness
-from ._options import Options
+from bitformat._options import Options
 
 if Options()._use_pure_python:
     from ._bitstore_pure import BitStore
@@ -510,10 +509,11 @@ class Bits:
 
         .. code-block:: pycon
 
-            s.pp('hex16')
-            s.pp('bin', 'hex', sep='_', show_offset=False)
+            s.pp('hex4')
+            s.pp('bin', 'hex', show_offset=False)
 
         """
+        colour = Colour(not Options().no_color)
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
@@ -1029,6 +1029,7 @@ class Bits:
     def _pp(self, dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None, bits_per_group: int, width: int, sep: str, format_sep: str,
             show_offset: bool, stream: TextIO, offset_factor: int) -> None:
         """Internal pretty print method."""
+        colour = Colour(not Options().no_color)
         offset_width = 0
         offset_sep = ': '
         if show_offset:

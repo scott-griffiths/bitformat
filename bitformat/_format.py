@@ -7,9 +7,10 @@ from typing import Sequence, Any, Iterable, TextIO
 import copy
 import re
 
-from ._common import colour, override, Indenter
+from ._common import override, Indenter, Colour
 from ._fieldtype import FieldType
 from ._pass import Pass
+from ._options import Options
 
 __all__ = ['Format']
 
@@ -241,6 +242,7 @@ class Format(FieldType):
 
     @override
     def _str(self, indent: Indenter) -> str:
+        colour = Colour(not Options().no_color)
         name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
         s = ''
         s += indent(f"{name_str}(\n")
