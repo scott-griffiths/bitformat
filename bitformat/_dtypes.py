@@ -428,32 +428,30 @@ class Register:
         return cls._instance
 
     @classmethod
-    def add_dtype(cls, definition: DtypeDefinition, alias: str | None = None):
-        names = [definition.name] if alias is None else [definition.name, alias]
-        for name in names:
-            cls.name_to_def[name] = definition
-            if definition.get_fn is not None:
-                setattr(bitformat.Bits, name,
-                        property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
-                if definition.endianness_variants:
-                    def fget_be(b):
-                        if len(b) % 8 != 0:
-                            raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                        return definition.get_fn(b)
-                    def fget_le(b):
-                        if len(b) % 8 != 0:
-                            raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                        return definition.get_fn(b.byteswap())
-                    fget_ne = fget_le if byteorder == 'little' else fget_be
-                    setattr(bitformat.Bits, name + '_le',
-                            property(fget=fget_le,
-                                     doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
-                    setattr(bitformat.Bits, name + '_be',
-                            property(fget=fget_be,
-                                     doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
-                    setattr(bitformat.Bits, name + '_ne',
-                            property(fget=fget_ne,
-                                     doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only."))
+    def add_dtype(cls, definition: DtypeDefinition):
+        name = definition.name
+        cls.name_to_def[name] = definition
+        setattr(bitformat.Bits, name,
+                property(fget=definition.get_fn, doc=f"The Bits as {definition.description}. Read only."))
+        if definition.endianness_variants:
+            def fget_be(b):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                return definition.get_fn(b)
+            def fget_le(b):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                return definition.get_fn(b.byteswap())
+            fget_ne = fget_le if byteorder == 'little' else fget_be
+            setattr(bitformat.Bits, name + '_le',
+                    property(fget=fget_le,
+                             doc=f"The Bits as {definition.description} in little-endian byte order. Read only."))
+            setattr(bitformat.Bits, name + '_be',
+                    property(fget=fget_be,
+                             doc=f"The Bits as {definition.description} in big-endian byte order. Read only."))
+            setattr(bitformat.Bits, name + '_ne',
+                    property(fget=fget_ne,
+                             doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
