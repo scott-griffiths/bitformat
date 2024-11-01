@@ -489,7 +489,7 @@ class Array:
                              f"is not a multiple of the format length ({self._dtype.bitlength} bits).")
         self._bitstore = Bits.join([self._getbitslice(s - self._dtype.bitlength, s) for s in range(len(self._proxy), 0, -self._dtype.bitlength)])._bitstore
 
-    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
+    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None, groups: int | None = None,
            width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """
         Pretty-print the Array contents.
@@ -501,7 +501,10 @@ class Array:
         :type dtype1: str or Dtype or None
         :param dtype2: Data type for addition display data.
         :type dtype2: str or Dtype or None
-        :param width: Maximum width of printed lines in characters. Defaults to 80. A single group will always be printed per line even if it exceeds the max width.
+        :param groups: How many groups of bits to display on each line. This overrides any value given for width.
+        :type groups: int or None
+        :param width: Maximum width of printed lines in characters. Defaults to 80, but ignored if groups parameter is set.
+            A single group will always be printed per line even if it exceeds the max width.
         :type width: int
         :param show_offset: If True, shows the element offset in the first column of each line.
         :type show_offset: bool
@@ -539,14 +542,14 @@ class Array:
         dtype2_str = ''
         if dtype2 is not None:
             dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
-        data = self._proxy if trailing_bit_length == 0 else self._getbitslice(0, -trailing_bit_length)
+        data = self._proxy if trailing_bit_length == 0 else self._getbitslice(0, len(self._proxy) - trailing_bit_length)
         length = len(self._proxy) // token_length
         len_str = colour.green + str(length) + colour.off
         stream.write(f"<{self.__class__.__name__} dtype1='{dtype1_str}'{dtype2_str}, length={len_str}, item_size={token_length} bits, total data size={(len(self._proxy) + 7) // 8} bytes> [\n")
-        data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length)
+        data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = 0b" + self._getbitslice(-trailing_bit_length, None).unpack('bin'))
+            stream.write(" + trailing_bits = 0b" + self._getbitslice(len(self._proxy) - trailing_bit_length, None).unpack('bin'))
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:

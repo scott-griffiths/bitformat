@@ -978,3 +978,12 @@ def test_with_dtypelist():
     with pytest.raises(ValueError):
         a += 2
 
+def test_pp_with_groups():
+    a = Array('u8', list(range(20)))
+    s = io.StringIO()
+    a.pp('u8', groups=10, stream=s)
+    assert remove_unprintable(s.getvalue()) == """<Array dtype1='u8', length=20, item_size=8 bits, total data size=20 bytes> [
+  0:   0   1   2   3   4   5   6   7   8   9
+ 10:  10  11  12  13  14  15  16  17  18  19
+]
+"""
