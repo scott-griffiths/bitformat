@@ -985,15 +985,13 @@ class Bits:
     def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype | DtypeList,
                      colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
-        chars_per_group = 0
+        chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, Dtype):
             if dtype.name == 'bytes':  # Special case for bytes to print one character each.
                 get_fn = Bits._getbytes_printable
             if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
                 get_fn = Register().get_single_dtype('u', bits_per_group).unpack
             align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
-            if Register().name_to_def[dtype.name].bitlength2chars_fn is not None:
-                chars_per_group = Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
             if dtype.name == 'bits':
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
@@ -1008,7 +1006,6 @@ class Bits:
         else:  # DtypeList
             align = '>'
             x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
-
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
             x = colour_start + x + colour_end

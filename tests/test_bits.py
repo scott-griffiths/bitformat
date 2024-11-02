@@ -437,7 +437,7 @@ def test_pp_with_dtypelist():
     s = io.StringIO()
     a.pp('bool, hex2, f32', show_offset=False, stream=s)
     expected_output = """<Bits, dtype1='bool, hex2, f32', length=41 bits> [
-[True, 'fe', 3.5]
+                        [True, 'fe', 3.5]
 ]
 """
     assert remove_unprintable(s.getvalue()) == expected_output
@@ -659,3 +659,7 @@ def test_unpack_dtype_list():
     b = d.pack([55, 33, 11, 0])
     assert b.unpack(d) == [55, 33, 11, False]
     assert b.unpack(f) == [55, 33, 11, False]
+
+def test_pp_edge_cases():
+    a = Bits('0x123141fff') * 7
+    a.pp('hex4, f16', groups=4)
