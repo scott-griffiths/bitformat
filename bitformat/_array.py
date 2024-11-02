@@ -489,7 +489,7 @@ class Array:
                              f"is not a multiple of the format length ({self._dtype.bitlength} bits).")
         self._bitstore = Bits.join([self._getbitslice(s - self._dtype.bitlength, s) for s in range(len(self._proxy), 0, -self._dtype.bitlength)])._bitstore
 
-    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None, groups: int | None = None,
+    def pp(self, dtype1: str | Dtype | DtypeList | None = None, dtype2: str | Dtype | DtypeList | None = None, groups: int | None = None,
            width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """
         Pretty-print the Array contents.
@@ -498,9 +498,9 @@ class Array:
         The output can be customized with various parameters to control the format, width, and display options.
 
         :param dtype1: Data type to display. Defaults to the current Array dtype.
-        :type dtype1: str or Dtype or None
+        :type dtype1: str or Dtype or DtypeList or None
         :param dtype2: Data type for addition display data.
-        :type dtype2: str or Dtype or None
+        :type dtype2: str or Dtype or DtypeList or None
         :param groups: How many groups of bits to display on each line. This overrides any value given for width.
         :type groups: int or None
         :param width: Maximum width of printed lines in characters. Defaults to 80, but ignored if groups parameter is set.
@@ -519,9 +519,15 @@ class Array:
         if dtype1 is None:
             dtype1 = self.dtype
         if isinstance(dtype1, str):
-            dtype1 = Dtype.from_string(dtype1)
+            if ',' in dtype1:
+                dtype1 = DtypeList.from_string(dtype1)
+            else:
+                dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
-            dtype2 = Dtype.from_string(dtype2)
+            if ',' in dtype2:
+                dtype2 = DtypeList.from_string(dtype2)
+            else:
+                dtype2 = Dtype.from_string(dtype2)
 
         token_length = dtype1.bits_per_item
         if dtype2 is not None:

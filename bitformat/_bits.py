@@ -1005,7 +1005,13 @@ class Bits:
             return x, chars_used
         else:  # DtypeList
             align = '>'
-            x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+            s = []
+            for b in bits.chunks(bits_per_group):
+                chars_per_dtype = [Bits._chars_per_dtype(d, d.bitlength) for d in dtype]
+                values = get_fn(b)
+                strings = [f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)]
+                s.append(f"[{', '.join(strings)}]")
+            x = sep.join(s)
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
             x = colour_start + x + colour_end
