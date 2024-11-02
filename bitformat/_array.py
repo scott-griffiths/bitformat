@@ -122,7 +122,7 @@ class Array:
     - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
     - ``insert(index, item)``: Insert an item at a given position.
     - ``pop([index])``: Remove and return an item. Default is the last item.
-    - ``pp([fmt, width, show_offset, stream])``: Pretty print the Array.
+    - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
     - ``reverse()``: Reverse the order of all items.
     - ``to_bits()``: Return the Array data as a Bits object.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
@@ -531,9 +531,10 @@ class Array:
 
         token_length = dtype1.bits_per_item
         if dtype2 is not None:
-            # For two types we're OK as long as they don't have different lengths given.
             if dtype1.bits_per_item != 0 and dtype2.bits_per_item != 0 and dtype1.bits_per_item != dtype2.bits_per_item:
-                raise ValueError(f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item}.")
+                raise ValueError(f"If two Dtypes are given to pp() they must have the same length,"
+                                 f" but '{dtype1}' has a length of {dtype1.bits_per_item} and '{dtype2}' has a "
+                                 f"length of {dtype2.bits_per_item}.")
             if token_length == 0:
                 token_length = dtype2.bits_per_item
         if token_length == 0:

@@ -47,7 +47,7 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
-    def pack(self, values: Any | None = None, /, **kwargs) -> Bits:
+    def pack(self, values: Sequence[Any] | None = None, /, **kwargs) -> Bits:
         """
         Pack the field type into bits.
 
@@ -62,7 +62,7 @@ class FieldType(abc.ABC):
         if values is None:
             return self._pack([], 0, {}, kwargs)[0]
         try:
-            bits, values_used = self._pack([values], 0, {}, kwargs)
+            bits, values_used = self._pack(values, 0, {}, kwargs)
         except TypeError as e:
             if not isinstance(values, Sequence):
                 raise TypeError(f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}.")

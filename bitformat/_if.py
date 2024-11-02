@@ -95,9 +95,9 @@ class If(FieldType):
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
-            _, v = self.then_._pack(values[index], index, vars_, kwargs)
+            _, v = self.then_._pack(values, index, vars_, kwargs)
         else:
-            _, v = self.else_._pack(values[index], index, vars_, kwargs)
+            _, v = self.else_._pack(values, index, vars_, kwargs)
         return self.to_bits(), v
 
     @override

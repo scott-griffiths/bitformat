@@ -41,15 +41,18 @@ def test_explicit_pass():
     f.parse(x = 4)
     assert f.bitlength == 0
 
-# def test_slightly_more_complex_things():
-#     f = Format("""my_format = (
-#     header: hex2 = 0x47
-#     flag: bool
-#     if {flag}:
-#         data: [u8; 6]
-#     """)
-#     b = f.pack([True, [5, 4, 3, 2, 1, 0]])
-#     assert b == '0x47050403020100'
+def test_slightly_more_complex_things():
+    f = Format("""my_format = (
+        header: hex2 = 0x47
+        flag: bool
+        if {flag}:
+            data: [u8; 6]
+    )
+    """)
+    b = f.pack(['47', True, [5, 4, 3, 2, 1, 0]])
+    assert b == '0x47, 0b1, 0x050403020100'
+    # b2 = f.pack(['47', False, [5, 4, 3, 2, 1, 0]])
+    # assert b2 == '0x47, 0b0, 0x050403020100'
 
 def test_eq():
     i = If.from_params('{1 > 0}', 'u2', 'i2')

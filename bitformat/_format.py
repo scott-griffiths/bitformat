@@ -139,6 +139,24 @@ class Format(FieldType):
         name, field_strs, err_msg = cls._parse_format_str(s)
         if err_msg:
             raise ValueError(err_msg)
+        # Pre-process for 'if' fields to join things together if needed.
+        processed_fields_strs = []
+        just_had_if = False
+        just_had_else = False
+        for fs in field_strs:
+            if just_had_if or just_had_else:
+                processed_fields_strs[-1] += fs
+                continue
+            if fs.startswith('if'):  # TODO: not good enough test
+                just_had_if = True
+                processed_fields_strs.append(fs)
+            elif fs.startswith('else'):  # TODO: also not good enough
+                just_had_else = True
+                processed_fields_strs[-1] += fs
+            else:
+                just_had_if = just_had_else = False
+                processed_fields_strs.append(fs)
+        field_strs = processed_fields_strs
 
         fieldtypes = []
         for fs in field_strs:
@@ -166,7 +184,7 @@ class Format(FieldType):
               kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fields:
-            _, v = fieldtype._pack(values[index], index + values_used, _vars, kwargs)
+            _, v = fieldtype._pack(values, index + values_used, _vars, kwargs)
             values_used += v
         return self.to_bits(), values_used
 

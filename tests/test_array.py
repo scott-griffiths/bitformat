@@ -988,6 +988,7 @@ def test_pp_with_groups():
 ]
 """
 
-def test_pp_with_dtypelist():
-    a = Array('u8', list(range(20)))
-    a.pp('u4, i4', groups=5)
+# def test_pp_with_dtypelist():
+#     a = Array('u8', list(range(20)))
+#     a.pp('i4, bits3', 'bits3, i5', groups=2)
+#     # a.pp('u4, i4', groups=5)

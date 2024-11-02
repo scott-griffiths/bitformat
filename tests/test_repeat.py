@@ -29,7 +29,7 @@ def test_edge_cases():
 
 def test_pack():
     f = Repeat('Repeat(4, bool)')
-    f.pack([True, False, True, False])
+    f.pack([[True, False, True, False]])
     assert f.value == [True, False, True, False]
 
 

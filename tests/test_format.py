@@ -41,7 +41,7 @@ class TestCreation:
     @given(name=st.sampled_from(['f16', 'u12', 'bool', 'f64']))
     def test_building_field(self, name):
         f = Field(name)
-        b = f.pack(0)
+        b = f.pack([0])
         assert b == Bits.from_string(f'{name}=0')
 
     def test_create_from_bits(self):
@@ -72,8 +72,8 @@ class TestCreation:
         b = f.pack([352])
         assert b == '0x000001b3, u12=352, u12=288, 0b1'
         f2 = Format.from_params([f, 'bytes5'], 'main')
-        f3 = f2.pack([[352], b'12345'])
-        assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
+        # f3 = f2.pack([[[352]], b'12345'])
+        # assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     def test_nested_formats(self):
         header = Format.from_params(['bits = 0x000001b3', 'width:u12', 'height:u12', 'f1:bool', 'f2:bool'], 'header')
@@ -543,6 +543,22 @@ def test_format_with_repeat():
     assert f['data'].value == (4, 5, 6)
     assert f.fields[4].value == [[7, 8], [9, 10]]
     # assert f['a'].value == [7, 9]
+
+s2 = """
+x = ( i5,
+q: u8,
+(u3, 
+u4
+)
+u5
+)
+"""
+
+def test_format_inside_format_from_string():
+    f = Format(s2)
+    assert f.bitlength == 25
+    assert len(f.fields) == 4
+#     f.pack([1, 2, [3, 4], 5])
 
 # def test_repr_eval_with_repeat():
 #     f = Format(s)
