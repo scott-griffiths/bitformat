@@ -526,7 +526,7 @@ class Array:
         token_length = dtype1.bits_per_item
         if dtype2 is not None:
             # For two types we're OK as long as they don't have different lengths given.
-            if dtype1.bits_per_item is not None and dtype2.bits_per_item is not None and dtype1.bits_per_item != dtype2.bits_per_item:
+            if dtype1.bits_per_item != 0 and dtype2.bits_per_item != 0 and dtype1.bits_per_item != dtype2.bits_per_item:
                 raise ValueError(f"Differing bit lengths of {dtype1.bits_per_item} and {dtype2.bits_per_item}.")
             if token_length == 0:
                 token_length = dtype2.bits_per_item

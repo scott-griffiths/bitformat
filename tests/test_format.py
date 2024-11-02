@@ -346,7 +346,7 @@ def test_field_array_str():
 def test_format_repr_string():
     f = Format.from_params(['x:const u8 = 12', 'u:bool = False', '[u3;44]'], 'dave')
     r = repr(f)
-    assert r == "Format.from_params(('x: const u8 = 12', 'u: bool = False', '[u3; 44]'), 'dave')"
+    assert r == "Format.from_params(['x: const u8 = 12', 'u: bool = False', '[u3; 44]'], 'dave')"
 
 def test_to_bits():
     f = Format.from_params(['u8', 'u8', 'u8'])

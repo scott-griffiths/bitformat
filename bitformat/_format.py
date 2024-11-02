@@ -255,12 +255,12 @@ class Format(FieldType):
     @override
     def _repr(self) -> str:
         name_str = '' if self.name == '' else f", {self.name!r}"
-        s = f"{self.__class__.__name__}.from_params(("
+        s = f"{self.__class__.__name__}.from_params(["
         for i, fieldtype in enumerate(self.fields):
             s += fieldtype._repr()
             if i != len(self.fields) - 1:
                 s += ', '
-        s += f"){name_str})"
+        s += f"]{name_str})"
         return s
 
     def __iadd__(self, other: FieldType | str) -> Format:
