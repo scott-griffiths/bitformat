@@ -987,3 +987,7 @@ def test_pp_with_groups():
  10:  10  11  12  13  14  15  16  17  18  19
 ]
 """
+
+def test_pp_with_dtypelist():
+    a = Array('u8', list(range(20)))
+    a.pp('u4, i4', groups=5)
