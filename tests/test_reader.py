@@ -30,3 +30,5 @@ def test_parse():
     f = Field('bytes3')
     assert r.parse(f) == 24
     assert f.value == b'wor'
+    r.parse(g := Field('bool'))
+    assert g.value is False

@@ -8,6 +8,17 @@ from bitformat._dtypes import Dtype, DtypeList
 
 
 class Reader:
+    """
+    Wraps a Bits object and a bit position to allow reading and parsing as a stream of bits.
+
+    **Methods:**
+    - ``read()``: Read from the current bit position, and interpret according to the given format.
+    - ``parse()``: Parse a fieldtype from the current bit position, returning the number of bits parsed.
+
+    **Properties:**
+    - ``bits``: The ``Bits`` object.
+    - ``pos``: The current bit position to read and parse from.
+    """
 
     def __init__(self, bits: BitsType | None = None, pos: int = 0) -> None:
         if bits is None:
@@ -32,33 +43,36 @@ class Reader:
     def pos(self, value: int) -> None:
         self._pos = int(value)
 
-    def read(self, v: int | Dtype | DtypeList | str, /) -> Any | list[Any]:
-        if isinstance(v, int):
-            if self.pos + v > len(self.bits):
-                raise ValueError(f"Cannot read {v} bits at position {self.pos} as only {len(self.bits) - self.pos} bits remain.")
-            x = self.bits[self.pos:self.pos + v]
-            self.pos += v
+    def read(self, fmt: int | Dtype | DtypeList | str, /) -> Any | list[Any]:
+        """Read from the current bit position, and interpret according to the given format."""
+        if isinstance(fmt, int):
+            if self.pos + fmt > len(self.bits):
+                raise ValueError(f"Cannot read {fmt} bits at position {self.pos} as only {len(self.bits) - self.pos} bits remain.")
+            x = self.bits[self.pos:self.pos + fmt]
+            self.pos += fmt
             return x
-        if isinstance(v, str):
-            if ',' in v:
-                v = DtypeList.from_string(v)
+        if isinstance(fmt, str):
+            if ',' in fmt:
+                fmt = DtypeList.from_string(fmt)
             else:
-                v = Dtype.from_string(v)
-        if self.pos + v.bitlength > len(self.bits):
-            raise ValueError(f"Reading '{v}' needs {v.bitlength} bits, but at position {self.pos} only {len(self.bits) - self.pos} bits remain.")
-        x = v.unpack(self.bits[self.pos:self.pos + v.bitlength])
-        self.pos += v.bitlength
+                fmt = Dtype.from_string(fmt)
+        if self.pos + fmt.bitlength > len(self.bits):
+            raise ValueError(f"Reading '{fmt}' needs {fmt.bitlength} bits, but at position {self.pos} only {len(self.bits) - self.pos} bits remain.")
+        x = fmt.unpack(self.bits[self.pos:self.pos + fmt.bitlength])
+        self.pos += fmt.bitlength
         return x
 
-    def parse(self, f: FieldType | str) -> int:
-        if isinstance(f, str):
-            f = FieldType.from_string(f)
-        bits_parsed = f.parse(self.bits[self.pos:])
+    def parse(self, f: FieldType, /) -> int:
+        """Parse a fieldtype from the current bit position, returning the number of bits parsed."""
+        try:
+            bits_parsed = f.parse(self.bits[self.pos:])
+        except AttributeError:
+            raise ValueError(f"parse() requires a FieldType. Got {f!r} of type {type(f)}.")
         self.pos += bits_parsed
         return bits_parsed
 
     def __str__(self):
-        return f"Reader({self.bits}, {self.pos})"
+        return f"Reader('{self.bits}', pos={self.pos})"
 
     def __repr__(self):
         return str(self)

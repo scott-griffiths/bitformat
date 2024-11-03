@@ -50,6 +50,7 @@ Miscellaneous
     dtypelist.rst
     array.rst
     reader.rst
+    fieldtype.rst
     field.rst
     format.rst
     if.rst
@@ -57,7 +58,6 @@ Miscellaneous
     pass.rst
     options.rst
     bitsproxy.rst
-    fieldtype.rst
     register.rst
     misc.rst
 
