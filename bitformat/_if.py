@@ -91,8 +91,8 @@ class If(FieldType):
             return then_len
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any] | None = None,
-              kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
             _, v = self.then_._pack(values, index, vars_, kwargs)

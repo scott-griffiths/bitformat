@@ -70,8 +70,8 @@ class Repeat(FieldType):
         return self.bitlength
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any] | None = None,
-              kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         self._bits = Bits()
         values_used = 0
         for i in range(self.count):

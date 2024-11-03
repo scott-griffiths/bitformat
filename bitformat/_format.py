@@ -180,8 +180,8 @@ class Format(FieldType):
         return sum(f.bitlength for f in self.fields)
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any] | None = None,
-              kwargs: dict[str, Any] | None = None) -> tuple[Bits, int]:
+    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
+              kwargs: dict[str, Any]) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fields:
             _, v = fieldtype._pack(values, index + values_used, _vars, kwargs)
