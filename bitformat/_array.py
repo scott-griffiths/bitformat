@@ -7,7 +7,6 @@ from typing import Union, Iterable, Any, overload, TextIO
 
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, Register, DtypeList
-from bitformat import _utils
 from bitformat._options import Options
 from bitformat._common import Colour
 import operator

@@ -17,6 +17,7 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
 * :ref:`Dtype <dtype>` -- A data type used to interpret binary data.
 * :ref:`DtypeList <dtypelist>` -- A sequence of :class:`Dtype` objects.
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
+* :ref:`Reader <reader>` -- Read and parse :class:`Bits` as a bit stream with a bit position.
 
 Field Types
 -----------
@@ -48,6 +49,7 @@ Miscellaneous
     dtype.rst
     dtypelist.rst
     array.rst
+    reader.rst
     field.rst
     format.rst
     if.rst
