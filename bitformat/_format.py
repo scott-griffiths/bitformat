@@ -145,14 +145,15 @@ class Format(FieldType):
         just_had_else = False
         for fs in field_strs:
             if just_had_if or just_had_else:
-                processed_fields_strs[-1] += fs
+                processed_fields_strs[-1] += '\n' + fs
+                just_had_if = just_had_else = False
                 continue
             if fs.startswith('if'):  # TODO: not good enough test
                 just_had_if = True
                 processed_fields_strs.append(fs)
             elif fs.startswith('else'):  # TODO: also not good enough
                 just_had_else = True
-                processed_fields_strs[-1] += fs
+                processed_fields_strs[-1] += '\n' + fs
             else:
                 just_had_if = just_had_else = False
                 processed_fields_strs.append(fs)

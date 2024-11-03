@@ -143,7 +143,10 @@ class If(FieldType):
 
     @override
     def _repr(self) -> str:
-        return self._str(Indenter())
+        s = self._str(Indenter(indent_size=0))
+        s = s.replace('\n', ' ')
+        s = f"{self.__class__.__name__}('{s}')"
+        return s
 
     @override
     def to_bits(self) -> Bits:

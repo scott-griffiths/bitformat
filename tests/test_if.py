@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Format, If
+from bitformat import Format, If, Bits
 
 
 def test_creation():
@@ -47,10 +47,28 @@ def test_slightly_more_complex_things():
         flag: bool
         if {flag}:
             data: [u8; 6]
+        else:
+            data: bool
+        f32
     )
     """)
-    b = f.pack(['47', True, [5, 4, 3, 2, 1, 0]])
-    assert b == '0x47, 0b1, 0x050403020100'
+    g = Format.from_string(str(f))
+    assert f == g
+    h = Format.from_params(f.fields, f.name)
+    assert f == h
+    i = eval(repr(f))
+    assert f == i
+    b = Bits('0x47, 0b1, 0x050403020100, f32=6.5')
+    f.parse(b)
+    # assert f.fields[-1].value == 6.5
+    # assert f['flag'].value is True
+    # assert f['data'].value == [5, 4, 3, 2, 1, 0]
+    # assert f['data'].dtype == '[u8;6]'
+    #
+    # print(f)
+    #
+    # b = f.pack(['47', True, [5, 4, 3, 2, 1, 0]])
+    # assert b == '0x47, 0b1, 0x050403020100'
     # b2 = f.pack(['47', False, [5, 4, 3, 2, 1, 0]])
     # assert b2 == '0x47, 0b0, 0x050403020100'
 
