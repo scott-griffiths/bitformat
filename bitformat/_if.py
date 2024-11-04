@@ -42,9 +42,9 @@ class If(FieldType):
     @classmethod
     def _possibly_from_string(cls, s: str, /) -> If | None:
         # This compiled re pattern expects
-        # if {expression}: then_ \n else: else_
+        # If {expression}: then_ \n Else: else_
         pattern = re.compile(
-            r'\s*if\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*else\s*:\s*(?P<else>.*))?\s*$'
+            r'\s*If\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*Else\s*:\s*(?P<else>.*))?\s*$'
         )
         if not (match := pattern.match(s)):
             return None
@@ -59,10 +59,12 @@ class If(FieldType):
 
         The string should be in the format:
 
-        if {expression}:
+        If {expression}:
             then_field
-        else:
+        Else:
             else_field
+
+        The Else clause is optional, and defaults to a :class:`Pass` field if not provided.
 
         """
         if (x := cls._possibly_from_string(s)) is not None:
@@ -138,11 +140,11 @@ class If(FieldType):
 
     @override
     def _str(self, indent: Indenter) -> str:
-        s = indent(f"if {self.condition}:\n")
+        s = indent(f"If {self.condition}:\n")
         with indent:
             s += self.then_._str(indent)
         if self.else_.bitlength != 0:
-            s += indent('else:\n')
+            s += indent('Else:\n')
             with indent:
                 s += self.else_._str(indent)
         return s

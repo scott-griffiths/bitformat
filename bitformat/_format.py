@@ -148,10 +148,10 @@ class Format(FieldType):
                 processed_fields_strs[-1] += '\n' + fs
                 just_had_if = just_had_else = False
                 continue
-            if fs.startswith('if'):  # TODO: not good enough test
+            if fs.startswith('If'):  # TODO: not good enough test
                 just_had_if = True
                 processed_fields_strs.append(fs)
-            elif fs.startswith('else'):  # TODO: also not good enough
+            elif fs.startswith('Else'):  # TODO: also not good enough
                 just_had_else = True
                 processed_fields_strs[-1] += '\n' + fs
             else:

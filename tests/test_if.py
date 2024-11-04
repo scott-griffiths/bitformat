@@ -9,14 +9,14 @@ def test_creation():
     assert v == 2
     assert i.value == 3
 
-    assert(str(i) == 'if {1 > 0}:\n    u2 = 3\nelse:\n    i2\n')
+    assert(str(i) == 'If {1 > 0}:\n    u2 = 3\nElse:\n    i2\n')
 
 def test_from_string():
-    i = If.from_string('if {1 > 0}: u2 else: i2')
+    i = If.from_string('If {1 > 0}: u2 Else: i2')
     assert i.bitlength == 2
-    assert str(i) == 'if {1 > 0}:\n    u2\nelse:\n    i2\n'
+    assert str(i) == 'If {1 > 0}:\n    u2\nElse:\n    i2\n'
 
-    j = If('if {x < 5}: bool')
+    j = If('If {x < 5}: bool')
     with pytest.raises(ValueError):
         _ = j.bitlength
 
@@ -45,9 +45,9 @@ def test_slightly_more_complex_things():
     f = Format("""my_format = (
         header: hex2 = 0x47
         flag: bool
-        if {flag}:
+        If {flag}:
             data: [u8; 6]
-        else:
+        Else:
             data: bool
         f32
     )
