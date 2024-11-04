@@ -40,6 +40,18 @@ class If(FieldType):
         return x
 
     @classmethod
+    def _possibly_from_string(cls, s: str, /) -> If | None:
+        # This compiled re pattern expects
+        # if {expression}: then_ \n else: else_
+        pattern = re.compile(
+            r'\s*if\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*else\s*:\s*(?P<else>.*))?\s*$'
+        )
+        if not (match := pattern.match(s)):
+            return None
+        groups = match.groupdict()
+        return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
+
+    @classmethod
     @override
     def from_string(cls, s: str, /) -> If:
         """
@@ -53,15 +65,9 @@ class If(FieldType):
             else_field
 
         """
-        # This compiled re pattern expects
-        # if {expression}: then_ \n else: else_
-        pattern = re.compile(
-            r'\s*if\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*else\s*:\s*(?P<else>.*))?\s*$'
-        )
-        if not (match := pattern.match(s)):
-            raise ValueError(f"Can't parse If field from '{s}'")
-        groups = match.groupdict()
-        return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
+        if (x := cls._possibly_from_string(s)) is not None:
+            return x
+        raise ValueError(f"Can't parse If field from '{s}'")
 
     @override
     def _getbitlength(self) -> int:

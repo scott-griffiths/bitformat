@@ -1,5 +1,6 @@
 from __future__ import annotations
 import abc
+import re
 import sys
 
 from bitformat import Bits
@@ -132,17 +133,25 @@ class FieldType(abc.ABC):
         :rtype: FieldType
         """
         s = s.strip()
+        # For each FieldType subclass check using a regex if it is of that type.
+        # First, check for a Pass:
         if s == '':
             return fieldtype_classes['Pass']()
-        elif s.startswith('if'): # TODO: this isn't a good enough test
-            return fieldtype_classes['If'].from_string(s)
-        elif s.startswith('Repeat('):
-            return fieldtype_classes['Repeat'].from_string(s)
-        elif s.endswith(')'):
+
+        # Then, check for an If. It should start with 'if' followed by a condition in {} and a :
+        if (x := fieldtype_classes['If']._possibly_from_string(s)) is not None:
+            return x
+        if (x := fieldtype_classes['Repeat']._possibly_from_string(s)) is not None:
+            return x
+
+        # Finally, check for a Field.
+        # Should start with either a `(` or a name followed by a `=` followed by a `(`.
+        # It should end with a `)`
+        # format_regex = r'([a-zA-Z][a-zA-Z0-9_]*?)\s*=\s*\('
+        if s.endswith(')'):
             # If it's legal it must be a Format.
             return fieldtype_classes['Format'].from_string(s)
-        else:
-            return fieldtype_classes['Field'].from_string(s)
+        return fieldtype_classes['Field'].from_string(s)
 
     @abc.abstractmethod
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

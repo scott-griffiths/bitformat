@@ -525,10 +525,10 @@ header = (
     y: u8,
     z: u8,
     data: [u8; 3],
-    Repeat(2, (
+    Repeat{2}: (
         a: u8,
         b: u8
-    ))
+    )
     bool
 )
 """

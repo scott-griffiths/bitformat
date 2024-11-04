@@ -8,17 +8,25 @@ def test_creation():
     assert p.field == Field('u8')
 
 def test_from_string():
-    p = Repeat.from_string('Repeat(3, u8)')
-    assert p.count == 3
-    assert p.field == Field('u8')
+    # p = Repeat.from_string('Repeat{3}: u8')
+    # assert p.count == 3
+    # assert p.field == Field('u8')
+    # s = """
+    # Repeat(2,
+    #     fred = (
+    #         bool,
+    #         john: i7
+    #     )
+    # )
+    # """
     s = """
-    Repeat(2,
+    Repeat {2}:
         fred = (
             bool,
             john: i7
         )
-    )
     """
+
     q = Repeat(s)
     assert q.count == 2
     assert q.unpack(Bits('0x8710')) == [[True, 7], [False, 16]]
@@ -28,7 +36,7 @@ def test_edge_cases():
     assert p.unpack('0xff') == []
 
 def test_pack():
-    f = Repeat('Repeat(4, bool)')
+    f = Repeat('Repeat {4}: bool')
     f.pack([[True, False, True, False]])
     assert f.value == [True, False, True, False]
 

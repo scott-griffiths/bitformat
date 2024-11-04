@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from ._field import FieldType
 from ._common import override, Indenter
 from typing import Sequence, Any
@@ -30,17 +32,27 @@ class Repeat(FieldType):
         return self.field.bitlength * self.count
 
     @classmethod
-    @override
-    def from_string(cls, s: str) -> Repeat:
+    def _possibly_from_string(cls, s: str, /) -> Repeat | None:
         # TODO: name is not handled yet.
         s = s.strip()
-        if not s.startswith('Repeat(') or not s.endswith(')'):
-            raise ValueError(f"Can't parse Repeat field from '{s}'")
-        s = s[7:-1].strip()
-        count, fieldtype = s.split(',', 1)
+        repeat_regex = r'Repeat\s*\{([^}]*)\}\s*:\s(.*)'
+        pattern = re.compile(repeat_regex, re.DOTALL)
+        if not (m := pattern.match(s)):
+            return None
+        count = int(m.group(1))
+        fieldtype_str = m.group(2)
         count = int(count)
-        fieldtype = FieldType.from_string(fieldtype)
+        fieldtype = FieldType.from_string(fieldtype_str)
         return cls.from_params(count, fieldtype)
+
+
+    @classmethod
+    @override
+    def from_string(cls, s: str) -> Repeat:
+        if (x := cls._possibly_from_string(s)) is not None:
+            return x
+        raise ValueError(f"Can't parse Repeat field from '{s}'")
+
 
     @override
     def _str(self, indent: Indenter) -> str:
