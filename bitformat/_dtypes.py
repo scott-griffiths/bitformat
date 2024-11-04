@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import functools
-from typing import Any, Callable, Iterable, Sequence, overload
+from typing import Any, Callable, Iterable, Sequence, overload, Union
 import inspect
 import bitformat
 from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
 
+# Things that can be converted to Bits when a Bits type is needed
+BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
 
 __all__ = ['Dtype', 'DtypeList', 'DtypeDefinition', 'Register', 'DtypeWithExpression']
 
@@ -256,7 +258,7 @@ class Dtype:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.join(self._create_fn(v) for v in value)
 
-    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> Any | tuple[Any]:
+    def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.

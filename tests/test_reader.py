@@ -18,7 +18,7 @@ def test_creation():
 def test_read():
     r = Reader('0x12345', 4)
     assert r.pos == 4
-    assert r.read(4) == '0x2'
+    assert r.read('bits4') == '0x2'
     assert r.pos == 8
     assert r.read('u4') == 3
     assert r.pos == 12
