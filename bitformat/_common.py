@@ -4,6 +4,8 @@ import ast
 from typing import Any
 import enum
 from ._options import Options
+import os
+from lark import Lark
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
@@ -146,3 +148,8 @@ class Endianness(enum.Enum):
 # The byte order of the system, used for the 'native' endianness modifiers ('_ne').
 # If you'd like to emulate a different native endianness, you can set this to 'little' or 'big'.
 byteorder: str = sys.byteorder
+
+
+_lark_file_path = os.path.join(os.path.dirname(__file__), 'format_parser.lark')
+with open(_lark_file_path, 'r') as f:
+    lark_parser = Lark(f)
