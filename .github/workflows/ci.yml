@@ -114,7 +114,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          cp repo
+          cd repo
           uv venv
           uv pip install ./dist/*.whl
 
