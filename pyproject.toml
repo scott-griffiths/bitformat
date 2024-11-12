@@ -36,3 +36,8 @@ build-backend = "hatchling.build"
 include = [
     "bitformat/format_parser.lark"
 ]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]
