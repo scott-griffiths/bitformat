@@ -101,11 +101,6 @@ jobs:
 
       - uses: actions/setup-python@v4
         with:
-          # This allows the matrix to specify just the major.minor version while still
-          # expanding it to get the latest patch version including alpha releases.
-          # This avoids the need to update for each new alpha, beta, release candidate,
-          # and then finally an actual release version.
-          python-version: ${{ fromJSON(format('["{0}", "{1}"]', format('{0}.0-alpha - {0}.X', matrix.python.action), matrix.python.action))[startsWith(matrix.python.action, 'pypy')] }}
           architecture: x64
 
       - name: Install uv
@@ -121,7 +116,7 @@ jobs:
       - name: Run pytest
         run: |
           cd repo
-          uv pip install -r ./pyproject.toml
+          uv pip install -r pyproject.toml
           uv run pytest --benchmark-disable
 
   all:
