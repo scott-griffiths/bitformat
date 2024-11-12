@@ -112,10 +112,12 @@ jobs:
         with:
           version: "0.5.1"
 
-      - name: Setup environment
+      - name: Set up environment
         run: |
           cd repo
           uv venv
+          ls -la
+          source .venv/bin/activate
 
       - name: Run pytest
         run: |
