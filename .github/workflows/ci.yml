@@ -120,7 +120,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          ls -la
+          cd repo
           uv pip install -r ./pyproject.toml
           uv run pytest --benchmark-disable
 
