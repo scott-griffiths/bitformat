@@ -116,11 +116,11 @@ jobs:
         run: |
           cd repo
           uv venv
-          ls -la
           source .venv/bin/activate
 
       - name: Run pytest
         run: |
+          ls -la
           uv pip install -r ./pyproject.toml
           uv run pytest --benchmark-disable
 
