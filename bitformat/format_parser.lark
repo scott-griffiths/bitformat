@@ -1,5 +1,4 @@
 
-?start: format
 dtype_name: "u" -> u
           | "i" -> i
           | "f" -> f
@@ -10,7 +9,10 @@ dtype_name: "u" -> u
           | "oct" -> oct
           | "bits" -> bits
           | "pad" -> pad
-?dtype_size: INT
+
+expression: "{" /[^\}]+/ "}"
+
+?dtype_size: INT | expression
 simple_dtype: dtype_name dtype_size?
 
 items: INT
@@ -23,7 +25,7 @@ dtype_list: "[" dtype ("," dtype)* "]"
 
 ?field_name: CNAME
 // This is too simplistic. Won't work for test like "b'some_bytes, some_other_bytes',"
-?simple_value: /[a-zA-Z0-9]+/
+?simple_value: /[a-zA-Z0-9\.\+\-]+/
 list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_value ("," simple_value)* [","] ")")
 value: simple_value | list_of_values
 
