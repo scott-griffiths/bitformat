@@ -114,9 +114,7 @@ jobs:
 
       - name: Setup environment
         run: |
-          # make sure we test the installed code
-          cp -R repo/tests/ tests/
-          cp repo/pyproject.toml .
+          cp repo
           uv venv
           uv pip install ./dist/*.whl
 
