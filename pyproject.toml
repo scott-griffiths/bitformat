@@ -39,5 +39,7 @@ include = [
 
 [tool.uv]
 dev-dependencies = [
-    "pytest>=8.3.3",
+    "pytest >= 7.4.2, < 8",
+    "hypothesis >= 6.98.13, < 7",
+    "pytest-benchmark >= 4.0.0, < 4.1",
 ]
