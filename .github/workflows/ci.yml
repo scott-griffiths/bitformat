@@ -116,6 +116,7 @@ jobs:
         run: |
           # make sure we test the installed code
           cp -R repo/tests/ tests/
+          cp repo/pyproject.toml .
           uv venv
           uv pip install ./dist/*.whl
 
