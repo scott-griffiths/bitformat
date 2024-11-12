@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import sys
-
 from ._bits import Bits
-from typing import Sequence, Any, Iterable, TextIO
+from typing import Sequence, Any, Iterable
 import copy
 import re
+from lark.visitors import Interpreter
 
-from ._common import override, Indenter, Colour
+from ._common import override, Indenter, Colour, lark_parser
 from ._fieldtype import FieldType
 from ._pass import Pass
 from ._options import Options
@@ -17,6 +16,27 @@ __all__ = ['Format']
 format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\((?P<content>.*)\)\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
+
+class FormatInterpreter(Interpreter):
+
+    def __init__(self):
+        self.name = ''
+        self.fieldtypes = []
+
+    def format_name(self, tree):
+        self.name = tree.children[0].value
+        print(self.name)
+
+    def field_type(self, tree):
+        self.fieldtypes.append(FieldType.from_string(tree.children[0].value))
+
+
+
+def parse_lark_format(s: str) -> Format:
+    tree = lark_parser.parse(s, start='format')
+    format_interpreter = FormatInterpreter()
+    x = format_interpreter.visit(tree)
+    return None
 
 class Format(FieldType):
     """
@@ -136,10 +156,11 @@ class Format(FieldType):
             f3 = Format.from_string('(u16, another_format = ([u8; 64], [bool; 8]))')
 
         """
+        # parse_lark_format(s)
         name, field_strs, err_msg = cls._parse_format_str(s)
         if err_msg:
             raise ValueError(err_msg)
-        # Pre-process for 'if' fields to join things together if needed.
+        # Pre-process for 'If' fields to join things together if needed.
         processed_fields_strs = []
         just_had_if = False
         just_had_else = False
@@ -153,7 +174,7 @@ class Format(FieldType):
                 processed_fields_strs.append(fs)
             elif fs.startswith('Else'):  # TODO: also not good enough
                 just_had_else = True
-                processed_fields_strs[-1] += '\n' + fs
+                processed_fields_strs[-1] += '\n' + fs  # TODO: Will fail if Else before If.
             else:
                 just_had_if = just_had_else = False
                 processed_fields_strs.append(fs)

@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
-from ._common import override, Indenter, Colour
+from ._common import override, Indenter, Colour, lark_parser
 from typing import Any, Sequence, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
@@ -87,6 +87,8 @@ class Field(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:
+        # x = lark_parser.parse(s, start='field')
+        # name = x.children[0].value
         s, comment = s.split('#', 1) if '#' in s else (s, '')
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
