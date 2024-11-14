@@ -48,6 +48,7 @@ from typing import Literal
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
 
+
 def uint_bits2chars(bitlength: int):
     # How many characters is largest possible int of this length?
     return len(str((1 << bitlength) - 1))
@@ -79,41 +80,131 @@ def bool_bits2chars(_: Literal[1]):
 
 dtype_definitions = [
     # Integer types
-    DtypeDefinition('u', "a two's complement unsigned int",
-                    Bits._setuint, Bits._getuint, int, False, uint_bits2chars, endianness_variants = True),
-    DtypeDefinition('i', "a two's complement signed int",
-                    Bits._setint, Bits._getint, int, True, int_bits2chars, endianness_variants = True),
+    DtypeDefinition(
+        "u",
+        "a two's complement unsigned int",
+        Bits._setuint,
+        Bits._getuint,
+        int,
+        False,
+        uint_bits2chars,
+        endianness_variants=True,
+    ),
+    DtypeDefinition(
+        "i",
+        "a two's complement signed int",
+        Bits._setint,
+        Bits._getint,
+        int,
+        True,
+        int_bits2chars,
+        endianness_variants=True,
+    ),
     # Literal types
-    DtypeDefinition('bin', "a binary string",
-                    Bits._setbin_safe, Bits._getbin, str, False, bits_per_character=1),
-    DtypeDefinition('oct', "an octal string",
-                    Bits._setoct, Bits._getoct, str, False, bits_per_character=3),
-    DtypeDefinition('hex', "a hexadecimal string",
-                    Bits._sethex, Bits._gethex, str, False, bits_per_character=4),
-    DtypeDefinition('bytes', "a bytes object",
-                    Bits._setbytes, Bits._getbytes, bytes, False, bits_per_character=8),
+    DtypeDefinition(
+        "bin",
+        "a binary string",
+        Bits._setbin_safe,
+        Bits._getbin,
+        str,
+        False,
+        bits_per_character=1,
+    ),
+    DtypeDefinition(
+        "oct",
+        "an octal string",
+        Bits._setoct,
+        Bits._getoct,
+        str,
+        False,
+        bits_per_character=3,
+    ),
+    DtypeDefinition(
+        "hex",
+        "a hexadecimal string",
+        Bits._sethex,
+        Bits._gethex,
+        str,
+        False,
+        bits_per_character=4,
+    ),
+    DtypeDefinition(
+        "bytes",
+        "a bytes object",
+        Bits._setbytes,
+        Bits._getbytes,
+        bytes,
+        False,
+        bits_per_character=8,
+    ),
     # Float types
-    DtypeDefinition('f', "an IEEE floating point number",
-                    Bits._setfloat, Bits._getfloat, float, True, float_bits2chars, endianness_variants = True,
-                    allowed_sizes=(16, 32, 64)),
+    DtypeDefinition(
+        "f",
+        "an IEEE floating point number",
+        Bits._setfloat,
+        Bits._getfloat,
+        float,
+        True,
+        float_bits2chars,
+        endianness_variants=True,
+        allowed_sizes=(16, 32, 64),
+    ),
     # Other known length types
-    DtypeDefinition('bits', "a Bits object",
-                    Bits._setbits, Bits._getbits, Bits, False, bits_bits2chars),
-    DtypeDefinition('bool', "a bool (True or False)",
-                    Bits._setbool, Bits._getbool, bool, False, bool_bits2chars, allowed_sizes=(1,)),
+    DtypeDefinition(
+        "bits",
+        "a Bits object",
+        Bits._setbits,
+        Bits._getbits,
+        Bits,
+        False,
+        bits_bits2chars,
+    ),
+    DtypeDefinition(
+        "bool",
+        "a bool (True or False)",
+        Bits._setbool,
+        Bits._getbool,
+        bool,
+        False,
+        bool_bits2chars,
+        allowed_sizes=(1,),
+    ),
     # Special case pad type
-    DtypeDefinition('pad', "a skipped section of padding",
-                    Bits._setpad, Bits._getpad, None, False, None),
-    ]
+    DtypeDefinition(
+        "pad",
+        "a skipped section of padding",
+        Bits._setpad,
+        Bits._getpad,
+        None,
+        False,
+        None,
+    ),
+]
 
 
 for dt in dtype_definitions:
     Register().add_dtype(dt)
 
 
-__all__ = ('Bits', 'Dtype', 'DtypeList', 'Format', 'FieldType', 'Field', 'Array', 'BitsProxy', 'Expression', 'Options',
-           'Repeat', 'Register', 'Endianness', 'If', 'Pass', 'Reader')
+__all__ = (
+    "Bits",
+    "Dtype",
+    "DtypeList",
+    "Format",
+    "FieldType",
+    "Field",
+    "Array",
+    "BitsProxy",
+    "Expression",
+    "Options",
+    "Repeat",
+    "Register",
+    "Endianness",
+    "If",
+    "Pass",
+    "Reader",
+)
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:
-    locals()[name].__module__ = 'bitformat'
+    locals()[name].__module__ = "bitformat"

@@ -1,10 +1,12 @@
 import os
 import sys
 
-__all__ = ['Options']
+__all__ = ["Options"]
+
 
 def is_interactive() -> bool:
-    return hasattr(sys, 'ps1')
+    return hasattr(sys, "ps1")
+
 
 class Options:
     """Returns the singleton module options instance.
@@ -26,7 +28,7 @@ class Options:
             cls._instance = super(Options, cls).__new__(cls)
             cls._bytealigned = False
             cls._verbose_bits_repr = is_interactive()
-            no_color = os.getenv('NO_COLOR')
+            no_color = os.getenv("NO_COLOR")
             cls._no_color = True if no_color else not is_interactive()
             cls._indent_size = 4
             # This is an experimental feature to use pure Python only (not bitarray)
@@ -41,12 +43,18 @@ class Options:
         if hasattr(self, name):
             super().__setattr__(name, value)
         else:
-            raise AttributeError(f"Cannot add new attribute '{name}' to Options. "
-                                 f"Only existing attributes can be modified:\n{self!r}")
+            raise AttributeError(
+                f"Cannot add new attribute '{name}' to Options. "
+                f"Only existing attributes can be modified:\n{self!r}"
+            )
 
     def __repr__(self) -> str:
-        attributes = {attr: getattr(self, attr) for attr in dir(self) if not attr.startswith('_') and not callable(getattr(self, attr))}
-        return '\n'.join(f"{attr}: {value!r}" for attr, value in attributes.items())
+        attributes = {
+            attr: getattr(self, attr)
+            for attr in dir(self)
+            if not attr.startswith("_") and not callable(getattr(self, attr))
+        }
+        return "\n".join(f"{attr}: {value!r}" for attr, value in attributes.items())
 
     @property
     def bytealigned(self) -> bool:
@@ -84,7 +92,7 @@ class Options:
     def indent_size(self, value: int) -> None:
         value = int(value)
         if value < 0:
-            raise ValueError('Indent size cannot be negative.')
+            raise ValueError("Indent size cannot be negative.")
         self._indent_size = value
 
     @property

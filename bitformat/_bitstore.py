@@ -9,7 +9,7 @@ from typing import Sequence, Iterator, Iterable
 class BitStore:
     """A light wrapper around bitarray"""
 
-    __slots__ = ('_bitarray', 'startbit', 'endbit')
+    __slots__ = ("_bitarray", "startbit", "endbit")
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
@@ -76,7 +76,9 @@ class BitStore:
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
         x = super().__new__(cls)
         x.startbit = 0
-        x._bitarray = bitarray.frozenbitarray(bitarray.util.int2ba(i, length=length, endian='big', signed=signed))
+        x._bitarray = bitarray.frozenbitarray(
+            bitarray.util.int2ba(i, length=length, endian="big", signed=signed)
+        )
         x.endbit = len(x._bitarray)
         return x
 
@@ -92,7 +94,7 @@ class BitStore:
         return x
 
     def _to_bitarray(self) -> bitarray.frozenbitarray:
-        return self._bitarray[self.startbit:self.endbit]
+        return self._bitarray[self.startbit : self.endbit]
 
     def to_bytes(self) -> bytes:
         return self._to_bitarray().tobytes()
@@ -146,7 +148,9 @@ class BitStore:
 
     def rfind(self, bs: BitStore, bytealigned: bool):
         if not bytealigned:
-            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit, right=True)
+            return self._bitarray.find(
+                bs._bitarray, self.startbit, self.endbit, right=True
+            )
         try:
             return next(self.rfindall(bs, bytealigned))
         except StopIteration:
@@ -160,7 +164,7 @@ class BitStore:
             # We're only looking for whole bytes, so can ignore bits at either end.
             start_byte = (self.startbit + 7) // 8
             end_byte = self.endbit // 8
-            b = self._bitarray[start_byte * 8: end_byte * 8].tobytes()
+            b = self._bitarray[start_byte * 8 : end_byte * 8].tobytes()
             byte_pos = 0
             bytes_to_search = end_byte - start_byte
             while byte_pos < bytes_to_search:
@@ -230,7 +234,9 @@ class BitStore:
         x.startbit = start + self.startbit
         x.endbit = stop + self.startbit if stop is not None else self.endbit
         if x.endbit > len(self._bitarray):
-            raise ValueError(f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}")
+            raise ValueError(
+                f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}"
+            )
         # This is just a view onto the other bitarray, so no copy needed.
         x._bitarray = self._bitarray
         return x

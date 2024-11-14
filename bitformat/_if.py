@@ -7,11 +7,10 @@ from typing import Sequence, Any
 from ._bits import Bits
 import re
 
-__all__ = ['If']
+__all__ = ["If"]
 
 
 class If(FieldType):
-
     condition: Expression
     condition_value: bool | None
     then_: FieldType
@@ -21,7 +20,13 @@ class If(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, condition: str | Expression, then_: FieldType | str, else_: FieldType | str | None = None, /) -> If:
+    def from_params(
+        cls,
+        condition: str | Expression,
+        then_: FieldType | str,
+        else_: FieldType | str | None = None,
+        /,
+    ) -> If:
         """
         The ``else_`` parameter is optional, and defaults to a :class:`Pass` field if not provided.
 
@@ -32,9 +37,13 @@ class If(FieldType):
         x = super().__new__(cls)
         x.condition = Expression(condition) if isinstance(condition, str) else condition
         x.condition_value = None
-        x.then_ = then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
+        x.then_ = (
+            then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
+        )
         if else_ is not None:
-            x.else_ = else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
+            x.else_ = (
+                else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
+            )
         else:
             x.else_ = Pass()
         return x
@@ -44,12 +53,14 @@ class If(FieldType):
         # This compiled re pattern expects
         # If {expression}: then_ \n Else: else_
         pattern = re.compile(
-            r'\s*If\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*Else\s*:\s*(?P<else>.*))?\s*$'
+            r"\s*If\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*Else\s*:\s*(?P<else>.*))?\s*$"
         )
         if not (match := pattern.match(s)):
             return None
         groups = match.groupdict()
-        return cls.from_params('{' + groups['expression'] + '}', groups['then'], groups['else'])
+        return cls.from_params(
+            "{" + groups["expression"] + "}", groups["then"], groups["else"]
+        )
 
     @classmethod
     @override
@@ -77,12 +88,16 @@ class If(FieldType):
             try:
                 then_len = self.then_.bitlength
             except ValueError as e:
-                raise ValueError(f"Cannot calculate length of the If field as 'then' field has no length: {e}")
+                raise ValueError(
+                    f"Cannot calculate length of the If field as 'then' field has no length: {e}"
+                )
         if self.condition_value is not True:
             try:
                 else_len = self.else_.bitlength
             except ValueError as e:
-                raise ValueError(f"Cannot calculate length of the If field as 'else' field has no length: {e}")
+                raise ValueError(
+                    f"Cannot calculate length of the If field as 'else' field has no length: {e}"
+                )
 
         if self.condition_value is True:
             return then_len
@@ -92,15 +107,22 @@ class If(FieldType):
             try:
                 cond = self.condition.evaluate()
             except ExpressionError:
-                raise ValueError(f"Cannot calculate length of the If field as it depends on the result of {self.condition}.\n"
-                                 f"If True the length would be {then_len}, if False the length would be {else_len}.")
+                raise ValueError(
+                    f"Cannot calculate length of the If field as it depends on the result of {self.condition}.\n"
+                    f"If True the length would be {then_len}, if False the length would be {else_len}."
+                )
             return then_len if cond else else_len
         else:
             return then_len
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        vars_: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
             _, v = self.then_._pack(values, index, vars_, kwargs)
@@ -128,7 +150,9 @@ class If(FieldType):
     @override
     def _getvalue(self) -> Any:
         if self.condition_value is None:
-            raise ValueError("Cannot get value of If field before parsing or unpacking it.")
+            raise ValueError(
+                "Cannot get value of If field before parsing or unpacking it."
+            )
         if self.condition_value:
             return self.then_._getvalue()
         else:
@@ -144,7 +168,7 @@ class If(FieldType):
         with indent:
             s += self.then_._str(indent)
         if self.else_.bitlength != 0:
-            s += indent('Else:\n')
+            s += indent("Else:\n")
             with indent:
                 s += self.else_._str(indent)
         return s
@@ -152,7 +176,7 @@ class If(FieldType):
     @override
     def _repr(self) -> str:
         s = self._str(Indenter(indent_size=0))
-        s = s.replace('\n', ' ')
+        s = s.replace("\n", " ")
         s = f"{self.__class__.__name__}('{s}')"
         return s
 
@@ -178,4 +202,3 @@ class If(FieldType):
         if self.else_ != other.else_:
             return False
         return True
-

@@ -5,7 +5,7 @@ from ._common import override, Indenter
 from typing import Sequence, Any
 from ._bits import Bits
 
-__all__ = ['Pass']
+__all__ = ["Pass"]
 
 
 class Pass(FieldType):
@@ -23,6 +23,7 @@ class Pass(FieldType):
         cond = If.from_params('{ x > 0 }', Pass(), 'bool')
 
     """
+
     # All Pass fields are the same, so we make it a singleton.
     _instance = None
 
@@ -33,9 +34,11 @@ class Pass(FieldType):
 
     @classmethod
     @override
-    def from_string(cls, s: str = '', /) -> Pass:
-        if s != '':
-            raise ValueError(f"The Pass field cannot be constructed from a string. Received '{s}'.")
+    def from_string(cls, s: str = "", /) -> Pass:
+        if s != "":
+            raise ValueError(
+                f"The Pass field cannot be constructed from a string. Received '{s}'."
+            )
         return cls()
 
     @override
@@ -43,8 +46,13 @@ class Pass(FieldType):
         return 0
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        vars_: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         return Bits(), 0
 
     @override
@@ -85,4 +93,3 @@ class Pass(FieldType):
     @override
     def __eq__(self, other) -> bool:
         return isinstance(other, Pass)
-

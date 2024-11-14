@@ -13,25 +13,29 @@ class BitStore:
     padding: int
 
     @classmethod
-    def _from_bytes_with_offsets(cls, b: bytes | bytearray | memoryview, offset: int = 0, padding: int = 0) -> BitStore:
+    def _from_bytes_with_offsets(
+        cls, b: bytes | bytearray | memoryview, offset: int = 0, padding: int = 0
+    ) -> BitStore:
         assert 0 <= offset <= 7
         assert 0 <= padding <= 7
         x = super().__new__(cls)
-        binstr = ''.join(format(byte, '08b') for byte in b)
-        x.bytearray_ = bytearray(int(b) for b in binstr[offset:None if padding == 0 else -padding])
+        binstr = "".join(format(byte, "08b") for byte in b)
+        x.bytearray_ = bytearray(
+            int(b) for b in binstr[offset : None if padding == 0 else -padding]
+        )
         x.data = bytearray(b)
         x.offset = offset
         x.padding = padding
         return x
 
     def __new__(cls) -> None:
-        return cls._from_bytes_with_offsets(b'')
+        return cls._from_bytes_with_offsets(b"")
 
     @classmethod
     def from_zeros(cls, i: int) -> BitStore:
         if i == 0:
-            return cls._from_bytes_with_offsets(b'')
-        b = b'\x00' * ((i + 7) // 8)
+            return cls._from_bytes_with_offsets(b"")
+        b = b"\x00" * ((i + 7) // 8)
         offset = 8 - (i % 8)
         if offset == 8:
             offset = 0
@@ -40,8 +44,8 @@ class BitStore:
     @classmethod
     def from_ones(cls, i: int) -> BitStore:
         if i == 0:
-            return cls._from_bytes_with_offsets(b'')
-        b = b'\xff' * ((i + 7) // 8)
+            return cls._from_bytes_with_offsets(b"")
+        b = b"\xff" * ((i + 7) // 8)
         offset = 8 - (i % 8)
         if offset == 8:
             offset = 0
@@ -53,21 +57,21 @@ class BitStore:
 
     @classmethod
     def from_hex(cls, hexstring: str, /) -> BitStore:
-        hexstring = ''.join(hexstring.split())
+        hexstring = "".join(hexstring.split())
         odd_length = len(hexstring) % 2
         if odd_length:
-            hexstring += '0'
+            hexstring += "0"
         b = bytes.fromhex(hexstring)
         return cls._from_bytes_with_offsets(b, offset=0, padding=odd_length * 4)
 
     @classmethod
     def from_oct(cls, octstring: str, /) -> BitStore:
-        octstring = ''.join(octstring.split())
-        if octstring == '':
+        octstring = "".join(octstring.split())
+        if octstring == "":
             return cls()
         integer_value = int(octstring, 8)
-        num_bytes = (len(octstring)*3 + 7) // 8
-        b = integer_value.to_bytes(num_bytes, byteorder='big')
+        num_bytes = (len(octstring) * 3 + 7) // 8
+        b = integer_value.to_bytes(num_bytes, byteorder="big")
         offset = 8 - ((len(octstring) * 3) % 8)
         if offset == 8:
             offset = 0
@@ -75,30 +79,36 @@ class BitStore:
 
     @classmethod
     def from_bin(cls, binstring: str) -> BitStore:
-        binstring = ''.join(binstring.split())
-        if binstring == '':
+        binstring = "".join(binstring.split())
+        if binstring == "":
             return cls()
         padding = 8 - (len(binstring) % 8)
         if padding == 8:
             padding = 0
         integer_value = int(binstring, 2) << padding
         num_bytes = (len(binstring) + 7) // 8
-        b = integer_value.to_bytes(num_bytes, byteorder='big')
+        b = integer_value.to_bytes(num_bytes, byteorder="big")
         return cls._from_bytes_with_offsets(b, 0, padding)
 
     @classmethod
     def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
         if signed:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
+                raise ValueError(
+                    f"{i} is too large a signed integer for a Bits of length {length}. "
+                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}]."
+                )
         else:
             if i >= (1 << length):
-                raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
-                                 f"The allowed range is [0, {(1 << length) - 1}].")
+                raise ValueError(
+                    f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                    f"The allowed range is [0, {(1 << length) - 1}]."
+                )
             if i < 0:
-                raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
-        b = i.to_bytes((length + 7) // 8, byteorder='big', signed=signed)
+                raise ValueError(
+                    f"Unsigned integers cannot be initialised with the negative number {i}."
+                )
+        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=signed)
         offset = 8 - (length % 8)
         if offset == 8:
             offset = 0
@@ -106,17 +116,17 @@ class BitStore:
 
     @classmethod
     def from_float(cls, f: float, length: int) -> BitStore:
-        fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
+        fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
         try:
             b = struct.pack(fmt, f)
         except OverflowError:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-            b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
+            b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
         return BitStore._from_bytes_with_offsets(b, 0, 0)
 
     @classmethod
     def join(cls, iterable: Iterable[BitStore], /) -> BitStore:
-        bin_str = ''.join(x.to_bin() for x in iterable)
+        bin_str = "".join(x.to_bin() for x in iterable)
         return cls.from_bin(bin_str)
 
     def to_bytes(self) -> bytes:
@@ -127,41 +137,45 @@ class BitStore:
 
         # Convert each group of 8 bits to a byte
         byte_list = [
-            sum(bit << (7 - i) for i, bit in enumerate(ba[j:j + 8]))
+            sum(bit << (7 - i) for i, bit in enumerate(ba[j : j + 8]))
             for j in range(0, len(ba), 8)
         ]
         return bytes(byte_list)
 
     def to_uint(self, start: int | None = None, end: int | None = None) -> int:
-        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
+        bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_[start:end])
         return int(bitstr, 2)
 
     def to_int(self, start: int | None = None, end: int | None = None) -> int:
-        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
+        bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_[start:end])
         start, end, _ = slice(start, end).indices(len(self))
         if self.bytearray_[start] == 0:
             return int(bitstr, 2)
         return int(bitstr, 2) - (1 << (end - start))
 
     def to_hex(self, start: int | None = None, end: int | None = None) -> str:
-        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
-        if bitstr == '':
-            return ''
+        bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_[start:end])
+        if bitstr == "":
+            return ""
         start, end, _ = slice(start, end).indices(len(self))
         if len(bitstr) % 4 != 0:
-            raise ValueError(f"Cannot convert {bitstr} to hex as it is not a multiple of 4 bits.")
+            raise ValueError(
+                f"Cannot convert {bitstr} to hex as it is not a multiple of 4 bits."
+            )
         return hex(int(bitstr, 2))[2:].zfill((end - start + 3) // 4)
 
     def to_bin(self, start: int | None = None, end: int | None = None) -> str:
-        return ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
+        return "".join("0" if i == 0 else "1" for i in self.bytearray_[start:end])
 
     def to_oct(self, start: int | None = None, end: int | None = None) -> str:
-        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_[start:end])
-        if bitstr == '':
-            return ''
+        bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_[start:end])
+        if bitstr == "":
+            return ""
         start, end, _ = slice(start, end).indices(len(self))
         if len(bitstr) % 3 != 0:
-            raise ValueError(f"Cannot convert {bitstr} to oct as it is not a multiple of 3 bits.")
+            raise ValueError(
+                f"Cannot convert {bitstr} to oct as it is not a multiple of 3 bits."
+            )
         return oct(int(bitstr, 2))[2:].zfill((end - start + 2) // 3)
 
     def __eq__(self, other: BitStore, /) -> bool:
@@ -182,9 +196,11 @@ class BitStore:
             raise ValueError
         return BitStore.from_int(self.to_uint() ^ other.to_uint(), len(self), False)
 
-    def find(self, bs: BitStore, bytealigned: bool = False, bytealign_offset: int = 0) -> int:
+    def find(
+        self, bs: BitStore, bytealigned: bool = False, bytealign_offset: int = 0
+    ) -> int:
         to_find = bs.to_bin()
-        bitstr = ''.join('0' if i == 0 else '1' for i in self.bytearray_)
+        bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_)
         if not bytealigned:
             return bitstr.find(to_find)
         start = 0
@@ -243,7 +259,7 @@ class BitStore:
         ba = self.bytearray_.__getitem__(key)
         # Convert to new bytearray. Each element of ba contributes just one bit to the byte.
         b = bytearray(
-            sum((bit << (7 - i)) for i, bit in enumerate(ba[j:j + 8]))
+            sum((bit << (7 - i)) for i, bit in enumerate(ba[j : j + 8]))
             for j in range(0, len(ba), 8)
         )
         padding = 8 - (len(ba) % 8)
@@ -251,12 +267,11 @@ class BitStore:
             padding = 0
         return self.__class__._from_bytes_with_offsets(b, 0, padding)
 
-
     def getslice(self, start: int | None, stop: int | None, /) -> BitStore:
         ba = self.bytearray_[start:stop]
         # Convert to new bytearray. Each element of ba contributes just one bit to the byte.
         b = bytearray(
-            sum((bit << (7 - i)) for i, bit in enumerate(ba[j:j + 8]))
+            sum((bit << (7 - i)) for i, bit in enumerate(ba[j : j + 8]))
             for j in range(0, len(ba), 8)
         )
         padding = 8 - (len(ba) % 8)

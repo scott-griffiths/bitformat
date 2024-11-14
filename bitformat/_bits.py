@@ -20,13 +20,15 @@ if Options()._use_pure_python:
 else:
     from ._bitstore import BitStore
 
-__all__ = ['Bits', 'BitsType']
+__all__ = ["Bits", "BitsType"]
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union['Bits', str, Iterable[Any], bytearray, bytes, memoryview]
+BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
 # name[length]=value
-NAME_INT_VALUE_RE: Pattern[str] = re.compile(r'^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))$')
+NAME_INT_VALUE_RE: Pattern[str] = re.compile(
+    r"^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)(?:=(.*))$"
+)
 
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
@@ -34,11 +36,13 @@ CACHE_SIZE = 256
 
 @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore(token: str) -> BitStore:
-    if token[0] != '0':
+    if token[0] != "0":
         match = NAME_INT_VALUE_RE.match(token)
         if not match:
-            raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
-                             "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
+            raise ValueError(
+                f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
+                "'u8 = 44') or a literal starting with '0b', '0o' or '0x'."
+            )
         name, length_str, value = match.groups()
         name, modifier = _utils.parse_name_to_name_and_modifier(name)
 
@@ -49,24 +53,28 @@ def token_to_bitstore(token: str) -> BitStore:
             try:
                 value = literal_eval(value)
             except ValueError:
-                raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
+                raise ValueError(
+                    f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type."
+                )
         return dtype.pack(value)._bitstore
-    if token.startswith(('0x', '0X')):
-        token = token[2:].replace('_', '')
+    if token.startswith(("0x", "0X")):
+        token = token[2:].replace("_", "")
         return BitStore.from_hex(token)
-    if token.startswith(('0b', '0B')):
-        token = token[2:].replace('_', '')
+    if token.startswith(("0b", "0B")):
+        token = token[2:].replace("_", "")
         return BitStore.from_bin(token)
-    if token.startswith(('0o', '0O')):
-        token = token[2:].replace('_', '')
+    if token.startswith(("0o", "0O")):
+        token = token[2:].replace("_", "")
         return BitStore.from_oct(token)
-    raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
+    raise ValueError(
+        f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?"
+    )
 
 
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitStore:
-    s = ''.join(s.split())  # Remove whitespace
-    tokens = [token for token in s.split(',') if token]
+    s = "".join(s.split())  # Remove whitespace
+    tokens = [token for token in s.split(",") if token]
     if len(tokens) == 1:
         return token_to_bitstore(tokens[0])
     if not tokens:
@@ -93,7 +101,7 @@ class Bits:
 
     """
 
-    __slots__ = ('_bitstore',)
+    __slots__ = ("_bitstore",)
 
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
@@ -131,7 +139,9 @@ class Bits:
             return cls.from_bytes(auto)
         elif isinstance(auto, abc.Iterable):
             return cls.from_iterable(auto)
-        raise TypeError(f"Cannot convert '{auto}' of type {type(auto)} to a Bits object.")
+        raise TypeError(
+            f"Cannot convert '{auto}' of type {type(auto)} to a Bits object."
+        )
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -159,7 +169,7 @@ class Bits:
         :rtype: Bits
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_bin(''.join('1' if x else '0' for x in i))
+        x._bitstore = BitStore.from_bin("".join("1" if x else "0" for x in i))
         return x
 
     @classmethod
@@ -194,7 +204,9 @@ class Bits:
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.join([Bits.from_auto(item)._bitstore for item in sequence])
+        x._bitstore = BitStore.join(
+            [Bits.from_auto(item)._bitstore for item in sequence]
+        )
         return x
 
     @classmethod
@@ -233,7 +245,9 @@ class Bits:
         try:
             x = dtype.pack(value)
         except (ValueError, TypeError) as e:
-            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
+            raise ValueError(
+                f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}"
+            )
         return x
 
     @classmethod
@@ -286,8 +300,10 @@ class Bits:
         :rtype: Bits
         """
         if len(self) % 8 != 0:
-            raise ValueError(f"Bit length must be an multiple of 8 to use byteswap (got length of {len(self)} bits). "
-                             "This error can be caused by using an endianness modifier on non-whole byte data.")
+            raise ValueError(
+                f"Bit length must be an multiple of 8 to use byteswap (got length of {len(self)} bits). "
+                "This error can be caused by using an endianness modifier on non-whole byte data."
+            )
         if bytelength is None:
             bytelength = len(self) // 8
         if bytelength == 0:
@@ -295,7 +311,9 @@ class Bits:
         if bytelength < 0:
             raise ValueError(f"Negative bytelength given: {bytelength}.")
         if len(self) % (bytelength * 8) != 0:
-            raise ValueError(f"The bits should be a whole number of bytelength bytes long.")
+            raise ValueError(
+                f"The bits should be a whole number of bytelength bytes long."
+            )
         chunks = []
         for startbit in range(0, len(self), bytelength * 8):
             x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
@@ -389,7 +407,9 @@ class Bits:
         p = self._bitstore.find(bs._bitstore, ba)
         return None if p == -1 else p
 
-    def find_all(self, bs: BitsType, count: int | None = None, bytealigned: bool | None = None) -> Iterable[int]:
+    def find_all(
+        self, bs: BitsType, count: int | None = None, bytealigned: bool | None = None
+    ) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         :param bs: The Bits to find.
@@ -432,9 +452,13 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitStore.join([self._bitstore.getslice(0, pos),
-                                     bs._bitstore,
-                                     self._bitstore.getslice(pos, None)])
+        x._bitstore = BitStore.join(
+            [
+                self._bitstore.getslice(0, pos),
+                bs._bitstore,
+                self._bitstore.getslice(pos, None),
+            ]
+        )
         return x
 
     def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
@@ -486,13 +510,24 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitStore.join([self._bitstore.getslice(0, pos),
-                                     bs._bitstore,
-                                     self._bitstore.getslice(pos + len(bs), None)])
+        x._bitstore = BitStore.join(
+            [
+                self._bitstore.getslice(0, pos),
+                bs._bitstore,
+                self._bitstore.getslice(pos + len(bs), None),
+            ]
+        )
         return x
 
-    def pp(self, dtype1: str | Dtype | DtypeList | None = None, dtype2: str | Dtype | DtypeList | None = None,
-           groups: int | None = None, width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+    def pp(
+        self,
+        dtype1: str | Dtype | DtypeList | None = None,
+        dtype2: str | Dtype | DtypeList | None = None,
+        groups: int | None = None,
+        width: int = 80,
+        show_offset: bool = True,
+        stream: TextIO = sys.stdout,
+    ) -> None:
         """Pretty print the Bits's value.
 
         :param dtype1: First data type to display.
@@ -520,43 +555,68 @@ class Bits:
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
-            dtype1 = Dtype.from_params('bin')
+            dtype1 = Dtype.from_params("bin")
             if len(self) % 8 == 0 and len(self) >= 8:
-                dtype2 = Dtype.from_params('hex')
+                dtype2 = Dtype.from_params("hex")
         if isinstance(dtype1, str):
-            if ',' in dtype1:
+            if "," in dtype1:
                 dtype1 = DtypeList.from_string(dtype1)
             else:
                 dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
-            if ',' in dtype2:
+            if "," in dtype2:
                 dtype2 = DtypeList.from_string(dtype2)
             else:
                 dtype2 = Dtype.from_string(dtype2)
 
         bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
-        trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
-        data = self if trailing_bit_length == 0 else self[0: -trailing_bit_length]
-        sep = ' '  # String to insert between groups
+        trailing_bit_length = (
+            len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
+        )
+        data = self if trailing_bit_length == 0 else self[0:-trailing_bit_length]
+        sep = " "  # String to insert between groups
         format_sep = " : "  # String to insert on each line between multiple formats
         dtype1_str = colour.purple + str(dtype1) + colour.off
-        dtype2_str = ''
+        dtype2_str = ""
         if dtype2 is not None:
             dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
         output_stream = io.StringIO()
         len_str = colour.green + str(len(self)) + colour.off
-        output_stream.write(f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n")
-        data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset,
-                 output_stream, 1, groups)
+        output_stream.write(
+            f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n"
+        )
+        data._pp(
+            dtype1,
+            dtype2,
+            bits_per_group,
+            width,
+            sep,
+            format_sep,
+            show_offset,
+            output_stream,
+            1,
+            groups,
+        )
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = 0b" + Dtype('bin').unpack(self[-trailing_bit_length:]))
+            output_stream.write(
+                " + trailing_bits = 0b"
+                + Dtype("bin").unpack(self[-trailing_bit_length:])
+            )
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return
 
-    def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
-                count: int | None = None, bytealigned: bool | None = None) -> Bits:
+    def replace(
+        self,
+        old: BitsType,
+        new: BitsType,
+        /,
+        start: int | None = None,
+        end: int | None = None,
+        count: int | None = None,
+        bytealigned: bool | None = None,
+    ) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.
 
         :param old: The Bits to replace.
@@ -605,10 +665,15 @@ class Bits:
         for i in range(len(starting_points) - 1):
             replacement_list.append(new._bitstore)
             replacement_list.append(
-                self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
+                self._bitstore.getslice(
+                    starting_points[i] + len(old), starting_points[i + 1]
+                )
+            )
         # Final replacement
         replacement_list.append(new._bitstore)
-        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
+        replacement_list.append(
+            self._bitstore.getslice(starting_points[-1] + len(old), None)
+        )
         x = self.__class__()
         x._bitstore = BitStore.join(replacement_list)
         return x
@@ -668,9 +733,15 @@ class Bits:
         if n < 0:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
-        n %= (end - start)
-        return Bits.join([self._slice(0, start), self._slice(start + n, end),
-                          self._slice(start, start + n), self._slice(end, len(self))])
+        n %= end - start
+        return Bits.join(
+            [
+                self._slice(0, start),
+                self._slice(start + n, end),
+                self._slice(start, start + n),
+                self._slice(end, len(self)),
+            ]
+        )
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Return new Bits with bit pattern rotated to the right.
@@ -692,9 +763,15 @@ class Bits:
         if n < 0:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
-        n %= (end - start)
-        return Bits.join([self._slice(0, start), self._slice(end - n, end),
-                          self._slice(start, end - n), self._slice(end, len(self))])
+        n %= end - start
+        return Bits.join(
+            [
+                self._slice(0, start),
+                self._slice(end - n, end),
+                self._slice(start, end - n),
+                self._slice(end, len(self)),
+            ]
+        )
 
     def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
         """Return new Bits with one or many bits set to 1 or 0.
@@ -749,7 +826,9 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-    def unpack(self, fmt: Dtype | str | DtypeList | list[Dtype | str], /) -> Any | list[Any]:
+    def unpack(
+        self, fmt: Dtype | str | DtypeList | list[Dtype | str], /
+    ) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
 
@@ -778,7 +857,7 @@ class Bits:
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.
         if isinstance(fmt, str):
-            if ',' in fmt:
+            if "," in fmt:
                 fmt = DtypeList.from_string(fmt)
             else:
                 fmt = Dtype.from_string(fmt)
@@ -802,20 +881,20 @@ class Bits:
         length = len(self)
         if length == 0:
             return []
-        hex_str = bin_str = f_str = u_str = i_str = ''
+        hex_str = bin_str = f_str = u_str = i_str = ""
         if length <= max_interpretation_length and length % 4 == 0:
-            t = self.unpack('bin')
-            with_underscores = '_'.join(t[x: x + 4] for x in range(0, len(t), 4))
-            bin_str = f'bin == {with_underscores}'
+            t = self.unpack("bin")
+            with_underscores = "_".join(t[x : x + 4] for x in range(0, len(t), 4))
+            bin_str = f"bin == {with_underscores}"
         if length <= max_interpretation_length:
-            u = self.unpack('u')
-            i = self.unpack('i')
+            u = self.unpack("u")
+            i = self.unpack("i")
             if u == i:
-                u_str = f'u{length} == i{length} == {u:_}'
+                u_str = f"u{length} == i{length} == {u:_}"
             else:
-                u_str = f'u{length} == {u:_}'
-                i_str = f'i{length} == {i:_}'
-        if length in Register().name_to_def['f'].allowed_sizes:
+                u_str = f"u{length} == {u:_}"
+                i_str = f"i{length} == {i:_}"
+        if length in Register().name_to_def["f"].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -830,32 +909,42 @@ class Bits:
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
-            raise ValueError(f"Cannot interpret as bytes - length of {len(self)} is not a multiple of 8 bits.")
+            raise ValueError(
+                f"Cannot interpret as bytes - length of {len(self)} is not a multiple of 8 bits."
+            )
         return self._bitstore.to_bytes()
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
-    _unprintable.extend(range(0x7f, 0xff))  # DEL char + non-ASCII
+    _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 
     def _getbytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
         bytes_ = self._getbytes()
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
-        string = ''.join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
+        string = "".join(
+            chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_
+        )
         return string
 
     def _setuint(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
         i = int(i)
         if length is None or length == 0:
-            raise ValueError("A non-zero length must be specified with a uint initialiser.")
+            raise ValueError(
+                "A non-zero length must be specified with a uint initialiser."
+            )
         try:
             self._bitstore = BitStore.from_int(i, length, False)
         except OverflowError as e:
             if i >= (1 << length):
-                raise ValueError(f"{i} is too large an unsigned integer for a Bits of length {length}. "
-                                 f"The allowed range is [0, {(1 << length) - 1}].")
+                raise ValueError(
+                    f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                    f"The allowed range is [0, {(1 << length) - 1}]."
+                )
             if i < 0:
-                raise ValueError(f"Unsigned integers cannot be initialised with the negative number {i}.")
+                raise ValueError(
+                    f"Unsigned integers cannot be initialised with the negative number {i}."
+                )
             raise e
 
     def _getuint(self) -> int:
@@ -868,13 +957,17 @@ class Bits:
         """Reset the Bits to have given signed int interpretation."""
         i = int(i)
         if length is None or length == 0:
-            raise ValueError("A non-zero length must be specified with an int initialiser.")
+            raise ValueError(
+                "A non-zero length must be specified with an int initialiser."
+            )
         try:
             self._bitstore = BitStore.from_int(i, length, True)
         except OverflowError as e:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
+                raise ValueError(
+                    f"{i} is too large a signed integer for a Bits of length {length}. "
+                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}]."
+                )
             raise e
 
     def _getint(self) -> int:
@@ -885,21 +978,21 @@ class Bits:
 
     def _setfloat(self, f: float | str, length: int | None) -> None:
         f = float(f)
-        fmt = {16: '>e', 32: '>f', 64: '>d'}[length]
+        fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
         try:
             b = struct.pack(fmt, f)
         except OverflowError:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-            b = struct.pack(fmt, float('inf') if f > 0 else float('-inf'))
+            b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
         self._bitstore = BitStore.from_bytes(b)
 
     def _getfloat(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
-        fmt = {16: '>e', 32: '>f', 64: '>d'}[len(self)]
+        fmt = {16: ">e", 32: ">f", 64: ">d"}[len(self)]
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _setbool(self, value: bool) -> None:
-        self._bitstore = BitStore.from_bin('1') if value else BitStore.from_bin('0')
+        self._bitstore = BitStore.from_bin("1") if value else BitStore.from_bin("0")
         return
 
     def _getbool(self) -> bool:
@@ -914,11 +1007,13 @@ class Bits:
     def _setbin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
         try:
-            if binstring.startswith(('0b', '0B')):
+            if binstring.startswith(("0b", "0B")):
                 binstring = binstring[2:]
         except AttributeError:
-            raise TypeError(f"Expected a binary string, but received a {type(binstring)} with value {binstring}.")
-        self._bitstore = BitStore.from_bin(binstring.replace('_', ''))
+            raise TypeError(
+                f"Expected a binary string, but received a {type(binstring)} with value {binstring}."
+            )
+        self._bitstore = BitStore.from_bin(binstring.replace("_", ""))
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
@@ -927,31 +1022,39 @@ class Bits:
     def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
         try:
-            if octstring.startswith(('0o', '0O')):
+            if octstring.startswith(("0o", "0O")):
                 octstring = octstring[2:]
         except AttributeError:
-            raise TypeError(f"Expected an octal string, but received a {type(octstring)} with value {octstring}.")
-        self._bitstore = BitStore.from_oct(octstring.replace('_', ''))
+            raise TypeError(
+                f"Expected an octal string, but received a {type(octstring)} with value {octstring}."
+            )
+        self._bitstore = BitStore.from_oct(octstring.replace("_", ""))
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
         if len(self) % 3 != 0:
-            raise ValueError(f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits.")
+            raise ValueError(
+                f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits."
+            )
         return self._bitstore.to_oct()
 
     def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         try:
-            if hexstring.startswith(('0x', '0X')):
+            if hexstring.startswith(("0x", "0X")):
                 hexstring = hexstring[2:]
         except AttributeError:
-            raise TypeError(f"Expected a hex string, but received a {type(hexstring)} with value {hexstring}.")
-        self._bitstore = BitStore.from_hex(hexstring.replace('_', ''))
+            raise TypeError(
+                f"Expected a hex string, but received a {type(hexstring)} with value {hexstring}."
+            )
+        self._bitstore = BitStore.from_hex(hexstring.replace("_", ""))
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string."""
         if len(self) % 4 != 0:
-            raise ValueError(f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits.")
+            raise ValueError(
+                f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits."
+            )
         return self._bitstore.to_hex()
 
     def _slice(self: Bits, start: int, end: int) -> Bits:
@@ -968,57 +1071,77 @@ class Bits:
         start = 0 if start is None else (start + len(self) if start < 0 else start)
         end = len(self) if end is None else (end + len(self) if end < 0 else end)
         if not 0 <= start <= end <= len(self):
-            raise ValueError(f"Invalid slice positions for Bits length {len(self)}: start={start}, end={end}.")
+            raise ValueError(
+                f"Invalid slice positions for Bits length {len(self)}: start={start}, end={end}."
+            )
         return start, end
 
     def _simple_str(self) -> str:
         length = len(self)
         if length == 0:
-            s = ''
+            s = ""
         elif length % 4 == 0:
-            s = '0x' + self.unpack('hex')
+            s = "0x" + self.unpack("hex")
         else:
-            s = '0b' + self.unpack('bin')
+            s = "0b" + self.unpack("bin")
         return s
 
     @staticmethod
-    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype | DtypeList,
-                     colour_start: str, colour_end: str, width: int | None = None) -> tuple[str, int]:
+    def _format_bits(
+        bits: Bits,
+        bits_per_group: int,
+        sep: str,
+        dtype: Dtype | DtypeList,
+        colour_start: str,
+        colour_end: str,
+        width: int | None = None,
+    ) -> tuple[str, int]:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, Dtype):
-            if dtype.name == 'bytes':  # Special case for bytes to print one character each.
+            if (
+                dtype.name == "bytes"
+            ):  # Special case for bytes to print one character each.
                 get_fn = Bits._getbytes_printable
-            if dtype.name == 'bool':  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-                get_fn = Register().get_single_dtype('u', bits_per_group).unpack
-            align = '<' if dtype.name in ['bin', 'oct', 'hex', 'bits', 'bytes'] else '>'
-            if dtype.name == 'bits':
-                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+            if (
+                dtype.name == "bool"
+            ):  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+                get_fn = Register().get_single_dtype("u", bits_per_group).unpack
+            align = "<" if dtype.name in ["bin", "oct", "hex", "bits", "bytes"] else ">"
+            if dtype.name == "bits":
+                x = sep.join(
+                    f"{b._simple_str(): {align}{chars_per_group}}"
+                    for b in bits.chunks(bits_per_group)
+                )
             else:
-                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+                x = sep.join(
+                    f"{str(get_fn(b)): {align}{chars_per_group}}"
+                    for b in bits.chunks(bits_per_group)
+                )
 
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
             x = colour_start + x + colour_end
             # Pad final line with spaces to align it
-            x += ' ' * padding_spaces
+            x += " " * padding_spaces
             return x, chars_used
         else:  # DtypeList
-            align = '>'
+            align = ">"
             s = []
             for b in bits.chunks(bits_per_group):
                 chars_per_dtype = [Bits._chars_per_dtype(d, d.bitlength) for d in dtype]
                 values = get_fn(b)
-                strings = [f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)]
+                strings = [
+                    f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)
+                ]
                 s.append(f"[{', '.join(strings)}]")
             x = sep.join(s)
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
             x = colour_start + x + colour_end
             # Pad final line with spaces to align it
-            x += ' ' * padding_spaces
+            x += " " * padding_spaces
             return x, chars_used
-
 
     @staticmethod
     def _chars_per_dtype(dtype: Dtype | DtypeList, bits_per_group: int):
@@ -1026,62 +1149,117 @@ class Bits:
         if isinstance(dtype, Dtype):
             return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
-        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2*(len(dtype) - 1)
+        chars = (
+            sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype)
+            + 2
+            + 2 * (len(dtype) - 1)
+        )
         return chars
 
-    def _pp(self, dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None, bits_per_group: int, width: int, sep: str, format_sep: str,
-            show_offset: bool, stream: TextIO, offset_factor: int, groups: int | None) -> None:
+    def _pp(
+        self,
+        dtype1: Dtype | DtypeList,
+        dtype2: Dtype | DtypeList | None,
+        bits_per_group: int,
+        width: int,
+        sep: str,
+        format_sep: str,
+        show_offset: bool,
+        stream: TextIO,
+        offset_factor: int,
+        groups: int | None,
+    ) -> None:
         """Internal pretty print method."""
         if dtype2 is not None:
             if dtype1.bitlength != 0:
                 try:
                     _ = dtype2.unpack(Bits.zeros(dtype1.bitlength))
                 except ValueError:
-                    raise ValueError(f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length.")
+                    raise ValueError(
+                        f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length."
+                    )
             if dtype2.bitlength != 0:
                 try:
                     _ = dtype1.unpack(Bits.zeros(dtype2.bitlength))
                 except ValueError:
-                    raise ValueError(f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length.")
+                    raise ValueError(
+                        f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length."
+                    )
         colour = Colour(not Options().no_color)
         offset_width = 0
-        offset_sep = ': '
+        offset_sep = ": "
         if show_offset:
             # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
             offset_width = len(str(len(self))) + len(offset_sep)
         group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
-        group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
+        group_chars2 = (
+            0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
+        )
         # The number of characters that get added when we add an extra group (after the first one)
-        total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
-        width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(
-            format_sep) * bool(group_chars2)
-        width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
+        total_group_chars = (
+            group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
+        )
+        width_excluding_offset_and_final_group = (
+            width
+            - offset_width
+            - group_chars1
+            - group_chars2
+            - len(format_sep) * bool(group_chars2)
+        )
+        width_excluding_offset_and_final_group = max(
+            width_excluding_offset_and_final_group, 0
+        )
         if groups is None:
-            groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
+            groups_per_line = (
+                1 + width_excluding_offset_and_final_group // total_group_chars
+            )
         else:
             groups_per_line = groups
-        max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
+        max_bits_per_line = (
+            groups_per_line * bits_per_group
+        )  # Number of bits represented on each line
         assert max_bits_per_line > 0
 
         bitpos = 0
         first_fb_width = second_fb_width = None
         for bits in self.chunks(max_bits_per_line):
-            offset_str = ''
+            offset_str = ""
             if show_offset:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
-                offset_str = colour.green + f'{offset: >{offset_width - len(offset_sep)}}' + offset_sep + colour.off
-            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
+                offset_str = (
+                    colour.green
+                    + f"{offset: >{offset_width - len(offset_sep)}}"
+                    + offset_sep
+                    + colour.off
+                )
+            fb1, chars_used = Bits._format_bits(
+                bits,
+                bits_per_group,
+                sep,
+                dtype1,
+                colour.purple,
+                colour.off,
+                first_fb_width,
+            )
             if first_fb_width is None:
                 first_fb_width = chars_used
-            fb2 = ''
+            fb2 = ""
             if dtype2 is not None:
-                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
+                fb2, chars_used = Bits._format_bits(
+                    bits,
+                    bits_per_group,
+                    sep,
+                    dtype2,
+                    colour.blue,
+                    colour.off,
+                    second_fb_width,
+                )
                 if second_fb_width is None:
                     second_fb_width = chars_used
                 fb2 = format_sep + fb2
 
-            line_fmt = offset_str + fb1 + fb2 + '\n'
+            line_fmt = offset_str + fb1 + fb2 + "\n"
             stream.write(line_fmt)
         return
 
@@ -1092,28 +1270,43 @@ class Bits:
         return sum(x.bits_per_item for x in d)
 
     @staticmethod
-    def _process_pp_tokens(dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None) -> tuple[int, bool]:
+    def _process_pp_tokens(
+        dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None
+    ) -> tuple[int, bool]:
         has_length_in_fmt = True
         bits_per_group = Bits._bits_per_item(dtype1)
 
         if dtype2 is not None:
-            if 0 not in {Bits._bits_per_item(dtype1), Bits._bits_per_item(dtype2)} and Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2):
-                raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
-                                 f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively.")
+            if 0 not in {
+                Bits._bits_per_item(dtype1),
+                Bits._bits_per_item(dtype2),
+            } and Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2):
+                raise ValueError(
+                    f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
+                    f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively."
+                )
             if bits_per_group == 0:
                 bits_per_group = Bits._bits_per_item(dtype2)
 
         if bits_per_group == 0:
             has_length_in_fmt = False
             if dtype2 is None:
-                bits_per_group = {'bin': 8, 'hex': 8, 'oct': 12, 'bytes': 32}.get(dtype1.name, 0)
+                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(
+                    dtype1.name, 0
+                )
                 if bits_per_group == 0:
-                    raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
+                    raise ValueError(
+                        f"No length or default length available for pp() dtype '{dtype1}'."
+                    )
             else:
                 try:
-                    bits_per_group = 2 * dtype1.bits_per_character * dtype2.bits_per_character
+                    bits_per_group = (
+                        2 * dtype1.bits_per_character * dtype2.bits_per_character
+                    )
                 except ValueError:
-                    raise ValueError(f"Can't find a default bitlength to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
+                    raise ValueError(
+                        f"Can't find a default bitlength to use for pp() format with dtypes '{dtype1}' and '{dtype2}'."
+                    )
                 if bits_per_group >= 24:
                     bits_per_group //= 2
         return bits_per_group, has_length_in_fmt
@@ -1195,17 +1388,17 @@ class Bits:
         """Return string representations of Bits for printing."""
         length = len(self)
         if length == 0:
-            return ''
+            return ""
         return self._simple_str()
 
     def __repr__(self) -> str:
-        """Return representation that could be used to recreate the Bits..
-
-        """
+        """Return representation that could be used to recreate the Bits.."""
         repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
-        interpretations = ''
+        interpretations = ""
         if Options().verbose_bits_repr:
-            interpretations = '\n'.join('# ' + x for x in self._str_interpretations() if x != '')
+            interpretations = "\n".join(
+                "# " + x for x in self._str_interpretations() if x != ""
+            )
         return f"{repr_}\n{interpretations}" if interpretations else repr_
 
     # ----- Comparisons
@@ -1254,16 +1447,13 @@ class Bits:
         return Bits.join([self, Bits.from_auto(bs)])
 
     @overload
-    def __getitem__(self: Bits, key: slice, /) -> Bits:
-        ...
+    def __getitem__(self: Bits, key: slice, /) -> Bits: ...
 
     @overload
-    def __getitem__(self, key: int, /) -> bool:
-        ...
+    def __getitem__(self, key: int, /) -> bool: ...
 
     def __getitem__(self: Bits, key: slice | int, /) -> Bits | bool:
-        """Return a new Bits representing a slice of the current Bits.
-        """
+        """Return a new Bits representing a slice of the current Bits."""
         if isinstance(key, numbers.Integral):
             return bool(self._bitstore.getindex(key))
         bs = super().__new__(self.__class__)
@@ -1316,7 +1506,7 @@ class Bits:
             x._bitstore = BitStore.join([x._bitstore, x._bitstore])
             m *= 2
         # Then finish off with the remaining copies
-        x._bitstore = BitStore.join([x._bitstore, x[0:(n - m) * old_len]._bitstore])
+        x._bitstore = BitStore.join([x._bitstore, x[0 : (n - m) * old_len]._bitstore])
         return x
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
@@ -1378,7 +1568,14 @@ class Bits:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            return hash(((self._slice(0, 800) + self._slice(len(self) - 800, len(self))).to_bytes(), len(self)))
+            return hash(
+                (
+                    (
+                        self._slice(0, 800) + self._slice(len(self) - 800, len(self))
+                    ).to_bytes(),
+                    len(self),
+                )
+            )
 
     def __iter__(self) -> Iterable[bool]:
         """Iterate over the bits."""

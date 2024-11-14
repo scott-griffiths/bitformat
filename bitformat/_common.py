@@ -12,8 +12,12 @@ from lark import Lark
 if sys.version_info >= (3, 12):
     from typing import override, final
 else:
-    def override(f): return f
-    def final(f): return f
+
+    def override(f):
+        return f
+
+    def final(f):
+        return f
 
 
 class Indenter:
@@ -38,20 +42,23 @@ class Indenter:
         Takes max_depth into account."""
         if self.max_depth is None or self.indent_level <= self.max_depth:
             self.at_max_depth = False
-            skipped_str = ''
+            skipped_str = ""
             if self.skipped_field_count > 0:
-                skipped_str = ' ' * ((self.indent_level + 1) * self.indent_size) + f'... ({self.skipped_field_count} fields)\n'
+                skipped_str = (
+                    " " * ((self.indent_level + 1) * self.indent_size)
+                    + f"... ({self.skipped_field_count} fields)\n"
+                )
                 self.skipped_field_count = 0
             # Add a new line if part of a larger structure and it doesn't already have one.
-            end = '\n' if self.indent_level > 0 and not s.endswith('\n') else ''
-            return skipped_str + ' ' * (self.indent_level * self.indent_size) + s + end
+            end = "\n" if self.indent_level > 0 and not s.endswith("\n") else ""
+            return skipped_str + " " * (self.indent_level * self.indent_size) + s + end
         if not self.at_max_depth and self.indent_level == self.max_depth + 1:
             self.at_max_depth = True
             self.skipped_field_count += 1
-            return ''
+            return ""
         if self.indent_level == self.max_depth + 1:
             self.skipped_field_count += 1
-        return ''
+        return ""
 
     def __enter__(self):
         self.indent_level += 1
@@ -63,22 +70,24 @@ class Indenter:
 
 class ExpressionError(ValueError):
     """Exception raised when failing to create or parse an Expression."""
+
     pass
 
 
 class Colour:
     """A class to hold colour codes for terminal output. If use_colour is False, all codes are empty strings."""
+
     def __new__(cls, use_colour: bool) -> Colour:
         x = super().__new__(cls)
         if use_colour:
-            cls.blue = '\033[34m'
-            cls.purple = '\033[35m'
-            cls.green = '\033[32m'
-            cls.red = '\033[31m'
-            cls.cyan = '\033[36m'
-            cls.off = '\033[0m'
+            cls.blue = "\033[34m"
+            cls.purple = "\033[35m"
+            cls.green = "\033[32m"
+            cls.red = "\033[31m"
+            cls.cyan = "\033[36m"
+            cls.off = "\033[0m"
         else:
-            cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ''
+            cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ""
         return x
 
 
@@ -88,31 +97,69 @@ class Expression:
 
     Created with a string that starts and ends with braces, e.g. '{x + 1}'.
     """
+
     def __init__(self, code_str: str):
         """Create an expression object from a string that starts and ends with braces."""
         code_str = code_str.strip()
-        if len(code_str) < 2 or code_str[0] != '{' or code_str[-1] != '}':
-            raise ExpressionError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
+        if len(code_str) < 2 or code_str[0] != "{" or code_str[-1] != "}":
+            raise ExpressionError(
+                f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'."
+            )
         self.code_str = code_str[1:-1].strip()
         self.code = self._compile_safe_eval()
 
-    node_whitelist = {'BinOp', 'Name', 'Add', 'Expr', 'Mult', 'FloorDiv', 'Sub', 'Load', 'Module', 'Constant',
-                      'UnaryOp', 'USub', 'Mod', 'Pow', 'BitAnd', 'BitXor', 'BitOr', 'And', 'Or', 'BoolOp', 'LShift',
-                      'RShift', 'Eq', 'NotEq', 'Compare', 'LtE', 'GtE', 'Subscript', 'Gt', 'Lt'}
+    node_whitelist = {
+        "BinOp",
+        "Name",
+        "Add",
+        "Expr",
+        "Mult",
+        "FloorDiv",
+        "Sub",
+        "Load",
+        "Module",
+        "Constant",
+        "UnaryOp",
+        "USub",
+        "Mod",
+        "Pow",
+        "BitAnd",
+        "BitXor",
+        "BitOr",
+        "And",
+        "Or",
+        "BoolOp",
+        "LShift",
+        "RShift",
+        "Eq",
+        "NotEq",
+        "Compare",
+        "LtE",
+        "GtE",
+        "Subscript",
+        "Gt",
+        "Lt",
+    }
 
     def _compile_safe_eval(self):
         """Compile the expression, but only allow a whitelist of operations."""
-        if '__' in self.code_str:
-            raise ExpressionError(f"Invalid Expression '{self}'. Double underscores are not permitted.")
+        if "__" in self.code_str:
+            raise ExpressionError(
+                f"Invalid Expression '{self}'. Double underscores are not permitted."
+            )
         try:
-            nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
+            nodes_used = set(
+                [x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))]
+            )
         except SyntaxError as e:
             raise ExpressionError(f"Failed to parse Expression '{self}': {e}")
         bad_nodes = nodes_used - Expression.node_whitelist
         if bad_nodes:
-            raise ExpressionError(f"Disallowed operations used in Expression '{self}'. "
-                             f"Disallowed nodes were: {bad_nodes}. "
-                             f"If you think this operation should be allowed, please raise a bug report.")
+            raise ExpressionError(
+                f"Disallowed operations used in Expression '{self}'. "
+                f"Disallowed nodes were: {bad_nodes}. "
+                f"If you think this operation should be allowed, please raise a bug report."
+            )
         try:
             code = compile(self.code_str, "<string>", "eval")
         except SyntaxError as e:
@@ -124,7 +171,9 @@ class Expression:
         try:
             value = eval(self.code, {"__builtins__": {}}, kwargs)
         except NameError as e:
-            raise ExpressionError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
+            raise ExpressionError(
+                f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}"
+            )
         return value
 
     def __str__(self):
@@ -140,16 +189,17 @@ class Expression:
 
 
 class Endianness(enum.Enum):
-    BIG = 'be'
-    LITTLE = 'le'
-    NATIVE = 'ne'
-    UNSPECIFIED = ''
+    BIG = "be"
+    LITTLE = "le"
+    NATIVE = "ne"
+    UNSPECIFIED = ""
+
 
 # The byte order of the system, used for the 'native' endianness modifiers ('_ne').
 # If you'd like to emulate a different native endianness, you can set this to 'little' or 'big'.
 byteorder: str = sys.byteorder
 
 
-_lark_file_path = os.path.join(os.path.dirname(__file__), 'format_parser.lark')
-with open(_lark_file_path, 'r') as f:
-    lark_parser = Lark(f, start=['format', 'field'])
+_lark_file_path = os.path.join(os.path.dirname(__file__), "format_parser.lark")
+with open(_lark_file_path, "r") as f:
+    lark_parser = Lark(f, start=["format", "field"])

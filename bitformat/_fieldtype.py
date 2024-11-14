@@ -11,16 +11,16 @@ import keyword
 from ._options import Options
 
 
-__all__ = ['FieldType']
+__all__ = ["FieldType"]
 
 fieldtype_classes = {}
 
-class FieldType(abc.ABC):
 
+class FieldType(abc.ABC):
     def __new__(cls, *args, **kwargs) -> FieldType:
         x = super().__new__(cls)
-        x._name = ''
-        x._comment = ''
+        x._name = ""
+        x._comment = ""
         return x
 
     def __init_subclass__(cls, **kwargs):
@@ -66,7 +66,9 @@ class FieldType(abc.ABC):
             bits, values_used = self._pack(values, 0, {}, kwargs)
         except TypeError as e:
             if not isinstance(values, Sequence):
-                raise TypeError(f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}.")
+                raise TypeError(
+                    f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}."
+                )
             raise e
         return bits
 
@@ -106,7 +108,12 @@ class FieldType(abc.ABC):
         """
         return self._repr()
 
-    def pp(self, stream: TextIO = sys.stdout, indent: int | None = None, depth: int | None = None) -> None:
+    def pp(
+        self,
+        stream: TextIO = sys.stdout,
+        indent: int | None = None,
+        depth: int | None = None,
+    ) -> None:
         """
         Pretty-print the fieldtype to a stream (or stdout by default).
 
@@ -118,7 +125,7 @@ class FieldType(abc.ABC):
         :type depth: int or None
         """
         stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
-        stream.write('\n')
+        stream.write("\n")
 
     @classmethod
     def from_string(cls, s: str) -> FieldType:
@@ -135,23 +142,23 @@ class FieldType(abc.ABC):
         s = s.strip()
         # For each FieldType subclass check using a regex if it is of that type.
         # First, check for a Pass:
-        if s == '':
-            return fieldtype_classes['Pass']()
+        if s == "":
+            return fieldtype_classes["Pass"]()
 
         # Then, check for an If. It should start with 'if' followed by a condition in {} and a :
-        if (x := fieldtype_classes['If']._possibly_from_string(s)) is not None:
+        if (x := fieldtype_classes["If"]._possibly_from_string(s)) is not None:
             return x
-        if (x := fieldtype_classes['Repeat']._possibly_from_string(s)) is not None:
+        if (x := fieldtype_classes["Repeat"]._possibly_from_string(s)) is not None:
             return x
 
         # Finally, check for a Field.
         # Should start with either a `(` or a name followed by a `=` followed by a `(`.
         # It should end with a `)`
         # format_regex = r'([a-zA-Z][a-zA-Z0-9_]*?)\s*=\s*\('
-        if s.endswith(')'):
+        if s.endswith(")"):
             # If it's legal it must be a Format.
-            return fieldtype_classes['Format'].from_string(s)
-        return fieldtype_classes['Field'].from_string(s)
+            return fieldtype_classes["Format"].from_string(s)
+        return fieldtype_classes["Field"].from_string(s)
 
     @abc.abstractmethod
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
@@ -164,8 +171,13 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        vars_: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         """
         Build the field from the values list, starting at index.
 
@@ -203,24 +215,19 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _str(self, indent: Indenter) -> str:
-        ...
+    def _str(self, indent: Indenter) -> str: ...
 
     @abc.abstractmethod
-    def _repr(self) -> str:
-        ...
+    def _repr(self) -> str: ...
 
     @abc.abstractmethod
-    def _copy(self) -> FieldType:
-        ...
+    def _copy(self) -> FieldType: ...
 
     @abc.abstractmethod
-    def _getvalue(self) -> Any:
-        ...
+    def _getvalue(self) -> Any: ...
 
     @abc.abstractmethod
-    def _setvalue(self, value: Any) -> None:
-        ...
+    def _setvalue(self, value: Any) -> None: ...
 
     @abc.abstractmethod
     def _getbitlength(self) -> int:
@@ -239,8 +246,7 @@ class FieldType(abc.ABC):
         return self._getbitlength()
 
     @abc.abstractmethod
-    def __eq__(self, other) -> bool:
-        ...
+    def __eq__(self, other) -> bool: ...
 
     def __copy__(self) -> FieldType:
         return self._copy()
@@ -249,13 +255,17 @@ class FieldType(abc.ABC):
         return self._name
 
     def _set_name(self, val: str) -> None:
-        if val != '':
+        if val != "":
             if not val.isidentifier():
-                raise ValueError(f"The FieldType name '{val}' is not a valid Python identifier.")
+                raise ValueError(
+                    f"The FieldType name '{val}' is not a valid Python identifier."
+                )
             if keyword.iskeyword(val):
                 raise ValueError(f"The FieldType name '{val}' is a Python keyword.")
-            if '__' in val:
-                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
+            if "__" in val:
+                raise ValueError(
+                    f"The FieldType name '{val}' contains a double underscore which is not permitted."
+                )
         self._name = val
 
     name = property(_get_name, _set_name)

@@ -7,16 +7,15 @@ from ._common import override, Indenter
 from typing import Sequence, Any
 from ._bits import Bits
 
-__all__ = ['Repeat']
+__all__ = ["Repeat"]
 
 
 class Repeat(FieldType):
-
     def __new__(cls, s: str) -> Repeat:
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, count: int, field: FieldType | str, name: str = '') -> Repeat:
+    def from_params(cls, count: int, field: FieldType | str, name: str = "") -> Repeat:
         x = super().__new__(cls)
         x.count = count
         x.name = name
@@ -35,7 +34,7 @@ class Repeat(FieldType):
     def _possibly_from_string(cls, s: str, /) -> Repeat | None:
         # TODO: name is not handled yet.
         s = s.strip()
-        repeat_regex = r'Repeat\s*\{([^}]*)\}\s*:\s(.*)'
+        repeat_regex = r"Repeat\s*\{([^}]*)\}\s*:\s(.*)"
         pattern = re.compile(repeat_regex, re.DOTALL)
         if not (m := pattern.match(s)):
             return None
@@ -45,14 +44,12 @@ class Repeat(FieldType):
         fieldtype = FieldType.from_string(fieldtype_str)
         return cls.from_params(count, fieldtype)
 
-
     @classmethod
     @override
     def from_string(cls, s: str) -> Repeat:
         if (x := cls._possibly_from_string(s)) is not None:
             return x
         raise ValueError(f"Can't parse Repeat field from '{s}'")
-
 
     @override
     def _str(self, indent: Indenter) -> str:
@@ -61,7 +58,7 @@ class Repeat(FieldType):
         s = indent(f"Repeat({count_str},\n")
         with indent:
             s += self.field._str(indent)
-        s += indent(')')
+        s += indent(")")
         return s
 
     @override
@@ -75,15 +72,22 @@ class Repeat(FieldType):
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if len(b) - startbit < self.bitlength:
-            raise ValueError(f"Repeat field '{str(self)}' needs {self.bitlength} bits to parse, but {len(b) - startbit} were available.")
-        self._bits = b[startbit:startbit + self.bitlength]
+            raise ValueError(
+                f"Repeat field '{str(self)}' needs {self.bitlength} bits to parse, but {len(b) - startbit} were available."
+            )
+        self._bits = b[startbit : startbit + self.bitlength]
         for i in range(self.count):
             startbit += self.field._parse(b, startbit, vars_)
         return self.bitlength
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        vars_: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         self._bits = Bits()
         values_used = 0
         for i in range(self.count):
@@ -110,7 +114,9 @@ class Repeat(FieldType):
             return None
         values = []
         for i in range(self.count):
-            value = self.field.unpack(self._bits[i * self.field.bitlength:(i + 1) * self.field.bitlength])
+            value = self.field.unpack(
+                self._bits[i * self.field.bitlength : (i + 1) * self.field.bitlength]
+            )
             values.append(value)
         return values
 
@@ -129,5 +135,3 @@ class Repeat(FieldType):
         if self.field != other.field:
             return False
         return True
-
-

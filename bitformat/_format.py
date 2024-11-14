@@ -11,16 +11,15 @@ from ._fieldtype import FieldType
 from ._pass import Pass
 from ._options import Options
 
-__all__ = ['Format']
+__all__ = ["Format"]
 
 format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\((?P<content>.*)\)\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
 class FormatInterpreter(Interpreter):
-
     def __init__(self):
-        self.name = ''
+        self.name = ""
         self.fieldtypes = []
 
     def format_name(self, tree):
@@ -31,12 +30,12 @@ class FormatInterpreter(Interpreter):
         self.fieldtypes.append(FieldType.from_string(tree.children[0].value))
 
 
-
 def parse_lark_format(s: str) -> Format:
-    tree = lark_parser.parse(s, start='format')
+    tree = lark_parser.parse(s, start="format")
     format_interpreter = FormatInterpreter()
     x = format_interpreter.visit(tree)
     return None
+
 
 class Format(FieldType):
     """
@@ -44,18 +43,20 @@ class Format(FieldType):
 
     """
 
-    def __new__(cls,  s: str | None = None) -> Format:
+    def __new__(cls, s: str | None = None) -> Format:
         if s is None:
             x = super().__new__(cls)
             x.fields = []
-            x.name = ''
+            x.name = ""
             x.vars = {}
             x._field_names = {}
             return x
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, fields: Sequence[FieldType | str] | None = None, name: str = '') -> Format:
+    def from_params(
+        cls, fields: Sequence[FieldType | str] | None = None, name: str = ""
+    ) -> Format:
         """
         Create a Format instance.
 
@@ -73,10 +74,12 @@ class Format(FieldType):
         x.name = name
         x.vars = {}
         x._field_names = {}
-        stetchy_field = ''
+        stetchy_field = ""
         for fieldtype in fields:
             if stetchy_field:
-                raise ValueError(f"A Field with no length can only occur at the end of a Format. Field '{stetchy_field}' is before the end.")
+                raise ValueError(
+                    f"A Field with no length can only occur at the end of a Format. Field '{stetchy_field}' is before the end."
+                )
             if isinstance(fieldtype, FieldType):
                 fieldtype = fieldtype._copy()
             elif isinstance(fieldtype, str):
@@ -92,30 +95,38 @@ class Format(FieldType):
             except ValueError:
                 pass
             x.fields.append(fieldtype)
-            if fieldtype.name != '':
+            if fieldtype.name != "":
                 x._field_names[fieldtype.name] = fieldtype
         return x
 
     @staticmethod
     def _parse_format_str(format_str: str) -> tuple[str, list[str], str]:
         if match := compiled_format_str_pattern.match(format_str):
-            name = match.group('name')
-            content = match.group('content')
+            name = match.group("name")
+            content = match.group("content")
         else:
-            return '', [], f"Invalid Format string '{format_str}'. It should be in the form '(field1, field2, ...)' or 'name = (field1, field2, ...)'."
-        name = '' if name is None else name.strip()
+            return (
+                "",
+                [],
+                f"Invalid Format string '{format_str}'. It should be in the form '(field1, field2, ...)' or 'name = (field1, field2, ...)'.",
+            )
+        name = "" if name is None else name.strip()
         field_strs = []
         # split by ',' but ignore any ',' that are inside ()
         start = 0
         inside_brackets = 0
         for i, p in enumerate(content):
-            if p == '(':
+            if p == "(":
                 inside_brackets += 1
-            elif p == ')':
+            elif p == ")":
                 if inside_brackets == 0:
-                    return '', [], f"Unbalanced parenthesis in Format string '({content})'."
+                    return (
+                        "",
+                        [],
+                        f"Unbalanced parenthesis in Format string '({content})'.",
+                    )
                 inside_brackets -= 1
-            elif p == ',' or p == '\n':
+            elif p == "," or p == "\n":
                 if inside_brackets == 0:
                     if s := content[start:i].strip():
                         field_strs.append(s)
@@ -123,15 +134,19 @@ class Format(FieldType):
         if inside_brackets == 0:
             s = content[start:].strip()
             if len(field_strs) == 0:
-                if s == '':
-                    raise ValueError("Format strings must contain a comma even when empty. Try '(,)' instead.")
+                if s == "":
+                    raise ValueError(
+                        "Format strings must contain a comma even when empty. Try '(,)' instead."
+                    )
                 else:
-                    raise ValueError(f"Format strings must contain a comma even with only one item. Try '({content},)' instead.")
+                    raise ValueError(
+                        f"Format strings must contain a comma even with only one item. Try '({content},)' instead."
+                    )
             if s:
                 field_strs.append(s)
         if inside_brackets != 0:
-            return '', [], f"Unbalanced parenthesis in Format string '[{content}]'."
-        return name, field_strs, ''
+            return "", [], f"Unbalanced parenthesis in Format string '[{content}]'."
+        return name, field_strs, ""
 
     @classmethod
     @override
@@ -166,15 +181,17 @@ class Format(FieldType):
         just_had_else = False
         for fs in field_strs:
             if just_had_if or just_had_else:
-                processed_fields_strs[-1] += '\n' + fs
+                processed_fields_strs[-1] += "\n" + fs
                 just_had_if = just_had_else = False
                 continue
-            if fs.startswith('If'):  # TODO: not good enough test
+            if fs.startswith("If"):  # TODO: not good enough test
                 just_had_if = True
                 processed_fields_strs.append(fs)
-            elif fs.startswith('Else'):  # TODO: also not good enough
+            elif fs.startswith("Else"):  # TODO: also not good enough
                 just_had_else = True
-                processed_fields_strs[-1] += '\n' + fs  # TODO: Will fail if Else before If.
+                processed_fields_strs[-1] += (
+                    "\n" + fs
+                )  # TODO: Will fail if Else before If.
             else:
                 just_had_if = just_had_else = False
                 processed_fields_strs.append(fs)
@@ -185,7 +202,7 @@ class Format(FieldType):
             try:
                 f = FieldType.from_string(fs)
             except ValueError as e:
-                no_of_notes = len(getattr(e, '__notes__', []))
+                no_of_notes = len(getattr(e, "__notes__", []))
                 max_notes = 2
                 if no_of_notes < max_notes:
                     e.add_note(f" -- when parsing Format string '{s}'.")
@@ -202,8 +219,13 @@ class Format(FieldType):
         return sum(f.bitlength for f in self.fields)
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, _vars: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        _vars: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         values_used = 0
         for fieldtype in self.fields:
             _, v = fieldtype._pack(values, index + values_used, _vars, kwargs)
@@ -224,7 +246,7 @@ class Format(FieldType):
         x.fields = [f._copy() for f in self.fields]
         x._field_names = {}
         for field in x.fields:
-            if field.name != '':
+            if field.name != "":
                 x._field_names[field.name] = field
         return x
 
@@ -238,14 +260,18 @@ class Format(FieldType):
         vals = []
         for i, f in enumerate(self.fields):
             if f.value is None:
-                raise ValueError(f"When getting Format value, cannot find value of this field:\n{f}")
+                raise ValueError(
+                    f"When getting Format value, cannot find value of this field:\n{f}"
+                )
             vals.append(f.value)
         return vals
 
     @override
     def _setvalue(self, val: Sequence[Any]) -> None:
         if len(val) != len(self.fields):
-            raise ValueError(f"Can't set {len(self.fields)} fields from {len(val)} values.")
+            raise ValueError(
+                f"Can't set {len(self.fields)} fields from {len(val)} values."
+            )
         for fieldtype, v in zip(self.fields, val):
             fieldtype._setvalue(v)
 
@@ -283,30 +309,32 @@ class Format(FieldType):
     @override
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
-        name_str = '' if self.name == '' else f"{colour.green}{self.name}{colour.off} = "
-        s = ''
+        name_str = (
+            "" if self.name == "" else f"{colour.green}{self.name}{colour.off} = "
+        )
+        s = ""
         s += indent(f"{name_str}(\n")
         with indent:
             for i, fieldtype in enumerate(self.fields):
                 s += fieldtype._str(indent)
-        s += indent(')')
+        s += indent(")")
         return s
 
     @override
     def _repr(self) -> str:
-        name_str = '' if self.name == '' else f", {self.name!r}"
+        name_str = "" if self.name == "" else f", {self.name!r}"
         s = f"{self.__class__.__name__}.from_params(["
         for i, fieldtype in enumerate(self.fields):
             s += fieldtype._repr()
             if i != len(self.fields) - 1:
-                s += ', '
+                s += ", "
         s += f"]{name_str})"
         return s
 
     def __iadd__(self, other: FieldType | str) -> Format:
         if isinstance(other, str):
             other = FieldType.from_string(other)
-        if other.name != '':
+        if other.name != "":
             self._field_names[other.name] = other
         self.fields.append(copy.copy(other))
         return self
@@ -361,5 +389,3 @@ class Format(FieldType):
         if self.fields != other.fields:
             return False
         return True
-
-

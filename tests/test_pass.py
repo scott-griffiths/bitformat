@@ -7,19 +7,22 @@ def test_pass_creation():
     assert p.bitlength == 0
     p.clear()
     assert p.to_bits() == Bits()
-    assert p.to_bytes() == b''
+    assert p.to_bytes() == b""
     with pytest.raises(ValueError):
         _ = p.value
-    assert p.name == ''
+    assert p.name == ""
+
 
 def test_singleton():
     a = Pass()
     b = Pass()
     assert a is b
 
+
 def test_using_in_format():
-    f = Format.from_params([Pass(), 'u8', Pass(), 'i3', Pass(), ''])
+    f = Format.from_params([Pass(), "u8", Pass(), "i3", Pass(), ""])
     assert len(f.fields) == 2
+
 
 def test_eq():
     p = Pass()

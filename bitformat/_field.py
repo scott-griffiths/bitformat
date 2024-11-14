@@ -10,11 +10,10 @@ from ._fieldtype import FieldType
 from ._options import Options
 
 
-__all__ = ['Field']
+__all__ = ["Field"]
 
 
 class Field(FieldType):
-
     const: bool
     _bits: Bits | None
 
@@ -22,7 +21,14 @@ class Field(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False, comment: str = '') -> Field:
+    def from_params(
+        cls,
+        dtype: Dtype | str,
+        name: str = "",
+        value: Any = None,
+        const: bool = False,
+        comment: str = "",
+    ) -> Field:
         """
         Create a Field instance from parameters.
 
@@ -48,7 +54,9 @@ class Field(FieldType):
             try:
                 x._dtype_expression = DtypeWithExpression.from_string(dtype)
             except ValueError as e:
-                raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
+                raise ValueError(
+                    f"Can't convert the string '{dtype}' to a Dtype: {str(e)}"
+                )
         else:
             x._dtype_expression = DtypeWithExpression.from_string(str(dtype))  # HACK
         x.name = name
@@ -63,21 +71,31 @@ class Field(FieldType):
                     if not isinstance(value, bytes):
                         raise ValueError()
                 except ValueError:
-                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
-                                     f"as it can't be converted to a bytes object.")
+                    raise ValueError(
+                        f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
+                        f"as it can't be converted to a bytes object."
+                    )
             if x.dtype.return_type is bool:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, int) or value not in (0, 1):
                         raise ValueError()
                 except ValueError:
-                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
-                                     f"as it can't be converted to a bool.")
+                    raise ValueError(
+                        f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
+                        f"as it can't be converted to a bool."
+                    )
         if value is not None:
             x._setvalue_no_const_check(value)
         if x.dtype.size == 0:
-            if x.dtype.name in ['bits', 'bytes'] and x.value is not None:
-                x._dtype_expression = DtypeWithExpression(x.dtype.name, len(x.value), x.dtype.is_array, x.dtype.items, x.dtype.endianness)
+            if x.dtype.name in ["bits", "bytes"] and x.value is not None:
+                x._dtype_expression = DtypeWithExpression(
+                    x.dtype.name,
+                    len(x.value),
+                    x.dtype.is_array,
+                    x.dtype.items,
+                    x.dtype.endianness,
+                )
         return x
 
     @override
@@ -89,16 +107,23 @@ class Field(FieldType):
     def from_string(cls, s: str, /) -> Field:
         # x = lark_parser.parse(s, start='field')
         # name = x.children[0].value
-        s, comment = s.split('#', 1) if '#' in s else (s, '')
+        s, comment = s.split("#", 1) if "#" in s else (s, "")
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
-        if ',' in dtype_str:
-            raise ValueError(f"Field strings can only have one Dtype and should not contain commas. "
-                             f"Perhaps you meant to use Format('({s})') instead?")
+        if "," in dtype_str:
+            raise ValueError(
+                f"Field strings can only have one Dtype and should not contain commas. "
+                f"Perhaps you meant to use Format('({s})') instead?"
+            )
         return cls.from_params(dtype_str, name, value, const, comment)
 
     @classmethod
-    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = '') -> Field:
+    def from_bits(
+        cls,
+        b: Bits | str | Iterable | bytearray | bytes | memoryview,
+        /,
+        name: str = "",
+    ) -> Field:
         """
         Create a Field instance from bits.
 
@@ -112,10 +137,12 @@ class Field(FieldType):
         b = Bits.from_auto(b)
         if len(b) == 0:
             raise ValueError(f"Can't create a Field from an empty Bits object.")
-        return cls.from_params(Dtype.from_params('bits', len(b)), name, b, const=True)
+        return cls.from_params(Dtype.from_params("bits", len(b)), name, b, const=True)
 
     @classmethod
-    def from_bytes(cls, b: bytes | bytearray, /, name: str = '', const: bool = False) -> Field:
+    def from_bytes(
+        cls, b: bytes | bytearray, /, name: str = "", const: bool = False
+    ) -> Field:
         """
         Create a Field instance from bytes.
 
@@ -128,12 +155,14 @@ class Field(FieldType):
         :return: The Field instance.
         :rtype: Field
         """
-        return cls.from_params(Dtype.from_params('bytes', len(b)), name, b, const)
+        return cls.from_params(Dtype.from_params("bytes", len(b)), name, b, const)
 
     @override
     def to_bits(self) -> Bits:
         if self._bits is None:
-            raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
+            raise ValueError(
+                f"Field '{self}' has no value, so can't be converted to bits."
+            )
         return self._bits
 
     @override
@@ -143,32 +172,36 @@ class Field(FieldType):
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
+        x = self.__class__.from_params(
+            self.dtype, self.name, self.value, self.const, self.comment
+        )
         return x
 
     @staticmethod
     def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
-        if '\n' in field_str:
+        if "\n" in field_str:
             raise ValueError(f"Field strings should not contain newline characters.")
         pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
         compiled_pattern = re.compile(pattern, re.DOTALL)
         match = compiled_pattern.match(field_str)
         if match:
-            name = match.group('name')
-            const = match.group('const') is not None
-            dtype_str = match.group('dtype').strip()
-            value = match.group('value')
+            name = match.group("name")
+            const = match.group("const") is not None
+            dtype_str = match.group("dtype").strip()
+            value = match.group("value")
         else:
             raise ValueError(f"Invalid field string '{field_str}'.")
-        name = '' if name is None else name.strip()
+        name = "" if name is None else name.strip()
         return dtype_str, name, value, const
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if self.const:
-            value = b[startbit:len(self._bits)]
+            value = b[startbit : len(self._bits)]
             if value != self._bits:
-                raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
+                raise ValueError(
+                    f"Read value '{value}' when const value '{self._bits}' was expected."
+                )
             return len(self._bits)
         if self._dtype_expression is not None:
             dtype = self._dtype_expression.evaluate(vars_)
@@ -176,18 +209,29 @@ class Field(FieldType):
             # TODO: This makes no sense as _dtype_expression is None ?!
             dtype = self._dtype_expression.base_dtype
         if len(b) - startbit < dtype.bitlength:
-            raise ValueError(f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b) - startbit} were available.")
+            raise ValueError(
+                f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b) - startbit} were available."
+            )
         # Deal with a stretchy dtype
-        self._bits = b[startbit:startbit + dtype.bitlength] if dtype.bitlength != 0 else b[startbit:]
-        if self.name != '':
+        self._bits = (
+            b[startbit : startbit + dtype.bitlength]
+            if dtype.bitlength != 0
+            else b[startbit:]
+        )
+        if self.name != "":
             vars_[self.name] = self.value
         return len(self._bits)
 
     @override
-    def _pack(self, values: Sequence[Any], index: int, vars_: dict[str, Any],
-              kwargs: dict[str, Any]) -> tuple[Bits, int]:
+    def _pack(
+        self,
+        values: Sequence[Any],
+        index: int,
+        vars_: dict[str, Any],
+        kwargs: dict[str, Any],
+    ) -> tuple[Bits, int]:
         if self.const and self.value is not None:
-            if self.name != '':
+            if self.name != "":
                 vars_[self.name] = self.value
             return self._bits, 0
         if self.name in kwargs.keys():
@@ -196,7 +240,7 @@ class Field(FieldType):
             return self._bits, 0
         else:
             self._setvalue(values[index])
-        if self.name != '':
+        if self.name != "":
             vars_[self.name] = self.value
         return self._bits, 1
 
@@ -208,17 +252,23 @@ class Field(FieldType):
 
     def _setvalue_no_const_check(self, value: Any) -> None:
         if value is None:
-            raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
+            raise ValueError(
+                "Cannot set the value of a Field to None. Perhaps you could use clear()?"
+            )
         try:
             self._bits = self.dtype.pack(value)
         except ValueError as e:
-            raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
+            raise ValueError(
+                f"Can't use the value '{value}' with the field '{self}': {e}"
+            )
 
     @override
     def _setvalue(self, value: Any) -> None:
         if self.const:
-            raise ValueError(f"Cannot set the value of a const Field '{self}'. "
-                             f"To change the value, first set the const property of the Field to False.")
+            raise ValueError(
+                f"Cannot set the value of a const Field '{self}'. "
+                f"To change the value, first set the const property of the Field to False."
+            )
         self._setvalue_no_const_check(value)
 
     value = property(_getvalue, _setvalue)
@@ -231,27 +281,27 @@ class Field(FieldType):
     @override
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
-        const_str = 'const ' if self.const else ''
+        const_str = "const " if self.const else ""
         dtype_str = str(self._dtype_expression)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
-        n = '' if self.name == '' else f"{colour.green}{self.name}{colour.off}: "
-        v = '' if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
-        comment = '' if self.comment == '' else f"  # {self.comment}"
+        n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
+        v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
+        comment = "" if self.comment == "" else f"  # {self.comment}"
         return indent(f"{n}{d}{v}{comment}")
 
     # This simple repr used when field is part of a larger object
     @override
     def _repr(self) -> str:
-        const_str = 'const ' if self.const else ''
-        n = '' if self.name == '' else f"{self.name}: "
+        const_str = "const " if self.const else ""
+        n = "" if self.name == "" else f"{self.name}: "
         dtype = f"{const_str}{self._dtype_expression}"
-        v = '' if self.value is None else f" = {self.value}"
+        v = "" if self.value is None else f" = {self.value}"
         return f"'{n}{dtype}{v}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        if self.dtype.name == 'bytes':
-            const_str = ', const=True' if self.const else ''
+        if self.dtype.name == "bytes":
+            const_str = ", const=True" if self.const else ""
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
 
@@ -261,7 +311,7 @@ class Field(FieldType):
             return False
         if self.dtype != other.dtype:
             return False
-        if self.dtype.name != 'pad' and self._bits != other._bits:
+        if self.dtype.name != "pad" and self._bits != other._bits:
             return False
         if self.const != other.const:
             return False

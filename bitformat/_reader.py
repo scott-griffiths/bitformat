@@ -69,25 +69,31 @@ class Reader:
     def pos(self, value: int) -> None:
         self._pos = int(value)
 
-    def read(self, dtype: Dtype | DtypeList | str, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
+    def read(
+        self, dtype: Dtype | DtypeList | str, /
+    ) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Read from the current bit position, and interpret according to the given dtype."""
         if isinstance(dtype, str):
-            if ',' in dtype:
+            if "," in dtype:
                 dtype = DtypeList.from_string(dtype)
             else:
                 dtype = Dtype.from_string(dtype)
         if self._pos + dtype.bitlength > len(self._bits):
-            raise ValueError(f"Reading '{dtype}' needs {dtype.bitlength} bits, but at position {self._pos} only {len(self._bits) - self._pos} bits remain.")
-        x = dtype.unpack(self.bits[self._pos:self._pos + dtype.bitlength])
+            raise ValueError(
+                f"Reading '{dtype}' needs {dtype.bitlength} bits, but at position {self._pos} only {len(self._bits) - self._pos} bits remain."
+            )
+        x = dtype.unpack(self.bits[self._pos : self._pos + dtype.bitlength])
         self._pos += dtype.bitlength
         return x
 
     def parse(self, f: FieldType, /) -> int:
         """Parse a fieldtype from the current bit position, returning the number of bits parsed."""
         try:
-            bits_parsed = f.parse(self._bits[self._pos:])
+            bits_parsed = f.parse(self._bits[self._pos :])
         except AttributeError:
-            raise ValueError(f"parse() requires a FieldType. Got {f!r} of type {type(f)}.")
+            raise ValueError(
+                f"parse() requires a FieldType. Got {f!r} of type {type(f)}."
+            )
         self._pos += bits_parsed
         return bits_parsed
 
