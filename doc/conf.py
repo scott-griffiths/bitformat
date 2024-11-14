@@ -14,7 +14,7 @@ year = datetime.datetime.utcfromtimestamp(
 project = 'bitformat'
 copyright = f'2024 - {year}, Scott Griffiths'
 author = 'Scott Griffiths'
-release = '0.1.0'
+release = '0.2.0'
 
 extensions = ['sphinx.ext.autodoc']
 autoapi_dirs = ['../bitformat/']
@@ -37,7 +37,7 @@ html_css_files = ["custom.css"]
 html_theme = 'piccolo_theme'
 
 html_theme_options = {
-    "banner_text": "bitformat is in a pre-alpha planning stage. This documentation is wildly inaccurate.",
+    "banner_text": "bitformat is currently in alpha. This documentation is may be inaccurate.",
     "banner_hiding": "permanent",
     "show_theme_credit": False,
     "globaltoc_maxdepth": 3,
