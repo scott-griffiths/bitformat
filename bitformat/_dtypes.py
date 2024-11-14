@@ -440,8 +440,10 @@ class DtypeDefinition:
                 raise ValueError(
                     "You shouldn't specify both a bits_per_character and a bitlength2chars_fn."
                 )
+
             def bitlength2chars_fn(x):
                 return x // bits_per_character
+
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: int, endianness: Endianness) -> tuple[int, Endianness]:

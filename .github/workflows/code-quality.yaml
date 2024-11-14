@@ -8,13 +8,13 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/setup
-            - run: uvx ruff check .
+            - run: uvx ruff check bitformat
     formatting:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/setup
-            - run: uvx ruff format --check bitformat
+            - run: uvx ruff format --check .
     type_consistency:
         runs-on: ubuntu-latest
         steps:
