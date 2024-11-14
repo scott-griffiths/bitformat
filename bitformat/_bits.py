@@ -312,7 +312,7 @@ class Bits:
             raise ValueError(f"Negative bytelength given: {bytelength}.")
         if len(self) % (bytelength * 8) != 0:
             raise ValueError(
-                f"The bits should be a whole number of bytelength bytes long."
+                f"The Bits to byteswap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
             )
         chunks = []
         for startbit in range(0, len(self), bytelength * 8):

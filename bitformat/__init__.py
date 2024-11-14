@@ -41,7 +41,7 @@ from ._if import If
 from ._pass import Pass
 from ._repeat import Repeat
 from ._options import Options
-from ._common import Expression, byteorder, Endianness
+from ._common import Expression, Endianness, byteorder
 from ._reader import Reader
 from typing import Literal
 
@@ -186,7 +186,7 @@ for dt in dtype_definitions:
     Register().add_dtype(dt)
 
 
-__all__ = (
+__all__ = [
     "Bits",
     "Dtype",
     "DtypeList",
@@ -203,8 +203,10 @@ __all__ = (
     "If",
     "Pass",
     "Reader",
-)
+]
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:
     locals()[name].__module__ = "bitformat"
+
+__all__.extend(["byteorder"])

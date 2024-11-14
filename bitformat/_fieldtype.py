@@ -1,6 +1,5 @@
 from __future__ import annotations
 import abc
-import re
 import sys
 
 from bitformat import Bits

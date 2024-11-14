@@ -6,7 +6,7 @@ import copy
 import re
 from lark.visitors import Interpreter
 
-from ._common import override, Indenter, Colour, lark_parser
+from ._common import override, Indenter, Colour
 from ._fieldtype import FieldType
 from ._pass import Pass
 from ._options import Options
@@ -30,11 +30,11 @@ class FormatInterpreter(Interpreter):
         self.fieldtypes.append(FieldType.from_string(tree.children[0].value))
 
 
-def parse_lark_format(s: str) -> Format:
-    tree = lark_parser.parse(s, start="format")
-    format_interpreter = FormatInterpreter()
-    x = format_interpreter.visit(tree)
-    return None
+# def parse_lark_format(s: str) -> Format:
+#     tree = lark_parser.parse(s, start="format")
+#     format_interpreter = FormatInterpreter()
+#     x = format_interpreter.visit(tree)
+#     return None
 
 
 class Format(FieldType):

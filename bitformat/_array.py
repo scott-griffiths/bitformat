@@ -653,7 +653,7 @@ class Array:
 
         if dtype1.is_array or (dtype2 is not None and dtype2.is_array):
             raise ValueError(
-                f"Array.pp() only supports simple Dtypes, not ones which represent arrays."
+                "Array.pp() only supports simple Dtypes, not ones which represent arrays."
             )
 
         trailing_bit_length = len(self._proxy) % token_length

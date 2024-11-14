@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
-from ._common import override, Indenter, Colour, lark_parser
+from ._common import override, Indenter, Colour
 from typing import Any, Sequence, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
@@ -61,7 +61,7 @@ class Field(FieldType):
             x._dtype_expression = DtypeWithExpression.from_string(str(dtype))  # HACK
         x.name = name
         if const is True and value is None:
-            raise ValueError(f"Fields with no value cannot be set to be const.")
+            raise ValueError("Fields with no value cannot be set to be const.")
         if isinstance(value, str):
             # Special cases converting from strings to bytes and bools.
             value_str = value
@@ -136,7 +136,7 @@ class Field(FieldType):
         """
         b = Bits.from_auto(b)
         if len(b) == 0:
-            raise ValueError(f"Can't create a Field from an empty Bits object.")
+            raise ValueError("Can't create a Field from an empty Bits object.")
         return cls.from_params(Dtype.from_params("bits", len(b)), name, b, const=True)
 
     @classmethod
@@ -180,7 +180,7 @@ class Field(FieldType):
     @staticmethod
     def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
         if "\n" in field_str:
-            raise ValueError(f"Field strings should not contain newline characters.")
+            raise ValueError("Field strings should not contain newline characters.")
         pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
         compiled_pattern = re.compile(pattern, re.DOTALL)
         match = compiled_pattern.match(field_str)

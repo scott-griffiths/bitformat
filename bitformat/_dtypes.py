@@ -356,7 +356,7 @@ class Dtype:
 
 
 class AllowedSizes:
-    values: tuple[int, ...] | tuple[int, int, ellipsis]
+    values: tuple[int, ...] | tuple[int, int, Ellipsis]
 
     """Used to specify either concrete values or ranges of values that are allowed lengths for data types."""
 
@@ -440,7 +440,8 @@ class DtypeDefinition:
                 raise ValueError(
                     "You shouldn't specify both a bits_per_character and a bitlength2chars_fn."
                 )
-            bitlength2chars_fn = lambda x: x // bits_per_character
+            def bitlength2chars_fn(x):
+                return x // bits_per_character
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: int, endianness: Endianness) -> tuple[int, Endianness]:
