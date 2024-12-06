@@ -42,6 +42,9 @@ class Format(FieldType):
     A sequence of :class:`FieldType` objects, used to group fields together.
 
     """
+    fields: list[FieldType]
+    name: str
+    vars: dict[str, Any]
 
     def __new__(cls, s: str | None = None) -> Format:
         if s is None:

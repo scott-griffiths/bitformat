@@ -388,7 +388,7 @@ class AllowedSizes:
         return other in self.values
 
     def only_one_value(self) -> bool:
-        return self.values and len(self.values) == 1
+        return bool(self.values and len(self.values) == 1)
 
 
 class DtypeDefinition:

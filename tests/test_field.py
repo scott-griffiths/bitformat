@@ -1,7 +1,7 @@
 import keyword
 
 import pytest
-from bitformat import Dtype, Bits, Field, Expression, FieldType, Format
+from bitformat import Dtype, Bits, Field, Expression
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
@@ -162,7 +162,7 @@ def test_field_array():
 
 
 def test_simple_array_parse():
-    f = Field("[u8; 2]")
+    f = Field.from_string("[u8; 2]")
     f.parse("0x0102")
     assert f.value == (1, 2)
 
@@ -215,7 +215,7 @@ def test_size_expression():
 
 
 def test_unpack():
-    f = Field("[i9; 4]")
+    f = Field.from_string("[i9; 4]")
     f.pack([[5, -5, 0, 100]])
     assert f.unpack() == (5, -5, 0, 100)
     f.clear()

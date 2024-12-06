@@ -11,6 +11,10 @@ __all__ = ["Repeat"]
 
 
 class Repeat(FieldType):
+
+    field: FieldType
+    count: int
+
     def __new__(cls, s: str) -> Repeat:
         return cls.from_string(s)
 
