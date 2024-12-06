@@ -826,6 +826,14 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
+    @overload
+    def unpack(self, fmt: Dtype | str, /) -> Any:
+        ...
+
+    @overload
+    def unpack(self, fmt: DtypeList | list[str], /) -> list[Any]:
+        ...
+
     def unpack(
         self, fmt: Dtype | str | DtypeList | list[Dtype | str], /
     ) -> Any | list[Any]:

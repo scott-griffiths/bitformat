@@ -696,7 +696,11 @@ class Array:
 
     def equals(self, other: Any, /) -> bool:
         """
-        Return True if the format and all Array items are equal to another Array.
+        Return True if the data type and all Array items are equal to another Array.
+
+        This method should be used to test the equality of two Arrays. Normally types will provide
+        an `==` operator to do this task, but for Arrays the `==` operator is instead
+        used for element-wise comparison and will return a new Array of bools.
 
         :param other: The other Array to compare with.
         :type other: Any
