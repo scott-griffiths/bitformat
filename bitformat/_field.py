@@ -4,13 +4,49 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeWithExpression
 from ast import literal_eval
-from ._common import override, Indenter, Colour
+from ._common import override, Indenter, Colour, lark_parser
 from typing import Any, Sequence, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
+from lark import Visitor
 
 
 __all__ = ["Field"]
+
+
+class FieldVisitor(Visitor):
+    def __init__(self):
+        self._values = []
+        self._dtype_names = []
+        self._dtype_sizes = []
+        self._dtype_items = []
+        self._const = None
+        self._field_name = ''
+
+    def simple_dtype(self, tree):
+        name = tree.children[0].children[0].value
+        size = 0 if tree.children[1] is None else tree.children[1].children[0].value
+        self._dtype_names.append(name)
+        self._dtype_sizes.append(size)
+        self._dtype_items.append(None)
+
+    def mutable_field(self, tree):
+        self._const = False
+
+    def const_field(self, tree):
+        self._const = True
+
+    def simple_value(self, tree):
+        self._values.append(tree.children[0].value)
+
+    def field_name(self, tree):
+        self._field_name = tree.children[0].value
+
+    def items(self, tree):
+        # This will already have parsed the simple_dtype, so replace
+        # the None value for items.
+        self._dtype_items.pop()
+        self._dtype_items.append(tree.children[0].value)
 
 
 class Field(FieldType):
@@ -103,10 +139,27 @@ class Field(FieldType):
         return self.dtype.bitlength
 
     @classmethod
+    def from_string_lark(cls, s: str, /) -> Field:
+        x = lark_parser.parse(s, start='field')
+        visitor = FieldVisitor()
+        visitor.visit(x)
+        if len(visitor._dtype_names) == 1:
+            items = visitor._dtype_items[0]
+            dtype = Dtype.from_params(visitor._dtype_names[0],
+                                      visitor._dtype_sizes[0],
+                                      items is not None,
+                                      items)
+            if not visitor._values:
+                values = None
+            else:
+                values = visitor._values[0]
+            return cls.from_params(dtype, visitor._field_name, values, visitor._const)
+
+
+
+    @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:
-        # x = lark_parser.parse(s, start='field')
-        # name = x.children[0].value
         s, comment = s.split("#", 1) if "#" in s else (s, "")
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
