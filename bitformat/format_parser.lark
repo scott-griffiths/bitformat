@@ -1,48 +1,44 @@
 
-dtype_name: "u" -> u
-          | "i" -> i
-          | "f" -> f
-          | "bool" -> bool
-          | "bytes" -> bytes
-          | "hex" -> hex
-          | "bin" -> bin
-          | "oct" -> oct
-          | "bits" -> bits
-          | "pad" -> pad
+
+comment: "#" /.+$/
+
+dtype_name: /u|i|f|bool|bytes|hex|bin|oct|bits|pad/
 
 expression: "{" /[^\}]+/ "}"
 
-?dtype_size: INT | expression
-simple_dtype: dtype_name dtype_size?
+dtype_size: INT | expression
+simple_dtype: dtype_name [dtype_size]
 
 items: INT
-array_dtype: "[" simple_dtype ";" items? "]"
+array_dtype: "[" simple_dtype ";" [items] "]"
 
-?dtype_single: simple_dtype | array_dtype
+dtype_single: simple_dtype | array_dtype
 
 dtype_list: "[" dtype ("," dtype)* "]"
-?dtype: dtype_list | dtype_single
+dtype: dtype_list | dtype_single
 
-?field_name: CNAME
+?field_name: CNAME -> field_name
 // This is too simplistic. Won't work for test like "b'some_bytes, some_other_bytes',"
-?simple_value: /[a-zA-Z0-9\.\+\-]+/
+simple_value: /[a-zA-Z0-9\.\+\-]+/ -> simple_value
 list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_value ("," simple_value)* [","] ")")
 value: simple_value | list_of_values
 
-// Match const_field with higher priority than non_const_field
-const_field.1: [field_name ":"] "const" dtype "=" value
-non_const_field.0: [field_name ":"] dtype ["=" value]
-?field: const_field | non_const_field
+// Match const_field with higher priority than mutable_field
+const_field.1: [field_name ":"] "const" dtype "=" value -> const_field
+mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
+?field: const_field | mutable_field
 
 condition: /[^:]+/
 if: "If" condition ":" field_type ["Else" ":" field_type]
 
 repeat: "Repeat" condition ":" field_type
 
+pass: ["Pass"] [comment]
+
 format_name: CNAME
 format: [format_name "="] "(" [field_type (("," | NEWLINE) field_type)*] [","] ")"
 
-?field_type: field | format | if | repeat
+?field_type: field | format | if | repeat | pass
 
 %import common.INT -> INT
 %import common.CNAME -> CNAME

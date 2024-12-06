@@ -20,7 +20,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
             - uses: ./.github/actions/setup
-            - run: uv run pyright .
+            - run: uv run pyright bitformat
     unit_tests:
         runs-on: ubuntu-latest
         steps:
