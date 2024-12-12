@@ -140,7 +140,7 @@ class BitStore:
 
     def find(self, bs: BitStore, bytealigned: bool) -> int:
         if not bytealigned:
-            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit)
+            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit) - self.startbit
         try:
             return next(self.findall(bs, bytealigned))
         except StopIteration:
@@ -150,7 +150,7 @@ class BitStore:
         if not bytealigned:
             return self._bitarray.find(
                 bs._bitarray, self.startbit, self.endbit, right=True
-            )
+            ) - self.startbit
         try:
             return next(self.rfindall(bs, bytealigned))
         except StopIteration:
@@ -178,21 +178,21 @@ class BitStore:
         i = self._bitarray.search(bs._bitarray, self.startbit, self.endbit)
         if not bytealigned:
             for p in i:
-                yield p
+                yield p - self.startbit
         else:
             for p in i:
-                if (p % 8) == 0:
-                    yield p
+                if (p - self.startbit) % 8 == 0:
+                    yield p - self.startbit
 
     def rfindall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
         i = self._bitarray.search(bs._bitarray, self.startbit, self.endbit, right=True)
         if not bytealigned:
             for p in i:
-                yield p
+                yield p - self.startbit
         else:
             for p in i:
                 if (p % 8) == 0:
-                    yield p
+                    yield p - self.startbit
 
     def count(self, value, /) -> int:
         return self._to_bitarray().count(value)
@@ -237,6 +237,9 @@ class BitStore:
             raise ValueError(
                 f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}"
             )
+        if x.endbit <= x.startbit:
+            x._bitarray = bitarray.frozenbitarray(0)
+            return x
         # This is just a view onto the other bitarray, so no copy needed.
         x._bitarray = self._bitarray
         return x

@@ -1465,6 +1465,11 @@ class Bits:
         if isinstance(key, numbers.Integral):
             return bool(self._bitstore.getindex(key))
         bs = super().__new__(self.__class__)
+        # TODO: This should use getslice when step == 1, but currently broken
+        # start, stop, step = key.indices(len(self))
+        # if step == 1:
+        #     bs._bitstore = self._bitstore.getslice(start, stop)
+        # else:
         bs._bitstore = self._bitstore.getslice_withstep(key)
         return bs
 
