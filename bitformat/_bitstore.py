@@ -276,7 +276,16 @@ class BitStore:
     def __len__(self) -> int:
         return self.endbit - self.startbit
 
-    def set(self, value: int, pos: int | slice) -> BitStore:
+    def set(self, value: int, pos: int) -> BitStore:
+        ba = bitarray.bitarray(self._to_bitarray())
+        ba[pos] = value
+        x = self.__class__()
+        x._bitarray = bitarray.frozenbitarray(ba)
+        x.startbit = 0
+        x.endbit = len(x._bitarray)
+        return x
+
+    def set_from_slice(self, value: int, pos: slice) -> BitStore:
         ba = bitarray.bitarray(self._to_bitarray())
         ba.__setitem__(pos, value)
         x = self.__class__()

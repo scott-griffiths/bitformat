@@ -792,10 +792,14 @@ class Bits:
         v = 1 if value else 0
         if not isinstance(pos, abc.Iterable):
             s = Bits()
-            s._bitstore = self._bitstore.set(v, pos)
+            if pos < 0:
+                pos += len(self)
+            if pos < 0 or pos >= len(self):
+                raise IndexError
+            s._bitstore = self._bitstore.set(bool(v), pos)
         elif isinstance(pos, range):
             s = Bits()
-            s._bitstore = self._bitstore.set(v, slice(pos.start, pos.stop, pos.step))
+            s._bitstore = self._bitstore.set_from_slice(v, slice(pos.start, pos.stop, pos.step))
         else:
             s = Bits()
             s._bitstore = self._bitstore.set_from_iterable(v, pos)
