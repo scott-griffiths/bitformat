@@ -13,10 +13,14 @@ import operator
 import sys
 
 
-if Options()._use_pure_python:
-    from ._bitstore_pure import MutableBitStore
-else:
-    from ._bitstore import MutableBitStore
+match Options().bitstore:
+    case "bitarray":
+        from ._bitstore import MutableBitStore
+    case "python":
+        from ._bitstore_pure import MutableBitStore
+    case "rust":
+        # TODO
+        from ._bitstore_pure import MutableBitStore
 
 __all__ = ["Array", "BitsProxy"]
 

@@ -15,10 +15,13 @@ from bitformat._common import Colour, Endianness
 from typing import Pattern
 from bitformat._options import Options
 
-if Options()._use_pure_python:
-    from ._bitstore_pure import BitStore
-else:
-    from ._bitstore import BitStore
+match Options().bitstore:
+    case "bitarray":
+        from ._bitstore import BitStore
+    case "python":
+        from ._bitstore_pure import BitStore
+    case "rust":
+        from ._bitstore_rust import BitStore
 
 __all__ = ["Bits", "BitsType"]
 

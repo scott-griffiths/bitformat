@@ -33,7 +33,7 @@ class Options:
             cls._indent_size = 4
             # This is an experimental feature to use pure Python only (not bitarray)
             # It affects imports so you need to change its value here in the code.
-            cls._use_pure_python = False
+            cls._bitstore = "bitarray"
         return cls._instance
 
     def __init__(self):
@@ -96,6 +96,6 @@ class Options:
         self._indent_size = value
 
     @property
-    def use_pure_python(self) -> bool:
-        """If True then pure Python implementation will be used instead of bitarray."""
-        return self._use_pure_python
+    def bitstore(self) -> str:
+        """Which version of the BitStore implementation to use."""
+        return self._bitstore
