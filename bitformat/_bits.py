@@ -776,13 +776,13 @@ class Bits:
             ]
         )
 
-    def set(self, value: Any, pos: int | Iterable[int] | None = None) -> Bits:
+    def set(self, value: Any, pos: int | Iterable[int]) -> Bits:
         """Return new Bits with one or many bits set to 1 or 0.
 
         :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
         :type value: Any
         :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Iterable[int] or None
+        :type pos: int or Iterable[int]
         :return: A new Bits object with the set bits.
         :rtype: Bits
 
@@ -790,10 +790,7 @@ class Bits:
 
         """
         v = 1 if value else 0
-        if pos is None:
-            # Set all bits to either 1 or 0
-            s = Bits.ones(len(self)) if v else Bits.zeros(len(self))
-        elif not isinstance(pos, abc.Iterable):
+        if not isinstance(pos, abc.Iterable):
             s = Bits()
             s._bitstore = self._bitstore.set(v, pos)
         elif isinstance(pos, range):

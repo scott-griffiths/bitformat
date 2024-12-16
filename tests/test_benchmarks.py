@@ -74,8 +74,7 @@ def test_repeated_reading(benchmark):
 def test_primes(benchmark):
     def primes():
         limit = 1000000
-        is_prime = Bits.zeros(limit)
-        is_prime = is_prime.set(True)
+        is_prime = Bits.ones(limit)
         # Manually set 0 and 1 to be not prime.
         is_prime = is_prime.set(False, [0, 1])
         # For every other integer, if it's set as prime then unset all of its multiples
