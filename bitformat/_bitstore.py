@@ -138,9 +138,13 @@ class BitStore:
         x.endbit = len(self)
         return x
 
+    # TODO: Returning -1 is really bad style. Just return None instead.
     def find(self, bs: BitStore, bytealigned: bool) -> int:
         if not bytealigned:
-            return self._bitarray.find(bs._bitarray, self.startbit, self.endbit) - self.startbit
+            p = self._bitarray.find(bs._bitarray, self.startbit, self.endbit)
+            if p == -1:
+                return -1
+            return p - self.startbit
         try:
             return next(self.findall(bs, bytealigned))
         except StopIteration:
@@ -148,32 +152,36 @@ class BitStore:
 
     def rfind(self, bs: BitStore, bytealigned: bool):
         if not bytealigned:
-            return self._bitarray.find(
+            p = self._bitarray.find(
                 bs._bitarray, self.startbit, self.endbit, right=True
-            ) - self.startbit
+            )
+            if p == -1:
+                return -1
+            return p - self.startbit
         try:
             return next(self.rfindall(bs, bytealigned))
         except StopIteration:
             return -1
 
     def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
-        if bytealigned is True and len(bs) % 8 == 0:
-            # Special case, looking for whole bytes on whole byte boundaries
-            bytes_ = bs.to_bytes()
-            # Round up start byte to next byte, and round end byte down.
-            # We're only looking for whole bytes, so can ignore bits at either end.
-            start_byte = (self.startbit + 7) // 8
-            end_byte = self.endbit // 8
-            b = self._bitarray[start_byte * 8 : end_byte * 8].tobytes()
-            byte_pos = 0
-            bytes_to_search = end_byte - start_byte
-            while byte_pos < bytes_to_search:
-                byte_pos = b.find(bytes_, byte_pos)
-                if byte_pos == -1:
-                    break
-                yield (byte_pos + start_byte) * 8
-                byte_pos = byte_pos + 1
-            return
+        # TODO: Reinstate this special case. Currently has issues with startbit or endbit.
+        # if bytealigned is True and len(bs) % 8 == 0:
+        #     # Special case, looking for whole bytes on whole byte boundaries
+        #     bytes_ = bs.to_bytes()
+        #     # Round up start byte to next byte, and round end byte down.
+        #     # We're only looking for whole bytes, so can ignore bits at either end.
+        #     start_byte = (self.startbit + 7) // 8
+        #     end_byte = self.endbit // 8
+        #     b = self._bitarray[start_byte * 8 : end_byte * 8].tobytes()
+        #     byte_pos = 0
+        #     bytes_to_search = end_byte - start_byte
+        #     while byte_pos < bytes_to_search:
+        #         byte_pos = b.find(bytes_, byte_pos)
+        #         if byte_pos == -1:
+        #             break
+        #         yield (byte_pos + start_byte) * 8
+        #         byte_pos = byte_pos + 1
+        #     return
         # General case
         i = self._bitarray.search(bs._bitarray, self.startbit, self.endbit)
         if not bytealigned:
@@ -217,12 +225,12 @@ class BitStore:
     def getindex(self, index: int, /) -> bool:
         return bool(self._bitarray.__getitem__(index + self.startbit))
 
-    def getslice_withstep(self, key: slice, /) -> BitStore:
+    def getslice_withstep(self, start:int, stop: int, step: int, /) -> BitStore:
         x = super().__new__(self.__class__)
         x.startbit = 0
-        start = key.start + self.startbit if key.start is not None else self.startbit
-        stop = key.stop + self.startbit if key.stop is not None else self.endbit
-        key = slice(start, stop, key.step)
+        start += self.startbit
+        stop += self.startbit
+        key = slice(start, stop, step)
         x._bitarray = self._bitarray.__getitem__(key)
         x.endbit = len(x._bitarray)
         return x
@@ -230,14 +238,17 @@ class BitStore:
     def getslice(self, start: int, stop: int | None, /) -> BitStore:
         assert start >= 0
         assert stop is None or stop >= 0
-        x = self.__class__()
+        x = super().__new__(self.__class__)
         x.startbit = start + self.startbit
-        x.endbit = stop + self.startbit if stop is not None else self.endbit
+        if stop is None:
+            stop = len(self)
+        x.endbit = stop + self.startbit
         if x.endbit > len(self._bitarray):
             raise ValueError(
                 f"Slice out of range. Start: {start}, Stop: {stop}, Length: {len(self)}, Startbit: {self.startbit}, Endbit: {self.endbit}"
             )
         if x.endbit <= x.startbit:
+            x.endbit = x.startbit
             x._bitarray = bitarray.frozenbitarray(0)
             return x
         # This is just a view onto the other bitarray, so no copy needed.
