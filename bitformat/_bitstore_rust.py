@@ -1,6 +1,7 @@
 
 from bit_rust import BitRust as BitStore
 import struct
+from typing import Iterator
 
 # These can all be converted to pure Rust later if we feel like it
 
@@ -52,8 +53,20 @@ def to_int(self) -> int:
         x >>= padding
     return x
 
+def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
+    # TODO: bytealign_offset - see _bitstore_pure.py
+    f = self.find(bs, bytealigned)
+    start = 0
+    while f is not None:
+        yield f + start
+        start += f + 1
+        slice_ = self.getslice(start, None)
+        f = slice_.find(bs, bytealigned)
+
+
 
 BitStore.from_int = classmethod(from_int)
 BitStore.from_float = classmethod(from_float)
 BitStore.to_uint = to_uint
 BitStore.to_int = to_int
+BitStore.findall = findall

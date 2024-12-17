@@ -82,7 +82,7 @@ def str_to_bitstore(s: str) -> BitStore:
         return token_to_bitstore(tokens[0])
     if not tokens:
         return BitStore.from_zeros(0)
-    return BitStore.join(token_to_bitstore(token) for token in tokens)
+    return BitStore.join([token_to_bitstore(token) for token in tokens])
 
 
 class Bits:
