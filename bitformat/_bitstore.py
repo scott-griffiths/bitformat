@@ -9,19 +9,21 @@ from typing import Sequence, Iterator, Iterable
 class BitStore:
     """A light wrapper around bitarray"""
 
-    __slots__ = ("_bitarray", "startbit", "endbit")
+    __slots__ = ("_bitarray", "startbit", "endbit", "mutable")
 
     @classmethod
-    def from_zeros(cls, i: int) -> BitStore:
+    def from_zeros(cls, i: int, mutable: bool = False) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         x._bitarray = bitarray.frozenbitarray(i)
         x.endbit = len(x._bitarray)
         return x
 
     @classmethod
-    def from_ones(cls, i: int) -> BitStore:
+    def from_ones(cls, i: int, mutable: bool = False) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         ba = bitarray.bitarray(i)
         ba.setall(True)
@@ -30,8 +32,9 @@ class BitStore:
         return x
 
     @classmethod
-    def from_bytes(cls, b: bytes | bytearray | memoryview, /) -> BitStore:
+    def from_bytes(cls, b: bytes | bytearray | memoryview, mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         ba = bitarray.bitarray()
         ba.frombytes(b)
@@ -40,8 +43,9 @@ class BitStore:
         return x
 
     @classmethod
-    def from_bin(cls, binstring: str, /) -> BitStore:
+    def from_bin(cls, binstring: str, mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         try:
             x._bitarray = bitarray.frozenbitarray(binstring)
@@ -51,8 +55,9 @@ class BitStore:
         return x
 
     @classmethod
-    def from_hex(cls, hexstring: str, /) -> BitStore:
+    def from_hex(cls, hexstring: str, mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         try:
             x._bitarray = bitarray.frozenbitarray(bitarray.util.hex2ba(hexstring))
@@ -62,8 +67,9 @@ class BitStore:
         return x
 
     @classmethod
-    def from_oct(cls, octstring: str, /) -> BitStore:
+    def from_oct(cls, octstring: str, mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         try:
             x._bitarray = bitarray.frozenbitarray(bitarray.util.base2ba(8, octstring))
@@ -73,8 +79,9 @@ class BitStore:
         return x
 
     @classmethod
-    def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
+    def from_int(cls, i: int, length: int, signed: bool, mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         x.startbit = 0
         x._bitarray = bitarray.frozenbitarray(
             bitarray.util.int2ba(i, length=length, endian="big", signed=signed)
@@ -83,8 +90,9 @@ class BitStore:
         return x
 
     @classmethod
-    def join(cls, seq: Sequence[BitStore], /) -> BitStore:
+    def join(cls, seq: Sequence[BitStore], mutable: bool = False, /) -> BitStore:
         x = super().__new__(cls)
+        x.mutable = mutable
         ba = bitarray.bitarray()
         x.startbit = 0
         for i in seq:
@@ -122,6 +130,7 @@ class BitStore:
         x._bitarray = self._to_bitarray() & other._to_bitarray()
         x.startbit = 0
         x.endbit = len(self)
+        x.mutable = self.mutable
         return x
 
     def __or__(self, other: BitStore, /) -> BitStore:
@@ -129,6 +138,7 @@ class BitStore:
         x._bitarray = self._to_bitarray() | other._to_bitarray()
         x.startbit = 0
         x.endbit = len(self)
+        x.mutable = self.mutable
         return x
 
     def __xor__(self, other: BitStore, /) -> BitStore:
@@ -136,6 +146,7 @@ class BitStore:
         x._bitarray = self._to_bitarray() ^ other._to_bitarray()
         x.startbit = 0
         x.endbit = len(self)
+        x.mutable = self.mutable
         return x
 
     # TODO: Returning -1 is really bad style. Just return None instead.
@@ -212,6 +223,7 @@ class BitStore:
         x._bitarray = bitarray.frozenbitarray(ba)
         x.startbit = 0
         x.endbit = len(x._bitarray)
+        x.mutable = False
         return x
 
     def __iter__(self) -> Iterable[bool]:
@@ -233,12 +245,14 @@ class BitStore:
         key = slice(start, stop, step)
         x._bitarray = self._bitarray.__getitem__(key)
         x.endbit = len(x._bitarray)
+        x.mutable = False
         return x
 
     def getslice(self, start: int, stop: int | None, /) -> BitStore:
         assert start >= 0
         assert stop is None or stop >= 0
         x = super().__new__(self.__class__)
+        x.mutable = False
         x.startbit = start + self.startbit
         if stop is None:
             stop = len(self)
@@ -257,6 +271,7 @@ class BitStore:
 
     def invert(self, index: int | None = None, /) -> BitStore:
         x = self.__class__()
+        x.mutable = False
         ba = bitarray.bitarray(self._to_bitarray())
         if index is not None:
             ba.invert(index)
@@ -289,6 +304,7 @@ class BitStore:
         ba = bitarray.bitarray(self._to_bitarray())
         ba.__setitem__(pos, value)
         x = self.__class__()
+        x.mutable = False
         x._bitarray = bitarray.frozenbitarray(ba)
         x.startbit = 0
         x.endbit = len(x._bitarray)
@@ -299,28 +315,24 @@ class BitStore:
         for p in pos:
             ba.__setitem__(p, value)
         x = self.__class__()
+        x.mutable = False
         x._bitarray = bitarray.frozenbitarray(ba)
         x.startbit = 0
         x.endbit = len(x._bitarray)
         return x
 
-
-class MutableBitStore(BitStore):
-    """A mutable version of BitStore with an additional setitem method.
-
-    This is used in the Array class to allow it to be changed after creation.
-    """
-
-    @classmethod
-    def from_bitstore(cls, bs: BitStore) -> MutableBitStore:
-        x = super().__new__(cls)
+    def get_mutable_copy(self) -> BitStore:
+        x = self.__class__()
+        x.mutable = True
         x.startbit = 0
-        ba = copy.copy(bs._to_bitarray())
+        ba = copy.copy(self._to_bitarray())
         x._bitarray = bitarray.frozenbitarray(ba)
         x.endbit = len(x._bitarray)
         return x
 
     def setitem(self, key: int | slice, value: BitStore, /):
+        if self.mutable is False:
+            raise ValueError("Cannot setitem on an immutable BitStore.")
         ba = bitarray.bitarray(self._to_bitarray())
         ba.__setitem__(key, value._bitarray)
         self._bitarray = bitarray.frozenbitarray(ba)
@@ -328,6 +340,8 @@ class MutableBitStore(BitStore):
         self.endbit = len(self._bitarray)
 
     def copy(self) -> BitStore:
+        if self.mutable is False:
+            raise ValueError("You shouldn't need to use copy() on an immutable BitStore.")
         s_copy = self.__class__()
         s_copy._bitarray = copy.copy(self._to_bitarray())
         s_copy.startbit = 0
