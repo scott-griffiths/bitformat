@@ -16,12 +16,10 @@ import sys
 match Options().bitstore:
     case "bitarray":
         from ._bitstore import BitStore
-
     case "python":
         from ._bitstore_pure import BitStore
     case "rust":
-        # TODO
-        from ._bitstore_pure import BitStore
+        from ._bitstore_rust import BitStore
 
 __all__ = ["Array", "BitsProxy"]
 
@@ -167,7 +165,7 @@ class Array:
 
         if isinstance(initializer, numbers.Integral):
             self._bitstore = BitStore.from_zeros(
-                initializer * self._dtype.bits_per_item, mutable = True
+                initializer * self._dtype.bits_per_item, True
             )
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
@@ -491,10 +489,8 @@ class Array:
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
-            self._bitstore = BitStore.join(
-                [self._bitstore]
-                + [self._create_element(item)._bitstore.get_mutable_copy() for item in iterable], True
-            )
+            to_join = [self._bitstore] + [self._create_element(item)._bitstore.get_mutable_copy() for item in iterable]
+            self._bitstore = BitStore.join(to_join, True)
 
     def insert(self, pos: int, x: ElementType, /) -> None:
         """
@@ -575,7 +571,7 @@ class Array:
     def to_bits(self) -> Bits:
         """Return as a Bits object. As Arrays are mutable we need to return a copy."""
         x = Bits()
-        x._bitstore = self._bitstore.copy()
+        x._bitstore = self._bitstore.get_mutable_copy()
         return x
 
     def reverse(self) -> None:
