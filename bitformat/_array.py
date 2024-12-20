@@ -64,6 +64,14 @@ class BitsProxy:
     __hash__ = None
     """The hash method is disabled for a ``BitsProxy`` object as it is mutable."""
 
+    def __eq__(self, other):
+        if isinstance(other, BitsProxy):
+            return self._bitstore == other._bitstore
+        try:
+            return self._bitstore == Bits.from_auto(other)._bitstore
+        except TypeError:
+            return False
+
 
 # List of special methods to delegate
 special_methods = [
@@ -71,7 +79,6 @@ special_methods = [
     "__and__",
     "__bool__",
     "__contains__",
-    "__eq__",
     "__ge__",
     "__getitem__",
     "__gt__",
@@ -81,7 +88,6 @@ special_methods = [
     "__lshift__",
     "__lt__",
     "__mul__",
-    "__ne__",
     "__or__",
     "__radd__",
     "__rand__",

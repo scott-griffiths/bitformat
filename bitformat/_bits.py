@@ -1025,7 +1025,7 @@ class Bits:
             raise TypeError(
                 f"Expected a binary string, but received a {type(binstring)} with value {binstring}."
             )
-        self._bitstore = BitStore.from_bin(binstring.replace("_", ""))
+        self._bitstore = BitStore.from_bin(''.join(binstring.replace("_", "").split()))
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""

@@ -63,6 +63,10 @@ def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
         slice_ = self.getslice(start, None)
         f = slice_.find(bs, bytealigned)
 
+def count(self, value: bool) -> int:
+    if value:
+        return self.count_ones()
+    return self.count_zeros()
 
 
 BitStore.from_int = classmethod(from_int)
@@ -70,3 +74,4 @@ BitStore.from_float = classmethod(from_float)
 BitStore.to_uint = to_uint
 BitStore.to_int = to_int
 BitStore.findall = findall
+BitStore.count = count
