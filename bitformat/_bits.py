@@ -796,7 +796,7 @@ class Bits:
                 pos += len(self)
             if pos < 0 or pos >= len(self):
                 raise IndexError
-            s._bitstore = self._bitstore.set(bool(v), pos)
+            s._bitstore = self._bitstore.set_index(bool(v), pos)
         elif isinstance(pos, range):
             s = Bits()
             s._bitstore = self._bitstore.set_from_slice(v, slice(pos.start, pos.stop, pos.step))

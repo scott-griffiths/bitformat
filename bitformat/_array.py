@@ -312,7 +312,7 @@ class Array:
                 new_data = Bits()
                 for x in value:
                     new_data += self._create_element(x)
-                self._bitstore.setitem(
+                self._bitstore.set_slice(
                     slice(start * self._dtype.bitlength, stop * self._dtype.bitlength),
                     new_data._bitstore,
                 )
@@ -323,7 +323,7 @@ class Array:
             if len(value) == items_in_slice:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
-                    self._bitstore.setitem(
+                    self._bitstore.set_slice(
                         slice(
                             s * self._dtype.bitlength,
                             s * self._dtype.bitlength + len(x),
@@ -343,7 +343,7 @@ class Array:
                 )
             start = self._dtype.bitlength * key
             x = self._create_element(value)
-            self._bitstore.setitem(slice(start, start + len(x)), x._bitstore)
+            self._bitstore.set_slice(slice(start, start + len(x)), x._bitstore)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
@@ -816,7 +816,7 @@ class Array:
                 f"Bitwise op {op} needs a Bits of length {self._dtype.bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits."
             )
         for start in range(0, len(self) * self._dtype.bitlength, self._dtype.bitlength):
-            self._bitstore.setitem(
+            self._bitstore.set_slice(
                 slice(start, start + self._dtype.bitlength),
                 op(
                     self._bitstore.getslice(start, start + self._dtype.bitlength),

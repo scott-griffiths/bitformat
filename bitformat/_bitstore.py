@@ -291,7 +291,7 @@ class BitStore:
     def __len__(self) -> int:
         return self.endbit - self.startbit
 
-    def set(self, value: int, pos: int) -> BitStore:
+    def set_index(self, value: int, pos: int) -> BitStore:
         ba = bitarray.bitarray(self._to_bitarray())
         ba[pos] = value
         x = self.__class__()
@@ -330,7 +330,7 @@ class BitStore:
         x.endbit = len(x._bitarray)
         return x
 
-    def setitem(self, key: int | slice, value: BitStore, /):
+    def set_slice(self, key: int | slice, value: BitStore, /):
         if self.mutable is False:
             raise ValueError("Cannot setitem on an immutable BitStore.")
         ba = bitarray.bitarray(self._to_bitarray())
