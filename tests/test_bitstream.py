@@ -449,6 +449,12 @@ class TestAdding:
         assert s.bin == "010000111"
 
     def test_join2(self):
+        s1 = Bits("0x00f1")
+        assert s1[4:12].hex == "0f"
+        bsl = [s1[0:16], s1[4:12]]
+        s = Bits.join(bsl)
+        assert s.hex == "00f10f"
+
         s1 = Bits("0x00112233445566778899aabbccddeeff")
         s2 = Bits("0b000011")
         bsl = [s1[0:32], s1[4:12], s2, s2, s2, s2]

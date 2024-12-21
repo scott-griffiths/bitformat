@@ -77,6 +77,11 @@ def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
 def set_from_slice(self, value: bool, s: slice) -> BitStore:
     return self.set_from_iterable(value, list(range(s.start or 0, s.stop, s.step or 1)));
 
+def set_mutable_slice(self, start: int, end: int, value: BitStore) -> None:
+    start = self.getslice(0, start)
+    middle = value
+    end = self.getslice(end, None)
+    self = BitStore.join([start, middle, end])
 
 BitStore.from_int = classmethod(from_int)
 BitStore.from_float = classmethod(from_float)
@@ -86,3 +91,4 @@ BitStore.findall = findall
 BitStore.count = count
 BitStore.set_from_iterable = set_from_iterable
 BitStore.set_from_slice = set_from_slice
+BitStore.set_mutable_slice = set_mutable_slice
