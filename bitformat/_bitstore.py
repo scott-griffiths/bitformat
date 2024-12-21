@@ -310,7 +310,7 @@ class BitStore:
         x.endbit = len(x._bitarray)
         return x
 
-    def set_from_iterable(self, value: int, pos: Iterable[int]) -> BitStore:
+    def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
         ba = bitarray.bitarray(self._to_bitarray())
         for p in pos:
             ba.__setitem__(p, value)

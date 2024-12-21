@@ -789,14 +789,14 @@ class Bits:
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        v = 1 if value else 0
+        v = True if value else False
         if not isinstance(pos, abc.Iterable):
             s = Bits()
             if pos < 0:
                 pos += len(self)
             if pos < 0 or pos >= len(self):
                 raise IndexError
-            s._bitstore = self._bitstore.set_index(bool(v), pos)
+            s._bitstore = self._bitstore.set_index(v, pos)
         elif isinstance(pos, range):
             s = Bits()
             s._bitstore = self._bitstore.set_from_slice(v, slice(pos.start, pos.stop, pos.step))

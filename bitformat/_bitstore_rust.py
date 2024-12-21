@@ -1,7 +1,7 @@
 
 from bit_rust import BitRust as BitStore
 import struct
-from typing import Iterator
+from typing import Iterator, Iterable
 
 # These can all be converted to pure Rust later if we feel like it
 
@@ -68,6 +68,15 @@ def count(self, value: bool) -> int:
         return self.count_ones()
     return self.count_zeros()
 
+def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
+    new_bitstore = self
+    for p in pos:
+        new_bitstore = new_bitstore.set_index(value, p)
+    return new_bitstore
+
+def set_from_slice(self, value: bool, s: slice) -> BitStore:
+    return self.set_from_iterable(value, list(range(s.start or 0, s.stop, s.step or 1)));
+
 
 BitStore.from_int = classmethod(from_int)
 BitStore.from_float = classmethod(from_float)
@@ -75,3 +84,5 @@ BitStore.to_uint = to_uint
 BitStore.to_int = to_int
 BitStore.findall = findall
 BitStore.count = count
+BitStore.set_from_iterable = set_from_iterable
+BitStore.set_from_slice = set_from_slice
