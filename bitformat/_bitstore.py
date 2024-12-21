@@ -330,11 +330,11 @@ class BitStore:
         x.endbit = len(x._bitarray)
         return x
 
-    def set_slice(self, key: int | slice, value: BitStore, /):
+    def set_mutable_slice(self, startbit: int, endbit:int, value: BitStore, /) -> None:
         if self.mutable is False:
             raise ValueError("Cannot setitem on an immutable BitStore.")
         ba = bitarray.bitarray(self._to_bitarray())
-        ba.__setitem__(key, value._bitarray)
+        ba.__setitem__(slice(startbit, endbit, None), value._bitarray)
         self._bitarray = bitarray.frozenbitarray(ba)
         self.startbit = 0
         self.endbit = len(self._bitarray)
