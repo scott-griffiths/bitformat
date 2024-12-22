@@ -38,20 +38,14 @@ def from_float(cls, f: float, length: int) -> BitStore:
     return BitStore.from_bytes(b)
 
 def to_uint(self) -> int:
-    b, offset = self.to_byte_data_with_offset()
-    x = int.from_bytes(b, byteorder="big")
-    padding = 8 - ((offset + len(self)) % 8)
-    if padding != 8:
-        x >>= padding
-    return x
+    return int(self.to_bin(), 2)
 
 def to_int(self) -> int:
-    b, offset = self.to_byte_data_with_offset()
-    x = int.from_bytes(b, byteorder="big", signed=True)
-    padding = 8 - ((offset + len(self)) % 8)
-    if padding != 8:
-        x >>= padding
-    return x
+    bin_str = self.to_bin()
+    i = int(bin_str, 2)
+    if bin_str[0] == "1":
+        i -= 1 << len(self)
+    return i
 
 def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
     # TODO: bytealign_offset - see _bitstore_pure.py
