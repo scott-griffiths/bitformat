@@ -237,17 +237,6 @@ class BitStore:
     def getindex(self, index: int, /) -> bool:
         return bool(self._bitarray.__getitem__(index + self.startbit))
 
-    def getslice_withstep(self, start:int, stop: int, step: int, /) -> BitStore:
-        x = super().__new__(self.__class__)
-        x.startbit = 0
-        start += self.startbit
-        stop += self.startbit
-        key = slice(start, stop, step)
-        x._bitarray = self._bitarray.__getitem__(key)
-        x.endbit = len(x._bitarray)
-        x.mutable = False
-        return x
-
     def getslice(self, start: int, stop: int | None, /) -> BitStore:
         assert start >= 0
         assert stop is None or stop >= 0
@@ -338,12 +327,3 @@ class BitStore:
         self._bitarray = bitarray.frozenbitarray(ba)
         self.startbit = 0
         self.endbit = len(self._bitarray)
-
-    def copy(self) -> BitStore:
-        if self.mutable is False:
-            raise ValueError("You shouldn't need to use copy() on an immutable BitStore.")
-        s_copy = self.__class__()
-        s_copy._bitarray = copy.copy(self._to_bitarray())
-        s_copy.startbit = 0
-        s_copy.endbit = len(s_copy._bitarray)
-        return s_copy

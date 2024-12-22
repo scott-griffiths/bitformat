@@ -800,8 +800,8 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
-        a_copy = self[:]
-        a_copy._bitstore.mutable = True
+        a_copy = Array(self.dtype)
+        a_copy._bitstore = self._bitstore.get_mutable_copy()
         a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
         return a_copy
 
