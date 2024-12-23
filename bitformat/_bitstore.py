@@ -213,8 +213,8 @@ class BitStore:
                 if (p % 8) == 0:
                     yield p - self.startbit
 
-    def count(self, value, /) -> int:
-        return self._to_bitarray().count(value)
+    def count(self) -> int:
+        return self._to_bitarray().count(1)
 
     def reverse(self) -> BitStore:
         x = self.__class__()

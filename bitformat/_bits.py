@@ -339,7 +339,7 @@ class Bits:
 
         """
         # count the number of 1s (from which it's easy to work out the 0s).
-        count = self._bitstore.count(1)
+        count = self._bitstore.count()
         return count if value else len(self) - count
 
     def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:

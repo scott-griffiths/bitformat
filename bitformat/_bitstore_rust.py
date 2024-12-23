@@ -42,11 +42,6 @@ def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
     for p in p_list:
         yield p
 
-def count(self, value: bool) -> int:
-    if value:
-        return self.count_ones()
-    return self.count_zeros()
-
 def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
     new_bitstore = self
     for p in pos:
@@ -65,7 +60,6 @@ BitStore.from_int = classmethod(from_int)
 BitStore.to_uint = to_uint
 BitStore.to_int = to_int
 BitStore.findall = findall
-BitStore.count = count
 BitStore.set_from_iterable = set_from_iterable
 BitStore.set_from_slice = set_from_slice
 BitStore.__iter__ = __iter__
