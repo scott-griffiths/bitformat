@@ -266,15 +266,15 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step != 1:
-                d = Bits()
+                d = []
                 for s in range(
                     start * self._dtype.bitlength,
                     stop * self._dtype.bitlength,
                     step * self._dtype.bitlength,
                 ):
-                    d += self._bitstore.getslice(s, s + self._dtype.bitlength)
+                    d.append(self._bitstore.getslice(s, s + self._dtype.bitlength))
                 a = self.__class__(self._dtype)
-                a._bitstore = d._bitstore
+                a._bitstore = BitStore.join(d)
                 return a
             else:
                 a = self.__class__(self._dtype)

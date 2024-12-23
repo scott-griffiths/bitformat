@@ -38,11 +38,9 @@ def to_int(self) -> int:
     return i
 
 def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
-    # TODO: bytealign_offset - see _bitstore_pure.py
     p_list = self.findall_list(bs, bytealigned)
     for p in p_list:
         yield p
-
 
 def count(self, value: bool) -> int:
     if value:
@@ -58,6 +56,10 @@ def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
 def set_from_slice(self, value: bool, s: slice) -> BitStore:
     return self.set_from_iterable(value, list(range(s.start or 0, s.stop, s.step or 1)));
 
+def __iter__(self) -> Iterator[bool]:
+    for i in range(len(self)):
+        yield self.getindex(i)
+
 
 BitStore.from_int = classmethod(from_int)
 BitStore.to_uint = to_uint
@@ -66,3 +68,4 @@ BitStore.findall = findall
 BitStore.count = count
 BitStore.set_from_iterable = set_from_iterable
 BitStore.set_from_slice = set_from_slice
+BitStore.__iter__ = __iter__
