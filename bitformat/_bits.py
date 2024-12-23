@@ -407,7 +407,7 @@ class Bits:
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().bytealigned if bytealigned is None else bytealigned
-        p = self._bitstore.find(bs._bitstore, ba)
+        p = self._bitstore.find(bs._bitstore, 0, ba)
         return None if p == -1 else p
 
     def find_all(
@@ -713,7 +713,7 @@ class Bits:
         ba = Options().bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._bitstore.rfind(bs._bitstore, ba)
+        p = self._bitstore.rfind(bs._bitstore, 0, ba)
         return None if p == -1 else p
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:

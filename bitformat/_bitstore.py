@@ -150,25 +150,25 @@ class BitStore:
         return x
 
     # TODO: Returning -1 is really bad style. Just return None instead.
-    def find(self, bs: BitStore, bytealigned: bool) -> int:
+    def find(self, bs: BitStore, start: int, bytealigned: bool) -> int:
         if not bytealigned:
-            p = self._bitarray.find(bs._bitarray, self.startbit, self.endbit)
+            p = self._bitarray.find(bs._bitarray, self.startbit + start, self.endbit)
             if p == -1:
                 return -1
-            return p - self.startbit
+            return p - self.startbit + start
         try:
             return next(self.findall(bs, bytealigned))
         except StopIteration:
             return -1
 
-    def rfind(self, bs: BitStore, bytealigned: bool):
+    def rfind(self, bs: BitStore, start: int, bytealigned: bool):
         if not bytealigned:
             p = self._bitarray.find(
-                bs._bitarray, self.startbit, self.endbit, right=True
+                bs._bitarray, self.startbit + start, self.endbit, right=True
             )
             if p == -1:
                 return -1
-            return p - self.startbit
+            return p - self.startbit + start
         try:
             return next(self.rfindall(bs, bytealigned))
         except StopIteration:
