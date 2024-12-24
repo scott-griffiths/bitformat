@@ -28,7 +28,7 @@ def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
     return cls.from_bytes_with_offset(b, offset=offset)
 
 def to_uint(self) -> int:
-    return int(self.to_bin(), 2)
+    return int.from_bytes(self.to_uint_byte_data(), byteorder="big", signed=False)
 
 def to_int(self) -> int:
     bin_str = self.to_bin()
