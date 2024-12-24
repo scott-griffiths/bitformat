@@ -14,8 +14,6 @@ import sys
 
 
 match Options().bitstore:
-    case "bitarray":
-        from ._bitstore import BitStore
     case "python":
         from ._bitstore_pure import BitStore
     case "rust":

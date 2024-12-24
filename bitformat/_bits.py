@@ -16,8 +16,6 @@ from typing import Pattern
 from bitformat._options import Options
 
 match Options().bitstore:
-    case "bitarray":
-        from ._bitstore import BitStore
     case "python":
         from ._bitstore_pure import BitStore
     case "rust":

@@ -31,9 +31,9 @@ class Options:
             no_color = os.getenv("NO_COLOR")
             cls._no_color = True if no_color else not is_interactive()
             cls._indent_size = 4
-            # This is an experimental feature to use pure Python only (not bitarray)
+            # This is an experimental feature to use pure Python only (not Rust)
             # It affects imports so you need to change its value here in the code.
-            cls._bitstore = "bitarray"
+            cls._bitstore = "rust"
         return cls._instance
 
     def __init__(self):
