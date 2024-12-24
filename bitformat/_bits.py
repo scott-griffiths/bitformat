@@ -131,7 +131,7 @@ class Bits:
         .. code-block:: python
 
             # Bits.from_auto will be called internally to convert to Bits
-            a = Bits() + '0x3f'a + b'hello' + [1, 0, 1]
+            a = Bits() + '0x3f' + b'hello' + [1, 0, 1]
 
         """
         if isinstance(auto, cls):

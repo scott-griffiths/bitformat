@@ -171,21 +171,21 @@ class Array:
 
         if isinstance(initializer, numbers.Integral):
             self._bitstore = BitStore.from_zeros(
-                initializer * self._dtype.bits_per_item, True
+                initializer * self._dtype.bits_per_item
             )
         elif isinstance(initializer, Bits):
             # We may change the internal BitStore, so need to make a copy here.
             self._bitstore = initializer._bitstore.get_mutable_copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
-            self._bitstore = BitStore.from_bytes(initializer, True)
+            self._bitstore = BitStore.from_bytes(initializer)
         elif initializer is not None:
-            self._bitstore = BitStore.from_zeros(0, True)
+            self._bitstore = BitStore.from_zeros(0)
             self.extend(initializer)
         else:
-            self._bitstore = BitStore.from_zeros(0, True)
+            self._bitstore = BitStore.from_zeros(0)
         if trailing_bits is not None:
             x = Bits.from_auto(trailing_bits)
-            self._bitstore = BitStore.join([self._bitstore, x._bitstore], True)
+            self._bitstore = BitStore.join([self._bitstore, x._bitstore])
 
     @property
     def data(self) -> BitsProxy:
@@ -351,7 +351,7 @@ class Array:
                     [
                         self._bitstore.getslice(0, start * self._dtype.bitlength),
                         self._bitstore.getslice(stop * self._dtype.bitlength, None),
-                    ], True
+                    ]
                 )
                 return
             # We need to delete from the end or the earlier positions will change
@@ -365,7 +365,7 @@ class Array:
                     [
                         self._bitstore.getslice(0, s * self._dtype.bitlength),
                         self._bitstore.getslice((s + 1) * self._dtype.bitlength, None),
-                    ], True
+                    ]
                 )
         else:
             if key < 0:
@@ -377,7 +377,7 @@ class Array:
                 [
                     self._bitstore.getslice(0, start),
                     self._bitstore.getslice(start + self._dtype.bitlength, None),
-                ], True
+                ]
             )
 
     def __repr__(self) -> str:
@@ -453,7 +453,7 @@ class Array:
                 "Cannot append to Array as its length is not a multiple of the format length."
             )
         self._bitstore = BitStore.join(
-            [self._bitstore, self._create_element(x)._bitstore], True
+            [self._bitstore, self._create_element(x)._bitstore]
         )
 
     def extend(
@@ -472,11 +472,11 @@ class Array:
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
             self._bitstore = BitStore.join(
-                [self._bitstore, Bits.from_bytes(iterable)._bitstore], True
+                [self._bitstore, Bits.from_bytes(iterable)._bitstore]
             )
             return
         if isinstance(iterable, Bits):
-            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore], True)
+            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore])
             return
         if len(self._proxy) % self._dtype.bitlength != 0:
             raise ValueError(
@@ -488,12 +488,12 @@ class Array:
                     f"Cannot extend an Array with format '{self._dtype}' from an Array of format '{iterable._dtype}'."
                 )
             # No need to iterate over the elements, we can just append the data
-            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore], True)
+            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore])
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._bitstore] + [self._create_element(item)._bitstore.get_mutable_copy() for item in iterable]
-            self._bitstore = BitStore.join(to_join, True)
+            self._bitstore = BitStore.join(to_join)
 
     def insert(self, pos: int, x: ElementType, /) -> None:
         """
@@ -516,7 +516,7 @@ class Array:
                 self._bitstore.getslice(0, pos * self._dtype.bitlength),
                 v._bitstore,
                 self._bitstore.getslice(pos * self._dtype.bitlength, None),
-            ], True
+            ]
         )
 
     def pop(self, pos: int = -1, /) -> ElementType:
