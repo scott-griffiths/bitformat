@@ -28,14 +28,10 @@ def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
     return cls.from_bytes_with_offset(b, offset=offset)
 
 def to_uint(self) -> int:
-    return int.from_bytes(self.to_uint_byte_data(), byteorder="big", signed=False)
+    return int.from_bytes(self.to_int_byte_data(False), byteorder="big", signed=False)
 
 def to_int(self) -> int:
-    bin_str = self.to_bin()
-    i = int(bin_str, 2)
-    if bin_str[0] == "1":
-        i -= 1 << len(self)
-    return i
+    return int.from_bytes(self.to_int_byte_data(True), byteorder="big", signed=True)
 
 def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
     p_list = self.findall_list(bs, bytealigned)
