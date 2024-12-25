@@ -22,6 +22,7 @@ classifiers = [
 ]
 keywords = ["binary", "bitarray", "bitvector", "bitfield", "bitstring", "construct", "struct", "parser"]
 dependencies = [
+    "bit-rust",
     "lark >= 1.2.2, < 1.3.0",
 ]
 
@@ -46,3 +47,6 @@ dev-dependencies = [
     "pyright>=1.1.389",
     "pytest-cov>=6.0.0",
 ]
+
+[tool.uv.sources]
+bit-rust = { path = "bit_rust" }
