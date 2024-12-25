@@ -944,7 +944,21 @@ class Bits:
                 "A non-zero length must be specified with a uint initialiser."
             )
         try:
-            self._bitstore = BitStore.from_int(i, length, False)
+            if i >= (1 << length):
+                raise ValueError(
+                    f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                    f"The allowed range is [0, {(1 << length) - 1}]."
+                )
+            if i < 0:
+                raise ValueError(
+                    f"Unsigned integers cannot be initialised with the negative number {i}."
+                )
+            b = i.to_bytes((length + 7) // 8, byteorder="big", signed=False)
+            offset = 8 - (length % 8)
+            if offset == 8:
+                self._bitstore = BitStore.from_bytes(b)
+            else:
+                self._bitstore = BitStore.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if i >= (1 << length):
                 raise ValueError(
@@ -971,7 +985,17 @@ class Bits:
                 "A non-zero length must be specified with an int initialiser."
             )
         try:
-            self._bitstore = BitStore.from_int(i, length, True)
+            if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
+                raise ValueError(
+                    f"{i} is too large a signed integer for a Bits of length {length}. "
+                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}]."
+                )
+            b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
+            offset = 8 - (length % 8)
+            if offset == 8:
+                self._bitstore = BitStore.from_bytes(b)
+            else:
+                self._bitstore = BitStore.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
                 raise ValueError(
