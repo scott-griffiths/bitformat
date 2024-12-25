@@ -27,12 +27,6 @@ def from_int(cls, i: int, length: int, signed: bool, /) -> BitStore:
         offset = 0
     return cls.from_bytes_with_offset(b, offset=offset)
 
-def to_uint(self) -> int:
-    return int.from_bytes(self.to_int_byte_data(False), byteorder="big", signed=False)
-
-def to_int(self) -> int:
-    return int.from_bytes(self.to_int_byte_data(True), byteorder="big", signed=True)
-
 def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
     p_list = self.findall_list(bs, bytealigned)
     for p in p_list:
@@ -47,8 +41,6 @@ def __iter__(self) -> Iterator[bool]:
 
 
 BitStore.from_int = classmethod(from_int)
-BitStore.to_uint = to_uint
-BitStore.to_int = to_int
 BitStore.findall = findall
 BitStore.set_from_slice = set_from_slice
 BitStore.__iter__ = __iter__

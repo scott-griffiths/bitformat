@@ -961,7 +961,7 @@ class Bits:
         """Return data as an unsigned int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return self._bitstore.to_uint()
+        return int.from_bytes(self._bitstore.to_int_byte_data(False), byteorder="big", signed=False)
 
     def _setint(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
@@ -984,7 +984,7 @@ class Bits:
         """Return data as a two's complement signed int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return self._bitstore.to_int()
+        return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
 
     def _setfloat(self, f: float | str, length: int | None) -> None:
         f = float(f)
