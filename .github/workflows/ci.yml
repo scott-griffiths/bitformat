@@ -109,12 +109,12 @@ jobs:
 
       - name: Set up environment
         run: |
+          cd repo
           uv venv
           source .venv/bin/activate
 
       - name: Run pytest
         run: |
-          cd repo
           uv pip install -r pyproject.toml
           cd bit_rust
           uvx maturin develop --release --uv
