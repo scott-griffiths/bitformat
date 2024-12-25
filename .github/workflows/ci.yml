@@ -116,6 +116,9 @@ jobs:
         run: |
           cd repo
           uv pip install -r pyproject.toml
+          cd bit_rust
+          uvx maturin develop --release --uv
+          cd ..
           uv run pytest --benchmark-disable
 
   all:
