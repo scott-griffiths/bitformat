@@ -8,7 +8,7 @@ import re
 import functools
 from ast import literal_eval
 from collections import abc
-from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
+from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
 from bitformat import _utils
 from bitformat._dtypes import Dtype, Register, DtypeList
 from bitformat._common import Colour, Endianness
@@ -774,13 +774,13 @@ class Bits:
             ]
         )
 
-    def set(self, value: Any, pos: int | Iterable[int]) -> Bits:
+    def set(self, value: Any, pos: int | Sequence[int]) -> Bits:
         """Return new Bits with one or many bits set to 1 or 0.
 
         :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
         :type value: Any
         :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Iterable[int]
+        :type pos: int or Sequence[int]
         :return: A new Bits object with the set bits.
         :rtype: Bits
 
@@ -788,7 +788,7 @@ class Bits:
 
         """
         v = True if value else False
-        if not isinstance(pos, abc.Iterable):
+        if not isinstance(pos, abc.Sequence):
             s = Bits()
             if pos < 0:
                 pos += len(self)
@@ -797,10 +797,10 @@ class Bits:
             s._bitstore = self._bitstore.set_index(v, pos)
         elif isinstance(pos, range):
             s = Bits()
-            s._bitstore = self._bitstore.set_from_slice(v, slice(pos.start, pos.stop, pos.step))
+            s._bitstore = self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
         else:
             s = Bits()
-            s._bitstore = self._bitstore.set_from_iterable(v, pos)
+            s._bitstore = self._bitstore.set_from_sequence(v, pos)
         return s
 
     def starts_with(self, prefix: BitsType) -> bool:

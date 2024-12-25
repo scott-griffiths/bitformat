@@ -38,11 +38,8 @@ def findall(self, bs: BitStore, bytealigned: bool) -> Iterator[int]:
     for p in p_list:
         yield p
 
-def set_from_iterable(self, value: bool, pos: Iterable[int]) -> BitStore:
-    return self.set_indices(value, list(pos))
-
-def set_from_slice(self, value: bool, s: slice) -> BitStore:
-    return self.set_from_iterable(value, list(range(s.start or 0, s.stop, s.step or 1)));
+def set_from_slice(self, value: bool, start: int, stop: int, step: int) -> BitStore:
+    return self.set_from_sequence(value, list(range(start, stop, step)));
 
 def __iter__(self) -> Iterator[bool]:
     for i in range(len(self)):
@@ -53,6 +50,5 @@ BitStore.from_int = classmethod(from_int)
 BitStore.to_uint = to_uint
 BitStore.to_int = to_int
 BitStore.findall = findall
-BitStore.set_from_iterable = set_from_iterable
 BitStore.set_from_slice = set_from_slice
 BitStore.__iter__ = __iter__

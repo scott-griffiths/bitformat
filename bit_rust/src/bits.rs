@@ -223,7 +223,7 @@ impl BitRust {
         }
     }
 
-    // I think this works as a Rust version. Keeping this copy for reference.
+    // This works as a Rust version. Not sure how to make a proper Python interface.
     pub fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = i64> + 'a {
         // Use the find fn to find all instances of b in self and return as an iterator
         let mut start: i64 = 0;
@@ -258,7 +258,6 @@ impl BitRust {
         self == rhs
     }
 
-    #[pyo3(signature = (length,))]
     #[staticmethod]
     pub fn from_zeros(length: i64) -> Self {
         BitRust {
@@ -268,7 +267,6 @@ impl BitRust {
         }
     }
 
-    #[pyo3(signature = (length,))]
     #[staticmethod]
     pub fn from_ones(length: i64) -> Self {
         BitRust {
@@ -278,7 +276,6 @@ impl BitRust {
         }
     }
 
-    #[pyo3(signature = (data,))]
     #[staticmethod]
     pub fn from_bytes(data: Vec<u8>) -> Self {
         let bitlength = (data.len() as i64) * 8;
@@ -289,7 +286,6 @@ impl BitRust {
         }
     }
 
-    #[pyo3(signature = (data, offset))]
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: i64) -> Self {
         assert!(offset < 8);
@@ -301,7 +297,6 @@ impl BitRust {
         }
     }
 
-    #[pyo3(signature = (binary_string,))]
     #[staticmethod]
     pub fn from_bin(binary_string: &str) -> PyResult<Self> {
         let mut data: Vec<u8> = Vec::new();
@@ -324,7 +319,6 @@ impl BitRust {
         })
     }
 
-    #[pyo3(signature = (hex,))]
     #[staticmethod]
     pub fn from_hex(hex: &str) -> PyResult<Self> {
         let mut new_hex = hex.to_string();
@@ -343,14 +337,12 @@ impl BitRust {
         })
     }
 
-    #[pyo3(signature = (bits_vec,))]
     #[staticmethod]
     pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
         let my_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
         return BitRust::join_internal(&my_vec);
     }
 
-    #[pyo3(signature = (oct,))]
     #[staticmethod]
     pub fn from_oct(oct: &str) -> PyResult<Self> {
         let mut bin_str = String::new();
@@ -376,13 +368,14 @@ impl BitRust {
             &self.copy_with_new_offset(0)
         };
         if no_offset.length % 8 == 0 {
-            return no_offset.data[no_offset.start_byte()..no_offset.end_byte()].to_vec();
+            // No offset and whole-byte data
+            return no_offset.active_data();
         }
         // Make sure final byte is padded with zeros
-        let mut bytes = no_offset.data[no_offset.start_byte()..no_offset.end_byte() - 1].to_vec();
-        let final_byte = no_offset.data[no_offset.end_byte() - 1];
-        let padding = 8 - (no_offset.length % 8);
-        bytes.push(final_byte & (0xff << padding));
+        let mut bytes = no_offset.active_data();
+        let padding_mask: u8 = 0xff << (8 - (no_offset.length % 8));
+        let bytes_len = bytes.len();
+        bytes[bytes_len - 1] &= padding_mask;
         bytes
     }
 
@@ -641,11 +634,11 @@ impl BitRust {
 
     // Return new BitRust with bit at index set to value.
     pub fn set_index(&self, value: bool, index: i64) -> PyResult<Self> {
-        self.set_indices(value, vec![index])
+        self.set_from_sequence(value, vec![index])
     }
 
     // Return new BitRust with bits at indices set to value.
-    pub fn set_indices(&self, value: bool, indices: Vec<i64>) -> PyResult<Self> {
+    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<Self> {
         let mut data: Vec<u8> = self.active_data();
         let mut positive_indices: Vec<i64> = vec![];
         for index in indices {
