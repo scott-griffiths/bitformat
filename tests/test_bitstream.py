@@ -551,13 +551,13 @@ class TestAdding:
         assert s.bin == ""
 
     def test_init_with_concatenated_strings(self):
-        s = Bits("0xff, 0Xee,0xd ,0xcc")
+        s = Bits("0xff, 0xee,0xd ,0xcc")
         assert s.hex == "ffeedcc"
-        s = Bits("0b0 ,0B111 ,0b001")
+        s = Bits("0b0 ,0b111 ,0b001")
         assert s.bin == "0111001"
         s = Bits("0xffee")
         assert s.hex == "ffee"
-        s = Bits("  0o123 ,0O7 ,0o1")
+        s = Bits("  0o123 ,0o7 ,0o1")
         assert s.oct == "12371"
         s += "  0o 332"
         assert s.oct == "12371332"

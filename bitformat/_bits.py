@@ -53,13 +53,13 @@ def token_to_bitstore(token: str) -> BitRust:
                     f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type."
                 )
         return dtype.pack(value)._bitstore
-    if token.startswith(("0x", "0X")):
+    if token.startswith("0x"):
         token = token[2:].replace("_", "")
         return BitRust.from_hex(token)
-    if token.startswith(("0b", "0B")):
+    if token.startswith("0b"):
         token = token[2:].replace("_", "")
         return BitRust.from_bin(token)
-    if token.startswith(("0o", "0O")):
+    if token.startswith("0o"):
         token = token[2:].replace("_", "")
         return BitRust.from_oct(token)
     raise ValueError(
@@ -1036,7 +1036,7 @@ class Bits:
     def _setbin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
         try:
-            if binstring.startswith(("0b", "0B")):
+            if binstring.startswith("0b"):
                 binstring = binstring[2:]
         except AttributeError:
             raise TypeError(
@@ -1051,7 +1051,7 @@ class Bits:
     def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
         try:
-            if octstring.startswith(("0o", "0O")):
+            if octstring.startswith("0o"):
                 octstring = octstring[2:]
         except AttributeError:
             raise TypeError(
@@ -1070,7 +1070,7 @@ class Bits:
     def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         try:
-            if hexstring.startswith(("0x", "0X")):
+            if hexstring.startswith("0x"):
                 hexstring = hexstring[2:]
         except AttributeError:
             raise TypeError(

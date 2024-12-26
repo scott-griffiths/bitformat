@@ -39,7 +39,7 @@ class TestCreation:
         assert (len(s), s.unpack("hex")) == (16, "a0ff")
 
     def test_creation_from_hex_with_whitespace(self):
-        s = Bits("  \n0 X a  4e       \r3  \n")
+        s = Bits("  \n0x a  4e       \r3  \n")
         assert s.hex == "a4e3"
 
     @pytest.mark.parametrize("bad_val", ["0xx0", "0xX0", "0Xx0", "-2e"])
