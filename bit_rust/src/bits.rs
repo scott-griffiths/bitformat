@@ -133,7 +133,7 @@ impl BitRust {
         ((self.offset + self.length + 7) / 8) as usize
     }
 
-    fn active_data(&self) -> Vec<u8> {
+    pub(crate) fn active_data(&self) -> Vec<u8> {
         self.data[self.start_byte()..self.end_byte()].to_vec()
     }
     
@@ -434,13 +434,9 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
-        let x = self.data.iter()
-            .map(|byte| format!("{:08b}", byte))
-            .fold(String::new(), |mut bin_str, bin| {
-                bin_str.push_str(&bin);
-                bin_str
-            });
-        x[self.offset as usize..(self.offset + self.length) as usize].to_string()
+        let bv = BitVec::from_bytes(&*self.active_data());
+        let s: String = bv.iter().map(|b| if b { '1' } else { '0' }).collect();
+        s[(self.offset % 8) as usize..((self.offset % 8) + self.length) as usize].to_string()
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
