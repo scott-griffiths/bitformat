@@ -668,6 +668,9 @@ impl BitRust {
     }
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
+        // One way to do this (for lower values of step) would be to create a whole-byte mask
+        // of the bit pattern and apply that before cleaning up the edges.
+        // And of course if step is 1 or -1 that's a special case too!
         let mut data: Vec<u8> = self.active_data();
         let offset = self.offset % 8;
         let positive_start = if start < 0 { start + self.length } else { start };

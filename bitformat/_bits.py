@@ -14,12 +14,7 @@ from bitformat._dtypes import Dtype, Register, DtypeList
 from bitformat._common import Colour, Endianness
 from typing import Pattern
 from bitformat._options import Options
-
-match Options().bitstore:
-    case "python":
-        from ._bitstore_pure import BitStore
-    case "rust":
-        from ._bitstore_rust import BitStore
+from ._bitstore_rust import BitRust
 
 __all__ = ["Bits", "BitsType"]
 
@@ -36,7 +31,7 @@ CACHE_SIZE = 256
 
 
 @functools.lru_cache(CACHE_SIZE)
-def token_to_bitstore(token: str) -> BitStore:
+def token_to_bitstore(token: str) -> BitRust:
     if token[0] != "0":
         match = NAME_INT_VALUE_RE.match(token)
         if not match:
@@ -60,27 +55,27 @@ def token_to_bitstore(token: str) -> BitStore:
         return dtype.pack(value)._bitstore
     if token.startswith(("0x", "0X")):
         token = token[2:].replace("_", "")
-        return BitStore.from_hex(token)
+        return BitRust.from_hex(token)
     if token.startswith(("0b", "0B")):
         token = token[2:].replace("_", "")
-        return BitStore.from_bin(token)
+        return BitRust.from_bin(token)
     if token.startswith(("0o", "0O")):
         token = token[2:].replace("_", "")
-        return BitStore.from_oct(token)
+        return BitRust.from_oct(token)
     raise ValueError(
         f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?"
     )
 
 
 @functools.lru_cache(CACHE_SIZE)
-def str_to_bitstore(s: str) -> BitStore:
+def str_to_bitstore(s: str) -> BitRust:
     s = "".join(s.split())  # Remove whitespace
     tokens = [token for token in s.split(",") if token]
     if len(tokens) == 1:
         return token_to_bitstore(tokens[0])
     if not tokens:
-        return BitStore.from_zeros(0)
-    return BitStore.join([token_to_bitstore(token) for token in tokens])
+        return BitRust.from_zeros(0)
+    return BitRust.join([token_to_bitstore(token) for token in tokens])
 
 
 class Bits:
@@ -107,7 +102,7 @@ class Bits:
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
-            x._bitstore = BitStore.from_zeros(0)
+            x._bitstore = BitRust.from_zeros(0)
         else:
             x._bitstore = str_to_bitstore(s)
         return x
@@ -155,7 +150,7 @@ class Bits:
         :rtype: Bits
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_bytes(b)
+        x._bitstore = BitRust.from_bytes(b)
         return x
 
     @classmethod
@@ -170,7 +165,7 @@ class Bits:
         :rtype: Bits
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_bin("".join("1" if x else "0" for x in i))
+        x._bitstore = BitRust.from_bin("".join("1" if x else "0" for x in i))
         return x
 
     @classmethod
@@ -205,7 +200,7 @@ class Bits:
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitStore.join(
+        x._bitstore = BitRust.join(
             [Bits.from_auto(item)._bitstore for item in sequence]
         )
         return x
@@ -226,7 +221,7 @@ class Bits:
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_ones(n)
+        x._bitstore = BitRust.from_ones(n)
         return x
 
     @classmethod
@@ -266,7 +261,7 @@ class Bits:
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
-        x._bitstore = BitStore.from_zeros(n)
+        x._bitstore = BitRust.from_zeros(n)
         return x
 
     # ----- Instance Methods -----
@@ -453,7 +448,7 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitStore.join(
+        x._bitstore = BitRust.join(
             [
                 self._bitstore.getslice(0, pos),
                 bs._bitstore,
@@ -482,7 +477,7 @@ class Bits:
             pos = (pos,)
         length = len(self)
         x = self.__class__()
-        # No need to copy as the BitStore is immutable!
+        # No need to copy as the BitRust is immutable!
         x._bitstore = self._bitstore
         for p in pos:
             if p < 0:
@@ -511,7 +506,7 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitStore.join(
+        x._bitstore = BitRust.join(
             [
                 self._bitstore.getslice(0, pos),
                 bs._bitstore,
@@ -676,7 +671,7 @@ class Bits:
             self._bitstore.getslice(starting_points[-1] + len(old), None)
         )
         x = self.__class__()
-        x._bitstore = BitStore.join(replacement_list)
+        x._bitstore = BitRust.join(replacement_list)
         return x
 
     def reverse(self) -> Bits:
@@ -914,7 +909,7 @@ class Bits:
 
     def _setbytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
-        self._bitstore = BitStore.from_bytes(bytes(data))
+        self._bitstore = BitRust.from_bytes(bytes(data))
 
     def _getbytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
@@ -956,9 +951,9 @@ class Bits:
             b = i.to_bytes((length + 7) // 8, byteorder="big", signed=False)
             offset = 8 - (length % 8)
             if offset == 8:
-                self._bitstore = BitStore.from_bytes(b)
+                self._bitstore = BitRust.from_bytes(b)
             else:
-                self._bitstore = BitStore.from_bytes_with_offset(b, offset=offset)
+                self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if i >= (1 << length):
                 raise ValueError(
@@ -993,9 +988,9 @@ class Bits:
             b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
             offset = 8 - (length % 8)
             if offset == 8:
-                self._bitstore = BitStore.from_bytes(b)
+                self._bitstore = BitRust.from_bytes(b)
             else:
-                self._bitstore = BitStore.from_bytes_with_offset(b, offset=offset)
+                self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
                 raise ValueError(
@@ -1018,7 +1013,7 @@ class Bits:
         except OverflowError:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
             b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-        self._bitstore = BitStore.from_bytes(b)
+        self._bitstore = BitRust.from_bytes(b)
 
     def _getfloat(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
@@ -1026,7 +1021,7 @@ class Bits:
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _setbool(self, value: bool) -> None:
-        self._bitstore = BitStore.from_bin("1") if value else BitStore.from_bin("0")
+        self._bitstore = BitRust.from_bin("1") if value else BitRust.from_bin("0")
         return
 
     def _getbool(self) -> bool:
@@ -1047,7 +1042,7 @@ class Bits:
             raise TypeError(
                 f"Expected a binary string, but received a {type(binstring)} with value {binstring}."
             )
-        self._bitstore = BitStore.from_bin(''.join(binstring.replace("_", "").split()))
+        self._bitstore = BitRust.from_bin(''.join(binstring.replace("_", "").split()))
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
@@ -1062,7 +1057,7 @@ class Bits:
             raise TypeError(
                 f"Expected an octal string, but received a {type(octstring)} with value {octstring}."
             )
-        self._bitstore = BitStore.from_oct(octstring.replace("_", ""))
+        self._bitstore = BitRust.from_oct(octstring.replace("_", ""))
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""
@@ -1081,7 +1076,7 @@ class Bits:
             raise TypeError(
                 f"Expected a hex string, but received a {type(hexstring)} with value {hexstring}."
             )
-        self._bitstore = BitStore.from_hex(hexstring.replace("_", ""))
+        self._bitstore = BitRust.from_hex(hexstring.replace("_", ""))
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string."""
@@ -1535,16 +1530,16 @@ class Bits:
         x = self.__class__()
         if n == 0:
             return x
-        # No need to copy as the BitStore is immutable.
+        # No need to copy as the BitRust is immutable.
         x._bitstore = self._bitstore
         m = 1
         old_len = len(self)
         # Keep doubling the length for as long as we can
         while m * 2 < n:
-            x._bitstore = BitStore.join([x._bitstore, x._bitstore])
+            x._bitstore = BitRust.join([x._bitstore, x._bitstore])
             m *= 2
         # Then finish off with the remaining copies
-        x._bitstore = BitStore.join([x._bitstore, x[0 : (n - m) * old_len]._bitstore])
+        x._bitstore = BitRust.join([x._bitstore, x[0 : (n - m) * old_len]._bitstore])
         return x
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:

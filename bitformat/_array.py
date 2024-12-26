@@ -11,13 +11,7 @@ from bitformat._options import Options
 from bitformat._common import Colour
 import operator
 import sys
-
-
-match Options().bitstore:
-    case "python":
-        from ._bitstore_pure import BitStore
-    case "rust":
-        from ._bitstore_rust import BitStore
+from ._bitstore_rust import BitRust
 
 __all__ = ["Array", "BitsProxy"]
 
@@ -168,22 +162,22 @@ class Array:
         self._set_dtype(dtype)
 
         if isinstance(initializer, numbers.Integral):
-            self._bitstore = BitStore.from_zeros(
+            self._bitstore = BitRust.from_zeros(
                 initializer * self._dtype.bits_per_item
             )
         elif isinstance(initializer, Bits):
-            # We may change the internal BitStore, so need to make a copy here.
+            # We may change the internal BitRust, so need to make a copy here.
             self._bitstore = initializer._bitstore.get_mutable_copy()
         elif isinstance(initializer, (bytes, bytearray, memoryview)):
-            self._bitstore = BitStore.from_bytes(initializer)
+            self._bitstore = BitRust.from_bytes(initializer)
         elif initializer is not None:
-            self._bitstore = BitStore.from_zeros(0)
+            self._bitstore = BitRust.from_zeros(0)
             self.extend(initializer)
         else:
-            self._bitstore = BitStore.from_zeros(0)
+            self._bitstore = BitRust.from_zeros(0)
         if trailing_bits is not None:
             x = Bits.from_auto(trailing_bits)
-            self._bitstore = BitStore.join([self._bitstore, x._bitstore])
+            self._bitstore = BitRust.join([self._bitstore, x._bitstore])
 
     @property
     def data(self) -> BitsProxy:
@@ -272,7 +266,7 @@ class Array:
                 ):
                     d.append(self._bitstore.getslice(s, s + self._dtype.bitlength))
                 a = self.__class__(self._dtype)
-                a._bitstore = BitStore.join(d)
+                a._bitstore = BitRust.join(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
@@ -345,7 +339,7 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = BitStore.join(
+                self._bitstore = BitRust.join(
                     [
                         self._bitstore.getslice(0, start * self._dtype.bitlength),
                         self._bitstore.getslice(stop * self._dtype.bitlength, None),
@@ -359,7 +353,7 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore =BitStore.join(
+                self._bitstore =BitRust.join(
                     [
                         self._bitstore.getslice(0, s * self._dtype.bitlength),
                         self._bitstore.getslice((s + 1) * self._dtype.bitlength, None),
@@ -371,7 +365,7 @@ class Array:
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self._dtype.bitlength * key
-            self._bitstore = BitStore.join(
+            self._bitstore = BitRust.join(
                 [
                     self._bitstore.getslice(0, start),
                     self._bitstore.getslice(start + self._dtype.bitlength, None),
@@ -450,7 +444,7 @@ class Array:
             raise ValueError(
                 "Cannot append to Array as its length is not a multiple of the format length."
             )
-        self._bitstore = BitStore.join(
+        self._bitstore = BitRust.join(
             [self._bitstore, self._create_element(x)._bitstore]
         )
 
@@ -469,12 +463,12 @@ class Array:
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
-            self._bitstore = BitStore.join(
+            self._bitstore = BitRust.join(
                 [self._bitstore, Bits.from_bytes(iterable)._bitstore]
             )
             return
         if isinstance(iterable, Bits):
-            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore])
+            self._bitstore = BitRust.join([self._bitstore, iterable._bitstore])
             return
         if len(self._proxy) % self._dtype.bitlength != 0:
             raise ValueError(
@@ -486,12 +480,12 @@ class Array:
                     f"Cannot extend an Array with format '{self._dtype}' from an Array of format '{iterable._dtype}'."
                 )
             # No need to iterate over the elements, we can just append the data
-            self._bitstore = BitStore.join([self._bitstore, iterable._bitstore])
+            self._bitstore = BitRust.join([self._bitstore, iterable._bitstore])
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._bitstore] + [self._create_element(item)._bitstore.get_mutable_copy() for item in iterable]
-            self._bitstore = BitStore.join(to_join)
+            self._bitstore = BitRust.join(to_join)
 
     def insert(self, pos: int, x: ElementType, /) -> None:
         """
@@ -509,7 +503,7 @@ class Array:
             pos, len(self)
         )  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = BitStore.join(
+        self._bitstore = BitRust.join(
             [
                 self._bitstore.getslice(0, pos * self._dtype.bitlength),
                 v._bitstore,

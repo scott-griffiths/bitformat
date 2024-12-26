@@ -31,9 +31,6 @@ class Options:
             no_color = os.getenv("NO_COLOR")
             cls._no_color = True if no_color else not is_interactive()
             cls._indent_size = 4
-            # This is an experimental feature to use pure Python only (not Rust)
-            # It affects imports so you need to change its value here in the code.
-            cls._bitstore = "rust"
         return cls._instance
 
     def __init__(self):
@@ -95,7 +92,3 @@ class Options:
             raise ValueError("Indent size cannot be negative.")
         self._indent_size = value
 
-    @property
-    def bitstore(self) -> str:
-        """Which version of the BitStore implementation to use."""
-        return self._bitstore
