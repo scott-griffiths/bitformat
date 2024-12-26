@@ -3,6 +3,7 @@ use std::sync::Arc;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use hamming;
+use bit_vec::BitVec;
 
 /// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
 /// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
@@ -14,6 +15,7 @@ pub struct BitRust {
     offset: i64,
     length: i64,
 }
+
 
 impl fmt::Debug for BitRust {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -299,19 +301,16 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_bin(binary_string: &str) -> PyResult<Self> {
-        let mut data: Vec<u8> = Vec::new();
-        let mut byte: u8 = 0;
-        for chunk in binary_string.as_bytes().chunks(8) {
-            for (i, &c) in chunk.iter().enumerate() {
-                if c == b'1' {
-                    byte |= 1 << (7 - i);
-                } else if c != b'0' {
-                    return Err(PyValueError::new_err("Invalid character"));
-                }
+        // Convert the binary string to a bitvec first
+        let mut bv = BitVec::with_capacity(binary_string.len());
+        for c in binary_string.chars() {
+            match c {
+                '0' => bv.push(false),
+                '1' => bv.push(true),
+                _ => return Err(PyValueError::new_err("Invalid character")),
             }
-            data.push(byte);
-            byte = 0;
         }
+        let data = bv.to_bytes();
         Ok(BitRust {
             data: Arc::new(data),
             offset: 0,
@@ -697,7 +696,7 @@ impl BitRust {
         })
     }
 
-    /// Return a copy with the mutable flag set.
+    /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
             data: Arc::new(self.active_data()),
