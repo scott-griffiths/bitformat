@@ -640,30 +640,56 @@ impl BitRust {
     // Return new BitRust with bits at indices set to value.
     pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<Self> {
         let mut data: Vec<u8> = self.active_data();
+        let offset = self.offset % 8;
         let mut positive_indices: Vec<i64> = vec![];
         for index in indices {
             if -index > self.length {
                 return Err(PyIndexError::new_err("Negative index past the end"));
             }
+            if index >= self.length {
+                return Err(PyIndexError::new_err("Index out of range."))
+            }
             positive_indices.push(if index < 0 { index + self.length } else { index });
         }
-        if value {
-            for index in positive_indices {
-                let byte_offset = ((index + self.offset) / 8) as usize;
-                let bit_offset = (index + self.offset) % 8;
+        for index in positive_indices {
+            let byte_offset = ((index + offset) / 8) as usize;
+            let bit_offset = (index + offset) % 8;
+            if value {
                 data[byte_offset] |= 128 >> bit_offset;
-            }
-        }
-        else {
-            for index in positive_indices {
-                let byte_offset = ((index + self.offset) / 8) as usize;
-                let bit_offset = (index + self.offset) % 8;
+            } else {
                 data[byte_offset] &= !(128 >> bit_offset);
             }
         }
         Ok(BitRust {
             data: Arc::new(data),
-            offset: self.offset,
+            offset,
+            length: self.length,
+        })
+    }
+
+    pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
+        let mut data: Vec<u8> = self.active_data();
+        let offset = self.offset % 8;
+        let positive_start = if start < 0 { start + self.length } else { start };
+        let positive_stop = if stop < 0 { stop + self.length} else { stop };
+        if positive_start < 0 || positive_start >= self.length {
+            return Err(PyIndexError::new_err("Start of slice out of bounds."));
+        }
+        if positive_stop < 0 || positive_start >= self.length {
+            return Err(PyIndexError::new_err("End of slice out of bounds."));
+        }
+        for index in (positive_start..positive_stop).step_by(step as usize) {
+            let byte_offset = ((index + offset) / 8) as usize;
+            let bit_offset = (index + offset) % 8;
+            if value {
+                data[byte_offset] |= 128 >> bit_offset;
+            } else {
+                data[byte_offset] &= !(128 >> bit_offset);
+            }
+        }
+        Ok(BitRust {
+            data: Arc::new(data),
+            offset,
             length: self.length,
         })
     }
