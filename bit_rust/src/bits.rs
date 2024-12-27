@@ -3,7 +3,7 @@ use std::sync::Arc;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use hamming;
-use bit_vec::BitVec;
+use bitvec::prelude::*;
 
 /// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
 /// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
@@ -302,15 +302,17 @@ impl BitRust {
     #[staticmethod]
     pub fn from_bin(binary_string: &str) -> PyResult<Self> {
         // Convert the binary string to a bitvec first
-        let mut bv = BitVec::with_capacity(binary_string.len());
+        let mut b: BitVec<u8, Msb0> = BitVec::with_capacity(binary_string.len());
         for c in binary_string.chars() {
             match c {
-                '0' => bv.push(false),
-                '1' => bv.push(true),
+                '0' => b.push(false),
+                '1' => b.push(true),
                 _ => return Err(PyValueError::new_err("Invalid character")),
             }
         }
-        let data = bv.to_bytes();
+        // Convert to bytes
+        b.set_uninitialized(false);
+        let data = b.into_vec();
         Ok(BitRust {
             data: Arc::new(data),
             offset: 0,
@@ -434,8 +436,8 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
-        let bv = BitVec::from_bytes(&*self.active_data());
-        let s: String = bv.iter().map(|b| if b { '1' } else { '0' }).collect();
+        let b: BitVec<u8, Msb0> = BitVec::from_vec(self.active_data());
+        let s = b.iter().map(|x| if *x { '1' } else { '0' }).collect::<String>();
         s[(self.offset % 8) as usize..((self.offset % 8) + self.length) as usize].to_string()
     }
 
