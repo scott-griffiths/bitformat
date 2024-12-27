@@ -10,7 +10,7 @@ import itertools
 def test_chunking(benchmark):
     def chunks():
         s = Bits.from_string("0xef1356a6200b3, 0b0")
-        s = Bits.join(itertools.repeat(s, 60))
+        s = Bits.join(itertools.repeat(s, 6000))
         c = 0
         for triplet in s.chunks(3):
             if triplet == "0b001":
@@ -18,7 +18,7 @@ def test_chunking(benchmark):
         return c
 
     c = benchmark(chunks)
-    assert c == 120, c
+    assert c == 12000, c
 
 
 def test_count(benchmark):
@@ -45,19 +45,19 @@ def test_token_parsing(benchmark):
 
 def test_find_all(benchmark):
     def finding():
-        random.seed(4)
-        i = random.randrange(0, 2**2000)
-        s = Bits.pack("u2000", i)
+        random.seed(999)
+        i = random.randrange(0, 2**2000000)
+        s = Bits.pack("u20000000", i)
         for ss in [
             "0b11010010101",
             "0xabcdef1234, 0b000101111010101010011010100100101010101",
-            "0x4321", "0b111"
+            "0x4321"
         ]:
             x = len(list(s.find_all(ss)))
         return x
 
     c = benchmark(finding)
-    assert c == 198
+    assert c == 289
 
 
 def test_repeated_reading(benchmark):
@@ -73,7 +73,7 @@ def test_repeated_reading(benchmark):
 
 def test_primes(benchmark):
     def primes():
-        limit = 10000
+        limit = 1000000
         is_prime = Bits.ones(limit)
         # Manually set 0 and 1 to be not prime.
         is_prime = is_prime.set(False, [0, 1])
@@ -85,4 +85,4 @@ def test_primes(benchmark):
         return twin_primes
 
     c = benchmark(primes)
-    assert c == 205
+    assert c == 8169

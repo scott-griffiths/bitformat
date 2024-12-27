@@ -241,6 +241,13 @@ impl BitRust {
         })
     }
 
+    fn to_bitvec(&self) -> BitVec<u8, Msb0> {
+        let mut b: BitVec<u8, Msb0> = BitVec::from_vec(self.active_data());
+        b.drain(..(self.offset % 8) as usize);
+        b.truncate(self.length as usize);
+        b
+    }
+
 }
 
 #[pymethods]
@@ -436,9 +443,7 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
-        let b: BitVec<u8, Msb0> = BitVec::from_vec(self.active_data());
-        let s = b.iter().map(|x| if *x { '1' } else { '0' }).collect::<String>();
-        s[(self.offset % 8) as usize..((self.offset % 8) + self.length) as usize].to_string()
+        self.to_bitvec().iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
