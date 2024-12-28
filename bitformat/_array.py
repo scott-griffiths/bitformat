@@ -353,7 +353,7 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore =BitRust.join(
+                self._bitstore = BitRust.join(
                     [
                         self._bitstore.getslice(0, s * self._dtype.bitlength),
                         self._bitstore.getslice((s + 1) * self._dtype.bitlength, None),
