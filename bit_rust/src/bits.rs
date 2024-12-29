@@ -593,21 +593,28 @@ impl BitRust {
         if self.length == 0 {
             return 0;
         }
-        let offset = self.offset % 8;
-        let padding = if (self.length + offset) % 8 == 0 { 0 } else { 8 - (self.length + offset) % 8 };
-        // Case where there's only one byte of used data.
-        if self.start_byte() + 1 == self.end_byte() {
-            return ((self.data[self.start_byte()] << offset) >> (offset + padding)).count_ones() as usize;
-        }
-        let mut c = hamming::weight(&self.data[self.start_byte()..self.end_byte()]) as usize;
-        // Subtract any bits in the offset or padding.
-        if offset != 0 {
-            c -= (self.data[self.start_byte()] >> (8 - offset)).count_ones() as usize;
-        }
-        if padding != 0 {
-            c -= (self.data[self.end_byte() - 1] << (8 -padding)).count_ones() as usize;
-        }
-        c
+        let bv = self.to_bitvec();
+        bv.count_ones()
+
+        // The version below is about 15x faster on the count benchmark.
+        // I'm presuming that all the time is being spent in the conversion to the bitvec
+        // so it will speed up a lot when BitVec is used as the storage.
+
+        // let offset = self.offset % 8;
+        // let padding = if (self.length + offset) % 8 == 0 { 0 } else { 8 - (self.length + offset) % 8 };
+        // // Case where there's only one byte of used data.
+        // if self.start_byte() + 1 == self.end_byte() {
+        //     return ((self.data[self.start_byte()] << offset) >> (offset + padding)).count_ones() as usize;
+        // }
+        // let mut c = hamming::weight(&self.data[self.start_byte()..self.end_byte()]) as usize;
+        // // Subtract any bits in the offset or padding.
+        // if offset != 0 {
+        //     c -= (self.data[self.start_byte()] >> (8 - offset)).count_ones() as usize;
+        // }
+        // if padding != 0 {
+        //     c -= (self.data[self.end_byte() - 1] << (8 -padding)).count_ones() as usize;
+        // }
+        // c
     }
 
     /// Returns a new BitRust with all bits reversed.
