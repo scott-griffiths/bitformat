@@ -91,6 +91,7 @@ pub fn find_bitvec_bytealigned(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>,
 #[pyclass]
 pub struct BitRust {
     data: Arc<Vec<u8>>,
+    bv: BitVec<u8, Msb0>,
     offset: usize,
     length: usize,
 }
@@ -121,6 +122,7 @@ impl Clone for BitRust {
     fn clone(&self) -> Self {
         BitRust {
             data: Arc::clone(&self.data),
+            bv: self.bv.clone(),
             offset: self.offset,
             length: self.length,
         }
@@ -159,7 +161,8 @@ impl BitRust {
             data.push(op(a.data[i], b.data[i]));
         }
         Ok(BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             length: self.length,
             offset: 0,
         })
@@ -196,7 +199,8 @@ impl BitRust {
             new_length += bits.length;
         }
         BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: new_offset,
             length: new_length,
         }
@@ -224,6 +228,7 @@ impl BitRust {
         if self.length == 0 {
             return BitRust {
                 data: Arc::new(vec![]),
+                bv: BitVec::new(),
                 offset: 0,
                 length: 0,
             }
@@ -233,6 +238,7 @@ impl BitRust {
         if new_offset == bit_offset {
             return BitRust {
                 data: Arc::new(self.active_data()),
+                bv: BitVec::from_vec(self.active_data()),
                 offset: new_offset,
                 length: self.length,
             }
@@ -270,7 +276,8 @@ impl BitRust {
             }
         }
         BitRust {
-            data: Arc::new(new_data),
+            data: Arc::new(new_data.clone()),
+            bv: BitVec::from_vec(new_data),
             offset: new_offset,
             length: self.length,
         }
@@ -283,6 +290,7 @@ impl BitRust {
         let new_length = end_bit - start_bit;
         BitRust {
             data: Arc::clone(&self.data),
+            bv: self.bv[start_bit..end_bit].to_owned(),
             offset: start_bit + self.offset,
             length: new_length,
         }
@@ -293,12 +301,14 @@ impl BitRust {
         if self.offset < 8 && self.end_byte() == self.data.len() {
             return BitRust {
                 data: Arc::clone(&self.data),
+                bv: self.bv.clone(),
                 offset: self.offset,
                 length: self.length,
             }
         }
         BitRust {
             data: Arc::new(self.active_data()),
+            bv: BitVec::from_vec(self.active_data()),
             offset: self.offset % 8,
             length: self.length,
         }
@@ -352,6 +362,7 @@ impl BitRust {
     pub fn from_zeros(length: usize) -> Self {
         BitRust {
             data: Arc::new(vec![0; (length + 7) / 8]),
+            bv: BitVec::repeat(false, length),
             offset: 0,
             length,
         }
@@ -361,6 +372,7 @@ impl BitRust {
     pub fn from_ones(length: usize) -> Self {
         BitRust {
             data: Arc::new(vec![0xff; (length + 7) / 8]),
+            bv: BitVec::repeat(true, length),
             offset: 0,
             length,
         }
@@ -370,7 +382,8 @@ impl BitRust {
     pub fn from_bytes(data: Vec<u8>) -> Self {
         let bitlength = data.len() * 8;
         BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: 0,
             length: bitlength,
         }
@@ -381,7 +394,8 @@ impl BitRust {
         assert!(offset < 8);
         let bitlength = data.len() * 8 - offset;
         BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset,
             length: bitlength,
         }
@@ -402,7 +416,8 @@ impl BitRust {
         b.set_uninitialized(false);
         let data = b.into_vec();
         Ok(BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: 0,
             length: binary_string.len(),
         })
@@ -420,7 +435,8 @@ impl BitRust {
             Err(_) => return Err(PyValueError::new_err("Invalid character")),
         };
         Ok(BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: 0,
             length: hex.len() * 4,
         })
@@ -626,7 +642,8 @@ impl BitRust {
         let final_bits = (self.offset + self.length) % 8;
         let new_offset = if final_bits == 0 { 0 } else { 8 - final_bits };
         BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: new_offset,
             length: self.length,
         }
@@ -678,6 +695,7 @@ impl BitRust {
         let new_length = end_bit - start_bit;
         Ok(BitRust {
             data: Arc::clone(&self.data),
+            bv: self.bv[start_bit..end_bit].to_owned(),
             offset: start_bit + self.offset,
             length: new_length,
         })
@@ -701,7 +719,8 @@ impl BitRust {
             }
         }
         BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset: self.offset,
             length: self.length,
         }
@@ -746,7 +765,8 @@ impl BitRust {
             }
         }
         Ok(BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset,
             length: self.length,
         })
@@ -776,7 +796,8 @@ impl BitRust {
             }
         }
         Ok(BitRust {
-            data: Arc::new(data),
+            data: Arc::new(data.clone()),
+            bv: BitVec::from_vec(data),
             offset,
             length: self.length,
         })
@@ -786,6 +807,7 @@ impl BitRust {
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
             data: Arc::new(self.active_data()),
+            bv: BitVec::from_vec(self.active_data()),
             offset: self.offset % 8,
             length: self.length,
         }
