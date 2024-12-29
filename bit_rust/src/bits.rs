@@ -54,32 +54,6 @@ pub fn find_bitvec(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usiz
 }
 
 
-fn kmp_search(text: &BitSlice<u8, Msb0>, pattern: &BitSlice<u8, Msb0>, step: usize) -> Option<usize> {
-    assert!(step >= 1);
-    let lps = compute_lps(pattern);
-    let mut i = 0; // index for text
-    let mut j = 0; // index for pattern
-
-    while i < text.len() {
-        if pattern[j] == text[i] {
-            i += 1;
-            j += 1;
-        }
-        if j == pattern.len() {
-            if (i - j) % step == 0 {
-                return Some(i - j); // match found at index (i - j)
-            }
-        } else if i < text.len() && pattern[j] != text[i] {
-            if j != 0 {
-                j = lps[j - 1];
-            } else {
-                i += 1;
-            }
-        }
-    }
-    None // no match found
-}
-
 /// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
 /// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
 /// are stored.
@@ -298,38 +272,6 @@ impl BitRust {
             offset: self.offset % 8,
             length: self.length,
         }
-    }
-
-    pub fn find_rust(&self, b: &BitRust, start: usize) -> Option<usize> {
-        if b.length + start > self.length {
-            return None;
-        }
-        let pattern = b.to_bitvec();
-        assert_eq!(pattern.len(), b.length());
-        let s = self.to_bitvec();
-
-        let lps = compute_lps(&pattern);
-        let mut i = start; // index for text
-        let mut j = 0; // index for pattern
-
-        while i < s.len() {
-            if pattern[j] == s[i] {
-                i += 1;
-                j += 1;
-            }
-            if j == pattern.len() {
-                let match_position = i - j;
-                return Some(match_position);
-            }
-            if i < s.len() && pattern[j] != s[i] {
-                if j != 0 {
-                    j = lps[j - 1];
-                } else {
-                    i += 1;
-                }
-            }
-        }
-        None
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
@@ -589,24 +531,6 @@ impl BitRust {
         }
     }
 
-    pub fn find_old(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        if b.length + start > self.length {
-            return None;
-        }
-        let step = if bytealigned { 8 } else { 1 };
-        let mut pos = if bytealigned { (start + 7) / 8 * 8 } else { start };
-        let b_length = b.length;
-        let b = b.to_bitvec();
-        let s = self.to_bitvec();
-        while pos <= self.length - b_length {
-            if b == s[pos..pos + b_length] {
-                return Some(pos - start);
-            }
-            pos += step;
-        }
-        None
-    }
-
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
         let s = self.to_bitvec();
         let pattern = b.to_bitvec();
@@ -845,22 +769,6 @@ impl BitRust {
     }
 }
 
-
-// #[test]
-// fn new1() {
-//     let data: Vec<u8> = vec![10, 20, 30];
-//     let bits = Bits::new(data, 0, 24).unwrap();
-//     assert_eq!(*bits.data(), vec![10, 20, 30]);
-//     assert_eq!(bits.offset(), 0);
-//     assert_eq!(bits.length(), 24);
-// }
-
-// #[test]
-// fn new2() {
-//     let bits = Bits::new(vec![], 0, 0).unwrap();
-//     assert_eq!(bits.length(), 0);
-// }
-
 #[test]
 fn from_bytes() {
     let data: Vec<u8> = vec![10, 20, 30];
@@ -1073,16 +981,16 @@ fn test_invert() {
 fn test_find() {
     let b1 = BitRust::from_zeros(10);
     let b2 = BitRust::from_ones(2);
-    // assert_eq!(b1.find(&b2, 0,false), None);
-    // let b3 = BitRust::from_bin("00001110").unwrap();
-    // let b4 = BitRust::from_bin("01").unwrap();
-    // assert_eq!(b3.find(&b4, 0, false), Some(3));
-    // assert_eq!(b3.find(&b4, 2,false), Some(1));
-    //
-    // let s = BitRust::from_bin("0000110110000").unwrap();
-    // let f = BitRust::from_bin("11011").unwrap();
-    // let p = s.find(&f, 0, false).unwrap();
-    // assert_eq!(p, 4);
+    assert_eq!(b1.find(&b2, 0,false), None);
+    let b3 = BitRust::from_bin("00001110").unwrap();
+    let b4 = BitRust::from_bin("01").unwrap();
+    assert_eq!(b3.find(&b4, 0, false), Some(3));
+    assert_eq!(b3.find(&b4, 2,false), Some(3));
+
+    let s = BitRust::from_bin("0000110110000").unwrap();
+    let f = BitRust::from_bin("11011").unwrap();
+    let p = s.find(&f, 0, false).unwrap();
+    assert_eq!(p, 4);
 
     let s = BitRust::from_hex("010203040102ff").unwrap();
     // assert s.find("0x05", bytealigned=True) is None
@@ -1111,10 +1019,10 @@ fn test_and() {
 
 #[test]
 fn test_findall() {
-    // let b = BitRust::from_hex("00ff0ff0").unwrap();
-    // let a = BitRust::from_hex("ff").unwrap();
-    // let q: Vec<usize> = b.find_all_rust(&a, false).collect();
-    // assert_eq!(q, vec![8, 20]);
+    let b = BitRust::from_hex("00ff0ff0").unwrap();
+    let a = BitRust::from_hex("ff").unwrap();
+    let q: Vec<usize> = b.find_all_rust(&a, false).collect();
+    assert_eq!(q, vec![8, 20]);
 
     let a = BitRust::from_hex("fffff4512345ff1234ff12ff").unwrap();
     let b = BitRust::from_hex("ff").unwrap();
