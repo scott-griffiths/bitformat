@@ -53,6 +53,36 @@ pub fn find_bitvec(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usiz
     None
 }
 
+// The same as find_bitvec but only returns matches that are a multiple of 8.
+pub fn find_bitvec_bytealigned(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usize) -> Option<usize> {
+    let lps = compute_lps(pattern);
+    let mut i = start; // index for text
+    let mut j = 0; // index for pattern
+
+    while i < s.len() {
+        if pattern[j] == s[i] {
+            i += 1;
+            j += 1;
+        }
+        if j == pattern.len() {
+            let match_position = i - j;
+            if match_position % 8 == 0 {
+                return Some(match_position);
+            } else {
+                j = lps[j - 1];
+            }
+        }
+        if i < s.len() && pattern[j] != s[i] {
+            if j != 0 {
+                j = lps[j - 1];
+            } else {
+                i += 1;
+            }
+        }
+    }
+    None
+}
+
 
 /// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
 /// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
@@ -534,17 +564,11 @@ impl BitRust {
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
         let s = self.to_bitvec();
         let pattern = b.to_bitvec();
-        let mut pos = find_bitvec(&s , &pattern, start);
-        if !bytealigned {
-            return pos;
+        if bytealigned {
+            find_bitvec_bytealigned(&s, &pattern, start)
+        } else {
+            find_bitvec(&s, &pattern, start)
         }
-        while let Some(p) = pos {
-            if p % 8 == 0 {
-                return pos;
-            }
-            pos = find_bitvec(&s, &pattern,  p + 1);
-        }
-        None
     }
     
     pub fn rfind(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
