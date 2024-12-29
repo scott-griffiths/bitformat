@@ -25,9 +25,35 @@ fn compute_lps(pattern: &BitSlice<u8, Msb0>) -> Vec<usize> {
             }
         }
     }
-
     lps
 }
+
+pub fn find_bitvec(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usize) -> Option<usize> {
+    let lps = compute_lps(pattern);
+    let mut i = start; // index for text
+    let mut j = 0; // index for pattern
+
+    while i < s.len() {
+        if pattern[j] == s[i] {
+            i += 1;
+            j += 1;
+        }
+        if j == pattern.len() {
+            let match_position = i - j;
+            return Some(match_position);
+        }
+        if i < s.len() && pattern[j] != s[i] {
+            if j != 0 {
+                j = lps[j - 1];
+            } else {
+                i += 1;
+            }
+        }
+    }
+    None
+}
+
+
 fn kmp_search(text: &BitSlice<u8, Msb0>, pattern: &BitSlice<u8, Msb0>, step: usize) -> Option<usize> {
     assert!(step >= 1);
     let lps = compute_lps(pattern);
@@ -314,7 +340,7 @@ impl BitRust {
             let found = self.find(b, start, bytealigned);
             match found {
                 Some(x) => {
-                    start = x + 1;
+                    start = if bytealigned { x + 8 } else { x + 1 };
                     Some(x)
                 }
                 None => None,
@@ -582,7 +608,9 @@ impl BitRust {
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        let mut pos = self.find_rust(&b, start);
+        let s = self.to_bitvec();
+        let pattern = b.to_bitvec();
+        let mut pos = find_bitvec(&s , &pattern, start);
         if !bytealigned {
             return pos;
         }
@@ -590,7 +618,7 @@ impl BitRust {
             if p % 8 == 0 {
                 return pos;
             }
-            pos = self.find_rust(&b, start + p + 1);
+            pos = find_bitvec(&s, &pattern,  p + 1);
         }
         None
     }
@@ -1083,10 +1111,15 @@ fn test_and() {
 
 #[test]
 fn test_findall() {
-    let b = BitRust::from_hex("00ff0ff0").unwrap();
-    let a = BitRust::from_hex("ff").unwrap();
-    let q: Vec<usize> = b.find_all_rust(&a, false).collect();
-    assert_eq!(q, vec![8, 20]);
+    // let b = BitRust::from_hex("00ff0ff0").unwrap();
+    // let a = BitRust::from_hex("ff").unwrap();
+    // let q: Vec<usize> = b.find_all_rust(&a, false).collect();
+    // assert_eq!(q, vec![8, 20]);
+
+    let a = BitRust::from_hex("fffff4512345ff1234ff12ff").unwrap();
+    let b = BitRust::from_hex("ff").unwrap();
+    let q: Vec<usize> = a.find_all_rust(&b, true).collect();
+    assert_eq!(q, vec![0, 8, 6*8, 9*8, 11*8]);
 }
 
 #[test]

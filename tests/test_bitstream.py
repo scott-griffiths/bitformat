@@ -755,7 +755,7 @@ class TestManyDifferentThings:
         assert list(p) == [0, 3, 6, 9, 12, 15]
 
     def test_find_all_generator(self):
-        a = Bits("0xff1234512345ff1234ff12ff")
+        a = Bits("0xff1ff4512345ff1234ff12ff")
         p = a.find_all("0xff", bytealigned=True)
         assert next(p) == 0
         assert next(p) == 6 * 8
