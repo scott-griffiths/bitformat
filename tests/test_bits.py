@@ -77,6 +77,7 @@ class TestCreation:
         s = Bits.pack("i11", -1)
         assert s.bin == "11111111111"
         s = Bits.from_string("i12=7")
+        assert s.bin == "000000000111"
         assert s.i == 7
         s = Bits.pack(Dtype.from_string("i108"), -243)
         assert (s.unpack(Dtype("i")), len(s)) == (-243, 108)

@@ -314,13 +314,13 @@ impl BitRust {
         if self.bv.len() % 4 != 0 {
             return Err(PyValueError::new_err("Not a multiple of 4 bits long."));
         }
-        let bytes = self.bv.clone().into_vec();
+        let bytes = self.to_bytes();
         let hex_string = bytes.iter().map(|byte| format!("{:02x}", byte)).collect::<String>();
         if self.bv.len() % 8 == 0 {
             return Ok(hex_string);
         }
         // If the length is not a multiple of 8, we need to trim the padding bits
-        Ok(hex_string[1..hex_string.len()].to_string())
+        Ok(hex_string[0..hex_string.len() - 1].to_string())
 
     }
 
@@ -487,7 +487,7 @@ impl BitRust {
             Some(pos) => {
                 // Just invert the bit at pos
                 let value = bv[pos]; // TODO handle error ?
-                bv.set(pos, value);
+                bv.set(pos, !value);
             }
         }
         BitRust {
@@ -682,6 +682,8 @@ fn hex_edge_cases() {
     let b2 = b1.getslice(12, Some(b1.length())).unwrap();
     assert_eq!(b2.to_hex().unwrap(), "3456789abcdef");
     assert_eq!(b2.length(), 52);
+    let t = BitRust::from_hex("123").unwrap();
+    assert_eq!(t.to_hex().unwrap(), "123");
     // assert_eq!(b2.data().len(), 8);
 
     // let b2 = Bits::new(vec![0x01, 0x23, 0x45, 0x67], 12, 12).unwrap();
