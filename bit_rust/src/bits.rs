@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Not;
 use std::sync::Arc;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
@@ -131,18 +132,27 @@ impl Clone for BitRust {
 
 impl PartialEq for BitRust {
     fn eq(&self, other: &Self) -> bool {
-        if self.length != other.length {
-            return false;
-        }
-        if self.offset % 8 == 0 && other.offset % 8 == 0 {
-            if self.length % 8 == 0 {
-                return self.data[self.start_byte()..self.end_byte()] == other.data[other.start_byte()..other.end_byte()];
+        // println!("self.bv: {:?}", self.bv);
+        // println!("other.bv: {:?}", other.bv);
+        if self.to_bin() == other.to_bin(){
+            if self.bv == other.bv {
+                return true;
             }
-            if self.data[self.start_byte()..self.end_byte() - 1] != other.data[other.start_byte()..other.end_byte() - 1] {
-                return false;
-            }
+            panic!("BitVecs are not equal when BitRust are: {:?}, {:?}." , self.bv, other.bv);
         }
-        self.to_bin() == other.to_bin()
+        self.bv == other.bv
+    //     if self.length != other.length {
+    //         return false;
+    //     }
+    //     if self.offset % 8 == 0 && other.offset % 8 == 0 {
+    //         if self.length % 8 == 0 {
+    //             return self.data[self.start_byte()..self.end_byte()] == other.data[other.start_byte()..other.end_byte()];
+    //         }
+    //         if self.data[self.start_byte()..self.end_byte() - 1] != other.data[other.start_byte()..other.end_byte() - 1] {
+    //             return false;
+    //         }
+    //     }
+    //     self.to_bin() == other.to_bin()
     }
 }
 
@@ -160,9 +170,12 @@ impl BitRust {
         for i in 0..a.data.len() {
             data.push(op(a.data[i], b.data[i]));
         }
+        let mut bv = BitVec::from_vec(data.clone());
+        bv.drain(..self.offset);
+        bv.truncate(self.length);
         Ok(BitRust {
-            data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            data: Arc::new(data),
+            bv,
             length: self.length,
             offset: 0,
         })
@@ -198,9 +211,13 @@ impl BitRust {
             }
             new_length += bits.length;
         }
+        let mut bv = BitVec::new();
+        for bits in bits_vec {
+            bv.extend(bits.bv.clone());
+        }
         BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv,
             offset: new_offset,
             length: new_length,
         }
@@ -308,7 +325,7 @@ impl BitRust {
         }
         BitRust {
             data: Arc::new(self.active_data()),
-            bv: BitVec::from_vec(self.active_data()),
+            bv: self.bv.clone(),
             offset: self.offset % 8,
             length: self.length,
         }
@@ -338,7 +355,6 @@ impl BitRust {
         b.truncate(self.length);
         b
     }
-
 }
 
 #[pymethods]
@@ -351,10 +367,12 @@ impl BitRust {
     }
 
     pub fn __len__(&self) -> usize {
+        // assert_eq!(self.length, self.bv.len());
         self.length
     }
 
     pub fn __eq__(&self, rhs: &BitRust) -> bool {
+        assert_eq!(self.length, self.bv.len());
         self == rhs
     }
 
@@ -414,10 +432,10 @@ impl BitRust {
         }
         // Convert to bytes
         b.set_uninitialized(false);
-        let data = b.into_vec();
+        let data = b.clone().into_vec();
         Ok(BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv: b,
             offset: 0,
             length: binary_string.len(),
         })
@@ -434,9 +452,13 @@ impl BitRust {
             Ok(d) => d,
             Err(_) => return Err(PyValueError::new_err("Invalid character")),
         };
+        let mut bv = BitVec::from_vec(data.clone());
+        if is_odd_length {
+            bv.drain(bv.len() - 4..bv.len());
+        }
         Ok(BitRust {
-            data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            data: Arc::new(data),
+            bv,
             offset: 0,
             length: hex.len() * 4,
         })
@@ -540,6 +562,7 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
+        // self.bv.iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
         self.to_bitvec().iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
     }
 
@@ -641,9 +664,11 @@ impl BitRust {
         }
         let final_bits = (self.offset + self.length) % 8;
         let new_offset = if final_bits == 0 { 0 } else { 8 - final_bits };
+        let mut bv = self.bv.clone();
+        bv.reverse();
         BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv,
             offset: new_offset,
             length: self.length,
         }
@@ -705,22 +730,26 @@ impl BitRust {
     #[pyo3(signature = (pos=None))]
     pub fn invert(&self, pos: Option<usize>) -> Self {
         let mut data: Vec<u8> = Vec::new();
+        let mut bv = self.bv.clone();
         match pos {
             None => {
                 // Invert every bit
                 for byte in self.data[self.start_byte()..self.end_byte()].iter() {
                     data.push(byte ^ 0xff);
                 }
+                bv = bv.not();
             }
             Some(pos) => {
                 // Just invert the bit at pos
                 data = self.active_data();
                 data[(pos + self.offset) / 8] ^= 128 >> ((pos + self.offset) % 8);
+                let value = !bv[pos];
+                bv.set(pos, value);
             }
         }
         BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv,
             offset: self.offset,
             length: self.length,
         }
@@ -744,6 +773,7 @@ impl BitRust {
     // Return new BitRust with bits at indices set to value.
     pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<Self> {
         let mut data: Vec<u8> = self.active_data();
+        let mut bv = self.bv.clone();
         let offset = self.offset % 8;
         let mut positive_indices: Vec<usize> = vec![];
         for index in indices {
@@ -763,10 +793,11 @@ impl BitRust {
             } else {
                 data[byte_offset] &= !(128 >> bit_offset);
             }
+            bv.set(index, value);
         }
         Ok(BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv,
             offset,
             length: self.length,
         })
@@ -795,9 +826,13 @@ impl BitRust {
                 data[byte_offset] &= !(128 >> bit_offset);
             }
         }
+        let mut bv: BitVec<u8, Msb0> = BitVec::from_vec(data.clone());
+        bv.drain(..offset);
+        bv.truncate(self.length);
+
         Ok(BitRust {
             data: Arc::new(data.clone()),
-            bv: BitVec::from_vec(data),
+            bv,
             offset,
             length: self.length,
         })
@@ -807,7 +842,7 @@ impl BitRust {
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
             data: Arc::new(self.active_data()),
-            bv: BitVec::from_vec(self.active_data()),
+            bv: self.bv.clone(),
             offset: self.offset % 8,
             length: self.length,
         }
@@ -1010,6 +1045,7 @@ fn test_reverse() {
 #[test]
 fn test_invert() {
     let b = BitRust::from_bin("0").unwrap();
+    println!("b.bv: {:?}", b.bv);
     assert_eq!(b.invert(None).to_bin(), "1");
     let b = BitRust::from_bin("01110").unwrap();
     assert_eq!(b.invert(None).to_bin(), "10001");
@@ -1067,7 +1103,8 @@ fn test_and() {
     let a1 = BitRust::from_hex("f0f").unwrap();
     let a2 = BitRust::from_hex("123").unwrap();
     let a3 = a1.__and__(&a2).unwrap();
-    assert_eq!(a3, BitRust::from_hex("103").unwrap());
+    let b = BitRust::from_hex("103").unwrap();
+    assert_eq!(a3, b);
 }
 
 #[test]
