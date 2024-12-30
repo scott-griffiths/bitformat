@@ -5,8 +5,11 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use hamming;
 use bitvec::prelude::*;
 
+type BV = BitVec<u8, Msb0>;
+type BS = BitSlice<u8, Msb0>;
+
 // An implementation of the KMP algorithm for bit slices.
-fn compute_lps(pattern: &BitSlice<u8, Msb0>) -> Vec<usize> {
+fn compute_lps(pattern: &BS) -> Vec<usize> {
     let mut lps = vec![0; pattern.len()];
     let mut length = 0;
     let mut i = 1;
@@ -28,7 +31,7 @@ fn compute_lps(pattern: &BitSlice<u8, Msb0>) -> Vec<usize> {
     lps
 }
 
-pub fn find_bitvec(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usize) -> Option<usize> {
+pub fn find_bitvec(s: &BV, pattern: &BV, start: usize) -> Option<usize> {
     let lps = compute_lps(pattern);
     let mut i = start; // index for text
     let mut j = 0; // index for pattern
@@ -54,7 +57,7 @@ pub fn find_bitvec(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usiz
 }
 
 // The same as find_bitvec but only returns matches that are a multiple of 8.
-pub fn find_bitvec_bytealigned(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>, start: usize) -> Option<usize> {
+pub fn find_bitvec_bytealigned(s: &BV, pattern: &BV, start: usize) -> Option<usize> {
     let lps = compute_lps(pattern);
     let mut i = start; // index for text
     let mut j = 0; // index for pattern
@@ -90,7 +93,7 @@ pub fn find_bitvec_bytealigned(s: &BitVec<u8, Msb0>, pattern: &BitVec<u8, Msb0>,
 /// 
 #[pyclass]
 pub struct BitRust {
-    bv: BitVec<u8, Msb0>,
+    bv: BV,
 }
 
 
@@ -136,7 +139,7 @@ impl BitRust {
         if bits_vec.is_empty() {
             return BitRust::from_zeros(0);
         }
-        let mut bv = BitVec::new();
+        let mut bv = BV::new();
         for bits in bits_vec {
             bv.extend(bits.bv.clone());
         }
@@ -190,28 +193,28 @@ impl BitRust {
     #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
         BitRust {
-            bv: BitVec::repeat(false, length),
+            bv: BV::repeat(false, length),
         }
     }
 
     #[staticmethod]
     pub fn from_ones(length: usize) -> Self {
         BitRust {
-            bv: BitVec::repeat(true, length),
+            bv: BV::repeat(true, length),
         }
     }
 
     #[staticmethod]
     pub fn from_bytes(data: Vec<u8>) -> Self {
         BitRust {
-            bv: BitVec::from_vec(data),
+            bv: BV::from_vec(data),
         }
     }
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         assert!(offset < 8);
-        let mut bv = BitVec::from_vec(data);
+        let mut bv = BV::from_vec(data);
         bv.drain(..offset);
         BitRust {
             bv,
@@ -220,8 +223,7 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_bin(binary_string: &str) -> PyResult<Self> {
-        // Convert the binary string to a bitvec first
-        let mut b: BitVec<u8, Msb0> = BitVec::with_capacity(binary_string.len());
+        let mut b: BV = BV::with_capacity(binary_string.len());
         for c in binary_string.chars() {
             match c {
                 '0' => b.push(false),
@@ -229,7 +231,6 @@ impl BitRust {
                 _ => return Err(PyValueError::new_err("Invalid character")),
             }
         }
-        // Convert to bytes
         b.set_uninitialized(false);
         Ok(BitRust {
             bv: b,
@@ -247,7 +248,7 @@ impl BitRust {
             Ok(d) => d,
             Err(_) => return Err(PyValueError::new_err("Invalid character")),
         };
-        let mut bv = BitVec::from_vec(data.clone());
+        let mut bv = BV::from_vec(data.clone());
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
@@ -278,20 +279,10 @@ impl BitRust {
 
     /// Convert to bytes, padding with zero bits if needed.
     pub fn to_bytes(&self) -> Vec<u8> {
-        // let mut bv = self.bv.clone();
-        // bv.set_uninitialized(false);
-        // bv.into_vec()
-
-        // This is to get around the problem if there are unused bits at the start of the BitVec
-        // Obviously not very optimal!
-        let num_bytes = (self.bv.len() + 7) / 8;
-        let mut bytes = vec![0u8; num_bytes];
-        for (i, bit) in self.bv.iter().enumerate() {
-            if *bit {
-                bytes[i / 8] |= 1 << (7 - (i % 8));
-            }
-        }
-        bytes
+        let mut bv = self.bv.clone();
+        bv.force_align();
+        bv.set_uninitialized(false);
+        bv.as_raw_slice().to_vec()
     }
 
     // Return bytes that can easily be converted to an int in Python
@@ -303,7 +294,7 @@ impl BitRust {
         }
         debug_assert!((new_offset + self.bv.len()) % 8 == 0);
         let pad_with_ones = signed && self.bv.len() > 0 && self.bv[0];
-        let mut t: BitVec<u8, Msb0> = BitVec::repeat(pad_with_ones, new_offset);
+        let mut t: BV = BV::repeat(pad_with_ones, new_offset);
         t.extend(self.bv.clone());
         debug_assert_eq!(t.len() % 8, 0);
         debug_assert_eq!(t.len(), 8 * ((self.bv.len() + 7) / 8));
@@ -532,7 +523,7 @@ impl BitRust {
     }
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
-        let mut bv: BitVec<u8, Msb0> = self.bv.clone();
+        let mut bv: BV = self.bv.clone();
         let positive_start = if start < 0 { start + self.bv.len() as i64 } else { start };
         let positive_stop = if stop < 0 { stop + self.bv.len() as i64 } else { stop };
         if positive_start < 0 || positive_start >= self.bv.len() as i64 {
