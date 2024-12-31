@@ -5,8 +5,8 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use hamming;
 use bitvec::prelude::*;
 
-type BV = BitVec<u8, Msb0>;
-type BS = BitSlice<u8, Msb0>;
+type BV = BitVec<u64, Msb0>;
+type BS = BitSlice<u64, Msb0>;
 
 // An implementation of the KMP algorithm for bit slices.
 fn compute_lps(pattern: &BS) -> Vec<usize> {
@@ -86,6 +86,13 @@ pub fn find_bitvec_bytealigned(s: &BV, pattern: &BV, start: usize) -> Option<usi
     None
 }
 
+fn convert_bv_to_bytes(bv: &BV) -> Vec<u8> {
+    let mut bv = bv.clone();
+    bv.force_align();
+    bv.set_uninitialized(false);
+    let bytes: Vec<u8>  = bv.as_raw_slice().iter().flat_map(|x| x.to_be_bytes()).collect::<Vec<u8>>().to_vec();
+    bytes
+}
 
 /// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
 /// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
@@ -206,15 +213,18 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_bytes(data: Vec<u8>) -> Self {
+        let bits = data.as_slice().view_bits::<Msb0>();
+        let mut bv = BV::new();
+        bv.extend_from_bitslice(bits);
         BitRust {
-            bv: BV::from_vec(data),
+            bv,
         }
     }
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         assert!(offset < 8);
-        let mut bv = BV::from_vec(data);
+        let mut bv = BitRust::from_bytes(data).bv;
         bv.drain(..offset);
         BitRust {
             bv,
@@ -248,7 +258,7 @@ impl BitRust {
             Ok(d) => d,
             Err(_) => return Err(PyValueError::new_err("Invalid character")),
         };
-        let mut bv = BV::from_vec(data.clone());
+        let mut bv = BitRust::from_bytes(data.clone()).bv;
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
@@ -279,10 +289,7 @@ impl BitRust {
 
     /// Convert to bytes, padding with zero bits if needed.
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut bv = self.bv.clone();
-        bv.force_align();
-        bv.set_uninitialized(false);
-        bv.as_raw_slice().to_vec()
+        convert_bv_to_bytes(&self.bv)
     }
 
     // Return bytes that can easily be converted to an int in Python
@@ -298,7 +305,7 @@ impl BitRust {
         t.extend(self.bv.clone());
         debug_assert_eq!(t.len() % 8, 0);
         debug_assert_eq!(t.len(), 8 * ((self.bv.len() + 7) / 8));
-        t.into_vec()
+        convert_bv_to_bytes(&t)
     }
 
     pub fn to_hex(&self) -> PyResult<String> {
@@ -556,7 +563,7 @@ impl BitRust {
     }
 
     pub fn data(&self) -> Vec<u8> {
-        self.bv.clone().into_vec()
+        convert_bv_to_bytes(&self.bv)
     }
 }
 
