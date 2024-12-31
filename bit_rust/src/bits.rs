@@ -94,10 +94,8 @@ fn convert_bv_to_bytes(bv: &BV) -> Vec<u8> {
     bytes
 }
 
-/// BitRust is a struct that holds an arbitrary amount of binary data. The data is stored
-/// in a Vec<u8> but does not need to be a multiple of 8 bits. A bit offset and a bit length
-/// are stored.
-/// 
+/// BitRust is a struct that holds an arbitrary amount of binary data.
+/// Currently it's just wrapping a BitVec from the bitvec crate.
 #[pyclass]
 pub struct BitRust {
     bv: BV,
@@ -109,18 +107,18 @@ impl fmt::Debug for BitRust {
         if self.bv.len() > 100 {
             return f.debug_struct("Bits")
                 .field("hex", &self.slice(0, 100).to_hex().unwrap())
-                .field("length", &self.bv.len())
+                .field("length", &self.len())
                 .finish();
         }
-        if self.bv.len() % 4 == 0 {
+        if self.len() % 4 == 0 {
             return f.debug_struct("Bits")
                 .field("hex", &self.to_hex().unwrap())
-                .field("length", &self.bv.len())
+                .field("length", &self.len())
                 .finish();
         }
         f.debug_struct("Bits")
             .field("bin", &self.to_bin())
-            .field("length", &self.bv.len())
+            .field("length", &self.len())
             .finish()
     }
 }
@@ -141,6 +139,14 @@ impl PartialEq for BitRust {
 
 // Things not part of the Python interface.
 impl BitRust {
+
+    pub fn len(&self) -> usize {
+        self.bv.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.bv.is_empty()
+    }
 
     fn join_internal(bits_vec: &Vec<&BitRust>) -> Self {
         if bits_vec.is_empty() {
@@ -190,7 +196,7 @@ impl BitRust {
     }
 
     pub fn __len__(&self) -> usize {
-        self.bv.len()
+        self.len()
     }
 
     pub fn __eq__(&self, rhs: &BitRust) -> bool {
@@ -295,26 +301,26 @@ impl BitRust {
     // Return bytes that can easily be converted to an int in Python
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
         // Want the offset to make there be no padding.
-        let mut new_offset = 8 - self.bv.len() % 8;
+        let mut new_offset = 8 - self.len() % 8;
         if new_offset == 8 {
             new_offset = 0;
         }
-        debug_assert!((new_offset + self.bv.len()) % 8 == 0);
-        let pad_with_ones = signed && self.bv.len() > 0 && self.bv[0];
+        debug_assert!((new_offset + self.len()) % 8 == 0);
+        let pad_with_ones = signed && self.len() > 0 && self.bv[0];
         let mut t: BV = BV::repeat(pad_with_ones, new_offset);
         t.extend(self.bv.clone());
         debug_assert_eq!(t.len() % 8, 0);
-        debug_assert_eq!(t.len(), 8 * ((self.bv.len() + 7) / 8));
+        debug_assert_eq!(t.len(), 8 * ((self.len() + 7) / 8));
         convert_bv_to_bytes(&t)
     }
 
     pub fn to_hex(&self) -> PyResult<String> {
-        if self.bv.len() % 4 != 0 {
+        if self.len() % 4 != 0 {
             return Err(PyValueError::new_err("Not a multiple of 4 bits long."));
         }
         let bytes = self.to_bytes();
         let hex_string = bytes.iter().map(|byte| format!("{:02x}", byte)).collect::<String>();
-        if self.bv.len() % 8 == 0 {
+        if self.len() % 8 == 0 {
             return Ok(hex_string);
         }
         // If the length is not a multiple of 8, we need to trim the padding bits
@@ -327,7 +333,7 @@ impl BitRust {
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
-        if self.bv.len() % 3 != 0 {
+        if self.len() % 3 != 0 {
             return Err(PyValueError::new_err("Not a multiple of 3 bits long."));
         }
         let bin_str = self.to_bin();
@@ -342,7 +348,7 @@ impl BitRust {
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.bv.len() != other.bv.len() {
+        if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() & other.clone().bv;
@@ -351,7 +357,7 @@ impl BitRust {
         })
     }
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.bv.len() != other.bv.len() {
+        if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() | other.clone().bv;
@@ -360,7 +366,7 @@ impl BitRust {
         })
     }
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.bv.len() != other.bv.len() {
+        if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() ^ other.clone().bv;
@@ -378,16 +384,16 @@ impl BitRust {
     }
     
     pub fn rfind(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        if b.bv.len() + start > self.bv.len() {
+        if b.len() + start > self.len() {
             return None;
         }
         let step = if bytealigned { 8 } else { 1 };
-        let mut pos = self.bv.len() - b.bv.len();
+        let mut pos = self.len() - b.len();
         if bytealigned {
             pos = pos / 8 * 8;
         }
         while pos >= start + step {
-            if self.slice(pos, pos + b.bv.len()) == *b {
+            if self.slice(pos, pos + b.len()) == *b {
                 return Some(pos - start);
             }
             pos -= step;
@@ -396,7 +402,7 @@ impl BitRust {
     }
 
     pub fn count(&self) -> usize {
-        if self.bv.len() == 0 {
+        if self.len() == 0 {
             return 0;
         }
         self.bv.count_ones()
@@ -433,7 +439,7 @@ impl BitRust {
 
     /// Returns the bool value at a given bit index.
     pub fn getindex(&self, mut bit_index: i64) -> PyResult<bool> {
-        let length = self.bv.len();
+        let length = self.len();
         if bit_index >= length as i64 || bit_index < -(length as i64) {
             return Err(PyIndexError::new_err("Out of range."));
         }
@@ -447,7 +453,7 @@ impl BitRust {
 
     /// Returns the length of the Bits object in bits.
     pub fn length(&self) -> usize {
-        self.bv.len()
+        self.len()
     }
 
     /// Returns a reference to the raw data in the Bits object.
@@ -460,12 +466,12 @@ impl BitRust {
     /// Return a slice of the current BitRust. Uses a view on the current byte data.
     #[pyo3(signature = (start_bit, end_bit=None))]
     pub fn getslice(&self, start_bit: usize, end_bit: Option<usize>) -> PyResult<Self> {
-        let end_bit = end_bit.unwrap_or(self.bv.len());
+        let end_bit = end_bit.unwrap_or(self.len());
         if start_bit >= end_bit {
             return Ok(BitRust::from_zeros(0));
         }
         assert!(start_bit < end_bit);
-        if end_bit > self.bv.len() {
+        if end_bit > self.len() {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
         Ok(BitRust {
@@ -495,7 +501,7 @@ impl BitRust {
 
     /// Returns true if all of the bits are set to 1.
     pub fn all_set(&self) -> bool {
-        self.count() == self.bv.len()
+        self.count() == self.len()
     }
 
     /// Returns true if any of the bits are set to 1.
@@ -513,13 +519,13 @@ impl BitRust {
         let mut bv = self.bv.clone();
         let mut positive_indices: Vec<usize> = vec![];
         for index in indices {
-            if -index > self.bv.len() as i64 {
+            if -index > self.len() as i64 {
                 return Err(PyIndexError::new_err("Negative index past the end"));
             }
-            if index >= self.bv.len() as i64 {
+            if index >= self.len() as i64 {
                 return Err(PyIndexError::new_err("Index out of range."))
             }
-            positive_indices.push(if index < 0 { (self.bv.len() as i64 + index) as usize } else { index as usize});
+            positive_indices.push(if index < 0 { (self.len() as i64 + index) as usize } else { index as usize});
         }
         for index in positive_indices {
             bv.set(index, value);
@@ -531,12 +537,12 @@ impl BitRust {
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
         let mut bv: BV = self.bv.clone();
-        let positive_start = if start < 0 { start + self.bv.len() as i64 } else { start };
-        let positive_stop = if stop < 0 { stop + self.bv.len() as i64 } else { stop };
-        if positive_start < 0 || positive_start >= self.bv.len() as i64 {
+        let positive_start = if start < 0 { start + self.len() as i64 } else { start };
+        let positive_stop = if stop < 0 { stop + self.len() as i64 } else { stop };
+        if positive_start < 0 || positive_start >= self.len() as i64 {
             return Err(PyIndexError::new_err("Start of slice out of bounds."));
         }
-        if positive_stop < 0 || positive_start >= self.bv.len() as i64 {
+        if positive_stop < 0 || positive_start >= self.len() as i64 {
             return Err(PyIndexError::new_err("End of slice out of bounds."));
         }
         for index in (positive_start..positive_stop).step_by(step as usize) {
@@ -556,7 +562,7 @@ impl BitRust {
 
     pub fn set_mutable_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
         let start_slice = self.getslice(0, Some(start))?;
-        let end_slice = self.getslice(end, Some(self.bv.len()))?;
+        let end_slice = self.getslice(end, Some(self.len()))?;
         let joined = BitRust::join_internal(&vec![&start_slice, value, &end_slice]);
         *self = joined;
         Ok(())
