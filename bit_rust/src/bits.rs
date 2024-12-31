@@ -104,7 +104,7 @@ pub struct BitRust {
 
 impl fmt::Debug for BitRust {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.bv.len() > 100 {
+        if self.len() > 100 {
             return f.debug_struct("Bits")
                 .field("hex", &self.slice(0, 100).to_hex().unwrap())
                 .field("length", &self.len())
@@ -411,19 +411,10 @@ impl BitRust {
         // I'm presuming that all the time is being spent in the conversion to the bitvec
         // so it will speed up a lot when BitVec is used as the storage.
 
-        // let offset = self.offset % 8;
-        // let padding = if (self.length + offset) % 8 == 0 { 0 } else { 8 - (self.length + offset) % 8 };
-        // // Case where there's only one byte of used data.
-        // if self.start_byte() + 1 == self.end_byte() {
-        //     return ((self.data[self.start_byte()] << offset) >> (offset + padding)).count_ones() as usize;
-        // }
-        // let mut c = hamming::weight(&self.data[self.start_byte()..self.end_byte()]) as usize;
-        // // Subtract any bits in the offset or padding.
-        // if offset != 0 {
-        //     c -= (self.data[self.start_byte()] >> (8 - offset)).count_ones() as usize;
-        // }
-        // if padding != 0 {
-        //     c -= (self.data[self.end_byte() - 1] << (8 -padding)).count_ones() as usize;
+        // let mut bv = self.bv.clone();
+        // self.bv.set_uninitialized(false);
+        // let mut c = hamming::weight(self.bv.as_raw_slice()) as usize;
+
         // }
         // c
     }
@@ -545,6 +536,7 @@ impl BitRust {
         if positive_stop < 0 || positive_start >= self.len() as i64 {
             return Err(PyIndexError::new_err("End of slice out of bounds."));
         }
+        // TODO: What if step is negative here?
         for index in (positive_start..positive_stop).step_by(step as usize) {
             bv.set(index as usize, value);
         }
