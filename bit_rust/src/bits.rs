@@ -5,8 +5,8 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use hamming;
 use bitvec::prelude::*;
 
-type BV = BitVec<u64, Msb0>;
-type BS = BitSlice<u64, Msb0>;
+type BV = BitVec<u8, Msb0>;
+type BS = BitSlice<u8, Msb0>;
 
 // An implementation of the KMP algorithm for bit slices.
 fn compute_lps(pattern: &BS) -> Vec<usize> {
