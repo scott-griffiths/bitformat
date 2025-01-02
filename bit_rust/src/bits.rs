@@ -2,7 +2,6 @@ use std::fmt;
 use std::ops::Not;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
-use hamming;
 use bitvec::prelude::*;
 
 type BV = BitVec<u8, Msb0>;
