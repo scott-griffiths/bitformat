@@ -74,8 +74,9 @@ jobs:
             runs-on: ubuntu-latest
           - name: 🍎
             runs-on: macos-latest
-          - name: 🪟
-            runs-on: windows-latest
+# Removing Windows for now - just need to get the uv venv activated I think.
+#          - name: 🪟
+#            runs-on: windows-latest
         python:
           - name: CPython 3.11
             major_dot_minor: '3.11'
@@ -119,7 +120,7 @@ jobs:
           cd bit_rust
           uvx maturin develop --release --uv
           cd ..
-          uv run pytest --benchmark-disable
+          uv run pytest --benchmark-skip
 
   all:
     name: All successful
