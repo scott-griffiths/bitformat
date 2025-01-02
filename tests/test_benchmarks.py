@@ -57,7 +57,7 @@ def test_find_all(benchmark):
         return x
 
     c = benchmark(finding)
-    assert c == 289
+    assert c == 37
 
 
 def test_repeated_reading(benchmark):
