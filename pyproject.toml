@@ -1,6 +1,6 @@
 [project]
 name = "bitformat"
-version = "0.2.0"
+version = "0.2.0-alpha.1"
 description = "A library for creating and interpreting binary formats."
 readme = "README.md"
 authors = [
