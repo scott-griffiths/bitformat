@@ -34,11 +34,6 @@ documentation = "https://bitformat.readthedocs.io/"
 requires = ["hatchling", "maturin>=1.7,<2.0"]
 build-backend = "hatchling.build"
 
-[tool.hatch.build.hooks.custom]
-dependencies = ["hatch-maturin"]
-
-[tool.hatch.build.targets.wheel.hooks.maturin]
-dependencies = ["maturin>=1.7,<2.0"]
 
 [tool.hatch.build]
 include = [
