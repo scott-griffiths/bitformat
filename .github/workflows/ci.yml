@@ -74,9 +74,8 @@ jobs:
             runs-on: ubuntu-latest
           - name: 🍎
             runs-on: macos-latest
-# Removing Windows for now - just need to get the uv venv activated I think.
-#          - name: 🪟
-#            runs-on: windows-latest
+          - name: 🪟
+            runs-on: windows-latest
         python:
           - name: CPython 3.11
             major_dot_minor: '3.11'
