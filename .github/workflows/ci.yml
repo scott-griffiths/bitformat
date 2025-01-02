@@ -113,14 +113,10 @@ jobs:
           uv venv
           source .venv/bin/activate
 
-      - name: Run pytest
+      - name: Build and test
         run: |
           cd repo
-          uv pip install -r pyproject.toml
-          cd bit_rust
-          uvx maturin develop --release --uv
-          cd ..
-          uv run pytest --benchmark-skip
+          ./build.sh
 
   all:
     name: All successful
