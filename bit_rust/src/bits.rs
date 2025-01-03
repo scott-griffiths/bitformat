@@ -256,7 +256,7 @@ impl BitRust {
         })
     }
 
-    // An unchecked version of from_bin. Used internally when you're sure the input is valid.
+    // An unchecked version of from_bin. Used when you're sure the input is valid.
     #[staticmethod]
     pub fn from_bin(binary_str: &str) -> Self {
         let mut b: BV = BV::with_capacity(binary_str.len());
@@ -322,23 +322,45 @@ impl BitRust {
     }
 
     #[staticmethod]
-    pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
-        let my_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
-        BitRust::join_internal(&my_vec)
+    pub fn from_oct_checked(oct: &str) -> PyResult<Self> {
+        let mut bin_str = String::new();
+        let skip = if oct.starts_with("0o") { 2 } else { 0 };
+        for ch in oct.chars().skip(skip) {
+            match ch {
+                '0' => bin_str.push_str("000"),
+                '1' => bin_str.push_str("001"),
+                '2' => bin_str.push_str("010"),
+                '3' => bin_str.push_str("011"),
+                '4' => bin_str.push_str("100"),
+                '5' => bin_str.push_str("101"),
+                '6' => bin_str.push_str("110"),
+                '7' => bin_str.push_str("111"),
+                '_' => continue,
+                c if c.is_whitespace() => continue,
+                _ => return Err(PyValueError::new_err("Invalid character")),
+            }
+        }
+        Ok(BitRust::from_bin(&bin_str))
     }
 
     #[staticmethod]
-    pub fn from_oct(oct: &str) -> PyResult<Self> {
+    pub fn from_oct(oct: &str) -> Self {
         let mut bin_str = String::new();
         for ch in oct.chars() {
             // Convert each ch to an integer
             let digit = match ch.to_digit(8) {
                 Some(d) => d,
-                None => return Err(PyValueError::new_err("Invalid character")),
+                None => panic!("Invalid character"),
             };
             bin_str.push_str(&format!("{:03b}", digit)); // Format as 3-bit binary
         }
-        Ok(BitRust::from_bin(&bin_str))
+        BitRust::from_bin(&bin_str)
+    }
+
+    #[staticmethod]
+    pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
+        let my_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
+        BitRust::join_internal(&my_vec)
     }
 
     /// Convert to bytes, padding with zero bits if needed.
@@ -879,7 +901,7 @@ fn test_getslice() {
 fn test_all_set() {
     let b = BitRust::from_bin("111");
     assert!(b.all_set());
-    let c = BitRust::from_oct("7777777777").unwrap();
+    let c = BitRust::from_oct("7777777777");
     assert!(c.all_set());
 }
 

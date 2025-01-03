@@ -54,14 +54,11 @@ def token_to_bitstore(token: str) -> BitRust:
                 )
         return dtype.pack(value)._bitstore
     if token.startswith("0x"):
-        token = token[2:].replace("_", "")
-        return BitRust.from_hex(token)
+        return BitRust.from_hex_checked(token)
     if token.startswith("0b"):
-        token = token[2:].replace("_", "")
-        return BitRust.from_bin(token)
+        return BitRust.from_bin_checked(token)
     if token.startswith("0o"):
-        token = token[2:].replace("_", "")
-        return BitRust.from_oct(token)
+        return BitRust.from_oct_checked(token)
     raise ValueError(
         f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?"
     )
@@ -1046,14 +1043,7 @@ class Bits:
 
     def _setoct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
-        try:
-            if octstring.startswith("0o"):
-                octstring = octstring[2:]
-        except AttributeError:
-            raise TypeError(
-                f"Expected an octal string, but received a {type(octstring)} with value {octstring}."
-            )
-        self._bitstore = BitRust.from_oct(octstring.replace("_", ""))
+        self._bitstore = BitRust.from_oct_checked(octstring)
 
     def _getoct(self) -> str:
         """Return interpretation as an octal string."""

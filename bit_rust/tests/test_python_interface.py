@@ -39,7 +39,7 @@ def test_from_oct():
     a = BitRust.from_oct('776')
     assert a.to_bin() == '111111110'
     with pytest.raises(ValueError):
-        b = BitRust.from_oct('abc')
+        b = BitRust.from_oct_checked('abc')
     assert a.to_oct() == "776"
 
 def test_to_bytes():
