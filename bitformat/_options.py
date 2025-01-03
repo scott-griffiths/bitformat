@@ -15,9 +15,9 @@ class Options:
 
     .. code-block:: python
 
-        if Options().bytealigned:
+        if Options().byte_aligned:
             # ...
-            Options().bytealigned = False
+            Options().byte_aligned = False
 
     """
 
@@ -26,7 +26,7 @@ class Options:
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(Options, cls).__new__(cls)
-            cls._bytealigned = False
+            cls._byte_aligned = False
             cls._verbose_bits_repr = is_interactive()
             no_color = os.getenv("NO_COLOR")
             cls._no_color = True if no_color else not is_interactive()
@@ -54,13 +54,13 @@ class Options:
         return "\n".join(f"{attr}: {value!r}" for attr, value in attributes.items())
 
     @property
-    def bytealigned(self) -> bool:
+    def byte_aligned(self) -> bool:
         """Governs the default byte alignment option in methods that use it."""
-        return self._bytealigned
+        return self._byte_aligned
 
-    @bytealigned.setter
-    def bytealigned(self, value: bool) -> None:
-        self._bytealigned = bool(value)
+    @byte_aligned.setter
+    def byte_aligned(self, value: bool) -> None:
+        self._byte_aligned = bool(value)
 
     @property
     def verbose_bits_repr(self) -> bool:

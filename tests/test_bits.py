@@ -121,7 +121,7 @@ class TestInitialisation:
         a = Bits.from_string("0xabcd")
         r = a.find("0xbc")
         assert r == 4
-        r = a.find("0x23462346246", bytealigned=True)
+        r = a.find("0x23462346246", byte_aligned=True)
         assert r is None
 
     def test_rfind(self):

@@ -77,7 +77,7 @@ class TestNoPosAttribute:
         assert t == "0b0100"
 
 
-class TestByteAligned:
+class Testbyte_aligned:
     def test_not_byte_aligned(self):
         a = Bits.from_string("0x00 ff 0f f")
         li = list(a.find_all("0xff"))
@@ -90,7 +90,7 @@ class TestByteAligned:
         assert a == "0x000"
 
     def test_byte_aligned(self):
-        bitformat.Options().bytealigned = True
+        bitformat.Options().byte_aligned = True
         a = Bits.from_string("0x00 ff 0f f")
         li = list(a.find_all("0xff"))
         assert li == [8]
@@ -100,7 +100,7 @@ class TestByteAligned:
         assert p == 8
         a = a.replace("0xff", "")
         assert a == "0x000ff"
-        bitformat.Options().bytealigned = False
+        bitformat.Options().byte_aligned = False
 
 
 def test_adding():

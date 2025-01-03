@@ -197,11 +197,11 @@ class BitStore:
         return BitStore.from_int(self.to_uint() ^ other.to_uint(), len(self), False)
 
     def find(
-        self, bs: BitStore, bytealigned: bool = False, bytealign_offset: int = 0
+        self, bs: BitStore, byte_aligned: bool = False, bytealign_offset: int = 0
     ) -> int:
         to_find = bs.to_bin()
         bitstr = "".join("0" if i == 0 else "1" for i in self.bytearray_)
-        if not bytealigned:
+        if not byte_aligned:
             return bitstr.find(to_find)
         start = 0
         f = bitstr.find(to_find, start)
@@ -210,22 +210,22 @@ class BitStore:
             f = bitstr.find(to_find, start)
         return f
 
-    def rfind(self, bs: BitStore, bytealigned: bool = False) -> int:
-        all_pos = list(self.findall(bs, bytealigned))
+    def rfind(self, bs: BitStore, byte_aligned: bool = False) -> int:
+        all_pos = list(self.findall(bs, byte_aligned))
         if not all_pos:
             return -1
         return all_pos[-1]
 
-    def findall(self, bs: BitStore, bytealigned: bool = False) -> Iterator[int]:
+    def findall(self, bs: BitStore, byte_aligned: bool = False) -> Iterator[int]:
         # Use self.find() to find all the positions of a BitStore in another BitStore
-        f = self.find(bs, bytealigned)
+        f = self.find(bs, byte_aligned)
         start = 0
         while f != -1:
             yield f + start
             start += f + 1
             slice_ = self.getslice(start, None)
             bytealign_offset = start % 8
-            f = slice_.find(bs, bytealigned, bytealign_offset)
+            f = slice_.find(bs, byte_aligned, bytealign_offset)
 
     def count(self, value, /) -> int:
         return self.bytearray_.count(value)
