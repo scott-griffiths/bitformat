@@ -50,7 +50,7 @@ A variety of constructor methods are available to create `Bits`, including from 
 >>> a = Bits('0b1010')  # Create from a binary string
 >>> b = Bits('u12 = 54')  # Create from a formatted string.
 >>> c = Bits.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
->>> d = Bits.pack('f16', -0.75)  # Pack a value into a data type.
+>>> d = Bits.from_dtype('f16', -0.75)  # Pack a value into a data type.
 >>> e = Bits.join([a, b, c, d])  # The best way to join lots of bits together.
 ```
 
@@ -128,7 +128,7 @@ The `Format` class can be used to give structure to bits, as well as storing the
 
 ```pycon
 >>> f = Format('(width: u12, height: u12, flags: [bool; 4])')
->>> f.pack([320, 240, [True, False, True, False]])
+>>> f.oack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
 >>> print(f)
 (

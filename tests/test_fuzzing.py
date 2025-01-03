@@ -38,7 +38,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
     bits_per_character = Register().name_to_def[dtype_name].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
-    b = Bits.pack("u800", int_value)[0:length]
+    b = Bits.from_dtype("u800", int_value)[0:length]
     f.parse(b)
     assert f.to_bits() == b
     v = f.value
@@ -70,7 +70,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     bits_per_character = Register().name_to_def[dtype_name].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
-    b = Bits.pack("u320", int_value)[0 : length * items]
+    b = Bits.from_dtype("u320", int_value)[0: length * items]
     f.parse(b)
     assert f.to_bits() == b
     if (

@@ -9,12 +9,12 @@ from bitformat import Dtype, Bits, Field, Endianness, DtypeList
 
 
 def test_build():
-    a = Bits.pack("u12", 104)
+    a = Bits.from_dtype("u12", 104)
     assert a == "u12 = 104"
-    b = Bits.pack("bool", False)
+    b = Bits.from_dtype("bool", False)
     assert len(b) == 1
     assert b[0] == 0
-    c = Bits.pack(Dtype("f64"), 13.75)
+    c = Bits.from_dtype(Dtype("f64"), 13.75)
     assert len(c) == 64
     assert c.unpack(["f64"]) == [13.75]
 
@@ -31,11 +31,11 @@ class TestCreation:
 
     @given(st.binary())
     def test_creation_from_bytes_roundtrip(self, data):
-        s = Bits.pack("bytes", data)
+        s = Bits.from_dtype("bytes", data)
         assert s.bytes == data
 
     def test_creation_from_hex(self):
-        s = Bits.pack("hex", "0xA0ff")
+        s = Bits.from_dtype("hex", "0xA0ff")
         assert (len(s), s.unpack("hex")) == (16, "a0ff")
 
     def test_creation_from_hex_with_whitespace(self):
@@ -45,70 +45,70 @@ class TestCreation:
     @pytest.mark.parametrize("bad_val", ["0xx0", "0xX0", "0Xx0", "-2e"])
     def test_creation_from_hex_errors(self, bad_val: str):
         with pytest.raises(ValueError):
-            Bits.pack("hex", bad_val)
+            Bits.from_dtype("hex", bad_val)
 
     def test_creation_from_bin(self):
-        s = Bits.pack("bin", "1010000011111111")
+        s = Bits.from_dtype("bin", "1010000011111111")
         assert (len(s), s.hex) == (16, "a0ff")
         s = Bits.from_string("0b00")[:1]
         assert s.unpack("bin") == "0"
-        s = Bits.pack("bin", " 0000 \n 0001\r ")
+        s = Bits.from_dtype("bin", " 0000 \n 0001\r ")
         assert s.bin == "00000001"
 
     def test_creation_from_uint_errors(self):
         # test = Bits.pack('u10', -1)
 
         with pytest.raises(ValueError):
-            Bits.pack("u10", -1)
+            Bits.from_dtype("u10", -1)
         with pytest.raises(ValueError):
-            Bits.pack("uint", 12)
+            Bits.from_dtype("uint", 12)
         with pytest.raises(ValueError):
-            Bits.pack("uint2", 4)
+            Bits.from_dtype("uint2", 4)
         with pytest.raises(ValueError):
-            Bits.pack("u0", 1)
+            Bits.from_dtype("u0", 1)
         with pytest.raises(ValueError):
-            Bits.pack("u2", 12)
+            Bits.from_dtype("u2", 12)
 
     def test_creation_from_int(self):
-        s = Bits.pack("i4", 0)
+        s = Bits.from_dtype("i4", 0)
         assert s.unpack([Dtype.from_string("bin4")])[0] == "0000"
-        s = Bits.pack(Dtype.from_string("i2"), 1)
+        s = Bits.from_dtype(Dtype.from_string("i2"), 1)
         assert s.bin == "01"
-        s = Bits.pack("i11", -1)
+        s = Bits.from_dtype("i11", -1)
         assert s.bin == "11111111111"
         s = Bits.from_string("i12=7")
         assert s.bin == "000000000111"
         assert s.i == 7
-        s = Bits.pack(Dtype.from_string("i108"), -243)
+        s = Bits.from_dtype(Dtype.from_string("i108"), -243)
         assert (s.unpack(Dtype("i")), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.pack(Dtype.from_params("i", length), value)
+                s = Bits.from_dtype(Dtype.from_params("i", length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.pack(Dtype.from_params("int", length), int_)
+            _ = Bits.from_dtype(Dtype.from_params("int", length), int_)
 
     def test_creation_from_bool(self):
-        a = Bits.pack("bool", False)
+        a = Bits.from_dtype("bool", False)
         assert a == "0b0"
         b = Bits.from_string("bool=0")
         assert b == [0]
 
     def test_creation_from_bool_errors(self):
         with pytest.raises(ValueError):
-            _ = Bits.pack("bool2", 0)
+            _ = Bits.from_dtype("bool2", 0)
 
     def test_creation_keyword_error(self):
         with pytest.raises(ValueError):
-            Bits.pack("squirrel", 5)
+            Bits.from_dtype("squirrel", 5)
 
     def test_creation_from_memoryview(self):
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
-        b = Bits.pack("bytes", m)
+        b = Bits.from_dtype("bytes", m)
         assert b.unpack(["[u8; 5]"]) == [(10, 11, 12, 13, 14)]
 
 
@@ -196,22 +196,22 @@ class TestContainsBug:
 
 class TestUnderscoresInLiterals:
     def test_hex_creation(self):
-        a = Bits.pack("hex", "ab_cd__ef")
+        a = Bits.from_dtype("hex", "ab_cd__ef")
         assert a.hex == "abcdef"
         b = Bits.from_string("0x0102_0304")
         assert b.u == 0x0102_0304
 
     def test_binary_creation(self):
-        a = Bits.pack("bin", "0000_0001_0010")
+        a = Bits.from_dtype("bin", "0000_0001_0010")
         assert a.bin == "000000010010"
         b = Bits.from_string("0b0011_1100_1111_0000")
         assert b.bin == "0011110011110000"
         v = 0b1010_0000
-        c = Bits.pack("u8", 0b1010_0000)
+        c = Bits.from_dtype("u8", 0b1010_0000)
         assert c.u == v
 
     def test_octal_creation(self):
-        a = Bits.pack("oct", "0011_2233_4455_6677")
+        a = Bits.from_dtype("oct", "0011_2233_4455_6677")
         assert a.u == 0o001122334455_6677
         b = Bits.from_string("0o123_321_123_321")
         assert b.u == 0o123_321_123321
@@ -251,7 +251,7 @@ class TestPrettyPrinting:
         )
 
     def test_small_width(self):
-        a = Bits.pack("u20", 0)
+        a = Bits.from_dtype("u20", 0)
         s = io.StringIO()
         a.pp(dtype1="bin", stream=s, width=5)
         assert (
@@ -330,7 +330,7 @@ class TestPrettyPrinting:
         )
 
         a = bytearray(range(0, 256))
-        b = Bits.pack("bytes", a)
+        b = Bits.from_dtype("bytes", a)
         s = io.StringIO()
         b.pp("bytes", stream=s, width=120)
         assert (
@@ -510,7 +510,7 @@ class TestPrettyPrinting_NewFormats:
         )
 
     def test_uint(self):
-        a = Bits().join([Bits.pack("u12", x) for x in range(40, 105)])
+        a = Bits().join([Bits.from_dtype("u12", x) for x in range(40, 105)])
         s = io.StringIO()
         a.pp("u", "hex3", stream=s, width=120)
         assert (
@@ -527,7 +527,7 @@ class TestPrettyPrinting_NewFormats:
         )
 
     def test_float2(self):
-        a = Bits.pack("f64", 76.25) + "0b11111"
+        a = Bits.from_dtype("f64", 76.25) + "0b11111"
         s = io.StringIO()
         a.pp("i64", "f", stream=s)
         assert (
@@ -571,7 +571,7 @@ def test_unpack_single():
 
 def test_pack_array():
     d = Dtype.from_params("u", 33, True, 5)
-    a = Bits.pack(d, [10, 100, 1000, 32, 1])
+    a = Bits.from_dtype(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
     assert d.return_type == tuple
 
@@ -598,7 +598,7 @@ def test_mul_by_zero():
 
 
 def test_uintne():
-    s = Bits.pack("u_ne160", 454)
+    s = Bits.from_dtype("u_ne160", 454)
     t = Bits("u_ne160=454")
     assert s == t
 
@@ -631,7 +631,7 @@ def test_float_errors():
         _ = a.f
     for le in (8, 10, 12, 18, 30, 128, 200):
         with pytest.raises(ValueError):
-            _ = Bits.pack(Dtype.from_params("f", le), 1.0)
+            _ = Bits.from_dtype(Dtype.from_params("f", le), 1.0)
 
 
 def test_little_endian_uint():
@@ -645,7 +645,7 @@ def test_little_endian_uint():
     assert s.u_le == 999
     s = s.byteswap()
     assert s.u == 999
-    s = Bits.pack("u_le24", 1001)
+    s = Bits.from_dtype("u_le24", 1001)
     assert s.u_le == 1001
     assert len(s) == 24
     assert s.unpack("u_le") == 1001
@@ -678,7 +678,7 @@ def test_big_endian_errors():
 
 def test_native_endian_floats():
     if bitformat.byteorder == "little":
-        a = Bits.pack("f_ne64", 0.55)
+        a = Bits.from_dtype("f_ne64", 0.55)
         assert a.unpack("f_ne64") == 0.55
         assert a.f_le == 0.55
         assert a.f_ne == 0.55

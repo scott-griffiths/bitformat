@@ -11,15 +11,15 @@ sys.path.insert(0, "..")
 
 class TestAll:
     def test_creation_from_uint(self):
-        s = Bits.pack("u6", 15)
+        s = Bits.from_dtype("u6", 15)
         assert s.bin == "001111"
-        s = Bits.pack("u1", 0)
+        s = Bits.from_dtype("u1", 0)
         assert s.bin == "0"
         s = Bits.from_zeros(8)
         assert s.u == 0
 
     def test_creation_from_oct(self):
-        s = Bits.pack(Dtype("oct"), "7")
+        s = Bits.from_dtype(Dtype("oct"), "7")
         assert s.oct == "7"
         assert s.bin == "111"
         s += "0o1"
@@ -150,7 +150,7 @@ class TestBFloats:
         assert b.bfloat == -30.5
         assert len(b) == 16
         fs = [0.0, -6.1, 1.52e35, 0.000001]
-        a = bitstring.pack("4*bfloat", *fs)
+        a = bitstring.from_dtype("4*bfloat", *fs)
         fsp = a.unpack("4*bfloat")
         assert len(a) == len(fs) * 16
         for f, fp in zip(fs, fsp):
@@ -204,7 +204,7 @@ class TestBFloats:
             _ = a.f
 
     def test_overflows(self):
-        inf16 = Bits.pack("f16", math.inf)
+        inf16 = Bits.from_dtype("f16", math.inf)
         inf32 = Bits.from_string("f32 = inf")
         inf64 = Dtype.from_string("f64").pack(float("inf"))
 
@@ -248,7 +248,7 @@ class TestNumpy:
 
 
 def test_bytes_from_list():
-    s = Bits.pack("bytes", [1, 2])
+    s = Bits.from_dtype("bytes", [1, 2])
     assert s == "0x0102"
     s = Bits.from_bytes(bytearray([1, 2]))
     assert s == "0x0102"

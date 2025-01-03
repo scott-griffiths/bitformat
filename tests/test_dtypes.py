@@ -90,7 +90,7 @@ class TestCreatingNewDtypes:
         Register().add_dtype(md)
         a = Bits("0xf")
         assert a.uintr == 15
-        a = Bits.pack("uintr4", 1)
+        a = Bits.from_dtype("uintr4", 1)
         assert a == "0x1"
         a += "uintr100=0"
         assert a == "0x1, 0b" + "0" * 100

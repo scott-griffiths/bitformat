@@ -225,7 +225,7 @@ class Bits:
         return x
 
     @classmethod
-    def pack(cls, dtype: Dtype | str, value: Any, /) -> Bits:
+    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits:
         """
         Pack a value according to a data type.
 

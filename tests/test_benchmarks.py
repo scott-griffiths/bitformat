@@ -47,7 +47,7 @@ def test_find_all(benchmark):
     def finding():
         random.seed(999)
         i = random.randrange(0, 2**2000000)
-        s = Bits.pack("u20000000", i)
+        s = Bits.from_dtype("u20000000", i)
         for ss in [
             "0b11010010101",
             "0xabcdef1234, 0b000101111010101010011010100100101010101",
@@ -64,7 +64,7 @@ def test_repeated_reading(benchmark):
     def repeating_reading():
         random.seed(1414)
         i = random.randrange(0, 2**800000)
-        s = Bits.pack("u800000", i)
+        s = Bits.from_dtype("u800000", i)
         for _ in range(800000 // 40):
             _ = s.unpack("u4, f32, bool, bool, bool, bool".split(","))
 
