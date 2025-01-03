@@ -23,7 +23,7 @@ def test_chunking(benchmark):
 
 def test_count(benchmark):
     def count():
-        s = Bits.zeros(100000000)
+        s = Bits.from_zeros(100000000)
         s = s.set(1, [10, 100, 1000, 10000000])
         return s.count(1)
 
@@ -38,7 +38,7 @@ def test_token_parsing(benchmark):
             s += "u12=244, f32=0.4"
             s += "0x3e44f, 0b11011, 0o75523"
             s += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]
-            s += Bits.zeros(104)
+            s += Bits.from_zeros(104)
 
     benchmark(token_parsing)
 
@@ -74,7 +74,7 @@ def test_repeated_reading(benchmark):
 def test_primes(benchmark):
     def primes():
         limit = 1000000
-        is_prime = Bits.ones(limit)
+        is_prime = Bits.from_ones(limit)
         # Manually set 0 and 1 to be not prime.
         is_prime = is_prime.set(False, [0, 1])
         # For every other integer, if it's set as prime then unset all of its multiples

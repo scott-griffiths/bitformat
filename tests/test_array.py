@@ -695,8 +695,8 @@ class TestCreationFromBits:
         assert a[0] == Bits.from_string("0xff")
         with pytest.raises(TypeError):
             a += 8
-        a.append(Bits.zeros(8))
-        assert a[:].equals(Array("bits8", ["0b1111 1111", Bits.zeros(8)]))
+        a.append(Bits.from_zeros(8))
+        assert a[:].equals(Array("bits8", ["0b1111 1111", Bits.from_zeros(8)]))
         a.extend(["0b10101011"])
         assert a[-1].hex == "ab"
 

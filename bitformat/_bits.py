@@ -206,7 +206,7 @@ class Bits:
         return x
 
     @classmethod
-    def ones(cls, n: int, /) -> Bits:
+    def from_ones(cls, n: int, /) -> Bits:
         """
         Create a new :class:`Bits` with all bits set to one.
 
@@ -247,7 +247,7 @@ class Bits:
         return x
 
     @classmethod
-    def zeros(cls, n: int, /) -> Bits:
+    def from_zeros(cls, n: int, /) -> Bits:
         """
         Create a new Bits with all bits set to zero.
 
@@ -1202,14 +1202,14 @@ class Bits:
         if dtype2 is not None:
             if dtype1.bitlength != 0:
                 try:
-                    _ = dtype2.unpack(Bits.zeros(dtype1.bitlength))
+                    _ = dtype2.unpack(Bits.from_zeros(dtype1.bitlength))
                 except ValueError:
                     raise ValueError(
                         f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length."
                     )
             if dtype2.bitlength != 0:
                 try:
-                    _ = dtype1.unpack(Bits.zeros(dtype2.bitlength))
+                    _ = dtype1.unpack(Bits.from_zeros(dtype2.bitlength))
                 except ValueError:
                     raise ValueError(
                         f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length."
@@ -1516,7 +1516,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        return Bits.join([self._slice(n, len(self)), Bits.zeros(n)])
+        return Bits.join([self._slice(n, len(self)), Bits.from_zeros(n)])
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -1569,7 +1569,7 @@ class Bits:
         if n == 0:
             return self
         n = min(n, len(self))
-        return Bits.join([Bits.zeros(n), self._slice(0, len(self) - n)])
+        return Bits.join([Bits.from_zeros(n), self._slice(0, len(self) - n)])
 
     # ----- Other
 

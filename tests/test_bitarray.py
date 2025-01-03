@@ -15,7 +15,7 @@ class TestAll:
         assert s.bin == "001111"
         s = Bits.pack("u1", 0)
         assert s.bin == "0"
-        s = Bits.zeros(8)
+        s = Bits.from_zeros(8)
         assert s.u == 0
 
     def test_creation_from_oct(self):
@@ -59,7 +59,7 @@ class TestNoPosAttribute:
         assert s == "0b00000"
 
     def test_prepend(self):
-        s = Bits.zeros(1)
+        s = Bits.from_zeros(1)
         t = [1] + s
         assert s == [0]
         assert t == [1, 0]
@@ -199,7 +199,7 @@ class TestBFloats:
         assert (x, y, z) == (1.0, 2.0, 3.0)
 
     def test_interpret_bug(self):
-        a = Bits.ones(100)
+        a = Bits.from_ones(100)
         with pytest.raises(ValueError):
             _ = a.f
 
@@ -243,7 +243,7 @@ class TestNumpy:
 
     @pytest.mark.skipif(not numpy_installed, reason="numpy not installed.")
     def test_creation(self):
-        a = Bits.zeros(np.longlong(12))
+        a = Bits.from_zeros(np.longlong(12))
         assert a.hex == "000"
 
 

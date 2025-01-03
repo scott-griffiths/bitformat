@@ -86,7 +86,7 @@ class TestRfind:
         a = Bits("0b001001001")
         b = a.rfind("0b001")
         assert b == 6
-        big = Bits.zeros(100000) + "0x12" + Bits.zeros(10000)
+        big = Bits.from_zeros(100000) + "0x12" + Bits.from_zeros(10000)
         found = big.rfind("0x12", bytealigned=True)
         assert found == 100000
 
@@ -265,7 +265,7 @@ def test_insert():
     s = Bits("0x0011")
     s = s.insert(8, Bits("0x22"))
     assert s.hex == "002211"
-    s = Bits.ones(0)
+    s = Bits.from_ones(0)
     s = s.insert(0, "0b101")
     assert s.bin == "101"
 
@@ -572,8 +572,8 @@ class TestAdding:
         assert not s3 != s4
 
     def test_large_equals(self):
-        s1 = Bits.zeros(1000000)
-        s2 = Bits.zeros(1000000)
+        s1 = Bits.from_zeros(1000000)
+        s2 = Bits.from_zeros(1000000)
         s1 = s1.set(True, [-1, 55, 53214, 534211, 999999])
         s2 = s2.set(True, [-1, 55, 53214, 534211, 999999])
         assert s1 == s2
@@ -978,7 +978,7 @@ class TestManyDifferentThings:
 
 class TestSet:
     def test_set(self):
-        a = Bits.zeros(16)
+        a = Bits.from_zeros(16)
         a = a.set(True, 0)
         assert a == "0b10000000 00000000"
         a = a.set(1, 15)
@@ -1005,14 +1005,14 @@ class TestSet:
             _ = a.set(1, [-11])
 
     def test_set_list(self):
-        a = Bits.zeros(18)
+        a = Bits.from_zeros(18)
         a = a.set(True, range(18))
         assert a.i == -1
         a = a.set(False, range(18))
         assert a.i == 0
 
     def test_unset(self):
-        a = Bits.ones(16)
+        a = Bits.from_ones(16)
         a = a.set(False, 0)
         assert ~a == "0b10000000 00000000"
         a = a.set(0, 15)
@@ -1051,7 +1051,7 @@ class TestInvert:
         assert a.bin == "100000"
 
     def test_invert_errors(self):
-        a = Bits.zeros(10)
+        a = Bits.from_zeros(10)
         with pytest.raises(IndexError):
             _ = a.invert(10)
         with pytest.raises(IndexError):
@@ -1080,7 +1080,7 @@ class TestInvert:
         assert a == "0b00110000110001"
 
     def test_logical_inplace_errors(self):
-        a = Bits.zeros(4)
+        a = Bits.from_zeros(4)
         with pytest.raises(ValueError):
             a |= "0b111"
         with pytest.raises(ValueError):
@@ -1179,14 +1179,14 @@ class TestMoreMisc:
             a.rol(-1)
 
     def test_init_with_zeros(self):
-        a = Bits.zeros(0)
+        a = Bits.from_zeros(0)
         assert not a
-        a = Bits.zeros(1)
+        a = Bits.from_zeros(1)
         assert a == "0b0"
-        a = Bits.zeros(1007)
+        a = Bits.from_zeros(1007)
         assert a == Bits.from_string("u1007 = 0")
         with pytest.raises(ValueError):
-            _ = Bits.zeros(-1)
+            _ = Bits.from_zeros(-1)
         with pytest.raises(TypeError):
             a += 10
 

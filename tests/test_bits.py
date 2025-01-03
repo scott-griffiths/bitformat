@@ -265,7 +265,7 @@ class TestPrettyPrinting:
         )
 
     def test_multi_line(self):
-        a = Bits.zeros(100)
+        a = Bits.from_zeros(100)
         s = io.StringIO()
         a.pp("bin", stream=s, width=80)
         assert (
@@ -299,7 +299,7 @@ class TestPrettyPrinting:
         )
 
     def test_multi_line_multi_format(self):
-        a = Bits.ones(112)
+        a = Bits.from_ones(112)
         s = io.StringIO()
         a.pp("bin8", "hex2", stream=s, width=42)
         assert (
@@ -344,12 +344,12 @@ class TestPrettyPrinting:
         )
 
     def test_group_size_errors(self):
-        a = Bits.zeros(120)
+        a = Bits.from_zeros(120)
         with pytest.raises(ValueError):
             a.pp("hex1", "oct")
 
     def test_zero_group_size(self):
-        a = Bits.zeros(600)
+        a = Bits.from_zeros(600)
         s = io.StringIO()
         a.pp("bin120", stream=s, show_offset=False)
         expected_output = """<Bits, dtype1='bin120', length=600 bits> [
@@ -362,7 +362,7 @@ class TestPrettyPrinting:
 """
         assert remove_unprintable(s.getvalue()) == expected_output
 
-        a = Bits.zeros(400)
+        a = Bits.from_zeros(400)
         s = io.StringIO()
         a.pp(stream=s, dtype1="hex", show_offset=False)
         expected_output = """<Bits, dtype1='hex', length=400 bits> [
@@ -478,7 +478,7 @@ class TestPrettyPrintingErrors:
             a.pp("binary")
 
     def test_interpret_problems(self):
-        a = Bits.zeros(7)
+        a = Bits.from_zeros(7)
         with pytest.raises(ValueError):
             a.pp("oct")
         with pytest.raises(ValueError):

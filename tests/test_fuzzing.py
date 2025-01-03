@@ -119,6 +119,6 @@ def test_format_consistency(dtype_names, lengths):
         f2 = f
         assert f == f2
         # Create some bits of the right length
-        b = Bits.ones(f.bitlength)
+        b = Bits.from_ones(f.bitlength)
         f.parse(b)
         assert f.to_bits() == b
