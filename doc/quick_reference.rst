@@ -139,7 +139,5 @@ A `Repeat` field repeats another field type a given number of times.
 ``Repeat(count: int | Iterable[int] | str, fieldtype: FieldType | str | Dtype | Bits | None = None, name: str = '')``
 
 
-----
-
 
 

@@ -37,7 +37,7 @@ html_css_files = ["custom.css"]
 html_theme = "piccolo_theme"
 
 html_theme_options = {
-    "banner_text": "bitformat is currently in alpha. This documentation is may be inaccurate.",
+    "banner_text": "bitformat is currently in alpha. This documentation may be inaccurate.",
     "banner_hiding": "permanent",
     "show_theme_credit": False,
     "globaltoc_maxdepth": 3,
