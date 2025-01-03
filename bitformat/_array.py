@@ -60,7 +60,7 @@ class BitsProxy:
         if isinstance(other, BitsProxy):
             return self._bitstore == other._bitstore
         try:
-            return self._bitstore == Bits.from_auto(other)._bitstore
+            return self._bitstore == Bits.from_any(other)._bitstore
         except TypeError:
             return False
 
@@ -176,7 +176,7 @@ class Array:
         else:
             self._bitstore = BitRust.from_zeros(0)
         if trailing_bits is not None:
-            x = Bits.from_auto(trailing_bits)
+            x = Bits.from_any(trailing_bits)
             self._bitstore = BitRust.join([self._bitstore, x._bitstore])
 
     @property
@@ -186,7 +186,7 @@ class Array:
 
     @data.setter
     def data(self, value: BitsType) -> None:
-        self._bitstore = Bits.from_auto(value)._bitstore
+        self._bitstore = Bits.from_any(value)._bitstore
 
     def _getbitslice(self, start: int, stop: int | None) -> Bits:
         x = Bits()
@@ -799,7 +799,7 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = Bits.from_auto(value)
+        value = Bits.from_any(value)
         if len(value) != self._dtype.bitlength:
             raise ValueError(
                 f"Bitwise op {op} needs a Bits of length {self._dtype.bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits."

@@ -298,7 +298,7 @@ class Dtype:
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
 
         """
-        b = bitformat.Bits.from_auto(b)
+        b = bitformat.Bits.from_any(b)
         if self.bitlength > len(b):
             raise ValueError(
                 f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack."
@@ -814,7 +814,7 @@ class DtypeList:
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
 
         """
-        b = bitformat.Bits.from_auto(b)
+        b = bitformat.Bits.from_any(b)
         if self.bitlength > len(b):
             raise ValueError(
                 f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack."

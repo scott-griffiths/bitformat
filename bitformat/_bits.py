@@ -110,14 +110,14 @@ class Bits:
     # ----- Class Methods -----
 
     @classmethod
-    def from_auto(cls: Type[Bits], auto: BitsType, /) -> Bits:
+    def from_any(cls: Type[Bits], any: BitsType, /) -> Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
         The builder delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string` as appropriate.
 
-        :param auto: The object to convert to a :class:`Bits`.
-        :type auto: BitsType
+        :param any: The object to convert to a :class:`Bits`.
+        :type any: BitsType
 
         :raises TypeError: If no builder can be found.
 
@@ -127,16 +127,16 @@ class Bits:
             a = Bits() + '0x3f' + b'hello' + [1, 0, 1]
 
         """
-        if isinstance(auto, cls):
-            return auto
-        if isinstance(auto, str):
-            return cls.from_string(auto)
-        elif isinstance(auto, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(auto)
-        elif isinstance(auto, abc.Iterable):
-            return cls.from_iterable(auto)
+        if isinstance(any, cls):
+            return any
+        if isinstance(any, str):
+            return cls.from_string(any)
+        elif isinstance(any, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(any)
+        elif isinstance(any, abc.Iterable):
+            return cls.from_iterable(any)
         raise TypeError(
-            f"Cannot convert '{auto}' of type {type(auto)} to a Bits object."
+            f"Cannot convert '{any}' of type {type(any)} to a Bits object."
         )
 
     @classmethod
@@ -201,7 +201,7 @@ class Bits:
         """
         x = super().__new__(cls)
         x._bitstore = BitRust.join(
-            [Bits.from_auto(item)._bitstore for item in sequence]
+            [Bits.from_any(item)._bitstore for item in sequence]
         )
         return x
 
@@ -373,7 +373,7 @@ class Bits:
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
-        suffix = self.from_auto(suffix)
+        suffix = self.from_any(suffix)
         if len(suffix) <= len(self):
             return self._slice(len(self) - len(suffix), len(self)) == suffix
         return False
@@ -396,7 +396,7 @@ class Bits:
             6
 
         """
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().bytealigned if bytealigned is None else bytealigned
@@ -425,7 +425,7 @@ class Bits:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         ba = Options().bytealigned if bytealigned is None else bytealigned
         return self._findall(bs, count, ba)
 
@@ -442,7 +442,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self.from_auto(bs)
+        bs = self.from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -500,7 +500,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self.from_auto(bs)
+        bs = self.from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -635,8 +635,8 @@ class Bits:
         """
         if count == 0:
             return self
-        old = self.from_auto(old)
-        new = self.from_auto(new)
+        old = self.from_any(old)
+        new = self.from_any(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -702,7 +702,7 @@ class Bits:
         if end < start.
 
         """
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         ba = Options().bytealigned if bytealigned is None else bytealigned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
@@ -807,7 +807,7 @@ class Bits:
         :rtype: bool
 
         """
-        prefix = self.from_auto(prefix)
+        prefix = self.from_any(prefix)
         if len(prefix) <= len(self):
             return self._slice(0, len(prefix)) == prefix
         return False
@@ -904,7 +904,7 @@ class Bits:
         return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _setbits(self, bs: BitsType, _length: None = None) -> None:
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         self._bitstore = bs._bitstore
 
     def _setbytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
@@ -1351,7 +1351,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
         return s
@@ -1364,7 +1364,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore
         return s
@@ -1375,7 +1375,7 @@ class Bits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = Bits.from_auto(bs)
+        bs = Bits.from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
@@ -1440,7 +1440,7 @@ class Bits:
 
         """
         try:
-            return self._bitstore == Bits.from_auto(bs)._bitstore
+            return self._bitstore == Bits.from_any(bs)._bitstore
         except TypeError:
             return False
 
@@ -1473,7 +1473,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        return Bits.join([self, Bits.from_auto(bs)])
+        return Bits.join([self, Bits.from_any(bs)])
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
@@ -1544,7 +1544,7 @@ class Bits:
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__.from_auto(bs)
+        bs = self.__class__.from_any(bs)
         return bs.__add__(self)
 
     def __rmul__(self: Bits, n: int, /) -> Bits:
