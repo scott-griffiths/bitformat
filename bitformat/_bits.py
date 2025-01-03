@@ -82,16 +82,19 @@ class Bits:
     """
     An immutable container of binary data.
 
-    To construct use a builder method:
+    To construct use a builder 'from' method:
 
-    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
-    * ``Bits.from_iterable(i)`` - Convert each element to a bool.
     * ``Bits.from_string(s)`` - Use a formatted string.
-    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
+    * ``Bits.from_iterable(i)`` - Convert each element to a bool.
+    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
+    * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
-    * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
+
+    or concatenate bits together:
+
+    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
 
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
@@ -1035,14 +1038,7 @@ class Bits:
 
     def _setbin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
-        try:
-            if binstring.startswith("0b"):
-                binstring = binstring[2:]
-        except AttributeError:
-            raise TypeError(
-                f"Expected a binary string, but received a {type(binstring)} with value {binstring}."
-            )
-        self._bitstore = BitRust.from_bin(''.join(binstring.replace("_", "").split()))
+        self._bitstore = BitRust.from_bin_checked(binstring)
 
     def _getbin(self) -> str:
         """Return interpretation as a binary string."""
@@ -1069,14 +1065,7 @@ class Bits:
 
     def _sethex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
-        try:
-            if hexstring.startswith("0x"):
-                hexstring = hexstring[2:]
-        except AttributeError:
-            raise TypeError(
-                f"Expected a hex string, but received a {type(hexstring)} with value {hexstring}."
-            )
-        self._bitstore = BitRust.from_hex(hexstring.replace("_", ""))
+        self._bitstore = BitRust.from_hex_checked(hexstring)
 
     def _gethex(self) -> str:
         """Return the hexadecimal representation as a string."""

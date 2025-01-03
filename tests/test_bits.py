@@ -707,3 +707,19 @@ def test_unpack_dtype_list():
     b = d.pack([55, 33, 11, 0])
     assert b.unpack(d) == [55, 33, 11, False]
     assert b.unpack(f) == [55, 33, 11, False]
+
+def test_from_ones():
+    a = Bits.from_ones(0)
+    assert a == Bits()
+    a = Bits.from_ones(1)
+    assert a == Bits("0b1")
+    with pytest.raises(ValueError):
+        _ = Bits.from_ones(-1)
+
+def test_from_zeros():
+    a = Bits.from_zeros(0)
+    assert a == Bits()
+    a = Bits.from_zeros(1)
+    assert a == Bits("0b0")
+    with pytest.raises(ValueError):
+        _ = Bits.from_zeros(-1)
