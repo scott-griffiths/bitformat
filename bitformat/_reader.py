@@ -33,7 +33,7 @@ class Reader:
     def bits(self) -> Bits:
         """
         Get or set the Bits object associated with the Reader.
-        Can be set from anything valid for :class:`Bits.from_auto`, for example
+        Can be set from anything valid for :class:`Bits.from_any`, for example
         ``bytes`` objects, formatted strings, or :class:`Bits` objects.
 
         Changing the Bits object may invalidate the bit position, but it's left

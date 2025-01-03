@@ -84,14 +84,14 @@ class Bits:
 
     To construct use a builder method:
 
-    * ``Bits.from_auto(auto)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
+    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
     * ``Bits.from_iterable(i)`` - Convert each element to a bool.
     * ``Bits.from_string(s)`` - Use a formatted string.
     * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
-    * ``Bits.ones(n)`` - Initialise with ``n`` one bits.
-    * ``Bits.pack(dtype, value)`` - Combine a data type with a value.
-    * ``Bits.zeros(n)`` - Initialise with ``n`` zero bits.
+    * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
+    * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
+    * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
 
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
@@ -123,7 +123,7 @@ class Bits:
 
         .. code-block:: python
 
-            # Bits.from_auto will be called internally to convert to Bits
+            # Bits.from_any will be called internally to convert to Bits
             a = Bits() + '0x3f' + b'hello' + [1, 0, 1]
 
         """
@@ -190,7 +190,7 @@ class Bits:
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
-        :param sequence: A sequence to concatenate. Items can either be Bits, or something that can be converted via :meth:`from_auto`.
+        :param sequence: A sequence to concatenate. Items can either be Bits, or something that can be converted via :meth:`from_any`.
         :type sequence: Iterable[Bits]
         :rtype: Bits
 
