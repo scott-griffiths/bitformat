@@ -110,7 +110,7 @@ class Bits:
     # ----- Class Methods -----
 
     @classmethod
-    def from_any(cls: Type[Bits], any: BitsType, /) -> Bits:
+    def _from_any(cls: Type[Bits], any: BitsType, /) -> Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
@@ -201,7 +201,7 @@ class Bits:
         """
         x = super().__new__(cls)
         x._bitstore = BitRust.join(
-            [Bits.from_any(item)._bitstore for item in sequence]
+            [Bits._from_any(item)._bitstore for item in sequence]
         )
         return x
 
@@ -373,7 +373,7 @@ class Bits:
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
-        suffix = self.from_any(suffix)
+        suffix = self._from_any(suffix)
         if len(suffix) <= len(self):
             return self._slice(len(self) - len(suffix), len(self)) == suffix
         return False
@@ -396,7 +396,7 @@ class Bits:
             6
 
         """
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
@@ -425,7 +425,7 @@ class Bits:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._findall(bs, count, ba)
 
@@ -442,7 +442,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self.from_any(bs)
+        bs = self._from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -490,7 +490,7 @@ class Bits:
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self.from_any(bs)
+        bs = self._from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
@@ -625,8 +625,8 @@ class Bits:
         """
         if count == 0:
             return self
-        old = self.from_any(old)
-        new = self.from_any(new)
+        old = self._from_any(old)
+        new = self._from_any(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -692,7 +692,7 @@ class Bits:
         if end < start.
 
         """
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
@@ -797,7 +797,7 @@ class Bits:
         :rtype: bool
 
         """
-        prefix = self.from_any(prefix)
+        prefix = self._from_any(prefix)
         if len(prefix) <= len(self):
             return self._slice(0, len(prefix)) == prefix
         return False
@@ -894,7 +894,7 @@ class Bits:
         return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _setbits(self, bs: BitsType, _length: None = None) -> None:
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         self._bitstore = bs._bitstore
 
     def _setbytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
@@ -1320,7 +1320,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
         return s
@@ -1333,7 +1333,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore
         return s
@@ -1344,7 +1344,7 @@ class Bits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = Bits.from_any(bs)
+        bs = Bits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
@@ -1409,7 +1409,7 @@ class Bits:
 
         """
         try:
-            return self._bitstore == Bits.from_any(bs)._bitstore
+            return self._bitstore == Bits._from_any(bs)._bitstore
         except TypeError:
             return False
 
@@ -1442,7 +1442,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        return Bits.join([self, Bits.from_any(bs)])
+        return Bits.join([self, Bits._from_any(bs)])
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
@@ -1513,7 +1513,7 @@ class Bits:
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__.from_any(bs)
+        bs = self.__class__._from_any(bs)
         return bs.__add__(self)
 
     def __rmul__(self: Bits, n: int, /) -> Bits:

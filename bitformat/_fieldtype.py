@@ -39,7 +39,7 @@ class FieldType(abc.ABC):
         :return: The number of bits used.
         :rtype: int
         """
-        b = Bits() if b is None else Bits.from_any(b)
+        b = Bits() if b is None else Bits._from_any(b)
         self.clear()
         try:
             return self._parse(b, 0, kwargs)

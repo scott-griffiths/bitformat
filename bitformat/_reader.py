@@ -26,7 +26,7 @@ class Reader:
         if bits is None:
             self._bits = Bits()
         else:
-            self._bits = Bits.from_any(bits)
+            self._bits = Bits._from_any(bits)
         self._pos = pos
 
     @property
@@ -49,7 +49,7 @@ class Reader:
 
     @bits.setter
     def bits(self, value: BitsType) -> None:
-        self._bits = Bits.from_any(value)
+        self._bits = Bits._from_any(value)
 
     @property
     def pos(self) -> int:

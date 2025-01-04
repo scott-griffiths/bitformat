@@ -187,7 +187,7 @@ class Field(FieldType):
         :return: The Field instance.
         :rtype: Field
         """
-        b = Bits.from_any(b)
+        b = Bits._from_any(b)
         if len(b) == 0:
             raise ValueError("Can't create a Field from an empty Bits object.")
         return cls.from_params(Dtype.from_params("bits", len(b)), name, b, const=True)
