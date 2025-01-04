@@ -83,8 +83,8 @@ class Bits:
 
     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
     * ``Bits.from_string(s)`` - Use a formatted string.
-    * ``Bits.from_iterable(i)`` - Convert each element to a bool.
-    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string`.
+    * ``Bits.from_bools(i)`` - Convert each element in i to a bool.
+    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_bools` or :meth:`Bits.from_string`.
     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
@@ -114,7 +114,7 @@ class Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-        The builder delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_iterable` or :meth:`Bits.from_string` as appropriate.
+        The builder delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_bools` or :meth:`Bits.from_string` as appropriate.
 
         :param any: The object to convert to a :class:`Bits`.
         :type any: BitsType
@@ -134,7 +134,7 @@ class Bits:
         elif isinstance(any, (bytes, bytearray, memoryview)):
             return cls.from_bytes(any)
         elif isinstance(any, abc.Iterable):
-            return cls.from_iterable(any)
+            return cls.from_bools(any)
         raise TypeError(
             f"Cannot convert '{any}' of type {type(any)} to a Bits object."
         )
@@ -154,7 +154,7 @@ class Bits:
         return x
 
     @classmethod
-    def from_iterable(cls, i: Iterable[Any], /) -> Bits:
+    def from_bools(cls, i: Iterable[Any], /) -> Bits:
         """
         Create a new :class:`Bits` from an iterable by converting each element to a bool.
 

@@ -578,12 +578,12 @@ def test_pack_array():
 
 def test_from_iterable():
     with pytest.raises(TypeError):
-        _ = Bits.from_iterable()
-    a = Bits.from_iterable([])
+        _ = Bits.from_bools()
+    a = Bits.from_bools([])
     assert a == Bits()
-    a = Bits.from_iterable([1, 0, 1, 1])
+    a = Bits.from_bools([1, 0, 1, 1])
     assert a == "0b1011"
-    a = Bits.from_iterable((True,))
+    a = Bits.from_bools((True,))
     assert a == "bool=1"
 
 
