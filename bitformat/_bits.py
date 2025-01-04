@@ -468,23 +468,13 @@ class Bits:
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        if pos is None:
-            x = self.__class__()
-            x._bitstore = self._bitstore.invert()
-            return x
-
-        if not isinstance(pos, abc.Iterable):
-            pos = (pos,)
-        length = len(self)
         x = self.__class__()
-        # No need to copy as the BitRust is immutable!
-        x._bitstore = self._bitstore
-        for p in pos:
-            if p < 0:
-                p += length
-            if not 0 <= p < length:
-                raise IndexError(f"Bit position {p} out of range.")
-            x._bitstore = x._bitstore.invert(p)
+        if pos is None:
+            x._bitstore = self._bitstore.invert_all()
+        elif not isinstance(pos, abc.Iterable):
+            x._bitstore = self._bitstore.invert_single_bit(pos)
+        else:
+            x._bitstore = self._bitstore.invert_bit_list(list(pos))
         return x
 
     def overwrite(self, pos: int, bs: BitsType, /) -> Bits:

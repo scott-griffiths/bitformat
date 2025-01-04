@@ -3,6 +3,15 @@ use std::ops::Not;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use bitvec::prelude::*;
+use lazy_static::lazy_static;
+
+lazy_static!(
+    pub static ref ZERO_BIT: BitRust = BitRust::from_zeros(1);
+);
+
+lazy_static!(
+    pub static ref ONE_BIT: BitRust = BitRust::from_ones(1);
+);
 
 type BV = BitVec<u8, Msb0>;
 type BS = BitSlice<u8, Msb0>;
@@ -559,6 +568,50 @@ impl BitRust {
             bv,
         }
     }
+
+    pub fn invert_bit_list(&self, pos_list: Vec<i64>) -> PyResult<Self> {
+        let mut bv = self.bv.clone();
+        for pos in pos_list {
+            if pos < -(self.len() as i64) || pos >= self.len() as i64 {
+                return Err(PyIndexError::new_err("Index out of range."));
+            }
+            let pos = if pos < 0 {
+                (pos + self.len() as i64) as usize
+            } else {
+                pos as usize
+            };
+            let value = bv[pos];
+            bv.set(pos, !value);
+        }
+        Ok(BitRust {
+            bv,
+        })
+    }
+
+    pub fn invert_single_bit(&self, pos: i64) -> PyResult<Self> {
+        if pos < -(self.len() as i64) || pos >= self.len() as i64 {
+            return Err(PyIndexError::new_err("Index out of range."));
+        }
+        let pos = if pos < 0 {
+            (pos + self.len() as i64) as usize
+        } else {
+            pos as usize
+        };
+        let mut bv = self.bv.clone();
+        let value = bv[pos];
+        bv.set(pos, !value);
+        Ok(BitRust {
+            bv,
+        })
+    }
+
+    pub fn invert_all(&self) -> Self {
+        let bv = self.bv.clone().not();
+        BitRust {
+            bv,
+        }
+    }
+
 
     /// Returns true if all of the bits are set to 1.
     pub fn all_set(&self) -> bool {
