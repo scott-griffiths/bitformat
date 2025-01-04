@@ -28,7 +28,7 @@ Features
 Installation and download
 -------------------------
 
-The first product release was made in September 2024, with a fuller release planned for later in the year.
+The first product release was made in September 2024, with a further releases planned for 2025.
 If you wish to try it out now then you may prefer to use the main branch on GitHub as that will be ahead of the release on PyPI. ::
 
     pip install git+https://github.com/scott-griffiths/bitformat

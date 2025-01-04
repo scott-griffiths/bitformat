@@ -22,6 +22,9 @@ def test_read():
     assert r.pos == 8
     assert r.read("u4") == 3
     assert r.pos == 12
+    r.pos = 0
+    b = r.read(8)
+    assert b == '0x12'
 
 
 def test_parse():

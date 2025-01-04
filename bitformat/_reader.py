@@ -76,10 +76,12 @@ class Reader:
         self._pos = int(value)
 
     def read(
-        self, dtype: Dtype | DtypeList | str, /
+        self, dtype: Dtype | DtypeList | str | int, /
     ) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Read from the current bit position, and interpret according to the given dtype."""
-        if isinstance(dtype, str):
+        if isinstance(dtype, int):
+            dtype = Dtype.from_params('bits', dtype)
+        elif isinstance(dtype, str):
             if "," in dtype:
                 dtype = DtypeList.from_string(dtype)
             else:

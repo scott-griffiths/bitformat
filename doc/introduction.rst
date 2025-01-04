@@ -65,9 +65,9 @@ Some examples creating ``Bits`` from strings::
 
 and the same values created with other methods::
 
-    a = Bits.pack('bin', '110')
+    a = Bits.from_dtype('bin', '110')
     b = Bits.from_string('0xabc')
-    c = Bits.pack('f16', 3.8)
+    c = Bits.from_dtype('f16', 3.8)
     d = Bits.zeros(6)
 
 Once created they are all just binary data, so can be interpreted as any other data type. For example::

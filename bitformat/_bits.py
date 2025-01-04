@@ -184,8 +184,7 @@ class Bits:
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object
-        that could create one via the from_string or from_bytes methods.
+        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the from_string or from_bytes methods.
         :type sequence: Iterable[Bits]
         :rtype: Bits
 
