@@ -22,11 +22,11 @@ class Reader:
     - ``pos``: The current bit position to read and parse from.
     """
 
-    def __init__(self, bits: BitsType | None = None, pos: int = 0) -> None:
+    def __init__(self, bits: Bits | None = None, pos: int = 0) -> None:
         if bits is None:
             self._bits = Bits()
         else:
-            self._bits = Bits._from_any(bits)
+            self.bits = bits
         self._pos = pos
 
     @property
@@ -48,8 +48,16 @@ class Reader:
         return self._bits
 
     @bits.setter
-    def bits(self, value: BitsType) -> None:
-        self._bits = Bits._from_any(value)
+    def bits(self, value: Bits) -> None:
+        if not isinstance(value, Bits):
+            if isinstance(value, str):
+                help = " Did you mean to use 'Bits.from_string()'?"
+            elif isinstance(value, (bytes, bytearray, memoryview)):
+                help = " Did you mean to use 'Bits.from_bytes()'?"
+            else:
+                help = ""
+            raise TypeError(f"A Reader's 'bits' should be initialised with a 'Bits' object, but received a {type(value)}.{help}")
+        self._bits = value
 
     @property
     def pos(self) -> int:
