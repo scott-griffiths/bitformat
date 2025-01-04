@@ -60,9 +60,9 @@ class TestNoPosAttribute:
 
     def test_prepend(self):
         s = Bits.from_zeros(1)
-        t = [1] + s
-        assert s == [0]
-        assert t == [1, 0]
+        t = Bits.from_bools([1]) + s
+        assert s == "0b0"
+        assert t == "0b10"
 
     def test_rol(self):
         s = Bits.from_string("0b0001")

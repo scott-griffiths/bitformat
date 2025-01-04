@@ -95,7 +95,7 @@ class TestCreation:
         a = Bits.from_dtype("bool", False)
         assert a == "0b0"
         b = Bits.from_string("bool=0")
-        assert b == [0]
+        assert b == Bits.from_bools([False])
 
     def test_creation_from_bool_errors(self):
         with pytest.raises(ValueError):
@@ -131,7 +131,7 @@ class TestInitialisation:
 
     def test_find_all(self):
         a = Bits("0b0010011")
-        b = list(a.find_all([1]))
+        b = list(a.find_all('0b1'))
         assert b == [2, 5, 6]
         t = Bits("0b10")
         tp = list(t.find_all("0b1"))

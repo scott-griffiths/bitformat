@@ -633,7 +633,7 @@ class TestMultiplication:
         q = Bits()
         q *= 143
         assert not q
-        q += [True, True, False]
+        q += Bits.from_bools([True, True, False])
         q *= 0
         assert not q
 

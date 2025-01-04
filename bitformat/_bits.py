@@ -19,7 +19,7 @@ from ._bitstore_rust import BitRust
 __all__ = ["Bits", "BitsType"]
 
 # Things that can be converted to Bits when a Bits type is needed
-BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
+BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 
 # name[length]=value
 NAME_INT_VALUE_RE: Pattern[str] = re.compile(
@@ -110,7 +110,7 @@ class Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-        The builder delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_bools` or :meth:`Bits.from_string` as appropriate.
+        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
 
         :param any: The object to convert to a :class:`Bits`.
         :type any: BitsType
@@ -119,8 +119,8 @@ class Bits:
 
         .. code-block:: python
 
-            # Bits.from_any will be called internally to convert to Bits
-            a = Bits() + '0x3f' + b'hello' + [1, 0, 1]
+            # Bits._from_any will be called internally to convert to Bits
+            a = Bits() + '0x3f' + b'hello'
 
         """
         if isinstance(any, cls):
@@ -129,8 +129,6 @@ class Bits:
             return cls.from_string(any)
         elif isinstance(any, (bytes, bytearray, memoryview)):
             return cls.from_bytes(any)
-        elif isinstance(any, abc.Iterable):
-            return cls.from_bools(any)
         raise TypeError(
             f"Cannot convert '{any}' of type {type(any)} to a Bits object."
         )
@@ -186,7 +184,8 @@ class Bits:
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
-        :param sequence: A sequence to concatenate. Items can either be Bits, or something that can be converted via :meth:`from_any`.
+        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object
+        that could create one via the from_string or from_bytes methods.
         :type sequence: Iterable[Bits]
         :rtype: Bits
 
