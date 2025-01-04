@@ -79,19 +79,15 @@ class Bits:
     """
     An immutable container of binary data.
 
-    To construct use a builder 'from' method:
+    To construct, use a builder 'from' method:
 
     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
     * ``Bits.from_string(s)`` - Use a formatted string.
-    * ``Bits.from_bools(i)`` - Convert each element in i to a bool.
-    * ``Bits.from_any(any)`` - Delegates to :meth:`Bits.from_bytes`, :meth:`Bits.from_bools` or :meth:`Bits.from_string`.
+    * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
-
-    or concatenate bits together:
-
-    * ``Bits.join(iterable)`` - Concatenate an iterable of ``Bits`` objects.
+    * ``Bits.from_joined(iterable)`` - Concatenate an iterable of ``Bits`` objects.
 
     ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
 
@@ -184,7 +180,7 @@ class Bits:
         return x
 
     @classmethod
-    def join(cls, sequence: Iterable[Any], /) -> Bits:
+    def from_joined(cls, sequence: Iterable[Any], /) -> Bits:
         """
         Return concatenation of Bits.
 
@@ -196,7 +192,7 @@ class Bits:
 
         .. code-block:: python
 
-            a = Bits.join([f'u6={x}' for x in range(64)])
+            a = Bits.from_joined([f'u6={x}' for x in range(64)])
 
         """
         x = super().__new__(cls)
@@ -314,7 +310,7 @@ class Bits:
         for startbit in range(0, len(self), bytelength * 8):
             x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
             chunks.append(Bits.from_bytes(x[::-1]))
-        return Bits.join(chunks)
+        return Bits.from_joined(chunks)
 
     def count(self, value: Any, /) -> int:
         """
@@ -720,7 +716,7 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        return Bits.join(
+        return Bits.from_joined(
             [
                 self._slice(0, start),
                 self._slice(start + n, end),
@@ -750,7 +746,7 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        return Bits.join(
+        return Bits.from_joined(
             [
                 self._slice(0, start),
                 self._slice(end - n, end),
@@ -1442,7 +1438,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        return Bits.join([self, Bits._from_any(bs)])
+        return Bits.from_joined([self, Bits._from_any(bs)])
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
@@ -1485,7 +1481,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        return Bits.join([self._slice(n, len(self)), Bits.from_zeros(n)])
+        return Bits.from_joined([self._slice(n, len(self)), Bits.from_zeros(n)])
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -1508,7 +1504,7 @@ class Bits:
             x._bitstore = BitRust.join([x._bitstore, x._bitstore])
             m *= 2
         # Then finish off with the remaining copies
-        x._bitstore = BitRust.join([x._bitstore, x[0 : (n - m) * old_len]._bitstore])
+        x._bitstore = BitRust.join([x._bitstore, x[0: (n - m) * old_len]._bitstore])
         return x
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
@@ -1538,7 +1534,7 @@ class Bits:
         if n == 0:
             return self
         n = min(n, len(self))
-        return Bits.join([Bits.from_zeros(n), self._slice(0, len(self) - n)])
+        return Bits.from_joined([Bits.from_zeros(n), self._slice(0, len(self) - n)])
 
     # ----- Other
 

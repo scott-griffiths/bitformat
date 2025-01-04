@@ -140,7 +140,7 @@ class TestInitialisation:
 
 class TestCut:
     def test_cut(self):
-        s = Bits().join(["0b000111"] * 10)
+        s = Bits().from_joined(["0b000111"] * 10)
         for t in s.chunks(6):
             assert t == "0b000111"
 
@@ -510,7 +510,7 @@ class TestPrettyPrinting_NewFormats:
         )
 
     def test_uint(self):
-        a = Bits().join([Bits.from_dtype("u12", x) for x in range(40, 105)])
+        a = Bits().from_joined([Bits.from_dtype("u12", x) for x in range(40, 105)])
         s = io.StringIO()
         a.pp("u", "hex3", stream=s, width=120)
         assert (

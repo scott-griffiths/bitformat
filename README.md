@@ -51,7 +51,7 @@ A variety of constructor methods are available to create `Bits`, including from 
 >>> b = Bits('u12 = 54')  # Create from a formatted string.
 >>> c = Bits.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
 >>> d = Bits.from_dtype('f16', -0.75)  # Pack a value into a data type.
->>> e = Bits.join([a, b, c, d])  # The best way to join lots of bits together.
+>>> e = Bits.from_joined([a, b, c, d])  # The best way to join lots of bits together.
 ```
 
 ### Interpreting those Bits

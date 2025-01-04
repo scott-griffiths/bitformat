@@ -576,7 +576,7 @@ class Array:
                 f"Cannot reverse the items in the Array as its data length ({len(self._proxy)} bits) "
                 f"is not a multiple of the format length ({self._dtype.bitlength} bits)."
             )
-        self._bitstore = Bits.join(
+        self._bitstore = Bits.from_joined(
             [
                 self._getbitslice(s - self._dtype.bitlength, s)
                 for s in range(len(self._proxy), 0, -self._dtype.bitlength)

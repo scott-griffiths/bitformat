@@ -445,29 +445,29 @@ class TestAdding:
         s3 = Bits("0b000")
         s4 = Bits("0b111")
         strings = [s1, s2, s1, s3, s4]
-        s = Bits.join(strings)
+        s = Bits.from_joined(strings)
         assert s.bin == "010000111"
 
     def test_join2(self):
         s1 = Bits("0x00f1")
         assert s1[4:12].hex == "0f"
         bsl = [s1[0:16], s1[4:12]]
-        s = Bits.join(bsl)
+        s = Bits.from_joined(bsl)
         assert s.hex == "00f10f"
 
         s1 = Bits("0x00112233445566778899aabbccddeeff")
         s2 = Bits("0b000011")
         bsl = [s1[0:32], s1[4:12], s2, s2, s2, s2]
-        s = Bits.join(bsl)
+        s = Bits.from_joined(bsl)
         assert s.hex == "00112233010c30c3"
 
         bsl = [Bits.from_dtype("u12", j) for j in range(10) for _ in range(10)]
-        s = Bits.join(bsl)
+        s = Bits.from_joined(bsl)
         assert len(s) == 1200
 
     def test_join_with_ints(self):
         with pytest.raises(TypeError):
-            _ = Bits.join([1, 2])
+            _ = Bits.from_joined([1, 2])
 
     def test_various_things2(self):
         s1 = Bits("0x1f08")[:13]
@@ -608,7 +608,7 @@ class TestAdding:
             _ = ~s
 
     def test_join_with_auto(self):
-        s = Bits.join(["0xf", "0b00", Bits.from_dtype("bin", "11")])
+        s = Bits.from_joined(["0xf", "0b00", Bits.from_dtype("bin", "11")])
         assert s == "0b11110011"
 
 
@@ -875,7 +875,7 @@ class TestManyDifferentThings:
         assert s == "0x43211234"
 
     def test_join_functions(self):
-        a = Bits.join(["0xa", "0xb", "0b1111"])
+        a = Bits.from_joined(["0xa", "0xb", "0b1111"])
         assert a == "0xabf"
 
     def test_difficult_prepends(self):

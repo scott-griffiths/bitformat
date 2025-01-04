@@ -10,7 +10,7 @@ import itertools
 def test_chunking(benchmark):
     def chunks():
         s = Bits.from_string("0xef1356a6200b3, 0b0")
-        s = Bits.join(itertools.repeat(s, 6000))
+        s = Bits.from_joined(itertools.repeat(s, 6000))
         c = 0
         for triplet in s.chunks(3):
             if triplet == "0b001":

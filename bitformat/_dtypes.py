@@ -290,7 +290,7 @@ class Dtype:
             return value
         if len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        return bitformat.Bits.join(self._create_fn(v) for v in value)
+        return bitformat.Bits.from_joined(self._create_fn(v) for v in value)
 
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         """Unpack a Bits to find its value.
@@ -800,7 +800,7 @@ class DtypeList:
             raise TypeError(
                 f"Expected a sequence of {len(self)} values to pack DtypeList '{self}'. Received '{values}'."
             )
-        return bitformat.Bits.join(
+        return bitformat.Bits.from_joined(
             dtype.pack(value) for dtype, value in zip(self._dtypes, values)
         )
 

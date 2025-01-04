@@ -282,7 +282,7 @@ class Format(FieldType):
 
     @override
     def to_bits(self) -> Bits:
-        return Bits().join(fieldtype.to_bits() for fieldtype in self.fields)
+        return Bits().from_joined(fieldtype.to_bits() for fieldtype in self.fields)
 
     def __len__(self) -> int:
         return len(self.fields)

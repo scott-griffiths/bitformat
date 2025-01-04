@@ -128,7 +128,7 @@ class TestCreation:
         assert a.unpack() == [ord("3"), ord("4"), ord("5")]
 
     def test_creation_from_bits(self):
-        a = Bits.join([Bits.from_dtype("i19", x) for x in range(-10, 10)])
+        a = Bits.from_joined([Bits.from_dtype("i19", x) for x in range(-10, 10)])
         b = Array("i19", a)
         assert b.unpack() == list(range(-10, 10))
 
