@@ -6,6 +6,11 @@ log() {
     echo "==> $1"
 }
 
+if ! command -v uv &> /dev/null; then
+    log "uv not found. Please install uv first."
+    exit 1
+fi
+
 # Create and activate virtual environment if it doesn't exist
 if [ ! -d ".venv" ]; then
     log "Creating uv virtual environment"
@@ -13,7 +18,11 @@ if [ ! -d ".venv" ]; then
 fi
 
 log "Activating virtual environment"
-source .venv/bin/activate
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    source .venv/Scripts/activate
+else
+    source .venv/bin/activate
+fi
 
 # Install dependencies including dev dependencies
 log "Installing dependencies"
