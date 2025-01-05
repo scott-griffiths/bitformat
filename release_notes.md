@@ -1,5 +1,15 @@
 # Release Notes
 
+### Some time in 2025: version 0.2.0
+
+This release replaces the core bit manipulation code with a version written in Rust. This should allow some great optimisations in the future, but this version is more a proof of concept to get the interface and the build systems working.
+
+Some other changes are still a bit half-baked. There is code to switch from my hand-rolled format parsing to using the lark library. There are additions for new fields such as `Repeat`, `If` and `Pass`, and some work has been done on expressions. All of this is rather unfinished and planned for the 0.3 release, while this release concentrates on the move to use a Rust backend.
+
+Other additions:
+
+* `Reader` -- A new class that wraps a `Bits` to provide a bit position and read / parse functionality.
+
 ### September 2024: version 0.1.0
 
 #### First working version
