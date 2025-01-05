@@ -26,11 +26,15 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 * The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported with no arbitrary restrictions on length.
-* Data is always stored efficiently as a contiguous array of bits.
+* Data is always stored as a contiguous array of bits.
+* The core is written is Rust for efficiency.
 
 > [!NOTE]
 > To see what been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
 
+## Installation
+
+There should be pre-built wheels available for most platforms so you can just `pip install bitformat`. If a wheel isn't available then please file a bug report and optionally take a look at the `build.sh` script.
 
 ## Documentation
 
