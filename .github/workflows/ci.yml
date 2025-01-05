@@ -111,7 +111,7 @@ jobs:
           cd repo
           uv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
-            .venv\\Scripts\\activate
+            source .venv\\Scripts\\activate
           else
             source .venv/bin/activate
           fi
