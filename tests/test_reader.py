@@ -3,7 +3,7 @@ from bitformat import Reader, Field, Bits
 
 
 def test_creation():
-    r = Reader()
+    r = Reader(Bits())
     assert len(r.bits) == 0
     assert r.pos == 0
 
@@ -28,8 +28,7 @@ def test_read():
 
 
 def test_parse():
-    r = Reader()
-    r.bits = Bits.from_bytes(b"hello_world")
+    r = Reader(Bits.from_bytes(b"hello_world"))
     r.pos = 6 * 8
     f = Field("bytes3")
     assert r.parse(f) == 24

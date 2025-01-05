@@ -21,11 +21,11 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
 
 Field Types
 -----------
-These classes build upon those above to provide more richer and more complex data structures.
+These classes build upon those above to provide richer and more complex data structures.
 
 * :ref:`FieldType <fieldtype>` -- The abstract base class for the other classes in this section.
-* :ref:`Field <field>` -- A well-defined amount of binary data with a single data type, and optionally a name.
 * :ref:`Format <format>` -- A sequence of :class:`FieldType` objects, such as :class:`Field` or other :class:`Format` instances.
+* :ref:`Field <field>` -- A well-defined amount of binary data with a single data type, and optionally a name.
 * :ref:`If <if>` -- A pair of :class:`FieldType` obejcts, one of which is selected based on a condition.
 * :ref:`Repeat <repeat>` -- Used to repeat another :class:`FieldType` a number of times.
 * :ref:`Pass <pass>` -- An empty :class:`FieldType` used as a placeholder.

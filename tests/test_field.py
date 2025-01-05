@@ -100,7 +100,7 @@ class TestCreation:
 
 
 class TestBuilding:
-    @given(x=st.integers(0, 1023), name=st.text().filter(str.isidentifier))
+    @given(x=st.integers(0, 1023), name=st.text().filter(str.isidentifier or keyword.iskeyword))
     def test_building_with_keywords(self, x, name):
         assume("__" not in name)
         f = Field.from_string(f"{name} :u10")
