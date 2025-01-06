@@ -170,8 +170,11 @@ jobs:
       - name: Move distribution files to dist
         run: |
           mkdir -p dist
-          find artifacts -name "*.whl" -o -name "*.tar.gz" -exec mv {} dist/ \;
+          find artifacts -type f \( -name "*.whl" -o -name "*.tar.gz" \) -exec mv {} dist/ \;
+          ls -lR artifacts/  # Let's see what files are actually in the artifacts directories
+          echo "Contents of dist directory:"
           ls -l dist/
+        
 
       # Optional: Test with TestPyPI first
       - name: Publish to Test PyPI
