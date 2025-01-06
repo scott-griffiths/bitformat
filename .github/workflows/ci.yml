@@ -29,10 +29,20 @@ jobs:
         os:
           - name: 🐧
             runs-on: ubuntu-latest
+          - name: 🍎
+            runs-on: macos-latest
+          - name: 🪟
+            runs-on: windows-latest
         python:
           - name: CPython 3.11
             major_dot_minor: '3.11'
             action: '3.11'
+          - name: CPython 3.12
+            major_dot_minor: '3.12'
+            action: '3.12'
+          - name: CPython 3.13
+            major_dot_minor: '3.13'
+            action: '3.13'
     steps:
       - uses: actions/checkout@v3
 
@@ -52,12 +62,16 @@ jobs:
 
       - name: Build sdist and wheel
         run: |
-          python -m build
+          # Only build sdist on one combination (ubuntu + py3.11)
+          if [[ "${{ matrix.os.runs-on }}" == "ubuntu-latest" && "${{ matrix.python.action }}" == "3.11" ]]; then
+            python -m build --sdist
+          fi
+          python -m build --wheel
       - name: Publish package files
         if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: packages
+          name: packages-${{ matrix.os.runs-on }}-${{ matrix.python.action }}
           path: dist/*
           if-no-files-found: error
 
@@ -149,8 +163,9 @@ jobs:
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
-          name: packages
+          pattern: packages-*
           path: dist
+          merge-multiple: true
 
       - name: List distribution files
         run: ls -l dist/
