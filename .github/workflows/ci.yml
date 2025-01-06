@@ -108,7 +108,7 @@ jobs:
       - name: Download package files
         uses: actions/download-artifact@v3
         with:
-          name: packages
+          name: packages-${{ matrix.os.runs-on }}-${{ matrix.python.action }}
           path: dist
 
       - uses: actions/setup-python@v4
