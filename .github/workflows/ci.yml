@@ -156,14 +156,16 @@ jobs:
     name: Publish to PyPI
     needs: [ all ]  # This ensures all tests have passed
     runs-on: ubuntu-latest
-    # Only publish on tag pushes that start with 'v'
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
 
     steps:
+      - name: Create dist directory
+        run: mkdir -p dist
+
       - name: Download all artifacts
         uses: actions/download-artifact@v3
         with:
-          pattern: packages-*
+          pattern: 'packages-*'  # This will match all our platform-specific artifacts
           path: dist
           merge-multiple: true
 
