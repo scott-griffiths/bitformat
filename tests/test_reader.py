@@ -26,6 +26,16 @@ def test_read():
     b = r.read(8)
     assert b == '0x12'
 
+def test_peek():
+    r = Reader(Bits("0xff000001"))
+    assert r.peek('hex2') == 'ff'
+    assert r.peek('hex2') == 'ff'
+    assert r.pos == 0
+    r.pos = len(r) - 1
+    assert r.peek(1) == '0b1'
+    with pytest.raises(ValueError):
+        _ = r.peek(2)
+    assert r.peek(1) == '0b1'
 
 def test_parse():
     r = Reader(Bits.from_bytes(b"hello_world"))
@@ -35,3 +45,4 @@ def test_parse():
     assert f.value == b"wor"
     r.parse(g := Field("bool"))
     assert g.value is False
+

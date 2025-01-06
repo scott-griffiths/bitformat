@@ -90,6 +90,13 @@ class Reader:
         self._pos += dtype.bitlength
         return x
 
+    def peek(self, dtype: Dtype | DtypeList | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
+        """Peek from the current bit position, and interpret according to the given dtype."""
+        current_pos = self._pos
+        value = self.read(dtype)
+        self._pos = current_pos
+        return value
+
     def parse(self, f: FieldType, /) -> int:
         """Parse a fieldtype from the current bit position, returning the number of bits parsed."""
         try:
@@ -106,3 +113,6 @@ class Reader:
 
     def __repr__(self) -> str:
         return str(self)
+
+    def __len__(self) -> int:
+        return len(self.bits)
