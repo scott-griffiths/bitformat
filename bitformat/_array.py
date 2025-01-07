@@ -6,7 +6,7 @@ from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
 
 from bitformat._bits import Bits, BitsType
-from bitformat._dtypes import Dtype, Register, DtypeList
+from bitformat._dtypes import Dtype, Register, DtypeTuple
 from bitformat._options import Options
 from bitformat._common import Colour
 import operator
@@ -147,7 +147,7 @@ class Array:
 
     def __init__(
         self,
-        dtype: str | Dtype | DtypeList,
+        dtype: str | Dtype | DtypeTuple,
         initializer: int
         | Array
         | Iterable
@@ -216,15 +216,15 @@ class Array:
     def dtype(self, new_dtype: str | Dtype) -> None:
         self._set_dtype(new_dtype)
 
-    def _set_dtype(self, new_dtype: str | Dtype | DtypeList) -> None:
+    def _set_dtype(self, new_dtype: str | Dtype | DtypeTuple) -> None:
         if isinstance(new_dtype, Dtype):
             self._dtype = new_dtype
-        elif isinstance(new_dtype, DtypeList):
+        elif isinstance(new_dtype, DtypeTuple):
             self._dtype = new_dtype
         else:
             try:
                 if "," in new_dtype:
-                    dtype = DtypeList.from_string(new_dtype)
+                    dtype = DtypeTuple.from_string(new_dtype)
                 else:
                     dtype = Dtype.from_string(new_dtype)
             except ValueError as e:
@@ -415,12 +415,12 @@ class Array:
         new_array = self.__class__(dtype, self.unpack())
         return new_array
 
-    def unpack(self, dtype: str | Dtype | DtypeList | None = None) -> list[ElementType]:
+    def unpack(self, dtype: str | Dtype | DtypeTuple | None = None) -> list[ElementType]:
         if dtype is None:
             dtype = self._dtype
         elif isinstance(dtype, str):
             if "," in dtype:
-                dtype = DtypeList.from_string(dtype)
+                dtype = DtypeTuple.from_string(dtype)
             else:
                 dtype = Dtype.from_string(dtype)
         elif not isinstance(dtype, Dtype):
@@ -585,8 +585,8 @@ class Array:
 
     def pp(
         self,
-        dtype1: str | Dtype | DtypeList | None = None,
-        dtype2: str | Dtype | DtypeList | None = None,
+        dtype1: str | Dtype | DtypeTuple | None = None,
+        dtype2: str | Dtype | DtypeTuple | None = None,
         groups: int | None = None,
         width: int = 80,
         show_offset: bool = True,
@@ -599,9 +599,9 @@ class Array:
         The output can be customized with various parameters to control the format, width, and display options.
 
         :param dtype1: Data type to display. Defaults to the current Array dtype.
-        :type dtype1: str or Dtype or DtypeList or None
+        :type dtype1: str or Dtype or DtypeTuple or None
         :param dtype2: Data type for addition display data.
-        :type dtype2: str or Dtype or DtypeList or None
+        :type dtype2: str or Dtype or DtypeTuple or None
         :param groups: How many groups of bits to display on each line. This overrides any value given for width.
         :type groups: int or None
         :param width: Maximum width of printed lines in characters. Defaults to 80, but ignored if groups parameter is set.
@@ -621,12 +621,12 @@ class Array:
             dtype1 = self.dtype
         if isinstance(dtype1, str):
             if "," in dtype1:
-                dtype1 = DtypeList.from_string(dtype1)
+                dtype1 = DtypeTuple.from_string(dtype1)
             else:
                 dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
             if "," in dtype2:
-                dtype2 = DtypeList.from_string(dtype2)
+                dtype2 = DtypeTuple.from_string(dtype2)
             else:
                 dtype2 = Dtype.from_string(dtype2)
 
@@ -725,9 +725,9 @@ class Array:
         self, op, value: int | float | None, is_comparison: bool = False
     ) -> Array:
         """Apply op with value to each element of the Array and return a new Array"""
-        if isinstance(self._dtype, DtypeList):
+        if isinstance(self._dtype, DtypeTuple):
             raise ValueError(
-                f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeList dtype."
+                f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeTuple dtype."
             )
         new_array = self.__class__("bool" if is_comparison else self._dtype)
         new_data = Bits()
@@ -764,9 +764,9 @@ class Array:
     def _apply_op_to_all_elements_inplace(self, op, value: int | float) -> Array:
         """Apply op with value to each element of the Array in place."""
         # This isn't really being done in-place, but it's simpler and faster for now?
-        if isinstance(self._dtype, DtypeList):
+        if isinstance(self._dtype, DtypeTuple):
             raise ValueError(
-                f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeList dtype."
+                f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeTuple dtype."
             )
         new_data = Bits()
         failures = index = 0

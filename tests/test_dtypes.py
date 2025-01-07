@@ -1,6 +1,6 @@
 import pytest
 import sys
-from bitformat import Dtype, Bits, Endianness, DtypeList
+from bitformat import Dtype, Bits, Endianness, DtypeTuple
 from bitformat._dtypes import DtypeDefinition, Register
 
 sys.path.insert(0, "..")
@@ -194,20 +194,20 @@ def test_endianness_errors():
 
 
 def test_dtype_list_creation():
-    d = DtypeList("u8, u16, u32, bool")
+    d = DtypeTuple("u8, u16, u32, bool")
     assert len(d) == 4
     assert d.bitlength == 8 + 16 + 32 + 1
 
-    d2 = DtypeList.from_params(d)
+    d2 = DtypeTuple.from_params(d)
     assert d == d2
-    d = DtypeList.from_params(["i5", *d[1:]])
+    d = DtypeTuple.from_params(["i5", *d[1:]])
     assert d[0] == "i5"
     assert d.bitlength == 5 + 16 + 32 + 1
     assert d != d2
 
 
 def test_dtype_list_packing():
-    d = DtypeList("bool, u8, f16")
+    d = DtypeTuple("bool, u8, f16")
     a = d.pack([1, 254, 0.5])
     assert a == "0b1, 0xfe, 0x3800"
     with pytest.raises(ValueError):
@@ -217,22 +217,22 @@ def test_dtype_list_packing():
 
 
 def test_dtype_list_unpacking():
-    d = DtypeList("bool, u8, f16")
+    d = DtypeTuple("bool, u8, f16")
     a = d.unpack("0b1, 0xfe, 0x3800")
     assert a == [1, 254, 0.5]
 
 
 def test_dtype_list_unpacking_with_pad():
     s = Bits.from_string("0b111000111")
-    d = DtypeList("bits3, pad3, bits3")
+    d = DtypeTuple("bits3, pad3, bits3")
     x, y = d.unpack(s)
     assert (x, y.unpack("u")) == ("0b111", 7)
 
 
 def test_dtype_list_slicing():
-    d = DtypeList("u1, u2, u3, u4, u5")
+    d = DtypeTuple("u1, u2, u3, u4, u5")
     d2 = d[1:4]
-    assert d2 == DtypeList("u2, u3, u4")
+    assert d2 == DtypeTuple("u2, u3, u4")
 
 
 def test_dtype_str_with_le():

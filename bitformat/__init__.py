@@ -33,7 +33,7 @@ __author__ = "Scott Griffiths"
 
 from ._bits import Bits
 from ._array import Array, BitsProxy
-from ._dtypes import DtypeDefinition, Register, Dtype, DtypeList
+from ._dtypes import DtypeDefinition, Register, Dtype, DtypeTuple
 from ._fieldtype import FieldType
 from ._field import Field
 from ._format import Format
@@ -189,7 +189,7 @@ for dt in dtype_definitions:
 __all__ = [
     "Bits",
     "Dtype",
-    "DtypeList",
+    "DtypeTuple",
     "Format",
     "FieldType",
     "Field",

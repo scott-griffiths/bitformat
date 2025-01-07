@@ -10,7 +10,7 @@ from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
 from bitformat import _utils
-from bitformat._dtypes import Dtype, Register, DtypeList
+from bitformat._dtypes import Dtype, Register, DtypeTuple
 from bitformat._common import Colour, Endianness
 from typing import Pattern
 from bitformat._options import Options
@@ -501,8 +501,8 @@ class Bits:
 
     def pp(
         self,
-        dtype1: str | Dtype | DtypeList | None = None,
-        dtype2: str | Dtype | DtypeList | None = None,
+        dtype1: str | Dtype | DtypeTuple | None = None,
+        dtype2: str | Dtype | DtypeTuple | None = None,
         groups: int | None = None,
         width: int = 80,
         show_offset: bool = True,
@@ -540,12 +540,12 @@ class Bits:
                 dtype2 = Dtype.from_params("hex")
         if isinstance(dtype1, str):
             if "," in dtype1:
-                dtype1 = DtypeList.from_string(dtype1)
+                dtype1 = DtypeTuple.from_string(dtype1)
             else:
                 dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
             if "," in dtype2:
-                dtype2 = DtypeList.from_string(dtype2)
+                dtype2 = DtypeTuple.from_string(dtype2)
             else:
                 dtype2 = Dtype.from_string(dtype2)
 
@@ -812,11 +812,11 @@ class Bits:
         ...
 
     @overload
-    def unpack(self, fmt: DtypeList | list[str], /) -> list[Any]:
+    def unpack(self, fmt: DtypeTuple | list[str], /) -> list[Any]:
         ...
 
     def unpack(
-        self, fmt: Dtype | str | DtypeList | list[Dtype | str], /
+        self, fmt: Dtype | str | DtypeTuple | list[Dtype | str], /
     ) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
@@ -847,11 +847,11 @@ class Bits:
         # For dtypes like hex, bin etc. there's no need to specify a length.
         if isinstance(fmt, str):
             if "," in fmt:
-                fmt = DtypeList.from_string(fmt)
+                fmt = DtypeTuple.from_string(fmt)
             else:
                 fmt = Dtype.from_string(fmt)
         elif isinstance(fmt, list):
-            fmt = DtypeList.from_params(fmt)
+            fmt = DtypeTuple.from_params(fmt)
         return fmt.unpack(self)
 
     # ----- Private Methods -----
@@ -1083,7 +1083,7 @@ class Bits:
         bits: Bits,
         bits_per_group: int,
         sep: str,
-        dtype: Dtype | DtypeList,
+        dtype: Dtype | DtypeTuple,
         colour_start: str,
         colour_end: str,
         width: int | None = None,
@@ -1117,7 +1117,7 @@ class Bits:
             # Pad final line with spaces to align it
             x += " " * padding_spaces
             return x, chars_used
-        else:  # DtypeList
+        else:  # DtypeTuple
             align = ">"
             s = []
             for b in bits.chunks(bits_per_group):
@@ -1136,7 +1136,7 @@ class Bits:
             return x, chars_used
 
     @staticmethod
-    def _chars_per_dtype(dtype: Dtype | DtypeList, bits_per_group: int):
+    def _chars_per_dtype(dtype: Dtype | DtypeTuple, bits_per_group: int):
         """How many characters are needed to represent a number of bits with a given Dtype."""
         if isinstance(dtype, Dtype):
             return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
@@ -1150,8 +1150,8 @@ class Bits:
 
     def _pp(
         self,
-        dtype1: Dtype | DtypeList,
-        dtype2: Dtype | DtypeList | None,
+        dtype1: Dtype | DtypeTuple,
+        dtype2: Dtype | DtypeTuple | None,
         bits_per_group: int,
         width: int,
         sep: str,
@@ -1256,14 +1256,14 @@ class Bits:
         return
 
     @staticmethod
-    def _bits_per_item(d: Dtype | DtypeList) -> int:
+    def _bits_per_item(d: Dtype | DtypeTuple) -> int:
         if isinstance(d, Dtype):
             return d.bits_per_item
         return sum(x.bits_per_item for x in d)
 
     @staticmethod
     def _process_pp_tokens(
-        dtype1: Dtype | DtypeList, dtype2: Dtype | DtypeList | None
+        dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None
     ) -> tuple[int, bool]:
         has_length_in_fmt = True
         bits_per_group = Bits._bits_per_item(dtype1)

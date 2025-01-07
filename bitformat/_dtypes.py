@@ -10,7 +10,7 @@ from ._common import Expression, Endianness, byteorder
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
-__all__ = ["Dtype", "DtypeList", "DtypeDefinition", "Register", "DtypeWithExpression"]
+__all__ = ["Dtype", "DtypeTuple", "DtypeDefinition", "Register", "DtypeWithExpression"]
 
 CACHE_SIZE = 256
 
@@ -95,7 +95,7 @@ class Dtype:
             except ValueError as e:
                 if "," in token:
                     raise ValueError(
-                        f"Can't parse token '{token}' as a single 'name[length]'. Did you mean to use a DtypeList instead?"
+                        f"Can't parse token '{token}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
                     )
                 else:
                     raise e
@@ -759,13 +759,13 @@ class DtypeWithExpression:
         return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}; {items_str}]"
 
 
-class DtypeList:
-    """A data type class, representing a list of concrete interpretations of binary data.
+class DtypeTuple:
+    """A data type class, representing a tuple of concrete interpretations of binary data.
 
-    DtypeList instances are immutable. They are often created implicitly elsewhere via a token string.
+    DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
 
-    >>> a = DtypeList('u12, u8, bool')
-    >>> b = DtypeList.from_params(['u12', 'u8', 'bool'])
+    >>> a = DtypeTuple('u12, u8, bool')
+    >>> b = DtypeTuple.from_params(['u12', 'u8', 'bool'])
 
     """
 
@@ -773,11 +773,11 @@ class DtypeList:
     _bitlength: int
     is_array: bool = False
 
-    def __new__(cls, s: str) -> DtypeList:
+    def __new__(cls, s: str) -> DtypeTuple:
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeList:
+    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
         x = super().__new__(cls)
         x._dtypes = [
             dtype if isinstance(dtype, Dtype) else Dtype.from_string(dtype)
@@ -787,7 +787,7 @@ class DtypeList:
         return x
 
     @classmethod
-    def from_string(cls, s: str, /) -> DtypeList:
+    def from_string(cls, s: str, /) -> DtypeTuple:
         tokens = [t.strip() for t in s.split(",")]
         dtypes = [Dtype.from_string(token) for token in tokens]
         return cls.from_params(dtypes)
@@ -798,7 +798,7 @@ class DtypeList:
                 raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
         except TypeError:
             raise TypeError(
-                f"Expected a sequence of {len(self)} values to pack DtypeList '{self}'. Received '{values}'."
+                f"Expected a sequence of {len(self)} values to pack DtypeTuple '{self}'. Received '{values}'."
             )
         return bitformat.Bits.from_joined(
             dtype.pack(value) for dtype, value in zip(self._dtypes, values)
@@ -833,13 +833,13 @@ class DtypeList:
     bitlength = property(
         _getbitlength, doc="The total length of all the dtypes in bits."
     )
-    bits_per_item = bitlength  # You can't do an array-like DtypeList so this is the same as bitlength
+    bits_per_item = bitlength  # You can't do an array-like DtypeTuple so this is the same as bitlength
 
     def __len__(self) -> int:
         return len(self._dtypes)
 
     def __eq__(self, other) -> bool:
-        if isinstance(other, DtypeList):
+        if isinstance(other, DtypeTuple):
             return self._dtypes == other._dtypes
         return False
 
@@ -847,12 +847,12 @@ class DtypeList:
     def __getitem__(self, key: int) -> Dtype: ...
 
     @overload
-    def __getitem__(self, key: slice) -> DtypeList: ...
+    def __getitem__(self, key: slice) -> DtypeTuple: ...
 
-    def __getitem__(self, key: int | slice) -> Dtype | DtypeList:
+    def __getitem__(self, key: int | slice) -> Dtype | DtypeTuple:
         if isinstance(key, int):
             return self._dtypes[key]
-        return DtypeList.from_params(self._dtypes[key])
+        return DtypeTuple.from_params(self._dtypes[key])
 
     def __iter__(self):
         return iter(self._dtypes)

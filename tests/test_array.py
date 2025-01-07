@@ -7,7 +7,7 @@ from bitformat import Array, Bits
 import copy
 import itertools
 import io
-from bitformat._dtypes import Dtype, DtypeList
+from bitformat._dtypes import Dtype, DtypeTuple
 import re
 import collections
 
@@ -971,7 +971,7 @@ def test_dtype_array_byteswap():
     assert a[1] == (4, 5, 6)
 
 
-def test_with_dtypelist():
+def test_with_dtypetuple():
     a = Array("u8, u6", [[1, 2], [3, 4]])
     assert a[0] == [1, 2]
     assert len(a) == 2
@@ -998,7 +998,7 @@ def test_pp_with_groups():
     )
 
 
-# def test_pp_with_dtypelist():
+# def test_pp_with_dtypetuple():
 #     a = Array('u8', list(range(20)))
 #     a.pp('i4, bits3', 'bits3, i5', groups=2)
 #     # a.pp('u4, i4', groups=5)

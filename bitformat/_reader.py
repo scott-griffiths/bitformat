@@ -4,7 +4,7 @@ from typing import Any
 
 from bitformat._bits import Bits, BitsType
 from bitformat._fieldtype import FieldType
-from bitformat._dtypes import Dtype, DtypeList
+from bitformat._dtypes import Dtype, DtypeTuple
 
 
 class Reader:
@@ -72,14 +72,14 @@ class Reader:
         self._pos = int(value)
 
     def read(
-        self, dtype: Dtype | DtypeList | str | int, /
+        self, dtype: Dtype | DtypeTuple | str | int, /
     ) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Read from the current bit position, and interpret according to the given dtype."""
         if isinstance(dtype, int):
             dtype = Dtype.from_params('bits', dtype)
         elif isinstance(dtype, str):
             if "," in dtype:
-                dtype = DtypeList.from_string(dtype)
+                dtype = DtypeTuple.from_string(dtype)
             else:
                 dtype = Dtype.from_string(dtype)
         if self._pos + dtype.bitlength > len(self._bits):
@@ -90,7 +90,7 @@ class Reader:
         self._pos += dtype.bitlength
         return x
 
-    def peek(self, dtype: Dtype | DtypeList | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
+    def peek(self, dtype: Dtype | DtypeTuple | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Peek from the current bit position, and interpret according to the given dtype."""
         current_pos = self._pos
         value = self.read(dtype)

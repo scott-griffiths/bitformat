@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits, Field, Endianness, DtypeList
+from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple
 
 
 def test_build():
@@ -460,7 +460,7 @@ oworld!!helloworld!!
         assert remove_unprintable(s.getvalue()) == expected_output
 
 
-def test_pp_with_dtypelist():
+def test_pp_with_dtypetuple():
     a = Bits("0b1, 0xfe, f32=3.5")
     s = io.StringIO()
     a.pp("bool, hex2, f32", show_offset=False, stream=s)
@@ -703,7 +703,7 @@ def test_unpack_field():
 
 def test_unpack_dtype_list():
     f = "u8, u8, u8, bool"
-    d = DtypeList(f)
+    d = DtypeTuple(f)
     b = d.pack([55, 33, 11, 0])
     assert b.unpack(d) == [55, 33, 11, False]
     assert b.unpack(f) == [55, 33, 11, False]

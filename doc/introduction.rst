@@ -92,13 +92,13 @@ As well as packing and unpacking bits with a dtype, you can also equivalently pa
     Bits('0110')
     >>> Dtype('f16').unpack('0x439a')
     3.80078125
-    >>> DtypeList('u1, u2, u3, u4').pack([1, 1, 1, 1])
+    >>> DtypeTuple('u1, u2, u3, u4').pack([1, 1, 1, 1])
     Bits('0b1010010001')
-    >>> DtypeList('hex2, u4, [bool; 4]').unpack('0x439a')
+    >>> DtypeTuple('hex2, u4, [bool; 4]').unpack('0x439a')
     ['43', 9, (True, False, True, False)]
 
 Here the value of ``-2`` was packed into a 3 bit signed integer ``Dtype`` to create a 3 bit ``Bits`` object.
-Then a 16 bit ``Bits`` was implicitly created from the hexadecimal string ``'0x439a'`` and unpacked as a 16 bit IEEE float value. For packing and unpacking multiple values in one go the :class:`DtypeList` class is available.
+Then a 16 bit ``Bits`` was implicitly created from the hexadecimal string ``'0x439a'`` and unpacked as a 16 bit IEEE float value. For packing and unpacking multiple values in one go the :class:`DtypeTuple` class is available.
 
 A very convenient feature is 'auto' initialisation, where various types will be promoted to a :class:`Bits` when appropriate.
 This has already happened in some of the examples above, but some more examples are::
