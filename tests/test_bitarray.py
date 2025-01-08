@@ -3,7 +3,7 @@
 import pytest
 import sys
 import bitformat
-from bitformat import Bits, Dtype
+from bitformat import Bits, Dtype, DtypeTuple
 import math
 
 sys.path.insert(0, "..")
@@ -252,3 +252,9 @@ def test_bytes_from_list():
     assert s == "0x0102"
     s = Bits.from_bytes(bytearray([1, 2]))
     assert s == "0x0102"
+
+def test_from_dtype_tuple():
+    a = Bits.from_dtype(DtypeTuple('u8, bool'), [50, True])
+    b = Bits.from_dtype('u8, bool', [50, True])
+    assert a.unpack("u8, bool") == [50, True]
+    assert a == b

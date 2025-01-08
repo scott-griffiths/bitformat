@@ -142,6 +142,11 @@ class Bits:
         :param b: The bytes object to convert to a :class:`Bits`.
         :type b: bytes
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
+
         """
         x = super().__new__(cls)
         x._bitstore = BitRust.from_bytes(b)
@@ -157,6 +162,11 @@ class Bits:
         :param i: The iterable to convert to a :class:`Bits`.
         :type i: Iterable[Any]
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
+
         """
         x = super().__new__(cls)
         x._bitstore = BitRust.from_bin("".join("1" if x else "0" for x in i))
@@ -222,6 +232,11 @@ class Bits:
         :param n: The number of bits.
         :type n: int
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_ones(5)  # binary 11111
+
         """
         if n == 0:
             return Bits()
@@ -232,19 +247,25 @@ class Bits:
         return x
 
     @classmethod
-    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits:
+    def from_dtype(cls, dtype: Dtype | DtypeTuple | str, value: Any, /) -> Bits:
         """
-        Pack a value according to a data type.
+        Pack a value according to a data type or data type tuple.
 
         :param dtype: The data type to pack.
-        :type dtype: Dtype | str
+        :type dtype: Dtype | DtypeTuple | str
         :param value: A value appropriate for the data type.
         :type value: Any
         :returns: A newly constructed ``Bits``.
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_dtype("u8", 17)
+            b = Bits.from_dtype("f16, i4, bool", [2.25, -3, False])
+
         """
         if isinstance(dtype, str):
-            dtype = Dtype.from_string(dtype)
+            dtype = DtypeTuple.from_string(dtype) if ',' in dtype else Dtype.from_string(dtype)
         try:
             x = dtype.pack(value)
         except (ValueError, TypeError) as e:
@@ -262,6 +283,11 @@ class Bits:
         :type n: int
         :return: A Bits object with all bits set to zero.
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_zeros(500)  # 500 zero bits
+
         """
         if n == 0:
             return Bits()
@@ -332,7 +358,7 @@ class Bits:
         :return: The count of bits set to 1 or 0.
         :rtype: int
 
-        ..code-block:: pycon
+        .. code-block:: pycon
 
             >>> Bits('0xef').count(1)
             7
@@ -398,7 +424,8 @@ class Bits:
         :return: The bit position if found, or None if not found.
         :rtype: int or None
 
-        ..code-block:: pycon
+        .. code-block:: pycon
+
             >>> Bits.from_string('0xc3e').find('0b1111')
             6
 
