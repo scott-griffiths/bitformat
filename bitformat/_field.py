@@ -136,7 +136,7 @@ class Field(FieldType):
 
     @override
     def _getbitlength(self) -> int:
-        return self.dtype.bitlength
+        return self.dtype.bit_length
 
     @classmethod
     def from_string_lark(cls, s: str, /) -> Field:
@@ -261,14 +261,14 @@ class Field(FieldType):
         else:
             # TODO: This makes no sense as _dtype_expression is None ?!
             dtype = self._dtype_expression.base_dtype
-        if len(b) - startbit < dtype.bitlength:
+        if len(b) - startbit < dtype.bit_length:
             raise ValueError(
-                f"Field '{str(self)}' needs {dtype.bitlength} bits to parse, but {len(b) - startbit} were available."
+                f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
             )
         # Deal with a stretchy dtype
         self._bits = (
-            b[startbit : startbit + dtype.bitlength]
-            if dtype.bitlength != 0
+            b[startbit : startbit + dtype.bit_length]
+            if dtype.bit_length != 0
             else b[startbit:]
         )
         if self.name != "":

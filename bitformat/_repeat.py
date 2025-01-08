@@ -32,7 +32,7 @@ class Repeat(FieldType):
 
     @override
     def _getbitlength(self) -> int:
-        return self.field.bitlength * self.count
+        return self.field.bit_length * self.count
 
     @classmethod
     def _possibly_from_string(cls, s: str, /) -> Repeat | None:
@@ -75,14 +75,14 @@ class Repeat(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        if len(b) - startbit < self.bitlength:
+        if len(b) - startbit < self.bit_length:
             raise ValueError(
-                f"Repeat field '{str(self)}' needs {self.bitlength} bits to parse, but {len(b) - startbit} were available."
+                f"Repeat field '{str(self)}' needs {self.bit_length} bits to parse, but {len(b) - startbit} were available."
             )
-        self._bits = b[startbit : startbit + self.bitlength]
+        self._bits = b[startbit : startbit + self.bit_length]
         for i in range(self.count):
             startbit += self.field._parse(b, startbit, vars_)
-        return self.bitlength
+        return self.bit_length
 
     @override
     def _pack(
@@ -119,7 +119,7 @@ class Repeat(FieldType):
         values = []
         for i in range(self.count):
             value = self.field.unpack(
-                self._bits[i * self.field.bitlength : (i + 1) * self.field.bitlength]
+                self._bits[i * self.field.bit_length : (i + 1) * self.field.bit_length]
             )
             values.append(value)
         return values

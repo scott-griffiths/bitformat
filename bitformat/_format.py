@@ -93,7 +93,7 @@ class Format(FieldType):
                 # Don't bother appending if it's the Pass singleton.
                 continue
             try:
-                if fieldtype.bitlength == 0:
+                if fieldtype.bit_length == 0:
                     stetchy_field = str(fieldtype)
             except ValueError:
                 pass
@@ -219,7 +219,7 @@ class Format(FieldType):
     @override
     def _getbitlength(self) -> int:
         """Return the total length of the Format in bits."""
-        return sum(f.bitlength for f in self.fields)
+        return sum(f.bit_length for f in self.fields)
 
     @override
     def _pack(

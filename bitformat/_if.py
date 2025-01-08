@@ -86,14 +86,14 @@ class If(FieldType):
     def _getbitlength(self) -> int:
         if self.condition_value in [None, True]:
             try:
-                then_len = self.then_.bitlength
+                then_len = self.then_.bit_length
             except ValueError as e:
                 raise ValueError(
                     f"Cannot calculate length of the If field as 'then' field has no length: {e}"
                 )
         if self.condition_value is not True:
             try:
-                else_len = self.else_.bitlength
+                else_len = self.else_.bit_length
             except ValueError as e:
                 raise ValueError(
                     f"Cannot calculate length of the If field as 'else' field has no length: {e}"
@@ -167,7 +167,7 @@ class If(FieldType):
         s = indent(f"If {self.condition}:\n")
         with indent:
             s += self.then_._str(indent)
-        if self.else_.bitlength != 0:
+        if self.else_.bit_length != 0:
             s += indent("Else:\n")
             with indent:
                 s += self.else_._str(indent)

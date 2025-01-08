@@ -172,6 +172,19 @@ class Bits:
         :param s: The formatted string to convert to a :class:`Bits`.
         :type s: str
         :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_string("0xff01")
+            b = Bits.from_string("0b1")
+            c = Bits.from_string("u12 = 31, f16=-0.25")
+
+        The `__init__` method for `Bits` redirects to the `from_string` method and is sometimes more convenient:
+
+        .. code-block:: python
+
+            a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
+
         """
         x = super().__new__(cls)
         x._bitstore = str_to_bitstore(s)
@@ -856,9 +869,9 @@ class Bits:
 
     # ----- Private Methods -----
 
-    def _findall(self, bs: Bits, count: int | None, bytealigned: bool) -> Iterable[int]:
+    def _findall(self, bs: Bits, count: int | None, byte_aligned: bool) -> Iterable[int]:
         c = 0
-        for i in self._bitstore.findall(bs._bitstore, bytealigned):
+        for i in self._bitstore.findall(bs._bitstore, byte_aligned):
             if count is not None and c >= count:
                 return
             c += 1
@@ -1121,7 +1134,7 @@ class Bits:
             align = ">"
             s = []
             for b in bits.chunks(bits_per_group):
-                chars_per_dtype = [Bits._chars_per_dtype(d, d.bitlength) for d in dtype]
+                chars_per_dtype = [Bits._chars_per_dtype(d, d.bit_length) for d in dtype]
                 values = get_fn(b)
                 strings = [
                     f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)
@@ -1163,16 +1176,16 @@ class Bits:
     ) -> None:
         """Internal pretty print method."""
         if dtype2 is not None:
-            if dtype1.bitlength != 0:
+            if dtype1.bit_length != 0:
                 try:
-                    _ = dtype2.unpack(Bits.from_zeros(dtype1.bitlength))
+                    _ = dtype2.unpack(Bits.from_zeros(dtype1.bit_length))
                 except ValueError:
                     raise ValueError(
                         f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length."
                     )
-            if dtype2.bitlength != 0:
+            if dtype2.bit_length != 0:
                 try:
-                    _ = dtype1.unpack(Bits.from_zeros(dtype2.bitlength))
+                    _ = dtype1.unpack(Bits.from_zeros(dtype2.bit_length))
                 except ValueError:
                     raise ValueError(
                         f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length."
@@ -1297,7 +1310,7 @@ class Bits:
                     )
                 except ValueError:
                     raise ValueError(
-                        f"Can't find a default bitlength to use for pp() format with dtypes '{dtype1}' and '{dtype2}'."
+                        f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'."
                     )
                 if bits_per_group >= 24:
                     bits_per_group //= 2

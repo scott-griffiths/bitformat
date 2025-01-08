@@ -12,7 +12,7 @@ class TestBasicFunctionality:
         assert str(b) == "bool"
         assert b.name == "bool"
         assert b.size == 1
-        assert b.bitlength == 1
+        assert b.bit_length == 1
 
         b2 = Dtype.from_string("bool1")
         assert b == b2
@@ -117,34 +117,34 @@ def test_len():
     a = Dtype("bytes2")
     assert a.size == 2
     assert a.items == 1
-    assert a.bitlength == 16
+    assert a.bit_length == 16
     a = Dtype("[bytes1; 2]")
     assert a.size == 1
     assert a.items == 2
-    assert a.bitlength == 16
+    assert a.bit_length == 16
     a = Dtype("u8")
     assert a.size == 8
-    assert a.bitlength == 8
+    assert a.bit_length == 8
     assert a.items == 1
     a = Dtype("bits8")
     assert a.size == 8
-    assert a.bitlength == 8
+    assert a.bit_length == 8
     assert a.items == 1
     a = Dtype("bool")
     assert a.size == 1
-    assert a.bitlength == 1
+    assert a.bit_length == 1
     assert a.items == 1
     a = Dtype("bytes4")
     assert a.size == 4
-    assert a.bitlength == 32
+    assert a.bit_length == 32
     assert a.items == 1
     a = Dtype("[u8; 3]")
     assert a.size == 8
-    assert a.bitlength == 24
+    assert a.bit_length == 24
     assert a.items == 3
     a = Dtype("[bytes3; 4]")
     assert a.size == 3
-    assert a.bitlength == 96
+    assert a.bit_length == 96
     assert a.items == 4
 
 
@@ -196,13 +196,13 @@ def test_endianness_errors():
 def test_dtype_list_creation():
     d = DtypeTuple("u8, u16, u32, bool")
     assert len(d) == 4
-    assert d.bitlength == 8 + 16 + 32 + 1
+    assert d.bit_length == 8 + 16 + 32 + 1
 
     d2 = DtypeTuple.from_params(d)
     assert d == d2
     d = DtypeTuple.from_params(["i5", *d[1:]])
     assert d[0] == "i5"
-    assert d.bitlength == 5 + 16 + 32 + 1
+    assert d.bit_length == 5 + 16 + 32 + 1
     assert d != d2
 
 

@@ -241,7 +241,7 @@ class FieldType(abc.ABC):
         ...
 
     @property
-    def bitlength(self) -> int:
+    def bit_length(self) -> int:
         return self._getbitlength()
 
     @abc.abstractmethod

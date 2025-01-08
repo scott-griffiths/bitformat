@@ -10,7 +10,7 @@ class TestCreation:
     def test_creation_from_dtype(self):
         d = Dtype.from_params("bytes", 2)
         assert d.size == 2
-        assert d.bitlength == 16
+        assert d.bit_length == 16
         assert d.bits_per_item
 
         ds = [Dtype.from_string(x) for x in ["bytes3", "u9", "i4", "f32", "bits11"]]
@@ -68,13 +68,13 @@ class TestCreation:
         assert f.value == b
         assert f.name == "hello"
         assert f.dtype.name == "bytes"
-        assert f.dtype.bitlength == len(b) * 8
+        assert f.dtype.bit_length == len(b) * 8
 
         f = Field.from_bytes(b, name="hello")
         assert f.value == b
         assert f.name == "hello"
         assert f.dtype.name == "bytes"
-        assert f.dtype.bitlength == len(b) * 8
+        assert f.dtype.bit_length == len(b) * 8
 
     @given(st.binary())
     def test_creation_from_bits(self, b):
@@ -84,7 +84,7 @@ class TestCreation:
             assert f.value == b
             assert f.name == "hello"
             assert f.dtype.name == "bits"
-            assert f.dtype.bitlength == len(b)
+            assert f.dtype.bit_length == len(b)
 
     def test_string_creation_with_const(self):
         f1 = Field.from_string("f1: u1 = 1")

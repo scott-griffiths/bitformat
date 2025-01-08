@@ -126,7 +126,7 @@ class Dtype:
             >>> Dtype('[u5; 1001]').bits_per_item
             5
 
-        See also :attr:`bitlength` and :attr:`size`.
+        See also :attr:`bit_length` and :attr:`size`.
 
         """
         return self._bits_per_item
@@ -161,24 +161,24 @@ class Dtype:
         For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
         though they have bitlengths of 10, 40 and 30 respectively.
 
-        See also :attr:`bits_per_item` and :attr:`bitlength`.
+        See also :attr:`bits_per_item` and :attr:`bit_length`.
 
         """
         return self._size
 
     @property
-    def bitlength(self) -> int:
+    def bit_length(self) -> int:
         """The total length of the data type in bits.
 
-        The ``bitlength`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
 
         .. code-block:: pycon
 
-            >>> Dtype('u12').bitlength
+            >>> Dtype('u12').bit_length
             12
-            >>> Dtype('[u12; 5]').bitlength
+            >>> Dtype('[u12; 5]').bit_length
             60
-            >>> Dtype('hex5').bitlength
+            >>> Dtype('hex5').bit_length
             20
 
         See also :attr:`bits_per_item` and :attr:`size`.
@@ -213,7 +213,7 @@ class Dtype:
 
     def __len__(self):
         raise TypeError(
-            "'Dtype' has no len() method. Use 'size', 'items' or 'bitlength' properties instead."
+            "'Dtype' has no len() method. Use 'size', 'items' or 'bit_length' properties instead."
         )
 
     @classmethod
@@ -279,11 +279,11 @@ class Dtype:
             b = self._create_fn(value)
             if self.bits_per_item != 0 and len(b) != self.bits_per_item:
                 raise ValueError(
-                    f"Dtype '{self}' has a bitlength of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits."
+                    f"Dtype '{self}' has a bit_length of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits."
                 )
             return b
         if isinstance(value, bitformat.Bits):
-            if len(value) != self.bitlength:
+            if len(value) != self.bit_length:
                 raise ValueError(
                     f"Expected {len(self)} bits, but got {len(value)} bits."
                 )
@@ -299,16 +299,16 @@ class Dtype:
 
         """
         b = bitformat.Bits._from_any(b)
-        if self.bitlength > len(b):
+        if self.bit_length > len(b):
             raise ValueError(
-                f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack."
+                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
             )
         if not self._is_array:
-            if self.bitlength == 0:
+            if self.bit_length == 0:
                 # Try to unpack everything
                 return self._get_fn(b)
             else:
-                return self._get_fn(b[: self.bitlength])
+                return self._get_fn(b[: self.bit_length])
         else:
             return tuple(
                 self._get_fn(b[i * self._bits_per_item : (i + 1) * self._bits_per_item])
@@ -770,7 +770,7 @@ class DtypeTuple:
     """
 
     _dtypes: list[Dtype]
-    _bitlength: int
+    _bit_length: int
     is_array: bool = False
 
     def __new__(cls, s: str) -> DtypeTuple:
@@ -783,7 +783,7 @@ class DtypeTuple:
             dtype if isinstance(dtype, Dtype) else Dtype.from_string(dtype)
             for dtype in dtypes
         ]
-        x._bitlength = sum(dtype.bitlength for dtype in x._dtypes)
+        x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
         return x
 
     @classmethod
@@ -815,25 +815,25 @@ class DtypeTuple:
 
         """
         b = bitformat.Bits._from_any(b)
-        if self.bitlength > len(b):
+        if self.bit_length > len(b):
             raise ValueError(
-                f"{self!r} is {self.bitlength} bits long, but only got {len(b)} bits to unpack."
+                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
             )
         vals = []
         pos = 0
         for dtype in self:
             if dtype.name != "pad":
-                vals.append(dtype.unpack(b[pos : pos + dtype.bitlength]))
-            pos += dtype.bitlength
+                vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
+            pos += dtype.bit_length
         return vals
 
     def _getbitlength(self) -> int:
-        return self._bitlength
+        return self._bit_length
 
-    bitlength = property(
+    bit_length = property(
         _getbitlength, doc="The total length of all the dtypes in bits."
     )
-    bits_per_item = bitlength  # You can't do an array-like DtypeTuple so this is the same as bitlength
+    bits_per_item = bit_length  # You can't do an array-like DtypeTuple so this is the same as bit_length
 
     def __len__(self) -> int:
         return len(self._dtypes)

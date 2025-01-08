@@ -12,7 +12,7 @@ class Pass(FieldType):
     """
     An empty placeholder :class:`FieldType`.
 
-    A Pass field has zero bitlength and no value. It can be used in conditionals when no action is required.
+    A Pass field has zero bit_length and no value. It can be used in conditionals when no action is required.
     When used elsewhere in a :class:`Format` it may be removed as an optimisation.
     All Pass fields are identical, so they are implemented as a singleton.
 

@@ -616,7 +616,7 @@ u5
 
 def test_format_inside_format_from_string():
     f = Format(s2)
-    assert f.bitlength == 25
+    assert f.bit_length == 25
     assert len(f.fields) == 4
 
 

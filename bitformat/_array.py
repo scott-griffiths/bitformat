@@ -230,7 +230,7 @@ class Array:
             except ValueError as e:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}': {e}")
             self._dtype = dtype
-        if self._dtype.bitlength == 0:
+        if self._dtype.bit_length == 0:
             raise ValueError(
                 f"A fixed length data type is needed for an Array, received '{new_dtype}'."
             )
@@ -238,7 +238,7 @@ class Array:
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
-        if len(b) != self._dtype.bitlength:
+        if len(b) != self._dtype.bit_length:
             raise ValueError(
                 f"The value {value!r} has the wrong length for the format '{self._dtype}'."
             )
@@ -246,7 +246,7 @@ class Array:
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
-        return len(self._bitstore) // self._dtype.bitlength
+        return len(self._bitstore) // self._dtype.bit_length
 
     @overload
     def __getitem__(self, key: slice, /) -> Array: ...
@@ -260,18 +260,18 @@ class Array:
             if step != 1:
                 d = []
                 for s in range(
-                    start * self._dtype.bitlength,
-                    stop * self._dtype.bitlength,
-                    step * self._dtype.bitlength,
+                    start * self._dtype.bit_length,
+                    stop * self._dtype.bit_length,
+                    step * self._dtype.bit_length,
                 ):
-                    d.append(self._bitstore.getslice(s, s + self._dtype.bitlength))
+                    d.append(self._bitstore.getslice(s, s + self._dtype.bit_length))
                 a = self.__class__(self._dtype)
                 a._bitstore = BitRust.join(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
                 a._bitstore = self._bitstore.getslice(
-                    start * self._dtype.bitlength, stop * self._dtype.bitlength
+                    start * self._dtype.bit_length, stop * self._dtype.bit_length
                 )
                 return a
         else:
@@ -283,7 +283,7 @@ class Array:
                 )
             return self._dtype.unpack(
                 self._getbitslice(
-                    self._dtype.bitlength * key, self._dtype.bitlength * (key + 1)
+                    self._dtype.bit_length * key, self._dtype.bit_length * (key + 1)
                 )
             )
 
@@ -305,7 +305,7 @@ class Array:
                 for x in value:
                     new_data += self._create_element(x)
                 self._bitstore.set_mutable_slice(
-                    start * self._dtype.bitlength, stop * self._dtype.bitlength,
+                    start * self._dtype.bit_length, stop * self._dtype.bit_length,
                     new_data._bitstore,
                 )
                 return
@@ -316,7 +316,7 @@ class Array:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
                     self._bitstore.set_mutable_slice(
-                        s * self._dtype.bitlength, s * self._dtype.bitlength + len(x),
+                        s * self._dtype.bit_length, s * self._dtype.bit_length + len(x),
                         x._bitstore,
                     )
             else:
@@ -330,7 +330,7 @@ class Array:
                 raise IndexError(
                     f"Index {key} out of range for Array of length {len(self)}."
                 )
-            start = self._dtype.bitlength * key
+            start = self._dtype.bit_length * key
             x = self._create_element(value)
             self._bitstore.set_mutable_slice(start, start + len(x), x._bitstore)
             return
@@ -341,8 +341,8 @@ class Array:
             if step == 1:
                 self._bitstore = BitRust.join(
                     [
-                        self._bitstore.getslice(0, start * self._dtype.bitlength),
-                        self._bitstore.getslice(stop * self._dtype.bitlength, None),
+                        self._bitstore.getslice(0, start * self._dtype.bit_length),
+                        self._bitstore.getslice(stop * self._dtype.bit_length, None),
                     ]
                 )
                 return
@@ -355,8 +355,8 @@ class Array:
             for s in r:
                 self._bitstore = BitRust.join(
                     [
-                        self._bitstore.getslice(0, s * self._dtype.bitlength),
-                        self._bitstore.getslice((s + 1) * self._dtype.bitlength, None),
+                        self._bitstore.getslice(0, s * self._dtype.bit_length),
+                        self._bitstore.getslice((s + 1) * self._dtype.bit_length, None),
                     ]
                 )
         else:
@@ -364,18 +364,18 @@ class Array:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError
-            start = self._dtype.bitlength * key
+            start = self._dtype.bit_length * key
             self._bitstore = BitRust.join(
                 [
                     self._bitstore.getslice(0, start),
-                    self._bitstore.getslice(start + self._dtype.bitlength, None),
+                    self._bitstore.getslice(start + self._dtype.bit_length, None),
                 ]
             )
 
     def __repr__(self) -> str:
         list_str = f"{self.unpack()}"
         bitstore_length = len(self._bitstore)
-        trailing_bit_length = bitstore_length % self._dtype.bitlength
+        trailing_bit_length = bitstore_length % self._dtype.bit_length
         final_str = (
             ""
             if trailing_bit_length == 0
@@ -426,9 +426,9 @@ class Array:
         elif not isinstance(dtype, Dtype):
             raise TypeError(f"Invalid dtype parameter: {dtype}")
         return [
-            dtype.unpack(self._proxy[start : start + dtype.bitlength])
+            dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(
-                0, len(self._proxy) - dtype.bitlength + 1, dtype.bitlength
+                0, len(self._proxy) - dtype.bit_length + 1, dtype.bit_length
             )
         ]
 
@@ -440,7 +440,7 @@ class Array:
         :type x: ElementType
         :return: None
         """
-        if len(self._proxy) % self._dtype.bitlength != 0:
+        if len(self._proxy) % self._dtype.bit_length != 0:
             raise ValueError(
                 "Cannot append to Array as its length is not a multiple of the format length."
             )
@@ -470,9 +470,9 @@ class Array:
         if isinstance(iterable, Bits):
             self._bitstore = BitRust.join([self._bitstore, iterable._bitstore])
             return
-        if len(self._proxy) % self._dtype.bitlength != 0:
+        if len(self._proxy) % self._dtype.bit_length != 0:
             raise ValueError(
-                f"Cannot extend Array as its data length ({len(self._proxy)} bits) is not a multiple of the format length ({self._dtype.bitlength} bits)."
+                f"Cannot extend Array as its data length ({len(self._proxy)} bits) is not a multiple of the format length ({self._dtype.bit_length} bits)."
             )
         if isinstance(iterable, Array):
             if self._dtype != iterable._dtype:
@@ -505,9 +505,9 @@ class Array:
         v = self._create_element(x)
         self._bitstore = BitRust.join(
             [
-                self._bitstore.getslice(0, pos * self._dtype.bitlength),
+                self._bitstore.getslice(0, pos * self._dtype.bit_length),
                 v._bitstore,
-                self._bitstore.getslice(pos * self._dtype.bitlength, None),
+                self._bitstore.getslice(pos * self._dtype.bit_length, None),
             ]
         )
 
@@ -538,7 +538,7 @@ class Array:
         """
         if self.item_size % 8 != 0:
             raise ValueError(
-                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bitlength} bits long."
+                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bit_length} bits long."
             )
         self.data = self._proxy.byteswap(self.item_size // 8)
 
@@ -570,16 +570,16 @@ class Array:
         return x
 
     def reverse(self) -> None:
-        trailing_bit_length = len(self._proxy) % self._dtype.bitlength
+        trailing_bit_length = len(self._proxy) % self._dtype.bit_length
         if trailing_bit_length != 0:
             raise ValueError(
                 f"Cannot reverse the items in the Array as its data length ({len(self._proxy)} bits) "
-                f"is not a multiple of the format length ({self._dtype.bitlength} bits)."
+                f"is not a multiple of the format length ({self._dtype.bit_length} bits)."
             )
         self._bitstore = Bits.from_joined(
             [
-                self._getbitslice(s - self._dtype.bitlength, s)
-                for s in range(len(self._proxy), 0, -self._dtype.bitlength)
+                self._getbitslice(s - self._dtype.bit_length, s)
+                for s in range(len(self._proxy), 0, -self._dtype.bit_length)
             ]
         )._bitstore
 
@@ -714,8 +714,8 @@ class Array:
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
         for _ in range(len(self)):
-            yield self._dtype.unpack(self._proxy[start : start + self._dtype.bitlength])
-            start += self._dtype.bitlength
+            yield self._dtype.unpack(self._proxy[start : start + self._dtype.bit_length])
+            start += self._dtype.bit_length
 
     def __copy__(self) -> Array:
         a_copy = self.__class__(self._dtype, self.to_bits())
@@ -744,7 +744,7 @@ class Array:
 
         for i in range(len(self)):
             v = self._dtype.unpack(
-                self._proxy[self._dtype.bitlength * i : self._dtype.bitlength * (i + 1)]
+                self._proxy[self._dtype.bit_length * i : self._dtype.bit_length * (i + 1)]
             )
             try:
                 new_data += new_array._create_element(partial_op(v))
@@ -773,7 +773,7 @@ class Array:
         msg = ""
         for i in range(len(self)):
             v = self._dtype.unpack(
-                self._proxy[self._dtype.bitlength * i : self._dtype.bitlength * (i + 1)]
+                self._proxy[self._dtype.bit_length * i : self._dtype.bit_length * (i + 1)]
             )
             try:
                 new_data += self._create_element(op(v, value))
@@ -800,15 +800,15 @@ class Array:
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
         value = Bits._from_any(value)
-        if len(value) != self._dtype.bitlength:
+        if len(value) != self._dtype.bit_length:
             raise ValueError(
-                f"Bitwise op {op} needs a Bits of length {self._dtype.bitlength} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits."
+                f"Bitwise op {op} needs a Bits of length {self._dtype.bit_length} to match format {self._dtype}, but received '{value}' which has a length of {len(value)} bits."
             )
-        for start in range(0, len(self) * self._dtype.bitlength, self._dtype.bitlength):
+        for start in range(0, len(self) * self._dtype.bit_length, self._dtype.bit_length):
             self._bitstore.set_mutable_slice(
-                start, start + self._dtype.bitlength,
+                start, start + self._dtype.bit_length,
                 op(
-                    self._bitstore.getslice(start, start + self._dtype.bitlength),
+                    self._bitstore.getslice(start, start + self._dtype.bit_length),
                     value._bitstore,
                 ),
             )
@@ -834,11 +834,11 @@ class Array:
         msg = ""
         for i in range(len(self)):
             a = self._dtype.unpack(
-                self._proxy[self._dtype.bitlength * i : self._dtype.bitlength * (i + 1)]
+                self._proxy[self._dtype.bit_length * i : self._dtype.bit_length * (i + 1)]
             )
             b = other._dtype.unpack(
                 other._proxy[
-                    other._dtype.bitlength * i : other._dtype.bitlength * (i + 1)
+                    other._dtype.bit_length * i : other._dtype.bit_length * (i + 1)
                 ]
             )
             try:

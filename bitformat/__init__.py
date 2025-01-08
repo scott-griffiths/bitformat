@@ -49,27 +49,27 @@ from typing import Literal
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
 
 
-def uint_bits2chars(bitlength: int):
+def uint_bits2chars(bit_length: int):
     # How many characters is largest possible int of this length?
-    return len(str((1 << bitlength) - 1))
+    return len(str((1 << bit_length) - 1))
 
 
-def int_bits2chars(bitlength: int):
+def int_bits2chars(bit_length: int):
     # How many characters is largest negative int of this length? (To include minus sign).
-    return len(str((-1 << (bitlength - 1))))
+    return len(str((-1 << (bit_length - 1))))
 
 
-def float_bits2chars(bitlength: Literal[16, 32, 64]):
+def float_bits2chars(bit_length: Literal[16, 32, 64]):
     # These bit lengths were found by looking at lots of possible values
-    if bitlength in [16, 32]:
+    if bit_length in [16, 32]:
         return 23  # Empirical value
     else:
         return 24  # Empirical value
 
 
-def bits_bits2chars(bitlength: int):
+def bits_bits2chars(bit_length: int):
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits.from_zeros(bitlength)
+    temp = Bits.from_zeros(bit_length)
     return len(temp._simple_str())
 
 
