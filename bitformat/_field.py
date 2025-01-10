@@ -256,11 +256,10 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if self._dtype_expression is not None:
-            dtype = self._dtype_expression.evaluate(vars_)
-        else:
-            # TODO: This makes no sense as _dtype_expression is None ?!
+        if self._dtype_expression.items_expression is None and self._dtype_expression.size_expression is None:
             dtype = self._dtype_expression.base_dtype
+        else:
+            dtype = self._dtype_expression.evaluate(vars_)
         if len(b) - startbit < dtype.bit_length:
             raise ValueError(
                 f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
