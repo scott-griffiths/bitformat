@@ -1,9 +1,11 @@
+// use std::borrow::Cow;
 use std::fmt;
 use std::ops::Not;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
+// use std::sync::Arc;
 
 lazy_static!(
     pub static ref ZERO_BIT: BitRust = BitRust::from_zeros(1);
@@ -148,6 +150,12 @@ impl PartialEq for BitRust {
 // Things not part of the Python interface.
 impl BitRust {
 
+    fn new(bv: BV) -> Self {
+        BitRust {
+            bv: bv,
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.bv.len()
     }
@@ -164,16 +172,12 @@ impl BitRust {
         for bits in bits_vec {
             bv.extend(bits.bv.clone());
         }
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
     
     /// Slice used internally without bounds checking.
     fn slice(&self, start_bit: usize, end_bit: usize) -> Self {
-        BitRust {
-            bv: self.bv[start_bit..end_bit].to_owned(),
-        }
+        BitRust::new(self.bv[start_bit..end_bit].to_owned())
     }
 
 
@@ -213,16 +217,12 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
-        BitRust {
-            bv: BV::repeat(false, length),
-        }
+        BitRust::new(BV::repeat(false, length))
     }
 
     #[staticmethod]
     pub fn from_ones(length: usize) -> Self {
-        BitRust {
-            bv: BV::repeat(true, length),
-        }
+        BitRust::new(BV::repeat(true, length))
     }
 
     #[staticmethod]
@@ -230,9 +230,7 @@ impl BitRust {
         let bits = data.as_slice().view_bits::<Msb0>();
         let mut bv = BV::new();
         bv.extend_from_bitslice(bits);
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
     #[staticmethod]
@@ -240,9 +238,7 @@ impl BitRust {
         assert!(offset < 8);
         let mut bv = BitRust::from_bytes(data).bv;
         bv.drain(..offset);
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
     #[staticmethod]
@@ -260,9 +256,7 @@ impl BitRust {
             }
         }
         b.set_uninitialized(false);
-        Ok(BitRust {
-            bv: b,
-        })
+        Ok(BitRust::new(b))
     }
 
     // An unchecked version of from_bin. Used when you're sure the input is valid.
@@ -277,9 +271,7 @@ impl BitRust {
             }
         }
         b.set_uninitialized(false);
-        BitRust {
-            bv: b,
-        }
+        BitRust::new(b)
     }
 
     #[staticmethod]
@@ -304,9 +296,7 @@ impl BitRust {
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     // An unchecked version of from_hex. Used internally when you're sure the input is valid.
@@ -325,9 +315,7 @@ impl BitRust {
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
     #[staticmethod]
@@ -404,7 +392,6 @@ impl BitRust {
         }
         // If the length is not a multiple of 8, we need to trim the padding bits
         Ok(hex_string[0..hex_string.len() - 1].to_string())
-
     }
 
     pub fn to_bin(&self) -> String {
@@ -431,27 +418,23 @@ impl BitRust {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() & other.clone().bv;
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
+
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() | other.clone().bv;
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
+
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let bv = self.bv.clone() ^ other.clone().bv;
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
@@ -502,9 +485,7 @@ impl BitRust {
     pub fn reverse(&self) -> Self {
         let mut bv = self.bv.clone();
         bv.reverse();
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
     /// Returns the bool value at a given bit index.
@@ -544,9 +525,7 @@ impl BitRust {
         if end_bit > self.len() {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
-        Ok(BitRust {
-            bv: self.bv[start_bit..end_bit].to_owned(),
-        })
+        Ok(BitRust::new(self.bv[start_bit..end_bit].to_owned()))
     }
 
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
@@ -564,9 +543,7 @@ impl BitRust {
                 bv.set(pos, !value);
             }
         }
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
     pub fn invert_bit_list(&self, pos_list: Vec<i64>) -> PyResult<Self> {
@@ -583,9 +560,7 @@ impl BitRust {
             let value = bv[pos];
             bv.set(pos, !value);
         }
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     pub fn invert_single_bit(&self, pos: i64) -> PyResult<Self> {
@@ -600,16 +575,12 @@ impl BitRust {
         let mut bv = self.bv.clone();
         let value = bv[pos];
         bv.set(pos, !value);
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     pub fn invert_all(&self) -> Self {
         let bv = self.bv.clone().not();
-        BitRust {
-            bv,
-        }
+        BitRust::new(bv)
     }
 
 
@@ -644,9 +615,7 @@ impl BitRust {
         for index in positive_indices {
             bv.set(index, value);
         }
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
@@ -663,16 +632,12 @@ impl BitRust {
         for index in (positive_start..positive_stop).step_by(step as usize) {
             bv.set(index as usize, value);
         }
-        Ok(BitRust {
-            bv,
-        })
+        Ok(BitRust::new(bv))
     }
 
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> Self {
-        BitRust {
-            bv: self.bv.clone(),
-        }
+        BitRust::new(self.bv.clone())
     }
 
     pub fn set_mutable_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
