@@ -1,11 +1,10 @@
-// use std::borrow::Cow;
+use std::borrow::Cow;
 use std::fmt;
 use std::ops::Not;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
-// use std::sync::Arc;
 
 lazy_static!(
     pub static ref ZERO_BIT: BitRust = BitRust::from_zeros(1);
@@ -152,16 +151,20 @@ impl BitRust {
 
     fn new(bv: BV) -> Self {
         BitRust {
-            bv: bv,
+            bv,
         }
     }
 
+    fn bits(&self) -> Cow<BS> {
+        Cow::Borrowed(self.bv.as_bitslice())
+    }
+
     pub fn len(&self) -> usize {
-        self.bv.len()
+        self.bits().len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.bv.is_empty()
+        self.bits().is_empty()
     }
 
     fn join_internal(bits_vec: &Vec<&BitRust>) -> Self {
@@ -373,7 +376,7 @@ impl BitRust {
             new_offset = 0;
         }
         debug_assert!((new_offset + self.len()) % 8 == 0);
-        let pad_with_ones = signed && self.len() > 0 && self.bv[0];
+        let pad_with_ones = signed && self.len() > 0 && self.bits()[0];
         let mut t: BV = BV::repeat(pad_with_ones, new_offset);
         t.extend(self.bv.clone());
         debug_assert_eq!(t.len() % 8, 0);
@@ -395,7 +398,7 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
-        self.bv.iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
+        self.bits().iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
@@ -467,7 +470,7 @@ impl BitRust {
         if self.len() == 0 {
             return 0;
         }
-        self.bv.count_ones()
+        self.bits().count_ones()
 
         // The version below is about 15x faster on the count benchmark.
         // I'm presuming that all the time is being spent in the conversion to the bitvec
@@ -499,7 +502,7 @@ impl BitRust {
         }
         debug_assert!(bit_index >= 0);
         let p = bit_index as usize;
-        Ok(self.bv[p])
+        Ok(self.bits()[p])
     }
 
     /// Returns the length of the Bits object in bits.
@@ -525,7 +528,7 @@ impl BitRust {
         if end_bit > self.len() {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
-        Ok(BitRust::new(self.bv[start_bit..end_bit].to_owned()))
+        Ok(BitRust::new(self.bits()[start_bit..end_bit].to_owned()))
     }
 
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
@@ -824,7 +827,6 @@ fn test_reverse() {
 #[test]
 fn test_invert() {
     let b = BitRust::from_bin("0");
-    println!("b.bv: {:?}", b.bv);
     assert_eq!(b.invert(None).to_bin(), "1");
     let b = BitRust::from_bin("01110");
     assert_eq!(b.invert(None).to_bin(), "10001");
