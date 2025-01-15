@@ -132,7 +132,7 @@ The `Format` class can be used to give structure to bits, as well as storing the
 
 ```pycon
 >>> f = Format('(width: u12, height: u12, flags: [bool; 4])')
->>> f.oack([320, 240, [True, False, True, False]])
+>>> f.pack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
 >>> print(f)
 (

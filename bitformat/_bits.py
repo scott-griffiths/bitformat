@@ -89,7 +89,7 @@ class Bits:
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_joined(iterable)`` - Concatenate an iterable of ``Bits`` objects.
 
-    ``Bits(s)`` is equivalent to ``Bits.from_string(s)``.
+    Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
 
     """
 
@@ -207,13 +207,14 @@ class Bits:
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the from_string or from_bytes methods.
+        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
         :type sequence: Iterable[Bits]
         :rtype: Bits
 
         .. code-block:: python
 
             a = Bits.from_joined([f'u6={x}' for x in range(64)])
+            b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
         x = super().__new__(cls)

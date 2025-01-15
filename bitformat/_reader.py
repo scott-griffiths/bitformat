@@ -14,6 +14,7 @@ class Reader:
     **Methods:**
 
     - ``read()``: Read from the current bit position, and interpret according to the given format.
+    - ``peek()``: Peek from the current bit position, and interpret according to the given format without changing the pos.
     - ``parse()``: Parse a fieldtype from the current bit position, returning the number of bits parsed.
 
     **Properties:**

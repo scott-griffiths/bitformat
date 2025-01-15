@@ -80,3 +80,8 @@ div.document hr {
     height: 0.25rem;
     background-color: #d03434;
 }
+
+div.document dl.py dt.sig {
+    border: 1px solid rgb(128, 128, 128);
+    border-radius: 0.5rem;
+}
