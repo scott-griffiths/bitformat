@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from bitformat._bits import Bits, BitsType
+from bitformat._bits import Bits
 from bitformat._fieldtype import FieldType
 from bitformat._dtypes import Dtype, DtypeTuple
 
@@ -48,10 +48,10 @@ class Reader:
         if not isinstance(value, Bits):
             help_ = ""
             if isinstance(value, str):
-                help_ = " Did you mean to use 'Bits.from_string()'?"
+                help_ = " Perhaps use 'Bits.from_string()'?"
             elif isinstance(value, (bytes, bytearray, memoryview)):
-                help_ = " Did you mean to use 'Bits.from_bytes()'?"
-            raise TypeError(f"A Reader's 'bits' should be initialised with a 'Bits' object, but received a {type(value)}.{help_}")
+                help_ = " Perhaps use 'Bits.from_bytes()'?"
+            raise TypeError(f"A Reader should be initialised with a 'Bits' object, but received a {type(value)}.{help_}")
         self._bits = value
 
     @property
@@ -103,7 +103,7 @@ class Reader:
         try:
             bits_parsed = f.parse(self._bits[self._pos :])
         except AttributeError:
-            raise ValueError(
+            raise TypeError(
                 f"parse() requires a FieldType. Got {f!r} of type {type(f)}."
             )
         self._pos += bits_parsed

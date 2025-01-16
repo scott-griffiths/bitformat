@@ -201,14 +201,14 @@ class Bits:
         return x
 
     @classmethod
-    def from_joined(cls, sequence: Iterable[Any], /) -> Bits:
+    def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits:
         """
         Return concatenation of Bits.
 
         This method concatenates a sequence of Bits objects into a single Bits object.
 
         :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-        :type sequence: Iterable[Bits]
+        :type sequence: Iterable[BitsType]
         :rtype: Bits
 
         .. code-block:: python

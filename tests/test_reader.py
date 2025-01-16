@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Reader, Field, Bits
+from bitformat import Reader, Field, Bits, Dtype, DtypeTuple
 
 
 def test_creation():
@@ -14,6 +14,10 @@ def test_creation():
     r = Reader(Bits.from_bytes(b"hello"))
     assert len(r.bits) == 40
 
+    with pytest.raises(TypeError):
+        _ = Reader('0x234')
+    with pytest.raises(TypeError):
+        _ = Reader(b'hello')
 
 def test_read():
     r = Reader(Bits("0x12345"), 4)
@@ -29,7 +33,7 @@ def test_read():
 def test_peek():
     r = Reader(Bits("0xff000001"))
     assert r.peek('hex2') == 'ff'
-    assert r.peek('hex2') == 'ff'
+    assert r.peek(Dtype('hex2')) == 'ff'
     assert r.pos == 0
     r.pos = len(r) - 1
     assert r.peek(1) == '0b1'
@@ -45,4 +49,12 @@ def test_parse():
     assert f.value == b"wor"
     r.parse(g := Field("bool"))
     assert g.value is False
+    with pytest.raises(TypeError):
+        _ = r.parse('bin2')
 
+def test_read_tuple():
+    r = Reader(Bits('0x00ffff'))
+    x = r.peek('hex3, u4')
+    assert x == ['00f', 15]
+    x = r.read(DtypeTuple('u8, bool, bool'))
+    assert x == [0, True, True]
