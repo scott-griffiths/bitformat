@@ -81,7 +81,7 @@ class Dtype:
         if token.startswith("[") and token.endswith("]"):
             if (p := token.find(";")) == -1:
                 raise ValueError(
-                    f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'."
+                    f"Array Dtype strings should be of the form '[dtype; items]' but can't find the ';'. Got '{token}'."
                 )
             t = token[p + 1 : -1]
             items = int(t) if t else 0
@@ -243,26 +243,23 @@ class Dtype:
             if little_endian
             else definition.get_fn
         )
-        if definition.set_fn is None:
-            x._create_fn = None
+        if "length" in inspect.signature(definition.set_fn).parameters:
+            set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
         else:
-            if "length" in inspect.signature(definition.set_fn).parameters:
-                set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
-            else:
-                set_fn = definition.set_fn
+            set_fn = definition.set_fn
 
-            def create_bits(v):
-                b = bitformat.Bits()
-                # The set_fn will do the length check for big endian too.
-                set_fn(b, v)
-                return b
+        def create_bits(v):
+            b = bitformat.Bits()
+            # The set_fn will do the length check for big endian too.
+            set_fn(b, v)
+            return b
 
-            def create_bits_le(v):
-                b = bitformat.Bits()
-                set_fn(b, v)
-                return b.byteswap()
+        def create_bits_le(v):
+            b = bitformat.Bits()
+            set_fn(b, v)
+            return b.byteswap()
 
-            x._create_fn = create_bits_le if little_endian else create_bits
+        x._create_fn = create_bits_le if little_endian else create_bits
 
         x._return_type = tuple if is_array else definition.return_type
         x._is_signed = definition.is_signed
