@@ -200,16 +200,16 @@ class Dtype:
     def bits_per_character(self) -> int | None:
         """The number of bits represented by a single character of the underlying data type.
 
-        For binary this is 1, for octal 3, hex 4 and for bytes this is 8. Most types won't
-        have a direct relationship between bits and characters, so this will be None.
+        For binary this is 1, for octal 3, hex 4 and for bytes this is 8. For types that don't
+        have a direct relationship between bits and characters this will be None.
 
         """
         return self._bits_per_character
 
     def __hash__(self) -> int:
         return hash(
-            (self._name, self._bits_per_item)
-        )  # TODO: Not enough info here - at least needs items?
+            (self._name, self._bits_per_item, self._items, self.is_array)
+        )
 
     def __len__(self):
         raise TypeError(
@@ -329,15 +329,7 @@ class Dtype:
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 
     def __repr__(self) -> str:
-        hide_length = (
-            Register().name_to_def[self._name].allowed_sizes.only_one_value()
-            or self._bits_per_item == 0
-        )
-        size_str = "" if hide_length else str(self.size)
-        if not self._is_array:
-            return f"{self.__class__.__name__}('{self._name}{self._endianness.value}{size_str}')"
-        items_str = "" if self._items == 0 else f" {self._items}"
-        return f"{self.__class__.__name__}('[{self._name}{self._endianness.value}{size_str};{items_str}]')"
+        return f"{self.__class__.__name__}('{self.__str__()}')"
 
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
@@ -839,6 +831,11 @@ class DtypeTuple:
         if isinstance(other, DtypeTuple):
             return self._dtypes == other._dtypes
         return False
+
+    def __hash__(self) -> int:
+        return hash(
+            tuple(self._dtypes)
+        )
 
     @overload
     def __getitem__(self, key: int) -> Dtype: ...

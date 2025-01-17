@@ -242,3 +242,18 @@ def test_dtype_str_with_le():
     assert str(d) == "f_be16"
     d = Dtype("i_ne16")
     assert str(d) == "i_ne16"
+    assert repr(d) == "Dtype('i_ne16')"
+
+
+def test_hashing():
+    a = Dtype('u8')
+    b = Dtype('u_be8')
+    c = Dtype('u_le8')
+    d = Dtype('u_ne8')
+    e = Dtype('i8')
+    f = Dtype('[u8; 1]')
+    g = Dtype('[u8; 2]')
+    h = DtypeTuple('u8')
+    i = DtypeTuple('u8, u8')
+    s = {a, b, c, d, e, f, g, h, i}
+    assert len(s) == 9
