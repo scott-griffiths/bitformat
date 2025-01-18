@@ -51,8 +51,8 @@ class Pass(FieldType):
         value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
-        return Bits()
+    ) -> None:
+        pass
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

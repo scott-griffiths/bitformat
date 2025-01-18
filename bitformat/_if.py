@@ -121,13 +121,12 @@ class If(FieldType):
         value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
+    ) -> None:
         self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
             _ = self.then_._pack(value, vars_, kwargs)
         else:
             _ = self.else_._pack(value, vars_, kwargs)
-        return self.to_bits()
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

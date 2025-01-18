@@ -280,20 +280,20 @@ class Field(FieldType):
         value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
+    ) -> None:
         if self.const and self.value is not None:
             if self.name != "":
                 vars_[self.name] = self.value
-            return self._bits
+            return
         if self.name in kwargs.keys():
             self._setvalue(kwargs[self.name])
             vars_[self.name] = self.value
-            return self._bits
+            return
         else:
             self._setvalue(value)
         if self.name != "":
             vars_[self.name] = self.value
-        return self._bits
+        return
 
     @override
     def _getvalue(self) -> Any | None:

@@ -227,7 +227,7 @@ class Format(FieldType):
         value: Sequence[Any],
         _vars: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
+    ) -> None:
         # TODO: This test should I think be looking at how many non-const fields there are?
         # if len(value) != len(self.fields):
         #     raise ValueError(f"Expected {len(self.fields)} value to pack, but received {len(value)}.")
@@ -237,7 +237,6 @@ class Format(FieldType):
                 continue
             _ = fieldtype._pack(value[index], _vars, kwargs)
             index += 1
-        return self.to_bits()
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

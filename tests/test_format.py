@@ -10,7 +10,8 @@ import random
 class TestCreation:
     def test_create_empty(self):
         f = Format()
-        b = f.pack([])
+        f.pack([])
+        b = f.to_bits()
         assert len(b) == 0
         assert f.name == ""
         assert len(f) == 0
@@ -18,7 +19,8 @@ class TestCreation:
     def test_create_from_dtype(self):
         d = Dtype.from_string("u12")
         f = Format.from_params([Field.from_params(d)], "x")
-        x = f.pack([1000])
+        f.pack([1000])
+        x = f.to_bits()
         assert f.name == "x"
         assert x == "u12=1000"
         assert len(x) == 12
@@ -40,25 +42,28 @@ class TestCreation:
     @given(name=st.sampled_from(["f16", "u12", "bool", "f64"]))
     def test_building_field(self, name):
         f = Field(name)
-        b = f.pack(0)
+        f.pack(0)
+        b = f.to_bits()
         assert b == Bits.from_string(f"{name}=0")
 
     def test_create_from_bits(self):
         b = Bits.from_string("0xabc")
         f = Format.from_params([Field.from_bits(b)])
-        x = f.pack([])
+        f.pack([])
+        x = f.to_bits()
         assert f.name == ""
         assert x == "0xabc"
         assert isinstance(x, Bits)
 
     def test_create_from_bits_with_name(self):
         f = Format.from_params([Field.from_bits("0xabc", "some_bits")])
-        x = f.pack([])
-        assert x, "0xabc"
+        f.pack([])
+        assert f.to_bits() == "0xabc"
 
     def test_create_from_list(self):
         f = Format.from_params(["const bits = 0xabc", "u5", "u5"])
-        x = f.pack([3, 10])
+        f.pack([3, 10])
+        x = f.to_bits()
         assert x == "bits = 0xabc, u5=3, u5=10"
         f.parse(x)
         assert isinstance(f, Format)
@@ -78,8 +83,8 @@ class TestCreation:
         )
         assert f == g
         assert f.name == "header"
-        b = f.pack([352])
-        assert b == "0x000001b3, u12=352, u12=288, 0b1"
+        f.pack([352])
+        assert f.to_bits() == "0x000001b3, u12=352, u12=288, 0b1"
         f2 = Format.from_params([f, "bytes5"], "main")
         # f3 = f2.pack([[[352]], b'12345'])
         # assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
@@ -99,16 +104,6 @@ class TestCreation:
         assert t["width"].value == 100
         assert f["header"]["width"].value == 100
         assert f["main"]["v2"].value == -99
-
-    # def test_format_in_itself(self):
-    #     f = Format(['x:u8'])
-    #     g = Format(['y:u8'])
-    #     f += g
-    #     b = f.build([10, 20])
-    #     # b = f.build(Bits('0x1234'))
-    #     f.clear()
-    #     f.parse(b)
-    #     assert f.value == [10, [20]]
 
 
 @pytest.mark.skip
@@ -173,13 +168,13 @@ class TestArray:
         array_field = Field.from_params("[u8; 20]", "my_array")
         f = Format.from_params([array_field], "a")
         assert f.fields[0].dtype.items == 20
-        a = f.pack([list(range(20))])
+        f.pack([list(range(20))])
 
         f2 = Format.from_params(["new_array: [u8;20]"], "b")
         assert f2.fields[0].dtype.items == 20
         assert f2.fields[0].value is None
-        f2["new_array"].value = a
-        assert a == f2.to_bits()
+        f2["new_array"].value = f.to_bits()
+        assert f.to_bits() == f2.to_bits()
 
     @pytest.mark.skip
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
@@ -616,11 +611,12 @@ u5
 def test_format_inside_format_from_string():
     test = Format("x = ((u8, u8),)")
     test.pack([[1, 2]])
+    assert test.value == [[1, 2]]
     f = Format(s2)
     assert f.bit_length == 25
     assert len(f.fields) == 4
     f.pack([1, 2, [3, 4], 5])
-
+    assert f.value == [1, 2, [3, 4], 5]
 
 # def test_repr_eval_with_repeat():
 #     f = Format(s)
@@ -637,3 +633,9 @@ def test_eq():
     assert f != Format("(u8, x: u8)")
     assert Format("(u8 = 3,)") == Format("(u8 = 3,)")
     assert Format("(u8 = 3,)") != Format("(u8 = 4,)")
+
+# def test_wrong_arguments():
+#     f = Format("(bool, bool, (i3, q: i3), [f64; 1])")
+#     f.pack([True, False, [2, -2], [4.5]])
+#     assert f.value == [True, False, [2, -2], (4.5,)]
+#     f.pack(1)

@@ -90,12 +90,12 @@ class Repeat(FieldType):
         value: Sequence[Any],
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
-        self._bits = Bits()
+    ) -> None:
+        bits_list = []
         for i in range(self.count):
-            bits = self.field._pack(value[i], vars_, kwargs)
-            self._bits += bits  # TODO: from_joined
-        return self._bits
+            self.field._pack(value[i], vars_, kwargs)
+            bits_list.append(self.field.to_bits())
+        self._bits = Bits.from_joined(bits_list)
 
     @override
     def _copy(self) -> Repeat:

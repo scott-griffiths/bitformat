@@ -47,29 +47,18 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
-    def pack(self, values: Sequence[Any] | None = None, /, **kwargs) -> Bits:
+    def pack(self, values: Sequence[Any] | Any, /, **kwargs) -> None:
         """
-        Pack the field type into bits.
+        Pack with values for each non-const field.
 
         :param values: The values to pack.
         :type values: Any, optional
         :param kwargs: Additional keyword arguments.
-        :return: The packed bits.
-        :rtype: Bits
+        :rtype: None
         """
         if kwargs is None:
             kwargs = {}
-        if values is None:
-            return self._pack(None, {}, kwargs)
-        try:
-            bits = self._pack(values, {}, kwargs)
-        except TypeError as e:
-            if not isinstance(values, Sequence):
-                raise TypeError(
-                    f"The values parameter must be a sequence (e.g. a list or tuple), not a {type(values)}."
-                )
-            raise e
-        return bits
+        self._pack(values, {}, kwargs)
 
     @final
     def unpack(self, b: BitsType | None = None) -> Any | list[Any]:
@@ -175,11 +164,9 @@ class FieldType(abc.ABC):
         value: Any | Sequence[Any],
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> Bits:
+    ) -> None:
         """
         Build the field from the values list, starting at index.
-
-        Return the bits and the number of values used.
 
         """
         ...

@@ -34,7 +34,7 @@ class TestCreation:
         assert f1.const is True
         f2 = Field.from_bits(b"123")
         assert f2.value == b"123"
-        b = f2.pack()
+        b = f2.to_bits()
         assert b.to_bytes() == b"123"
 
     @given(name=st.text())
@@ -94,9 +94,9 @@ class TestCreation:
         assert not f1.const
         f1.clear()
         f2.clear()
-        temp = f1.pack(0)
-        assert temp == "0b0"
-        assert f2.pack() == "0b1"
+        f1.pack(0)
+        assert f1.to_bits() == "0b0"
+        assert f2.to_bits() == "0b1"
 
 
 class TestBuilding:
@@ -104,31 +104,31 @@ class TestBuilding:
     def test_building_with_keywords(self, x, name):
         assume("__" not in name)
         f = Field.from_string(f"{name} :u10")
-        b = f.pack([], **{name: x})
-        assert b == Bits.from_string(f"u10={x}")
+        f.pack([], **{name: x})
+        assert f.to_bits() == Bits.from_string(f"u10={x}")
 
     def test_building_lots_of_types(self):
         f = Field("u4")
-        b = f.pack(15)
-        assert b == "0xf"
+        f.pack(15)
+        assert f.to_bits() == "0xf"
         f = Field("i4")
-        b = f.pack(-8)
-        assert b == "0x8"
+        f.pack(-8)
+        assert f.to_bits() == "0x8"
         f = Field("bytes3")
-        b = f.pack(b"abc")
-        assert b == "0x616263"
+        f.pack(b"abc")
+        assert f.to_bits() == "0x616263"
         f = Field("bits11")
         with pytest.raises(ValueError):
-            _ = f.pack(Bits.from_string("0x7ff"))
-        b = f.pack(Bits.from_string("0b111, 0xff"))
-        assert b == "0b11111111111"
+            f.pack(Bits.from_string("0x7ff"))
+        f.pack(Bits.from_string("0b111, 0xff"))
+        assert f.to_bits() == "0b11111111111"
 
     def test_building_with_const(self):
         f = Field.from_string("  const  u4 =8")
-        b = f.pack()
+        b = f.to_bits()
         assert b == "0x8"
         f.clear()
-        b = f.pack()
+        b = f.to_bits()
         assert b == "0x8"
         f.const = False
         assert f.value == 8
@@ -151,7 +151,8 @@ def test_field_array():
     f = Field.from_string("[u8; 3]")
     assert f.dtype == Dtype.from_string("[u8; 3]")
     assert f.dtype.items == 3
-    b = f.pack([1, 2, 3])
+    f.pack([1, 2, 3])
+    b = f.to_bits()
     assert b == "0x010203"
     assert type(b) is Bits
     f.clear()
