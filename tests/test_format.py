@@ -634,8 +634,11 @@ def test_eq():
     assert Format("(u8 = 3,)") == Format("(u8 = 3,)")
     assert Format("(u8 = 3,)") != Format("(u8 = 4,)")
 
-# def test_wrong_arguments():
-#     f = Format("(bool, bool, (i3, q: i3), [f64; 1])")
-#     f.pack([True, False, [2, -2], [4.5]])
-#     assert f.value == [True, False, [2, -2], (4.5,)]
-#     f.pack(1)
+def test_wrong_arguments():
+    f = Format("(bool, bool, (i3, q: i3), [f64; 1])")
+    f.pack([True, False, [2, -2], [4.5]])
+    assert f.value == [True, False, [2, -2], (4.5,)]
+    f.clear()
+    with pytest.raises(TypeError):
+        f.pack(1)
+    f.pack([1])

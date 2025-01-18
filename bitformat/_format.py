@@ -224,19 +224,19 @@ class Format(FieldType):
     @override
     def _pack(
         self,
-        value: Sequence[Any],
+        values: Sequence[Any],
         _vars: dict[str, Any],
         kwargs: dict[str, Any],
     ) -> None:
-        # TODO: This test should I think be looking at how many non-const fields there are?
-        # if len(value) != len(self.fields):
-        #     raise ValueError(f"Expected {len(self.fields)} value to pack, but received {len(value)}.")
-        index = 0
-        for fieldtype in self.fields:
-            if hasattr(fieldtype, 'const') and fieldtype.const:
-                continue
-            _ = fieldtype._pack(value[index], _vars, kwargs)
-            index += 1
+        if not isinstance(values, Sequence):
+            raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
+
+        fields = iter(self.fields)
+        for value in values:
+            next_field = next(fields)
+            while hasattr(next_field, 'const') and next_field.const:
+                next_field = next(fields)
+            next_field._pack(value, _vars, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
