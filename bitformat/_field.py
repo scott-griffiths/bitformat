@@ -281,19 +281,12 @@ class Field(FieldType):
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
     ) -> None:
-        if self.const and self.value is not None:
-            if self.name != "":
-                vars_[self.name] = self.value
-            return
-        if self.name in kwargs.keys():
+        if self.name in kwargs:
             self._setvalue(kwargs[self.name])
-            vars_[self.name] = self.value
-            return
         else:
             self._setvalue(value)
-        if self.name != "":
+        if self.name:
             vars_[self.name] = self.value
-        return
 
     @override
     def _getvalue(self) -> Any | None:
