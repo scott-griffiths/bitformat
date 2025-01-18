@@ -87,18 +87,15 @@ class Repeat(FieldType):
     @override
     def _pack(
         self,
-        values: Sequence[Any],
-        index: int,
+        value: Sequence[Any],
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> tuple[Bits, int]:
+    ) -> Bits:
         self._bits = Bits()
-        values_used = 0
         for i in range(self.count):
-            bits, v = self.field._pack(values[0], index + values_used, vars_, kwargs)
-            self._bits += bits
-            values_used += v
-        return self._bits, values_used
+            bits = self.field._pack(value[i], vars_, kwargs)
+            self._bits += bits  # TODO: from_joined
+        return self._bits
 
     @override
     def _copy(self) -> Repeat:

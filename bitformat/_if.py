@@ -118,17 +118,16 @@ class If(FieldType):
     @override
     def _pack(
         self,
-        values: Sequence[Any],
-        index: int,
+        value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> tuple[Bits, int]:
+    ) -> Bits:
         self.condition_value = self.condition.evaluate(vars_ | kwargs)
         if self.condition_value:
-            _, v = self.then_._pack(values, index, vars_, kwargs)
+            _ = self.then_._pack(value, vars_, kwargs)
         else:
-            _, v = self.else_._pack(values, index, vars_, kwargs)
-        return self.to_bits(), v
+            _ = self.else_._pack(value, vars_, kwargs)
+        return self.to_bits()
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

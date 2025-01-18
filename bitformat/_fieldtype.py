@@ -60,9 +60,9 @@ class FieldType(abc.ABC):
         if kwargs is None:
             kwargs = {}
         if values is None:
-            return self._pack([], 0, {}, kwargs)[0]
+            return self._pack(None, {}, kwargs)
         try:
-            bits, values_used = self._pack(values, 0, {}, kwargs)
+            bits = self._pack(values, {}, kwargs)
         except TypeError as e:
             if not isinstance(values, Sequence):
                 raise TypeError(
@@ -172,11 +172,10 @@ class FieldType(abc.ABC):
     @abc.abstractmethod
     def _pack(
         self,
-        values: Sequence[Any],
-        index: int,
+        value: Any | Sequence[Any],
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> tuple[Bits, int]:
+    ) -> Bits:
         """
         Build the field from the values list, starting at index.
 

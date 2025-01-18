@@ -277,24 +277,23 @@ class Field(FieldType):
     @override
     def _pack(
         self,
-        values: Sequence[Any],
-        index: int,
+        value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> tuple[Bits, int]:
+    ) -> Bits:
         if self.const and self.value is not None:
             if self.name != "":
                 vars_[self.name] = self.value
-            return self._bits, 0
+            return self._bits
         if self.name in kwargs.keys():
             self._setvalue(kwargs[self.name])
             vars_[self.name] = self.value
-            return self._bits, 0
+            return self._bits
         else:
-            self._setvalue(values[index])
+            self._setvalue(value)
         if self.name != "":
             vars_[self.name] = self.value
-        return self._bits, 1
+        return self._bits
 
     @override
     def _getvalue(self) -> Any | None:

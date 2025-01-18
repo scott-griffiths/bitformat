@@ -40,7 +40,7 @@ class TestCreation:
     @given(name=st.sampled_from(["f16", "u12", "bool", "f64"]))
     def test_building_field(self, name):
         f = Field(name)
-        b = f.pack([0])
+        b = f.pack(0)
         assert b == Bits.from_string(f"{name}=0")
 
     def test_create_from_bits(self):
@@ -193,7 +193,6 @@ class TestArray:
             ],
             "construct_example",
         )
-        # TODO: This should be chosen by hypothesis to make it repeatable.
         p = [random.randint(0, 255) for _ in range(w * h)]
         b = f.pack([w, h, p])
         f.clear()
@@ -615,12 +614,13 @@ u5
 
 
 def test_format_inside_format_from_string():
+    test = Format("x = ((u8, u8),)")
+    test.pack([[1, 2]])
     f = Format(s2)
     assert f.bit_length == 25
     assert len(f.fields) == 4
+    f.pack([1, 2, [3, 4], 5])
 
-
-#     f.pack([1, 2, [3, 4], 5])
 
 # def test_repr_eval_with_repeat():
 #     f = Format(s)

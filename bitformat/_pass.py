@@ -48,12 +48,11 @@ class Pass(FieldType):
     @override
     def _pack(
         self,
-        values: Sequence[Any],
-        index: int,
+        value: Any,
         vars_: dict[str, Any],
         kwargs: dict[str, Any],
-    ) -> tuple[Bits, int]:
-        return Bits(), 0
+    ) -> Bits:
+        return Bits()
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

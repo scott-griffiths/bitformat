@@ -94,7 +94,7 @@ class TestCreation:
         assert not f1.const
         f1.clear()
         f2.clear()
-        temp = f1.pack([0])
+        temp = f1.pack(0)
         assert temp == "0b0"
         assert f2.pack() == "0b1"
 
@@ -109,18 +109,18 @@ class TestBuilding:
 
     def test_building_lots_of_types(self):
         f = Field("u4")
-        b = f.pack([15])
+        b = f.pack(15)
         assert b == "0xf"
         f = Field("i4")
-        b = f.pack([-8])
+        b = f.pack(-8)
         assert b == "0x8"
         f = Field("bytes3")
-        b = f.pack([b"abc"])
+        b = f.pack(b"abc")
         assert b == "0x616263"
         f = Field("bits11")
         with pytest.raises(ValueError):
-            _ = f.pack([Bits.from_string("0x7ff")])
-        b = f.pack([Bits.from_string("0b111, 0xff")])
+            _ = f.pack(Bits.from_string("0x7ff"))
+        b = f.pack(Bits.from_string("0b111, 0xff"))
         assert b == "0b11111111111"
 
     def test_building_with_const(self):
@@ -151,7 +151,7 @@ def test_field_array():
     f = Field.from_string("[u8; 3]")
     assert f.dtype == Dtype.from_string("[u8; 3]")
     assert f.dtype.items == 3
-    b = f.pack([[1, 2, 3]])
+    b = f.pack([1, 2, 3])
     assert b == "0x010203"
     assert type(b) is Bits
     f.clear()
@@ -216,7 +216,7 @@ def test_size_expression():
 
 def test_unpack():
     f = Field.from_string("[i9; 4]")
-    f.pack([[5, -5, 0, 100]])
+    f.pack([5, -5, 0, 100])
     assert f.unpack() == (5, -5, 0, 100)
     f.clear()
     with pytest.raises(ValueError):
