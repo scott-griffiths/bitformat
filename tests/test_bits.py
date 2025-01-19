@@ -723,3 +723,11 @@ def test_from_zeros():
     assert a == Bits("0b0")
     with pytest.raises(ValueError):
         _ = Bits.from_zeros(-1)
+
+def test_bits_slicing():
+    a = Bits('0b1010101010101010')
+    b = a[-5:-8:1]
+    assert b == Bits()
+
+    assert a[::2] == '0xff'
+    assert a[1::2] == '0x00'

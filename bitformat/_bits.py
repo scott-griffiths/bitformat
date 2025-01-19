@@ -1494,7 +1494,7 @@ class Bits:
         if step == 1:
             bs._bitstore = self._bitstore.getslice(start, stop)
         else:
-            bs._bitstore = self._bitstore.getslice_withstep(start, stop, step)
+            bs._bitstore = self._bitstore.getslice_with_step(start, stop, step)
         return bs
 
     def __invert__(self: Bits) -> Bits:
