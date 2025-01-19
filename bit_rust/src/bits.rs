@@ -537,6 +537,40 @@ impl BitRust {
         Ok(BitRust::new(self.bits()[start_bit..end_bit].to_owned()))
     }
 
+    pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
+        if step == 0 {
+            return Err(PyValueError::new_err("Step cannot be zero."));
+        }
+        // Note that a start_bit or end_bit of -1 means to stop at the beginning when using a negative step.
+        // Otherwise they should both be positive indices.
+        debug_assert!(start_bit >= -1);
+        debug_assert!(end_bit >= -1);
+        debug_assert!(step != 0);
+        if start_bit < -1 || end_bit < -1 {
+            return Err(PyValueError::new_err("Indices less than -1 are not valid values."));
+        }
+        if step > 0 {
+            if start_bit >= end_bit {
+                return Ok(BitRust::from_zeros(0));
+            }
+            if end_bit as usize > self.len() {
+                return Err(PyValueError::new_err("end bit goes past the end"));
+            }
+            Ok(BitRust::new(self.bits()[start_bit as usize..end_bit as usize].iter().step_by(step as usize).collect()))  // TODO: Do I need .to_owned() here?
+        } else {
+            if start_bit <= end_bit || start_bit == -1 {
+                return Ok(BitRust::from_zeros(0));
+            }
+            if start_bit as usize > self.len() {
+                return Err(PyValueError::new_err("start bit goes past the end"));
+            }
+            // For negative step, the end_bit is inclusive, but the start_bit is exclusive.
+            debug_assert!(step < 0);
+            let adjusted_end_bit = (end_bit + 1) as usize;
+            Ok(BitRust::new(self.bits()[adjusted_end_bit..=start_bit as usize].iter().rev().step_by(-step as usize).collect()))
+        }
+    }
+
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
     pub fn invert(&self, pos: Option<usize>) -> Self {
@@ -1040,4 +1074,23 @@ fn test_eq() {
     assert!(a.__eq__(&b));
     let c = BitRust::from_bin("1010");
     assert!(!a.__eq__(&c));
+}
+
+#[test]
+fn test_getslice_withstep() {
+    let bits = BitRust::from_bin("11001100");
+    let slice = bits.getslice_with_step(0, 8, 2).unwrap();
+    assert_eq!(slice.to_bin(), "1010");
+    let slice = bits.getslice_with_step(7, -1, -2).unwrap();
+    assert_eq!(slice.to_bin(), "0101");
+    let slice = bits.getslice_with_step(0, 8, 1).unwrap();
+    assert_eq!(slice.to_bin(), "11001100");
+    let slice = bits.getslice_with_step(7, -1, -1).unwrap();
+    assert_eq!(slice.to_bin(), "00110011");
+    let slice = bits.getslice_with_step(0, 8, 8).unwrap();
+    assert_eq!(slice.to_bin(), "1");
+    let slice = bits.getslice_with_step(0, 8, -8).unwrap();
+    assert_eq!(slice.to_bin(), "");
+    let slice = bits.getslice_with_step(0, 8, 3).unwrap();
+    assert_eq!(slice.to_bin(), "100");
 }
