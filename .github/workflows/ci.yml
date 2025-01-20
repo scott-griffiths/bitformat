@@ -66,11 +66,11 @@ jobs:
           if [[ "${{ matrix.os.runs-on }}" == "ubuntu-latest" && "${{ matrix.python.action }}" == "3.11" ]]; then
             python -m build --sdist
           fi
-          python -m build --wheel
-          # Build Rust wheels and copy them to dist
-          cd bit_rust
-          maturin build --release --strip
-          cp target/wheels/* ../dist/
+          # Build platform-specific wheels using the same process as test
+          ./build.sh
+          # Make sure wheels get copied to dist directory
+          mkdir -p dist
+          cp bit_rust/target/wheels/* dist/
       - name: Publish package files
         if: always()
         uses: actions/upload-artifact@v3
