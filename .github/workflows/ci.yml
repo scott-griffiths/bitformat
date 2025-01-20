@@ -84,7 +84,7 @@ jobs:
           # Build Rust wheels explicitly
           uv pip install -r pyproject.toml -r dev-requirements.txt
           cd bit_rust
-          uvx maturin build --release --uv
+          uvx maturin build --release
           cd ..
           
           # Copy wheels to dist
