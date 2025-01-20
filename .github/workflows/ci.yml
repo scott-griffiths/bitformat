@@ -67,6 +67,10 @@ jobs:
             python -m build --sdist
           fi
           python -m build --wheel
+          # Build Rust wheels and copy them to dist
+          cd bit_rust
+          maturin build --release --strip
+          cp target/wheels/* ../dist/
       - name: Publish package files
         if: always()
         uses: actions/upload-artifact@v3
