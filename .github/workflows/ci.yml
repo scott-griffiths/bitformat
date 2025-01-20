@@ -67,7 +67,6 @@ jobs:
 
       - name: Set up environment
         run: |
-          cd repo
           uv venv
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             source .venv\\Scripts\\activate
