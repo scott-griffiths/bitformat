@@ -146,15 +146,15 @@ You can also construct from literal binary, octal or hexadecimal values::
     >>> p = Bits.from_dtype('bin', '001')
     >>> q = Bits.from_dtype('hex', 'beef')
 
-There are several class constructor methods available to create ``Bits`` objects. As well as :meth:`Bits.from_dtype` there are :meth`Bits.from_bytes`, :meth:`Bits.from_bools`, :meth:`Bits.from_joined`, :meth:`Bits.from_zeros`, :meth:`Bits.from_ones` and :meth:`Bits.from_string`.
+There are several class constructor methods available to create ``Bits`` objects. As well as :meth:`Bits.from_dtype` there are :meth:`Bits.from_bytes`, :meth:`Bits.from_bools`, :meth:`Bits.from_joined`, :meth:`Bits.from_zeros`, :meth:`Bits.from_ones` and :meth:`Bits.from_string`.
 
-This final method of creating from a formatted string is often very convenient::
+Creating from a formatted string is often very convenient::
 
     >>> b = Bits.from_string('u12 = 160')
     >>> p = Bits.from_string('bin = 001')
     >>> q = Bits.from_string('hex = beef')
 
-It's so frequently used that the default constructor for ``Bits`` is just an alias for the :meth:`Bits.from_string` method. Add to that the short-cut of using ``'0b'`` prefix for binary and ``'0x'`` for hexadecimal, you can instead write ::
+It's so frequently used that the default constructor for ``Bits`` is just an alias for the :meth:`Bits.from_string` method. Add to that the short-cut of using a ``'0b'`` prefix for binary and ``'0x'`` for hexadecimal, you can instead write ::
 
     >>> b = Bits('u12 = 160')
     >>> p = Bits('0b001')
@@ -166,6 +166,8 @@ To get back from the ``Bits`` object to a Python-native object you can use the :
     >>> q.to_bytes()
     b'\xbe\xef'
 
+Note that if your ``Bits`` is not a whole number of bytes long then this method will add up to seven zero bits to make it a whole-byte quantity.
+If you are doing lots of bit manipulation work then converting to bytes is often the final stage.
 
 
 b) An array Dtype
@@ -173,12 +175,12 @@ b) An array Dtype
 
 You can also have a data type that represents an fixed-size array of simple data types. For example you might want to have a group of boolean flags, or a chunk of binary data as ``'u8'`` bytes. Note that this shouldn't be confused with the :class:`Array` class, which is a higher level mutable container that we'll come to later.
 
-The format strings for these is borrowed from the Rust programming language::
+The format strings for these are borrowed from the Rust programming language::
 
     >>> a = Bits.from_dtype('[u8; 5]', (104, 101, 108, 108, 111))
     >>> f = Bits.from_dtype('[bool; 4]', [True, True, False, True])
 
-So the :class:`Dtype` made from the string ``'[u8; 5]'`` represents an array of five 8-bit unsigned integers, and ``'[bool; 4]'`` is an array of four single bit booleans.
+The :class:`Dtype` made from the string ``'[u8; 5]'`` represents an array of five 8-bit unsigned integers, and ``'[bool; 4]'`` is an array of four single bit booleans.
 Of course these array data types also work when unpacking::
 
     >>> a.unpack('[i4; 10]')
@@ -196,7 +198,7 @@ The array Dtype above can only be used for a sequence of data types that are the
     >>> t.bin
     '1101000010100000000001111000'
 
-We've been a bit more explicit when creating the ``DtypeTuple`` here, as we could have just supplied the initialisation string to the ``from_dtype`` and it would have worked just as well. We are going to use the data type again though, so creating the ``DtypeTuple`` object means it won't have to parse the string more than once ::
+We've been a bit more explicit when creating the ``DtypeTuple`` here, as we could have just supplied the initialisation string to the ``from_dtype`` method and it would have worked just as well. We are going to use the data type again though, so creating the ``DtypeTuple`` object means it won't have to parse the string more than once ::
 
     >>> t.unpack(dt)
     [(True, True, False, True), 160, 120]
@@ -207,7 +209,7 @@ d) A format specification
 
 For more complex needs the :class:`Format` class allows a rich specification language that we'll only touch upon in this section.
 
-Combining some of our earlier creations ::
+Combining some of our earlier creations we could make this format::
 
     >>> fmt = Format("header = (const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
     >>> print(fmt)
@@ -217,6 +219,9 @@ Combining some of our earlier creations ::
         w: u12
         h: u12
     )
+
+Here we have introduced named fields and const fields. It's then easy to set and get the named fields::
+
     >>> fmt['flags'].value = [1, 1, 0, 1]
     >>> fmt['w'].value = 160
     >>> fmt['h'].value = 120
@@ -232,7 +237,6 @@ Combining some of our earlier creations ::
     >>> fmt.to_bytes()
     b'\x01G\xd0\xa0\x07\x80'
 
-Here we have introduced named fields and const fields, as well as easy access to setting and getting named fields.
 
 Another way to create using the format is via the :meth:`Format.pack` method::
 
