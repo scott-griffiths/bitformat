@@ -71,8 +71,17 @@ jobs:
           if [[ "${{ matrix.os.runs-on }}" == "ubuntu-latest" && "${{ matrix.python.action }}" == "3.11" ]]; then
             python -m build --sdist
           fi
-          # Build platform-specific wheels using the same process as test
-          ./build.sh
+
+          # Build Rust wheels explicitly
+          uv pip install -r pyproject.toml -r dev-requirements.txt
+          cd bit_rust
+          uvx maturin build --release --uv
+          cd ..
+          
+          # Copy wheels to dist
+          mkdir -p dist
+          cp bit_rust/target/wheels/* dist/
+
           # Make sure wheels get copied to dist directory
           mkdir -p dist
           cp bit_rust/target/wheels/* dist/
