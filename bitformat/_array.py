@@ -148,14 +148,7 @@ class Array:
     def __init__(
         self,
         dtype: str | Dtype | DtypeTuple,
-        initializer: int
-        | Array
-        | Iterable
-        | Bits
-        | bytes
-        | bytearray
-        | memoryview
-        | None = None,
+        initializer: int | Array | Iterable | Bits | bytes | bytearray | memoryview | None = None,
         trailing_bits: BitsType | None = None,
     ) -> None:
         self._proxy = BitsProxy(self)
@@ -384,7 +377,7 @@ class Array:
         )
         return f"Array('{self._dtype}', {list_str}{final_str})"
 
-    def astype(self, dtype: str | Dtype, /) -> Array:
+    def as_type(self, dtype: str | Dtype, /) -> Array:
         """
         Creates and returns a new ``Array`` instance with a specified data type, initialized with the current Array's elements.
 

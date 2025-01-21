@@ -775,13 +775,13 @@ class TestComparisonOperators:
 class TestAsType:
     def test_switching_int_types(self):
         a = Array("u8", [15, 42, 1])
-        b = a.astype("i8")
+        b = a.as_type("i8")
         assert a.unpack() == b.unpack()
         assert b.dtype == Dtype.from_string("i8")
 
     def test_switching_float_types(self):
         a = Array("f64", [-990, 34, 1, 0.25])
-        b = a.astype("f16")
+        b = a.as_type("f16")
         assert a.unpack() == b.unpack()
         assert b.dtype == Dtype.from_string("f16")
 
