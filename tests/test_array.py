@@ -997,8 +997,9 @@ def test_pp_with_groups():
 """
     )
 
+def test_create_from_bytes():
+    a = Array.from_bytes('u8', b'hello')
+    assert len(a) == 5
+    b = Array.from_bytes('i4', bytearray([1, 2, 3, 4]))
+    assert len(b) == 8
 
-# def test_pp_with_dtypetuple():
-#     a = Array('u8', list(range(20)))
-#     a.pp('i4, bits3', 'bits3, i5', groups=2)
-#     # a.pp('u4, i4', groups=5)

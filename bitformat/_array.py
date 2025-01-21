@@ -116,19 +116,22 @@ class Array:
     If the data length is not a multiple of the dtype length then the ``Array`` will have ``trailing_bits``
     which will prevent some methods from appending to the ``Array``.
 
+    To construct, use a builder 'from' method:
+
+    * ``Array.from_iterable(dtype, iterable)`` - Create and initialise from an iterable.
+    * ``Array.from_bits(dtype, b)`` - Create with data from a :class:`Bits` object.
+    * ``Array.from_bytes(dtype, b)`` - Create with data from a ``bytes`` object.
+    * ``Array.from_zeros(dtype, n)`` - Initialise with enough zero bits for ``n`` elements.
+
     Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``.
 
-    **Methods:**
+    **Other methods:**
 
     - ``append(item)``: Append a single item to the end of the Array.
     - ``as_type()`` TODO
     - ``byteswap()``: Change byte endianness of all items.
     - ``count(value)``: Count the number of occurrences of a value.
     - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
-    - ``from_bits()`` TODO
-    - ``from_bytes()`` TODO
-    - ``from_iterable()`` TODO
-    - ``from_zeros()`` TODO
     - ``insert(index, item)``: Insert an item at a given position.
     - ``pop([index])``: Remove and return an item. Default is the last item.
     - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
@@ -164,7 +167,20 @@ class Array:
         return x
 
     @classmethod
-    def from_bytes(cls, dtype: str | Dtype | DtypeTuple, b: bytes) -> Array:
+    def from_bytes(cls, dtype: str | Dtype | DtypeTuple, b: bytes | bytearray | memoryview) -> Array:
+        """Create a new :class:`Array` from a data type and a bytes object.
+
+        :param dtype: The data type of the elements in the ``Array``.
+        :type dtype: Dtype | DtypeTuple | str
+        :param b: The bytes object to convert to a :class:`Bits`.
+        :type b: bytes
+        :rtype: Array
+
+        .. code-block:: python
+
+            a = Array.from_bytes('u8', b"some_bytes_maybe_from_a_file")
+
+        """
         x = cls._partial_init(dtype)
         x._bitstore = BitRust.from_bytes(b)
         return x
