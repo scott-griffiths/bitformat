@@ -238,10 +238,6 @@ class Array:
     def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
-        if len(b) != self._dtype.bit_length:
-            raise ValueError(
-                f"The value {value!r} has the wrong length for the format '{self._dtype}'."
-            )
         return b
 
     def __len__(self) -> int:
@@ -397,8 +393,7 @@ class Array:
         This can be useful for changing the representation of data within the Array, for example, from integers to floating-point numbers or vice versa.
 
         Parameters:
-        - `dtype` (Union[str, Dtype]): The target data type for the new Array. This can be specified as a string or as a `Dtype` instance. The string format should match one of the predefined data type codes in the library.
-
+        - `dtype` (Union[str, Dtype]): The target data type for the new Array. This can be specified as a string or as a `Dtype` instance.
         Returns:
         - `Array`: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
 

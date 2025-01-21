@@ -173,6 +173,8 @@ class TestArray:
         f2 = Format.from_params(["new_array: [u8;20]"], "b")
         assert f2.fields[0].dtype.items == 20
         assert f2.fields[0].value is None
+        with pytest.raises(ValueError):
+            f2["new_array"].value = f.to_bits()[2:]
         f2["new_array"].value = f.to_bits()
         assert f.to_bits() == f2.to_bits()
 

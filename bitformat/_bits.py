@@ -1500,7 +1500,7 @@ class Bits:
     def __invert__(self: Bits) -> Bits:
         """Return the Bits with every bit inverted.
 
-        Raises Error if the Bits is empty.
+        Raises ValueError if the Bits is empty.
 
         """
         if len(self) == 0:

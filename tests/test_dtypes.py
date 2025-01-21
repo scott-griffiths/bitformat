@@ -111,6 +111,10 @@ class TestCreatingNewDtypes:
             _ = Dtype()
         with pytest.raises(ValueError):
             _ = Dtype("float17")
+        with pytest.raises(ValueError):
+            _ = Dtype("[u8]")
+        with pytest.raises(ValueError):
+            _ = Dtype("u8, i8")
 
 
 def test_len():
@@ -257,3 +261,15 @@ def test_hashing():
     i = DtypeTuple('u8, u8')
     s = {a, b, c, d, e, f, g, h, i}
     assert len(s) == 9
+
+def test_str():
+    a = Dtype('u_le8')
+    b = DtypeTuple('bool, [i5;]')
+    assert str(a) == 'u_le8'
+    assert str(b) == 'bool, [i5;]'
+    assert repr(a) == "Dtype('u_le8')"
+    assert repr(b) == "DtypeTuple('bool, [i5;]')"
+    nt = DtypeDefinition("pingu", "A new type", Bits._setuint, Bits._getuint)
+    s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
+    assert str(nt) == s
+    assert repr(nt) == s
