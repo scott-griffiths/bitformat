@@ -649,6 +649,8 @@ def test_little_endian_uint():
     assert s.u_le == 1001
     assert len(s) == 24
     assert s.unpack("u_le") == 1001
+    with pytest.raises(ValueError):
+        s.unpack('i_le_be')
 
 
 def test_little_endian_errors():

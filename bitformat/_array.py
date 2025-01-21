@@ -128,9 +128,10 @@ class Array:
     **Other methods:**
 
     - ``append(item)``: Append a single item to the end of the Array.
-    - ``as_type()`` TODO
+    - ``as_type(dtype)``: Creates a new Array with a new data type, initialized from the current Array.
     - ``byteswap()``: Change byte endianness of all items.
     - ``count(value)``: Count the number of occurrences of a value.
+    - ``equals(other)``: Comparison method between Arrays.
     - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
     - ``insert(index, item)``: Insert an item at a given position.
     - ``pop([index])``: Remove and return an item. Default is the last item.
@@ -407,20 +408,19 @@ class Array:
         The conversion process respects the original values of the elements, adapting them to the new data type format.
         This can be useful for changing the representation of data within the Array, for example, from integers to floating-point numbers or vice versa.
 
-        Parameters:
-        - `dtype` (Union[str, Dtype]): The target data type for the new Array. This can be specified as a string or as a `Dtype` instance.
-        Returns:
-        - `Array`: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
+        :param dtype: The target data type for the new Array.
+        :type dtype: str | Dtype
+        :returns: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
+        :rtype: Array
 
-        Raises:
-        - `ValueError`: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
+        :raises ValueError: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
 
-        Example:
-        ```python
-        original_array = Array('int', [1, 2, 3])
-        float_array = original_array.astype('float')
-        print(float_array.dtype)  # Output: Dtype('float')
-        ```
+        .. code-block:: python
+
+            original_array = Array('int', [1, 2, 3])
+            float_array = original_array.astype('float')
+            print(float_array.dtype)  # Output: Dtype('float')
+
         """
         new_array = self.__class__(dtype, self.unpack())
         return new_array
@@ -557,7 +557,7 @@ class Array:
 
         value -- The quantity to compare each Array element to. Type should be appropriate for the Array format.
 
-        For floating point types using a value of float('nan') will count the number of elements that are NaN.
+        For floating point types using a value of ``float('nan')`` will count the number of elements that are NaN.
 
         """
         if math.isnan(value):
@@ -705,12 +705,12 @@ class Array:
         Return True if the data type and all Array items are equal to another Array.
 
         This method should be used to test the equality of two Arrays. Normally types will provide
-        an `==` operator to do this task, but for Arrays the `==` operator is instead
+        an ``==`` operator to do this task, but for Arrays the ``==`` operator is instead
         used for element-wise comparison and will return a new Array of bools.
 
         :param other: The other Array to compare with.
         :type other: Any
-        :return: True if the Arrays are equal, False otherwise.
+        :return: ``True`` if the Arrays are equal, ``False`` otherwise.
         :rtype: bool
         """
         if isinstance(other, Array):
