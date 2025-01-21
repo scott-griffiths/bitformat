@@ -24,7 +24,7 @@ def remove_unprintable(s: str) -> str:
 
 class TestCreation:
     def test_creation_from_int(self):
-        a = Array("u12", 20)
+        a = Array.from_zeros("u12", 20)
         assert len(a) == 20
         assert a[19] == 0
         with pytest.raises(IndexError):
@@ -81,7 +81,7 @@ class TestCreation:
         assert a.dtype == Dtype.from_string("f64")
 
     def test_changing_format_with_trailing_bits(self):
-        a = Array("bool", 803)
+        a = Array.from_zeros("bool", 803)
         assert len(a) == 803
         a.dtype = "f16"
         assert len(a) == 803 // 16
@@ -90,7 +90,7 @@ class TestCreation:
         assert b.unpack() == [0] * 10
 
     def test_creation_with_trailing_bits(self):
-        a = Array("bool", trailing_bits="0xf")
+        a = Array.from_bits('bool', Bits('0xf'))
         assert a.data == "0b1111"
         assert len(a) == 4
 
@@ -105,7 +105,7 @@ class TestCreation:
         b.append("f")
         assert len(b) == 3
 
-        c = Array("f16", trailing_bits="0x0000, 0b1")
+        c = Array.from_bits("f16", Bits("0x0000, 0b1"))
         assert c[0] == 0.0
         assert c.unpack() == [0.0]
 
@@ -395,7 +395,7 @@ class TestArrayMethods:
         a = Array("i5")
         b = eval(a.__repr__())
         assert a.equals(b)
-        a = Array(a.dtype, Bits.from_string("0b11"))
+        a = Array.from_bits(a.dtype, Bits("0b11"))
 
         b = eval(a.__repr__())
         assert a.equals(b)
@@ -854,10 +854,10 @@ class TestMisc:
             a[-5] = 100.0
 
     def test_bytes(self):
-        a = Array("bytes8", 5)
+        a = Array.from_zeros("bytes8", 5)
         assert a.data == b"\x00" * 40
 
-        b = Array("bytes1", 5)
+        b = Array.from_zeros("bytes1", 5)
         assert b.data == b"\x00" * 5
 
     def test_bytes_trailing_bits(self):

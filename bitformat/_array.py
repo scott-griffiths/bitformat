@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-import numbers
 from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
 
@@ -117,12 +116,19 @@ class Array:
     If the data length is not a multiple of the dtype length then the ``Array`` will have ``trailing_bits``
     which will prevent some methods from appending to the ``Array``.
 
+    Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``.
+
     **Methods:**
 
     - ``append(item)``: Append a single item to the end of the Array.
+    - ``as_type()`` TODO
     - ``byteswap()``: Change byte endianness of all items.
     - ``count(value)``: Count the number of occurrences of a value.
     - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
+    - ``from_bits()`` TODO
+    - ``from_bytes()`` TODO
+    - ``from_iterable()`` TODO
+    - ``from_zeros()`` TODO
     - ``insert(index, item)``: Insert an item at a given position.
     - ``pop([index])``: Remove and return an item. Default is the last item.
     - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
@@ -145,32 +151,43 @@ class Array:
       gives the leftovers at the end of the data.
     """
 
-    def __init__(
-        self,
-        dtype: str | Dtype | DtypeTuple,
-        initializer: int | Array | Iterable | Bits | bytes | bytearray | memoryview | None = None,
-        trailing_bits: BitsType | None = None,
-    ) -> None:
-        self._proxy = BitsProxy(self)
-        self._set_dtype(dtype)
+    def __new__(cls, dtype: str | Dtype | DtypeTuple, iterable: Iterable | None = None) -> Array:
+        x = cls.from_iterable(dtype, [] if iterable is None else iterable)
+        return x
 
-        if isinstance(initializer, numbers.Integral):
-            self._bitstore = BitRust.from_zeros(
-                initializer * self._dtype.bits_per_item
-            )
-        elif isinstance(initializer, Bits):
-            # We may change the internal BitRust, so need to make a copy here.
-            self._bitstore = initializer._bitstore.get_mutable_copy()
-        elif isinstance(initializer, (bytes, bytearray, memoryview)):
-            self._bitstore = BitRust.from_bytes(initializer)
-        elif initializer is not None:
-            self._bitstore = BitRust.from_zeros(0)
-            self.extend(initializer)
-        else:
-            self._bitstore = BitRust.from_zeros(0)
-        if trailing_bits is not None:
-            x = Bits._from_any(trailing_bits)
-            self._bitstore = BitRust.join([self._bitstore, x._bitstore])
+    @classmethod
+    def _partial_init(cls, dtype: str | Dtype | DtypeTuple) -> Array:
+        """Code common to the various constructor methods."""
+        x = super().__new__(cls)
+        x._proxy = BitsProxy(x)
+        x._set_dtype(dtype)
+        return x
+
+    @classmethod
+    def from_bytes(cls, dtype: str | Dtype | DtypeTuple, b: bytes) -> Array:
+        x = cls._partial_init(dtype)
+        x._bitstore = BitRust.from_bytes(b)
+        return x
+
+    @classmethod
+    def from_bits(cls, dtype: str | Dtype | DtypeTuple, b: Bits) -> Array:
+        x = cls._partial_init(dtype)
+        # We may change the internal BitRust, so need to make a copy here.
+        x._bitstore = b._bitstore.get_mutable_copy()
+        return x
+
+    @classmethod
+    def from_zeros(cls, dtype: str | Dtype | DtypeTuple, n: int) -> Array:
+        x = cls._partial_init(dtype)
+        x._bitstore = BitRust.from_zeros(n * x._dtype.bits_per_item)
+        return x
+
+    @classmethod
+    def from_iterable(cls, dtype: str | Dtype | DtypeTuple, iterable: Iterable) -> Array:
+        x = cls._partial_init(dtype)
+        x._bitstore = BitRust.from_zeros(0)
+        x.extend(iterable)
+        return x
 
     @property
     def data(self) -> BitsProxy:
@@ -354,28 +371,17 @@ class Array:
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self._dtype.bit_length * key
-            self._bitstore = BitRust.join(
-                [
-                    self._bitstore.getslice(0, start),
-                    self._bitstore.getslice(start + self._dtype.bit_length, None),
-                ]
-            )
+            self._bitstore = BitRust.join([
+                self._bitstore.getslice(0, start),
+                self._bitstore.getslice(start + self._dtype.bit_length, None)
+            ])
 
     def __repr__(self) -> str:
-        list_str = f"{self.unpack()}"
         bitstore_length = len(self._bitstore)
-        trailing_bit_length = bitstore_length % self._dtype.bit_length
-        final_str = (
-            ""
-            if trailing_bit_length == 0
-            else ", trailing_bits="
-            + repr(
-                self._getbitslice(
-                    bitstore_length - trailing_bit_length, bitstore_length
-                )
-            ).splitlines()[0]
-        )
-        return f"Array('{self._dtype}', {list_str}{final_str})"
+        if bitstore_length % self._dtype.bit_length == 0:
+            list_str = f"{self.unpack()}"
+            return f"Array('{self._dtype}', {list_str})"
+        return f"Array.from_bits('{self._dtype}', {self.to_bits()!r})"
 
     def as_type(self, dtype: str | Dtype, /) -> Array:
         """
