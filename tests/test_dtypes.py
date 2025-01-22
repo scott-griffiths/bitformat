@@ -223,7 +223,7 @@ def test_dtype_list_packing():
 def test_dtype_list_unpacking():
     d = DtypeTuple("bool, u8, f16")
     a = d.unpack("0b1, 0xfe, 0x3800")
-    assert a == [1, 254, 0.5]
+    assert a == (1, 254, 0.5)
 
 
 def test_dtype_list_unpacking_with_pad():
@@ -264,11 +264,11 @@ def test_hashing():
 
 def test_str():
     a = Dtype('u_le8')
-    b = DtypeTuple('bool, [i5;]')
+    b = DtypeTuple('bool, [i5; 1]')
     assert str(a) == 'u_le8'
-    assert str(b) == 'bool, [i5;]'
+    assert str(b) == 'bool, [i5; 1]'
     assert repr(a) == "Dtype('u_le8')"
-    assert repr(b) == "DtypeTuple('bool, [i5;]')"
+    assert repr(b) == "DtypeTuple('bool, [i5; 1]')"
     nt = DtypeDefinition("pingu", "A new type", Bits._setuint, Bits._getuint)
     s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s

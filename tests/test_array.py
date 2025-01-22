@@ -973,11 +973,11 @@ def test_dtype_array_byteswap():
 
 def test_with_dtypetuple():
     a = Array("u8, u6", [[1, 2], [3, 4]])
-    assert a[0] == [1, 2]
+    assert a[0] == (1, 2)
     assert len(a) == 2
     assert a.item_size == 14
     a[1] = [5, 6]
-    assert a[1] == [5, 6]
+    assert a[1] == (5, 6)
     with pytest.raises(ValueError):
         _ = a / 2
     with pytest.raises(ValueError):
@@ -1003,3 +1003,12 @@ def test_create_from_bytes():
     b = Array.from_bytes('i4', bytearray([1, 2, 3, 4]))
     assert len(b) == 8
 
+def test_more_unpacking_to_dtypes():
+    a = Array('i3', [2, 1, -2, 0])
+    assert a.unpack('bin') == ['010', '001', '110', '000']
+    assert a.unpack('[i3; 2]') == [(2, 1), (-2, 0)]
+    with pytest.raises(ValueError):
+        a.unpack('[i3;]')
+    with pytest.raises(ValueError):
+        a.unpack('i, bool')
+    assert a.unpack(DtypeTuple('u8')) == [(71,)]

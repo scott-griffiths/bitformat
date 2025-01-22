@@ -893,7 +893,10 @@ class Bits:
                 fmt = Dtype.from_string(fmt)
         elif isinstance(fmt, list):
             fmt = DtypeTuple.from_params(fmt)
-        return fmt.unpack(self)
+        if isinstance(fmt, DtypeTuple):
+            return list(fmt.unpack(self))
+        else:
+            return fmt.unpack(self)
 
     # ----- Private Methods -----
 

@@ -415,17 +415,31 @@ class Array:
 
         :raises ValueError: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            original_array = Array('int', [1, 2, 3])
-            float_array = original_array.astype('float')
-            print(float_array.dtype)  # Output: Dtype('float')
+            >>> original_array = Array('i5', [1, 2, 3])
+            >>> float_array = original_array.as_type('f16')
+            >>> print(float_array)
+            Array('f16', [1.0, 2.0, 3.0])
 
         """
         new_array = self.__class__(dtype, self.unpack())
         return new_array
 
     def unpack(self, dtype: str | Dtype | DtypeTuple | None = None) -> list[ElementType]:
+        """Interpret the Array as a list of elements of a given dtype, defaulting to the Array's current dtype.
+
+        .. code-block:: pycon
+
+            >>> a = Array('i3', [2, 1, -2, 0])
+            >>> a.unpack()
+            [2, 1, -2, 0]
+            >>> a.unpack('bin3')
+            ['010', '001', '110', '000']
+            >>> a.unpack('u5, bool')
+            [(8, True), (24, False)]
+
+        """
         if dtype is None:
             dtype = self._dtype
         elif isinstance(dtype, str):
@@ -433,8 +447,14 @@ class Array:
                 dtype = DtypeTuple.from_string(dtype)
             else:
                 dtype = Dtype.from_string(dtype)
-        elif not isinstance(dtype, Dtype):
+        elif not isinstance(dtype, (Dtype, DtypeTuple)):
             raise TypeError(f"Invalid dtype parameter: {dtype}")
+        if dtype.bit_length == 0:
+            if dtype.is_array:
+                raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
+            else:
+                # No length supplied - use the current length instead
+                dtype = Dtype.from_params(dtype.name, self.dtype.size)
         return [
             dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(

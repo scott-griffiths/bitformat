@@ -755,10 +755,12 @@ class DtypeTuple:
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
         x = super().__new__(cls)
-        x._dtypes = [
-            dtype if isinstance(dtype, Dtype) else Dtype.from_string(dtype)
-            for dtype in dtypes
-        ]
+        x._dtypes = []
+        for d in dtypes:
+            dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
+            if dtype.bit_length == 0:
+                raise ValueError(f"Can't create a DtypeTuple from dtype '{d}' as it has an unknown length.")
+            x._dtypes.append(dtype)
         x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
         return x
 
@@ -779,7 +781,7 @@ class DtypeTuple:
         self,
         b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview,
         /,
-    ) -> list[Any | tuple[Any]]:
+    ) -> tuple[tuple[Any] | Any]:
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
@@ -796,7 +798,7 @@ class DtypeTuple:
             if dtype.name != "pad":
                 vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
             pos += dtype.bit_length
-        return vals
+        return tuple(vals)
 
     def _getbitlength(self) -> int:
         return self._bit_length
