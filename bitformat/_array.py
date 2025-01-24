@@ -10,7 +10,7 @@ from bitformat._options import Options
 from bitformat._common import Colour
 import operator
 import sys
-from ._bitstore_rust import BitRust
+from bitformat.bit_rust import BitRust
 
 __all__ = ["Array", "BitsProxy"]
 

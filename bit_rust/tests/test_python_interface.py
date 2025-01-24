@@ -1,5 +1,5 @@
 
-from bit_rust import BitRust
+from bitformat.bit_rust import BitRust
 import pytest
 
 def test_creation():

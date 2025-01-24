@@ -14,7 +14,7 @@ from bitformat._dtypes import Dtype, Register, DtypeTuple
 from bitformat._common import Colour, Endianness
 from typing import Pattern
 from bitformat._options import Options
-from ._bitstore_rust import BitRust
+from bitformat.bit_rust import BitRust
 
 __all__ = ["Bits", "BitsType"]
 

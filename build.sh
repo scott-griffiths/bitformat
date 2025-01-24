@@ -26,11 +26,11 @@ fi
 
 # Install dependencies including dev dependencies
 log "Installing dependencies"
-uv pip install -r pyproject.toml -r dev-requirements.txt
+uv pip install -r dev-requirements.txt
 
-# Build Rust components
-log "Building Rust components"
-(cd bit_rust && uvx maturin develop --release --uv)
+# Build and install the entire package
+log "Building and installing package"
+uvx maturin develop --release --uv
 
 # Run tests
 log "Running tests"

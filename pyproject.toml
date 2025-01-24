@@ -1,3 +1,7 @@
+[build-system]
+requires = ["maturin>=1.8,<2.0"]
+build-backend = "maturin"
+
 [project]
 name = "bitformat"
 version = "0.2.0-alpha.17"
@@ -15,28 +19,18 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
     "License :: OSI Approved :: MIT License",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: File Formats",
     "Typing :: Typed"
 ]
-keywords = ["binary", "bitarray", "bitvector", "bitfield", "bitstring", "construct", "struct", "parser"]
 dependencies = [
     "lark >= 1.2.2, < 1.3.0",
 ]
 
-[project.urls]
-homepage = "https://github.com/scott-griffiths/bitformat"
-documentation = "https://bitformat.readthedocs.io/"
-
-[build-system]
-requires = ["hatchling", "maturin>=1.7,<2.0"]
-build-backend = "hatchling.build"
-
-[tool.hatch.build]
-include = [
-    "bitformat/format_parser.lark"
-]
-
-[tool.uv.sources]
-bit-rust = { path = "bit_rust" }
+[tool.maturin]
+python-source = "."
+module-name = "bitformat.bit_rust"
+features = ["pyo3/extension-module"]

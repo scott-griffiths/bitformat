@@ -1,0 +1,15 @@
+[package]
+name = "bitformat"
+version = "0.2.0-alpha.17"
+edition = "2021"
+
+[lib]
+name = "bit_rust"
+crate-type = ["cdylib"]
+path = "bit_rust/src/lib.rs"
+
+[dependencies]
+hex = "0.4.3"
+pyo3 = "0.23.3"
+lazy_static = "1.5.0"
+bitvec = "1.0.1"
