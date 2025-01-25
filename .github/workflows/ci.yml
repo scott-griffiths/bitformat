@@ -87,11 +87,8 @@ jobs:
           
           # Copy wheels to dist
           mkdir -p dist
-          cp bit_rust/target/wheels/* dist/
+          cp bitformat/target/wheels/* dist/
 
-          # Make sure wheels get copied to dist directory
-          mkdir -p dist
-          cp bit_rust/target/wheels/* dist/
       - name: Publish package files
         if: always()
         uses: actions/upload-artifact@v3
