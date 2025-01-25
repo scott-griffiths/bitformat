@@ -31,7 +31,7 @@ class Repeat(FieldType):
         return x
 
     @override
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         return self.field.bit_length * self.count
 
     @classmethod
@@ -110,7 +110,7 @@ class Repeat(FieldType):
         self._bits = None
 
     @override
-    def _getvalue(self) -> list[Any] | None:
+    def _get_value(self) -> list[Any] | None:
         if self._bits is None:
             return None
         values = []
@@ -122,10 +122,10 @@ class Repeat(FieldType):
         return values
 
     @override
-    def _setvalue(self, val: list[Any]) -> None:
+    def _set_value(self, val: list[Any]) -> None:
         self._values = val
 
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

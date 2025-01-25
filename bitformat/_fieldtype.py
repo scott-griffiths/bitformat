@@ -209,13 +209,13 @@ class FieldType(abc.ABC):
     def _copy(self) -> FieldType: ...
 
     @abc.abstractmethod
-    def _getvalue(self) -> Any: ...
+    def _get_value(self) -> Any: ...
 
     @abc.abstractmethod
-    def _setvalue(self, value: Any) -> None: ...
+    def _set_value(self, value: Any) -> None: ...
 
     @abc.abstractmethod
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         """
         Return the length of the FieldType in bits.
 
@@ -228,7 +228,7 @@ class FieldType(abc.ABC):
 
     @property
     def bit_length(self) -> int:
-        return self._getbitlength()
+        return self._get_bit_length()
 
     @abc.abstractmethod
     def __eq__(self, other) -> bool: ...
@@ -254,7 +254,7 @@ class FieldType(abc.ABC):
         self._name = val
 
     name = property(_get_name, _set_name)
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
     def _get_comment(self) -> str:
         return self._comment

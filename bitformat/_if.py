@@ -83,7 +83,7 @@ class If(FieldType):
         raise ValueError(f"Can't parse If field from '{s}'")
 
     @override
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         if self.condition_value in [None, True]:
             try:
                 then_len = self.then_.bit_length
@@ -146,18 +146,18 @@ class If(FieldType):
         self.condition_value = None
 
     @override
-    def _getvalue(self) -> Any:
+    def _get_value(self) -> Any:
         if self.condition_value is None:
             raise ValueError(
                 "Cannot get value of If field before parsing or unpacking it."
             )
         if self.condition_value:
-            return self.then_._getvalue()
+            return self.then_._get_value()
         else:
-            return self.else_._getvalue()
+            return self.else_._get_value()
 
     @override
-    def _setvalue(self, val: Any) -> None:
+    def _set_value(self, val: Any) -> None:
         raise NotImplementedError
 
     @override
@@ -187,7 +187,7 @@ class If(FieldType):
         else:
             return self.else_.to_bits()
 
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

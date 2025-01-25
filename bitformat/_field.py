@@ -122,7 +122,7 @@ class Field(FieldType):
                         f"as it can't be converted to a bool."
                     )
         if value is not None:
-            x._setvalue_no_const_check(value)
+            x._set_value_no_const_check(value)
         if x.dtype.size == 0:
             if x.dtype.name in ["bits", "bytes"] and x.value is not None:
                 x._dtype_expression = DtypeWithExpression(
@@ -135,7 +135,7 @@ class Field(FieldType):
         return x
 
     @override
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         return self.dtype.bit_length
 
     @classmethod
@@ -282,19 +282,19 @@ class Field(FieldType):
         kwargs: dict[str, Any],
     ) -> None:
         if self.name in kwargs:
-            self._setvalue(kwargs[self.name])
+            self._set_value(kwargs[self.name])
         else:
-            self._setvalue(value)
+            self._set_value(value)
         if self.name:
             vars_[self.name] = self.value
 
     @override
-    def _getvalue(self) -> Any | None:
+    def _get_value(self) -> Any | None:
         if self._bits is None:
             return None
         return self.dtype.unpack(self._bits)
 
-    def _setvalue_no_const_check(self, value: Any) -> None:
+    def _set_value_no_const_check(self, value: Any) -> None:
         if value is None:
             raise ValueError(
                 "Cannot set the value of a Field to None. Perhaps you could use clear()?"
@@ -307,20 +307,20 @@ class Field(FieldType):
             )
 
     @override
-    def _setvalue(self, value: Any) -> None:
+    def _set_value(self, value: Any) -> None:
         if self.const:
             raise ValueError(
                 f"Cannot set the value of a const Field '{self}'. "
                 f"To change the value, first set the const property of the Field to False."
             )
-        self._setvalue_no_const_check(value)
+        self._set_value_no_const_check(value)
 
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
-    def _getdtype(self) -> Dtype:
+    def _get_dtype(self) -> Dtype:
         return self._dtype_expression.evaluate({})
 
-    dtype = property(_getdtype)
+    dtype = property(_get_dtype)
 
     @override
     def _str(self, indent: Indenter) -> str:

@@ -86,7 +86,7 @@ class TestChangingTheRegister:
 
 class TestCreatingNewDtypes:
     def test_new_type(self):
-        md = DtypeDefinition("uintr", "A new type", Bits._setuint, Bits._getuint)
+        md = DtypeDefinition("uintr", "A new type", Bits._set_u, Bits._get_u)
         Register().add_dtype(md)
         a = Bits("0xf")
         assert a.uintr == 15
@@ -269,7 +269,7 @@ def test_str():
     assert str(b) == 'bool, [i5; 1]'
     assert repr(a) == "Dtype('u_le8')"
     assert repr(b) == "DtypeTuple('bool, [i5; 1]')"
-    nt = DtypeDefinition("pingu", "A new type", Bits._setuint, Bits._getuint)
+    nt = DtypeDefinition("pingu", "A new type", Bits._set_u, Bits._get_u)
     s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s
     assert repr(nt) == s

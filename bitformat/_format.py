@@ -217,7 +217,7 @@ class Format(FieldType):
         return cls.from_params(fieldtypes, name)
 
     @override
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         """Return the total length of the Format in bits."""
         return sum(f.bit_length for f in self.fields)
 
@@ -262,7 +262,7 @@ class Format(FieldType):
             fieldtype.clear()
 
     @override
-    def _getvalue(self) -> list[Any]:
+    def _get_value(self) -> list[Any]:
         vals = []
         for i, f in enumerate(self.fields):
             if f.value is None:
@@ -273,15 +273,15 @@ class Format(FieldType):
         return vals
 
     @override
-    def _setvalue(self, val: Sequence[Any]) -> None:
+    def _set_value(self, val: Sequence[Any]) -> None:
         if len(val) != len(self.fields):
             raise ValueError(
                 f"Can't set {len(self.fields)} fields from {len(val)} values."
             )
         for fieldtype, v in zip(self.fields, val):
-            fieldtype._setvalue(v)
+            fieldtype._get_value(v)
 
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
     @override
     def to_bits(self) -> Bits:

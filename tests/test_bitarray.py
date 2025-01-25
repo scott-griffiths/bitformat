@@ -180,7 +180,7 @@ class TestBFloats:
         b = BitArray(bfloatle=1000)
         assert a[16:32] == b
         assert b.bfloatle == 1000.0
-        b.byteswap()
+        b.byte_swap()
         assert b.bfloat == 1000.0
         assert b.bfloatbe == 1000.0
 

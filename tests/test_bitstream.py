@@ -887,16 +887,16 @@ class TestManyDifferentThings:
 
     def test_reverse_bytes(self):
         a = Bits("0x123456")
-        a = a.byteswap()
+        a = a.byte_swap()
         assert a == "0x563412"
         b = a + "0b1"
         with pytest.raises(ValueError):
-            _ = b.byteswap()
+            _ = b.byte_swap()
         a = Bits("0x54")
-        a = a.byteswap()
+        a = a.byte_swap()
         assert a == "0x54"
         a = Bits()
-        a = a.byteswap()
+        a = a.byte_swap()
         assert not a
 
     def test_startswith(self):
@@ -1325,25 +1325,25 @@ class TestBugs:
 
     def test_byte_swap_int(self):
         s = Bits("0xf234567f")
-        s = s.byteswap(1)
+        s = s.byte_swap(1)
         assert s == "0xf234567f"
-        s = s.byteswap(2)
+        s = s.byte_swap(2)
         assert s == "0x34f27f56"
-        s = s.byteswap(2)
+        s = s.byte_swap(2)
         assert s == "0xf234567f"
         with pytest.raises(ValueError):
-            _ = s.byteswap(3)
+            _ = s.byte_swap(3)
 
     def test_byte_swap_errors(self):
         s = Bits("0x0011223344556677")
         with pytest.raises(TypeError):
-            s.byteswap("z")
+            s.byte_swap("z")
         with pytest.raises(ValueError):
-            s.byteswap(-1)
+            s.byte_swap(-1)
         with pytest.raises(TypeError):
-            s.byteswap([-1])
+            s.byte_swap([-1])
         with pytest.raises(ValueError):
-            s.byteswap(5.4)
+            s.byte_swap(5.4)
 
     def test_unicode(self):
         a = Bits("u12=34")
@@ -1382,5 +1382,5 @@ def test_overwrite_with_self():
 
 def test_byte_swap():
     b = Bits.from_bytes(b"\x01\x02\x03\x04")
-    b = b.byteswap()
+    b = b.byte_swap()
     assert b == "0x04030201"

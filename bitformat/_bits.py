@@ -318,7 +318,7 @@ class Bits:
         """
         return self._bitstore.any_set()
 
-    def byteswap(self, bytelength: int | None = None, /) -> Bits:
+    def byte_swap(self, bytelength: int | None = None, /) -> Bits:
         """Change the byte endianness. Return new Bits.
 
         The whole of the Bits will be byte-swapped. It must be a multiple
@@ -331,7 +331,7 @@ class Bits:
         """
         if len(self) % 8 != 0:
             raise ValueError(
-                f"Bit length must be an multiple of 8 to use byteswap (got length of {len(self)} bits). "
+                f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
                 "This error can be caused by using an endianness modifier on non-whole byte data."
             )
         if bytelength is None:
@@ -342,7 +342,7 @@ class Bits:
             raise ValueError(f"Negative bytelength given: {bytelength}.")
         if len(self) % (bytelength * 8) != 0:
             raise ValueError(
-                f"The Bits to byteswap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
+                f"The Bits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
             )
         chunks = []
         for startbit in range(0, len(self), bytelength * 8):
@@ -462,7 +462,7 @@ class Bits:
             raise ValueError("In find_all, count must be >= 0.")
         bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        return self._findall(bs, count, ba)
+        return self._find_all(bs, count, ba)
 
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
@@ -900,7 +900,7 @@ class Bits:
 
     # ----- Private Methods -----
 
-    def _findall(self, bs: Bits, count: int | None, byte_aligned: bool) -> Iterable[int]:
+    def _find_all(self, bs: Bits, count: int | None, byte_aligned: bool) -> Iterable[int]:
         c = 0
         for i in self._bitstore.findall(bs._bitstore, byte_aligned):
             if count is not None and c >= count:
@@ -931,15 +931,15 @@ class Bits:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
-    def _setbits(self, bs: BitsType, _length: None = None) -> None:
+    def _set_bits(self, bs: BitsType, _length: None = None) -> None:
         bs = Bits._from_any(bs)
         self._bitstore = bs._bitstore
 
-    def _setbytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
+    def _set_bytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitRust.from_bytes(bytes(data))
 
-    def _getbytes(self) -> bytes:
+    def _get_bytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
             raise ValueError(
@@ -950,62 +950,62 @@ class Bits:
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 
-    def _getbytes_printable(self) -> str:
+    def _get_bytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
-        bytes_ = self._getbytes()
+        bytes_ = self._get_bytes()
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(
             chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_
         )
         return string
 
-    def _setuint(self, i: int | str, length: int | None = None) -> None:
+    def _set_u(self, u: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
-        i = int(i)
+        u = int(u)
         if length is None or length == 0:
             raise ValueError(
-                "A non-zero length must be specified with a uint initialiser."
+                "A non-zero length must be specified with a 'u' initialiser."
             )
         try:
-            if i >= (1 << length):
+            if u >= (1 << length):
                 raise ValueError(
-                    f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                    f"{u} is too large an unsigned integer for a Bits of length {length}. "
                     f"The allowed range is [0, {(1 << length) - 1}]."
                 )
-            if i < 0:
+            if u < 0:
                 raise ValueError(
-                    f"Unsigned integers cannot be initialised with the negative number {i}."
+                    f"Unsigned integers cannot be initialised with the negative number {u}."
                 )
-            b = i.to_bytes((length + 7) // 8, byteorder="big", signed=False)
+            b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
             offset = 8 - (length % 8)
             if offset == 8:
                 self._bitstore = BitRust.from_bytes(b)
             else:
                 self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
-            if i >= (1 << length):
+            if u >= (1 << length):
                 raise ValueError(
-                    f"{i} is too large an unsigned integer for a Bits of length {length}. "
+                    f"{u} is too large an unsigned integer for a Bits of length {length}. "
                     f"The allowed range is [0, {(1 << length) - 1}]."
                 )
-            if i < 0:
+            if u < 0:
                 raise ValueError(
-                    f"Unsigned integers cannot be initialised with the negative number {i}."
+                    f"Unsigned integers cannot be initialised with the negative number {u}."
                 )
             raise e
 
-    def _getuint(self) -> int:
+    def _get_u(self) -> int:
         """Return data as an unsigned int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
         return int.from_bytes(self._bitstore.to_int_byte_data(False), byteorder="big", signed=False)
 
-    def _setint(self, i: int | str, length: int | None = None) -> None:
+    def _set_i(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
         i = int(i)
         if length is None or length == 0:
             raise ValueError(
-                "A non-zero length must be specified with an int initialiser."
+                "A non-zero length must be specified with an 'i' initialiser."
             )
         try:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
@@ -1027,13 +1027,13 @@ class Bits:
                 )
             raise e
 
-    def _getint(self) -> int:
+    def _get_i(self) -> int:
         """Return data as a two's complement signed int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
         return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
 
-    def _setfloat(self, f: float | str, length: int | None) -> None:
+    def _set_f(self, f: float | str, length: int | None) -> None:
         f = float(f)
         fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
         try:
@@ -1043,37 +1043,37 @@ class Bits:
             b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
         self._bitstore = BitRust.from_bytes(b)
 
-    def _getfloat(self) -> float:
+    def _get_f(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
         fmt = {16: ">e", 32: ">f", 64: ">d"}[len(self)]
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
-    def _setbool(self, value: bool) -> None:
+    def _set_bool(self, value: bool) -> None:
         self._bitstore = BitRust.from_bin("1") if value else BitRust.from_bin("0")
         return
 
-    def _getbool(self) -> bool:
+    def _get_bool(self) -> bool:
         return self[0]
 
-    def _getpad(self) -> None:
+    def _get_pad(self) -> None:
         return None
 
-    def _setpad(self, value: None, length: int) -> None:
+    def _set_pad(self, value: None, length: int) -> None:
         raise ValueError("It's not possible to set a 'pad' value.")
 
-    def _setbin_safe(self, binstring: str, _length: None = None) -> None:
+    def _set_bin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
         self._bitstore = BitRust.from_bin_checked(binstring)
 
-    def _getbin(self) -> str:
+    def _get_bin(self) -> str:
         """Return interpretation as a binary string."""
         return self._bitstore.to_bin()
 
-    def _setoct(self, octstring: str, _length: None = None) -> None:
+    def _set_oct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
         self._bitstore = BitRust.from_oct_checked(octstring)
 
-    def _getoct(self) -> str:
+    def _get_oct(self) -> str:
         """Return interpretation as an octal string."""
         if len(self) % 3 != 0:
             raise ValueError(
@@ -1081,11 +1081,11 @@ class Bits:
             )
         return self._bitstore.to_oct()
 
-    def _sethex(self, hexstring: str, _length: None = None) -> None:
+    def _set_hex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         self._bitstore = BitRust.from_hex_checked(hexstring)
 
-    def _gethex(self) -> str:
+    def _get_hex(self) -> str:
         """Return the hexadecimal representation as a string."""
         if len(self) % 4 != 0:
             raise ValueError(
@@ -1099,7 +1099,7 @@ class Bits:
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def _getbits(self: Bits):
+    def _get_bits(self: Bits):
         return self
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
@@ -1138,7 +1138,7 @@ class Bits:
             if (
                 dtype.name == "bytes"
             ):  # Special case for bytes to print one character each.
-                get_fn = Bits._getbytes_printable
+                get_fn = Bits._get_bytes_printable
             if (
                 dtype.name == "bool"
             ):  # Special case for bool to print '1' or '0' instead of `True` or `False`.

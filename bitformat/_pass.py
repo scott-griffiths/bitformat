@@ -42,7 +42,7 @@ class Pass(FieldType):
         return cls()
 
     @override
-    def _getbitlength(self) -> int:
+    def _get_bit_length(self) -> int:
         return 0
 
     @override
@@ -67,11 +67,11 @@ class Pass(FieldType):
         pass
 
     @override
-    def _getvalue(self) -> Any:
+    def _get_value(self) -> Any:
         raise ValueError("A Pass field has no value to get.")
 
     @override
-    def _setvalue(self, val: Any) -> None:
+    def _set_value(self, val: Any) -> None:
         raise ValueError("A Pass field cannot be set to a value.")
 
     @override
@@ -87,7 +87,7 @@ class Pass(FieldType):
     def to_bits(self) -> Bits:
         return Bits()
 
-    value = property(_getvalue, _setvalue)
+    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

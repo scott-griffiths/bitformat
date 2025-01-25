@@ -335,17 +335,17 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             a.reverse()
 
-    def test_byteswap(self):
+    def test_byte_swap(self):
         a = Array("u16")
-        a.byteswap()
+        a.byte_swap()
         assert a.unpack() == []
         b = Array("u17")
         with pytest.raises(ValueError):
-            b.byteswap()
+            b.byte_swap()
         a.extend([1, 0, 256])
-        a.byteswap()
+        a.byte_swap()
         assert a.unpack() == [256, 0, 1]
-        a.byteswap()
+        a.byte_swap()
         assert a.unpack() == [1, 0, 256]
 
     def test_getting(self):
@@ -963,10 +963,10 @@ def test_rgb_array():
         a.pp()
 
 
-def test_dtype_array_byteswap():
+def test_dtype_array_byte_swap():
     a = Array("[u_le16; 3]", [(1, 2, 3), (4, 5, 6)])
     assert a[1] == (4, 5, 6)
-    a.byteswap()
+    a.byte_swap()
     a.dtype = "[u_be16; 3]"
     assert a[1] == (4, 5, 6)
 

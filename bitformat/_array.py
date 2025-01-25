@@ -129,7 +129,7 @@ class Array:
 
     - ``append(item)``: Append a single item to the end of the Array.
     - ``as_type(dtype)``: Creates a new Array with a new data type, initialized from the current Array.
-    - ``byteswap()``: Change byte endianness of all items.
+    - ``byte_swap()``: Change byte endianness of all items.
     - ``count(value)``: Count the number of occurrences of a value.
     - ``equals(other)``: Comparison method between Arrays.
     - ``extend(iterable)``: Append new items to the end of the Array from an iterable.
@@ -215,7 +215,7 @@ class Array:
     def data(self, value: BitsType) -> None:
         self._bitstore = Bits._from_any(value)._bitstore
 
-    def _getbitslice(self, start: int, stop: int | None) -> Bits:
+    def _get_bit_slice(self, start: int, stop: int | None) -> Bits:
         x = Bits()
         x._bitstore = self._bitstore.getslice(start, stop)
         return x
@@ -232,7 +232,7 @@ class Array:
         trailing_bit_length = bitstore_length % self._dtype.bits_per_item
         if trailing_bit_length == 0:
             return Bits()
-        return self._getbitslice(bitstore_length - trailing_bit_length, bitstore_length)
+        return self._get_bit_slice(bitstore_length - trailing_bit_length, bitstore_length)
 
     @property
     def dtype(self) -> Dtype:
@@ -305,7 +305,7 @@ class Array:
                     f"Index {key} out of range for Array of length {len(self)}."
                 )
             return self._dtype.unpack(
-                self._getbitslice(
+                self._get_bit_slice(
                     self._dtype.bit_length * key, self._dtype.bit_length * (key + 1)
                 )
             )
@@ -558,7 +558,7 @@ class Array:
         del self[pos]
         return x
 
-    def byteswap(self) -> None:
+    def byte_swap(self) -> None:
         """
         Change the endianness in-place of all items in the Array.
 
@@ -568,9 +568,9 @@ class Array:
         """
         if self.item_size % 8 != 0:
             raise ValueError(
-                f"byteswap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bit_length} bits long."
+                f"byte_swap can only be used for whole-byte elements. The '{self._dtype}' format is {self._dtype.bit_length} bits long."
             )
-        self.data = self._proxy.byteswap(self.item_size // 8)
+        self.data = self._proxy.byte_swap(self.item_size // 8)
 
     def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
@@ -608,7 +608,7 @@ class Array:
             )
         self._bitstore = Bits.from_joined(
             [
-                self._getbitslice(s - self._dtype.bit_length, s)
+                self._get_bit_slice(s - self._dtype.bit_length, s)
                 for s in range(len(self._proxy), 0, -self._dtype.bit_length)
             ]
         )._bitstore
@@ -691,7 +691,7 @@ class Array:
         data = (
             self._proxy
             if trailing_bit_length == 0
-            else self._getbitslice(0, len(self._proxy) - trailing_bit_length)
+            else self._get_bit_slice(0, len(self._proxy) - trailing_bit_length)
         )
         length = len(self._proxy) // token_length
         len_str = colour.green + str(length) + colour.off
@@ -714,7 +714,7 @@ class Array:
         if trailing_bit_length != 0:
             stream.write(
                 " + trailing_bits = 0b"
-                + self._getbitslice(
+                + self._get_bit_slice(
                     len(self._proxy) - trailing_bit_length, None
                 ).unpack("bin")
             )
@@ -857,7 +857,7 @@ class Array:
         if is_comparison:
             new_type = Register().get_single_dtype("bool", 1)
         else:
-            new_type = self._promotetype(self._dtype, other._dtype)
+            new_type = self._promote_type(self._dtype, other._dtype)
         new_array = self.__class__(new_type)
         new_data = Bits()
         failures = index = 0
@@ -887,7 +887,7 @@ class Array:
         return new_array
 
     @classmethod
-    def _promotetype(
+    def _promote_type(
         cls, type1: Dtype, type2: Dtype
     ) -> Dtype:  # TODO: How does this work for array dtypes?
         """When combining types which one wins?

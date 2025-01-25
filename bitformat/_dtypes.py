@@ -239,7 +239,7 @@ class Dtype:
         )
         x._endianness = endianness
         x._get_fn = (
-            (lambda b: definition.get_fn(b.byteswap()))
+            (lambda b: definition.get_fn(b.byte_swap()))
             if little_endian
             else definition.get_fn
         )
@@ -257,7 +257,7 @@ class Dtype:
         def create_bits_le(v):
             b = bitformat.Bits()
             set_fn(b, v)
-            return b.byteswap()
+            return b.byte_swap()
 
         x._create_fn = create_bits_le if little_endian else create_bits
 
@@ -523,7 +523,7 @@ class Register:
                     raise ValueError(
                         f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits."
                     )
-                return definition.get_fn(b.byteswap())
+                return definition.get_fn(b.byte_swap())
 
             fget_ne = fget_le if byteorder == "little" else fget_be
             setattr(
