@@ -87,7 +87,7 @@ jobs:
           
           # Copy wheels to dist
           mkdir -p dist
-          cp bitformat/bitformat/target/wheels/* dist/
+          cp target/wheels/* dist/
 
       - name: Publish package files
         if: always()
