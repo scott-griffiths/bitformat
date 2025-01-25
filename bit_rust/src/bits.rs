@@ -6,6 +6,7 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
 use std::sync::Arc;
+use pyo3::prelude::*;
 
 lazy_static!(
     pub static ref ZERO_BIT: BitRust = BitRust::from_zeros(1);
@@ -230,8 +231,44 @@ impl BitRustIterator {
     }
 }
 
+#[pyclass]
+struct BitRustBoolIterator {
+    bits: Py<BitRust>,
+    index: usize,
+    length: usize,
+}
+
+#[pymethods]
+impl BitRustBoolIterator {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(&mut self, py: Python<'_>) -> PyResult<Option<bool>> {
+        if self.index < self.length {
+            let bits = self.bits.borrow(py);
+            let result = bits.getindex(self.index as i64);
+            self.index += 1;
+            result.map(Some)
+        } else {
+            Ok(None)
+        }
+    }
+}
+
+
 #[pymethods]
 impl BitRust {
+
+    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BitRustBoolIterator>> {
+        let py = slf.py();
+        let length = slf.len();
+        Py::new(py, BitRustBoolIterator {
+            bits: slf.into(),
+            index: 0,
+            length,
+        })
+    }
 
     // A stop-gap. We really want to return an iterator of i64.
     pub fn findall_list(&self, b: &BitRust, bytealigned: bool) -> Vec<usize>  {
