@@ -1,6 +1,6 @@
 # Release Notes
 
-### Some time in 2025: version 0.2.0
+### January 2025: version 0.2.
 
 This release replaces the core bit manipulation code with a version written in Rust. This should allow some great optimisations in the future, but this version is more a proof of concept to get the interface and the build systems working.
 

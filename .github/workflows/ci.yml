@@ -218,10 +218,9 @@ jobs:
           fi
 
       # Publish to actual PyPI only for non-prerelease versions
-      # Disabled for now while I'm testing
-  #    - name: Publish to PyPI
-  #      if: steps.check_prerelease.outputs.is_prerelease == 'false'
-  #      uses: pypa/gh-action-pypi-publish@release/v1
-  #      with:
-  #        password: ${{ secrets.PYPI_API_TOKEN }}
-  #        verbose: true
+      - name: Publish to PyPI
+        if: steps.check_prerelease.outputs.is_prerelease == 'false'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true
