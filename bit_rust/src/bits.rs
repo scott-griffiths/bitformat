@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::Not;
-use pyo3::{pyclass, pymethods, PyRef, PyResult};
+use pyo3::{pyclass, pymethods, PyRef, PyRefMut, PyResult};
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use bitvec::prelude::*;
 use lazy_static::lazy_static;
@@ -207,6 +207,29 @@ impl BitRust {
     }
 }
 
+#[pyclass]
+pub struct BitRustIterator {
+    positions: Vec<usize>,
+    index: usize,
+}
+
+#[pymethods]
+impl BitRustIterator {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<usize> {
+        if slf.index < slf.positions.len() {
+            let pos = slf.positions[slf.index];
+            slf.index += 1;
+            Some(pos)
+        } else {
+            None
+        }
+    }
+}
+
 #[pymethods]
 impl BitRust {
 
@@ -214,6 +237,15 @@ impl BitRust {
     pub fn findall_list(&self, b: &BitRust, bytealigned: bool) -> Vec<usize>  {
         let pos: Vec<usize> = self.find_all_rust(b, bytealigned).collect();
         pos
+    }
+
+    #[pyo3(signature = (bs, byte_aligned=false))]
+    pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
+        // TODO: Cheating here by making the whole list first, then making an iterator from it.
+        Ok(BitRustIterator {
+            positions: self.findall_list(bs, byte_aligned),
+            index: 0,
+        })
     }
 
     pub fn __len__(&self) -> usize {
