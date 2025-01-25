@@ -733,3 +733,12 @@ def test_bits_slicing():
 
     assert a[::2] == '0xff'
     assert a[1::2] == '0x00'
+
+def test_from_random():
+    a = Bits.from_random(0)
+    assert a == Bits()
+    a = Bits.from_random(1)
+    assert a == '0b1' or a == '0b0'
+    a = Bits.from_random(10000, 12)
+    b = Bits.from_random(10000, 12)
+    assert a == b

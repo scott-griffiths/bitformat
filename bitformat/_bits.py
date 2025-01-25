@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numbers
+import random
 import sys
 import struct
 import io
@@ -86,6 +87,7 @@ class Bits:
     * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
+    * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` randomly set bits.
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_joined(iterable)`` - Concatenate an iterable of ``Bits`` objects.
 
@@ -296,6 +298,33 @@ class Bits:
             raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
         x._bitstore = BitRust.from_zeros(n)
+        return x
+
+    @classmethod
+    def from_random(cls, n: int, /, seed: int | None = None) -> Bits:
+        """
+        Create a new Bits with all bits randomly set.
+
+        :param n: The number of bits.
+        :type n: int
+        :param seed: An optional seed.
+        :type seed: int | None
+        :return: A Bits object with all bits set to zero.
+        :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_random(1000000)  # A million random bits
+
+        """
+        if n == 0:
+            return Bits()
+        if n < 0:
+            raise ValueError(f"Negative bit length given: {n}.")
+        if seed is not None:
+            random.seed(seed)
+        value = random.getrandbits(n)
+        x = Bits.from_dtype(Dtype.from_params("u", n), value)
         return x
 
     # ----- Instance Methods -----
