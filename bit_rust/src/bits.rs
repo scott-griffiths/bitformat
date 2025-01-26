@@ -42,21 +42,29 @@ fn compute_lps(pattern: &BS) -> Vec<usize> {
     lps
 }
 
-pub fn find_bitvec(s: &BV, pattern: &BV, start: usize) -> Option<usize> {
-    let lps = compute_lps(pattern);
-    let mut i = start; // index for text
-    let mut j = 0; // index for pattern
+pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
+    // Early return if needle is empty or longer than haystack
+    if needle.length == 0 {
+        return Some(start);
+    }
+    if needle.length > haystack.length - start {
+        return None;
+    }
 
-    while i < s.len() {
-        if pattern[j] == s[i] {
+    let lps = compute_lps(&needle.owned_data[needle.offset..needle.offset + needle.length]);
+    let mut i = start; // index for haystack
+    let mut j = 0;     // index for needle
+
+    while i < haystack.length {
+        if needle.owned_data[needle.offset + j] == haystack.owned_data[haystack.offset + i] {
             i += 1;
             j += 1;
         }
-        if j == pattern.len() {
+        if j == needle.length {
             let match_position = i - j;
             return Some(match_position);
         }
-        if i < s.len() && pattern[j] != s[i] {
+        if i < haystack.length && needle.owned_data[needle.offset + j] != haystack.owned_data[haystack.offset + i] {
             if j != 0 {
                 j = lps[j - 1];
             } else {
@@ -68,17 +76,25 @@ pub fn find_bitvec(s: &BV, pattern: &BV, start: usize) -> Option<usize> {
 }
 
 // The same as find_bitvec but only returns matches that are a multiple of 8.
-pub fn find_bitvec_bytealigned(s: &BV, pattern: &BV, start: usize) -> Option<usize> {
-    let lps = compute_lps(pattern);
-    let mut i = start; // index for text
-    let mut j = 0; // index for pattern
+pub fn find_bitvec_bytealigned(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
+    // Early return if needle is empty or longer than haystack
+    if needle.length == 0 {
+        return Some(start);
+    }
+    if needle.length > haystack.length - start {
+        return None;
+    }
 
-    while i < s.len() {
-        if pattern[j] == s[i] {
+    let lps = compute_lps(&needle.owned_data[needle.offset..needle.offset + needle.length]);
+    let mut i = start; // index for haystack
+    let mut j = 0;     // index for needle
+
+    while i < haystack.length {
+        if needle.owned_data[needle.offset + j] == haystack.owned_data[haystack.offset + i] {
             i += 1;
             j += 1;
         }
-        if j == pattern.len() {
+        if j == needle.length {
             let match_position = i - j;
             if match_position % 8 == 0 {
                 return Some(match_position);
@@ -86,7 +102,7 @@ pub fn find_bitvec_bytealigned(s: &BV, pattern: &BV, start: usize) -> Option<usi
                 j = lps[j - 1];
             }
         }
-        if i < s.len() && pattern[j] != s[i] {
+        if i < haystack.length && needle.owned_data[needle.offset + j] != haystack.owned_data[haystack.offset + i] {
             if j != 0 {
                 j = lps[j - 1];
             } else {
@@ -97,11 +113,38 @@ pub fn find_bitvec_bytealigned(s: &BV, pattern: &BV, start: usize) -> Option<usi
     None
 }
 
-fn convert_bv_to_bytes(bv: &BV) -> Vec<u8> {
-    let mut bv = bv.clone();
-    bv.force_align();
-    bv.set_uninitialized(false);
-    bv.as_raw_slice().to_vec()
+fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
+    // If we're byte-aligned and have a whole number of bytes, we can copy directly
+    if bits.offset % 8 == 0 && bits.length % 8 == 0 {
+        return bits.owned_data.as_raw_slice()[bits.offset/8..(bits.offset + bits.length)/8].to_vec();
+    }
+
+    // Otherwise, we need to create a new byte array with the correct bits
+    let num_bytes = (bits.length + 7) / 8;  // Round up to nearest byte
+    let mut result = Vec::with_capacity(num_bytes);
+
+    // Process 8 bits at a time
+    let mut current_byte: u8 = 0;
+    let mut bits_in_byte: usize = 0;
+
+    for i in 0..bits.length {
+        current_byte = (current_byte << 1) | (bits.owned_data[bits.offset + i] as u8);
+        bits_in_byte += 1;
+
+        if bits_in_byte == 8 {
+            result.push(current_byte);
+            current_byte = 0;
+            bits_in_byte = 0;
+        }
+    }
+
+    // Handle any remaining bits in the last partial byte
+    if bits_in_byte > 0 {
+        current_byte <<= 8 - bits_in_byte;  // Left align the remaining bits
+        result.push(current_byte);
+    }
+
+    result
 }
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
@@ -109,6 +152,8 @@ fn convert_bv_to_bytes(bv: &BV) -> Vec<u8> {
 #[pyclass]
 pub struct BitRust {
     owned_data: Arc<BV>,
+    offset: usize,
+    length: usize,
 }
 
 
@@ -134,8 +179,28 @@ impl fmt::Debug for BitRust {
 }
 
 impl PartialEq for BitRust {
+
     fn eq(&self, other: &Self) -> bool {
-        self.owned_data == other.owned_data
+        // First check if they have the same length
+        if self.length != other.length {
+            return false;
+        }
+
+        // If they're views into the same data and have the same offset and length, they're equal
+        if Arc::ptr_eq(&self.owned_data, &other.owned_data) &&
+            self.offset == other.offset &&
+            self.length == other.length {
+            return true;
+        }
+
+        // Otherwise compare bit by bit
+        // TODO: Must be a faster way!
+        for i in 0..self.length {
+            if self.owned_data[self.offset + i] != other.owned_data[other.offset + i] {
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -143,8 +208,11 @@ impl PartialEq for BitRust {
 impl BitRust {
 
     fn new(bv: BV) -> Self {
+        let length = bv.len();
         BitRust {
-            owned_data: Arc::new(bv)
+            owned_data: Arc::new(bv),
+            offset: 0,
+            length,
         }
     }
 
@@ -154,39 +222,84 @@ impl BitRust {
     }
 
     fn bits(&self) -> Cow<BS> {
-        Cow::Borrowed(self.owned_data.as_bitslice())
+        Cow::Borrowed(&self.owned_data[self.offset..self.offset + self.length])
     }
 
     fn len(&self) -> usize {
-        self.bits().len()
+        self.length
     }
 
-    fn join_internal(bits_vec: &Vec<&BitRust>) -> Self {
-        if bits_vec.is_empty() {
-            return BitRust::from_zeros(0);
+    fn join_internal(bits_vec: &[&BitRust]) -> Self {
+        match bits_vec.len() {
+            0 => BitRust::from_zeros(0),
+            1 => {
+                // For a single BitRust, create a view into it
+                let bits = bits_vec[0];
+                BitRust {
+                    owned_data: Arc::clone(&bits.owned_data),
+                    offset: bits.offset,
+                    length: bits.length,
+                }
+            }
+            _ => {
+                // Calculate total length first
+                let total_len: usize = bits_vec.iter().map(|b| b.length).sum();
+
+                // Create new BitVec with exact capacity needed
+                let mut bv = BV::with_capacity(total_len);
+
+                // Extend with each view's bits
+                for bits in bits_vec {
+                    bv.extend(&bits.owned_data[bits.offset..bits.offset + bits.length]);
+                }
+
+                // Create new BitRust with the combined data
+                BitRust {
+                    owned_data: Arc::new(bv),
+                    offset: 0,
+                    length: total_len,
+                }
+            }
         }
-        let total_len = bits_vec.iter().map(|b| b.len()).sum();
-        let mut bv = BV::with_capacity(total_len);
-        for bits in bits_vec {
-            bv.extend(bits.owned_data.as_ref());
-        }
-        BitRust::new(bv)
     }
-    
+
+
     /// Slice used internally without bounds checking.
     fn slice(&self, start_bit: usize, end_bit: usize) -> Self {
-        BitRust::new(self.owned_data[start_bit..end_bit].to_owned())
+        debug_assert!(start_bit <= end_bit);
+        debug_assert!(end_bit <= self.length);
+        BitRust {
+            owned_data: Arc::clone(&self.owned_data),
+            offset: self.offset + start_bit,
+            length: end_bit - start_bit,
+        }
     }
 
     fn bitwise_op<F>(&self, other: &BitRust, op: F) -> PyResult<BitRust>
     where
-        F: Fn(&BV, &BV) -> BV,
+        F: Fn(bool, bool) -> bool,
     {
-        if self.len() != other.len() {
+        // Check lengths match
+        if self.length != other.length {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        let bv = op(&self.owned_data, &other.owned_data);
-        Ok(BitRust::new(bv))
+
+        // Create new BitVec with exact capacity needed
+        let mut bv = BV::with_capacity(self.length);
+
+        // Apply operation bit by bit, using offsets to access correct bits
+        for i in 0..self.length {
+            let self_bit = self.owned_data[self.offset + i];
+            let other_bit = other.owned_data[other.offset + i];
+            bv.push(op(self_bit, other_bit));
+        }
+
+        // Return new BitRust with no offset
+        Ok(BitRust {
+            owned_data: Arc::new(bv),
+            offset: 0,
+            length: self.length,
+        })
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
@@ -432,23 +545,56 @@ impl BitRust {
 
     /// Convert to bytes, padding with zero bits if needed.
     pub fn to_bytes(&self) -> Vec<u8> {
-        convert_bv_to_bytes(&self.owned_data)
+        convert_bitrust_to_bytes(&self)
     }
 
     // Return bytes that can easily be converted to an int in Python
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
-        // Want the offset to make there be no padding.
-        let mut new_offset = 8 - self.len() % 8;
-        if new_offset == 8 {
-            new_offset = 0;
+        // If empty, return empty vector
+        if self.length == 0 {
+            return Vec::new();
         }
-        debug_assert!((new_offset + self.len()) % 8 == 0);
-        let pad_with_ones = signed && self.len() > 0 && self.bits()[0];
-        let mut t: BV = BV::repeat(pad_with_ones, new_offset);
-        t.extend(self.get_bv_clone());
-        debug_assert_eq!(t.len() % 8, 0);
-        debug_assert_eq!(t.len(), 8 * ((self.len() + 7) / 8));
-        convert_bv_to_bytes(&t)
+
+        // Calculate padding needed to make the length a multiple of 8
+        let padding_bits = (8 - self.length % 8) % 8;
+        let total_bytes = (self.length + padding_bits) / 8;
+
+        // Create result vector with exact capacity needed
+        let mut result = Vec::with_capacity(total_bytes);
+
+        // Handle sign extension for signed numbers
+        let pad_with_ones = signed && self.owned_data[self.offset];
+
+        // Process a byte at a time
+        let mut current_byte: u8 = 0;
+        let mut bits_in_byte: usize = 0;
+
+        // Add padding bits first (if needed)
+        for _ in 0..padding_bits {
+            current_byte = (current_byte << 1) | (pad_with_ones as u8);
+            bits_in_byte += 1;
+        }
+
+        // Process actual bits from the view
+        for i in 0..self.length {
+            if bits_in_byte == 8 {
+                result.push(current_byte);
+                current_byte = 0;
+                bits_in_byte = 0;
+            }
+            current_byte = (current_byte << 1) | (self.owned_data[self.offset + i] as u8);
+            bits_in_byte += 1;
+        }
+
+        // Push final byte if there are any remaining bits
+        if bits_in_byte > 0 {
+            result.push(current_byte);
+        }
+
+        debug_assert_eq!(result.len(), total_bytes);
+        debug_assert_eq!(result.len(), (self.length + 7) / 8);
+
+        result
     }
 
     pub fn to_hex(&self) -> PyResult<String> {
@@ -501,9 +647,9 @@ impl BitRust {
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
         if bytealigned {
-            find_bitvec_bytealigned(&self.owned_data, &b.owned_data, start)
+            find_bitvec_bytealigned(&self, &b, start)
         } else {
-            find_bitvec(&self.owned_data, &b.owned_data, start)
+            find_bitvec(&self, &b, start)
         }
     }
     
@@ -526,17 +672,70 @@ impl BitRust {
     }
 
     pub fn count(&self) -> usize {
-        if self.len() == 0 {
+        if self.length == 0 {
             return 0;
         }
-        hamming::weight(self.owned_data.as_raw_slice()) as usize
+
+        let start_bit = self.offset;
+        let end_bit = start_bit + self.length;
+
+        // Find complete bytes we can process
+        let first_complete_byte = (start_bit + 7) / 8;
+        let last_complete_byte = end_bit / 8;
+
+        let mut count = 0;
+
+        // Handle any bits before first complete byte
+        if first_complete_byte * 8 > start_bit {
+            for i in start_bit..(first_complete_byte * 8).min(end_bit) {
+                if self.owned_data[i] {
+                    count += 1;
+                }
+            }
+        }
+
+        // Use hamming::weight for complete bytes
+        // TODO: This is *much* slower when we use a slice
+        if last_complete_byte > first_complete_byte {
+            let raw_slice = self.owned_data.as_raw_slice();
+            count += hamming::weight(&raw_slice[first_complete_byte..last_complete_byte]) as usize;
+        }
+
+        // Handle any remaining bits
+        if end_bit > last_complete_byte * 8 {
+            for i in (last_complete_byte * 8)..end_bit {
+                if self.owned_data[i] {
+                    count += 1;
+                }
+            }
+        }
+
+        count
     }
 
     /// Returns a new BitRust with all bits reversed.
-    pub fn reverse(&self) -> Self {
-        let mut bv = self.get_bv_clone();
-        bv.reverse();
-        BitRust::new(bv)
+    pub fn reverse(&self) -> BitRust {
+        if self.length <= 1 {
+            return BitRust {
+                owned_data: Arc::clone(&self.owned_data),
+                offset: self.offset,
+                length: self.length,
+            };
+        }
+
+        // Create new BitVec with exact capacity needed
+        let mut bv = BV::with_capacity(self.length);
+
+        // Copy bits in reverse order
+        for i in (0..self.length).rev() {
+            bv.push(self.owned_data[self.offset + i]);
+        }
+
+        BitRust {
+            owned_data: Arc::new(bv),
+            offset: 0,
+            length: self.length,
+        }
     }
 
     /// Returns the bool value at a given bit index.
@@ -576,7 +775,8 @@ impl BitRust {
         if end_bit > self.len() {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
-        Ok(BitRust::new(self.bits()[start_bit..end_bit].to_owned()))
+        Ok(self.slice(start_bit, end_bit))
+        // Ok(BitRust::new(self.bits()[start_bit..end_bit].to_owned()))
     }
 
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
@@ -685,22 +885,35 @@ impl BitRust {
     }
 
     // Return new BitRust with bits at indices set to value.
-    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<Self> {
-        let mut bv = self.get_bv_clone();
-        let mut positive_indices: Vec<usize> = vec![];
-        for index in indices {
-            if -index > self.len() as i64 {
-                return Err(PyIndexError::new_err("Negative index past the end"));
-            }
-            if index >= self.len() as i64 {
-                return Err(PyIndexError::new_err("Index out of range."))
-            }
-            positive_indices.push(if index < 0 { (self.len() as i64 + index) as usize } else { index as usize});
+    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
+        // Create new BitVec with content from current view
+        let mut bv = BV::with_capacity(self.length);
+        bv.extend(&self.owned_data[self.offset..self.offset + self.length]);
+
+        // Update the specified indices
+        for idx in indices {
+            let pos = if idx < 0 {
+                // Handle negative indices
+                if -idx as usize > self.length {
+                    return Err(PyIndexError::new_err("Index out of range"));
+                }
+                self.length - (-idx as usize)
+            } else {
+                // Handle positive indices
+                if idx as usize >= self.length {
+                    return Err(PyIndexError::new_err("Index out of range"));
+                }
+                idx as usize
+            };
+            bv.set(pos, value);
         }
-        for index in positive_indices {
-            bv.set(index, value);
-        }
-        Ok(BitRust::new(bv))
+
+        // Return new BitRust with modified data
+        Ok(BitRust {
+            owned_data: Arc::new(bv),
+            offset: 0,
+            length: self.length,
+        })
     }
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
@@ -749,7 +962,7 @@ impl BitRust {
     }
 
     pub fn data(&self) -> Vec<u8> {
-        convert_bv_to_bytes(&self.owned_data)
+        convert_bitrust_to_bytes(&self)
     }
 }
 
@@ -920,6 +1133,8 @@ fn test_and() {
     let a3 = a1.__and__(&a2).unwrap();
     let b = BitRust::from_hex("103");
     assert_eq!(a3, b);
+    let a4 = a1.slice(4, 12).__and__(&a2.slice(4, 12)).unwrap();
+    assert_eq!(a4, BitRust::from_hex("03"));
 }
 
 #[test]
