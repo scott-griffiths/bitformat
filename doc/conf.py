@@ -19,7 +19,7 @@ release = "0.2.0"
 extensions = ["sphinx.ext.autodoc"]
 autoapi_dirs = ["../bitformat/"]
 autoapi_add_toctree_entry = False
-autodoc_mock_imports = ["bit_rust", "lark"]
+autodoc_mock_imports = ["bitformat.bit_rust", "lark"]
 
 add_module_names = False
 
