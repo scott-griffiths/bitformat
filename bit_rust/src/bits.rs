@@ -101,8 +101,7 @@ fn convert_bv_to_bytes(bv: &BV) -> Vec<u8> {
     let mut bv = bv.clone();
     bv.force_align();
     bv.set_uninitialized(false);
-    let bytes: Vec<u8>  = bv.as_raw_slice().iter().flat_map(|x| x.to_be_bytes()).collect::<Vec<u8>>().to_vec();
-    bytes
+    bv.as_raw_slice().to_vec()
 }
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
@@ -166,9 +165,10 @@ impl BitRust {
         if bits_vec.is_empty() {
             return BitRust::from_zeros(0);
         }
-        let mut bv = BV::new();
+        let total_len = bits_vec.iter().map(|b| b.len()).sum();
+        let mut bv = BV::with_capacity(total_len);
         for bits in bits_vec {
-            bv.extend(bits.get_bv_clone());
+            bv.extend(bits.owned_data.as_ref());
         }
         BitRust::new(bv)
     }
@@ -465,7 +465,11 @@ impl BitRust {
     }
 
     pub fn to_bin(&self) -> String {
-        self.bits().iter().map(|x| if *x { '1' } else { '0' }).collect::<String>()
+        let mut result = String::with_capacity(self.len());
+        for bit in self.bits().iter() {
+            result.push(if *bit { '1' } else { '0' });
+        }
+        result
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
