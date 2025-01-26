@@ -5,7 +5,6 @@ from typing import Any, Callable, Iterable, Sequence, overload, Union
 import inspect
 import bitformat
 import re
-from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
 from typing import Pattern
 
@@ -34,6 +33,14 @@ def parse_name_expression_token(fmt: str) -> tuple[str, str]:
         raise ValueError(f"Can't parse Dtype expression token '{fmt}'.")
     name, expression = match.groups()
     return name, expression
+
+def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
+    modifiers = name.split("_")
+    if len(modifiers) == 1:
+        return name, ""
+    if len(modifiers) == 2:
+        return modifiers[0], modifiers[1]
+    raise ValueError(f"Can't parse Dtype name '{name}' as more than one '_' is present.")
 
 
 class Dtype:
@@ -107,7 +114,7 @@ class Dtype:
             t = token[p + 1 : -1]
             items = int(t) if t else 0
             name, size = parse_name_size_token(token[1:p])
-            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            name, modifier = parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             return Register().get_array_dtype(name, size, items, endianness)
         else:
@@ -120,7 +127,7 @@ class Dtype:
                     )
                 else:
                     raise e
-            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            name, modifier = parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             return Register().get_single_dtype(name, size, endianness)
 
@@ -686,7 +693,7 @@ class DtypeWithExpression:
             except ValueError:
                 x.size_expression = Expression(size_str)
                 size = 0
-            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            name, modifier = parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
             return x
@@ -698,7 +705,7 @@ class DtypeWithExpression:
             except ValueError:
                 x.size_expression = Expression(size_str)
                 size = 0
-            name, modifier = _utils.parse_name_to_name_and_modifier(name)
+            name, modifier = parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             x.base_dtype = Register().get_single_dtype(name, size, endianness)
             return x
