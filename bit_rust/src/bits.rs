@@ -134,14 +134,6 @@ impl fmt::Debug for BitRust {
     }
 }
 
-// impl Clone for BitRust {
-//     fn clone(&self) -> Self {
-//         BitRust {
-//             owned_data: self.get_bv_clone(),
-//         }
-//     }
-// }
-
 impl PartialEq for BitRust {
     fn eq(&self, other: &Self) -> bool {
         self.owned_data == other.owned_data
@@ -166,12 +158,8 @@ impl BitRust {
         Cow::Borrowed(self.owned_data.as_bitslice())
     }
 
-    pub fn len(&self) -> usize {
+    fn len(&self) -> usize {
         self.bits().len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.bits().is_empty()
     }
 
     fn join_internal(bits_vec: &Vec<&BitRust>) -> Self {
@@ -190,9 +178,19 @@ impl BitRust {
         BitRust::new(self.owned_data[start_bit..end_bit].to_owned())
     }
 
+    fn bitwise_op<F>(&self, other: &BitRust, op: F) -> PyResult<BitRust>
+    where
+        F: Fn(&BV, &BV) -> BV,
+    {
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+        let bv = op(&self.owned_data, &other.owned_data);
+        Ok(BitRust::new(bv))
+    }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
-    pub fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = usize> + 'a {
+    fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = usize> + 'a {
         // Use the find fn to find all instances of b in self and return as an iterator
         let mut start: usize = 0;
         std::iter::from_fn(move || {
@@ -270,17 +268,11 @@ impl BitRust {
         })
     }
 
-    // A stop-gap. We really want to return an iterator of i64.
-    pub fn findall_list(&self, b: &BitRust, bytealigned: bool) -> Vec<usize>  {
-        let pos: Vec<usize> = self.find_all_rust(b, bytealigned).collect();
-        pos
-    }
-
     #[pyo3(signature = (bs, byte_aligned=false))]
     pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
         // TODO: Cheating here by making the whole list first, then making an iterator from it.
         Ok(BitRustIterator {
-            positions: self.findall_list(bs, byte_aligned),
+            positions: self.find_all_rust(bs, byte_aligned).collect(),
             index: 0,
         })
     }
@@ -492,27 +484,15 @@ impl BitRust {
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-        let bv = self.get_bv_clone() & other.get_bv_clone();
-        Ok(BitRust::new(bv))
+        self.bitwise_op(other, |a, b| a.clone() & b.clone())
     }
 
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-        let bv = self.get_bv_clone() | other.get_bv_clone();
-        Ok(BitRust::new(bv))
+        self.bitwise_op(other, |a, b| a.clone() | b.clone())
     }
 
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-        let bv = self.get_bv_clone() ^ other.get_bv_clone();
-        Ok(BitRust::new(bv))
+        self.bitwise_op(other, |a, b| a.clone() ^ b.clone())
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
@@ -545,18 +525,7 @@ impl BitRust {
         if self.len() == 0 {
             return 0;
         }
-        self.bits().count_ones()
-
-        // The version below is about 15x faster on the count benchmark.
-        // I'm presuming that all the time is being spent in the conversion to the bitvec
-        // so it will speed up a lot when BitVec is used as the storage.
-
-        // let mut bv = self.bv.clone();
-        // self.bv.set_uninitialized(false);
-        // let mut c = hamming::weight(self.bv.as_raw_slice()) as usize;
-
-        // }
-        // c
+        hamming::weight(self.owned_data.as_raw_slice()) as usize
     }
 
     /// Returns a new BitRust with all bits reversed.
@@ -732,18 +701,33 @@ impl BitRust {
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
         let mut bv: BV = self.get_bv_clone();
-        let positive_start = if start < 0 { start + self.len() as i64 } else { start };
-        let positive_stop = if stop < 0 { stop + self.len() as i64 } else { stop };
-        if positive_start < 0 || positive_start >= self.len() as i64 {
+        let len = self.len() as i64;
+        let positive_start = if start < 0 { start + len } else { start };
+        let positive_stop = if stop < 0 { stop + len } else { stop };
+
+        if positive_start < 0 || positive_start >= len {
             return Err(PyIndexError::new_err("Start of slice out of bounds."));
         }
-        if positive_stop < 0 || positive_start >= self.len() as i64 {
+        if positive_stop < 0 || positive_stop > len {
             return Err(PyIndexError::new_err("End of slice out of bounds."));
         }
-        // TODO: What if step is negative here?
-        for index in (positive_start..positive_stop).step_by(step as usize) {
-            bv.set(index as usize, value);
+        if step == 0 {
+            return Err(PyValueError::new_err("Step cannot be zero."));
         }
+
+        let mut index = positive_start;
+        if step > 0 {
+            while index < positive_stop {
+                bv.set(index as usize, value);
+                index += step;
+            }
+        } else {
+            while index > positive_stop {
+                bv.set(index as usize, value);
+                index += step;
+            }
+        }
+
         Ok(BitRust::new(bv))
     }
 
@@ -1113,19 +1097,6 @@ fn test_from_bytes_with_offset() {
     assert_eq!(bits.to_bin(), "0000");
     let bits = BitRust::from_bytes_with_offset(vec![0b11110000, 0b00001111], 4);
     assert_eq!(bits.to_bin(), "000000001111");
-}
-
-#[test]
-fn test_findall_list() {
-    let b = BitRust::from_hex("00ff0ff0");
-    let a = BitRust::from_hex("ff");
-    let q = b.findall_list(&a, false);
-    assert_eq!(q, vec![8, 20]);
-
-    let a = BitRust::from_hex("fffff4512345ff1234ff12ff");
-    let b = BitRust::from_hex("ff");
-    let q = a.findall_list(&b, true);
-    assert_eq!(q, vec![0, 8, 6*8, 9*8, 11*8]);
 }
 
 #[test]
