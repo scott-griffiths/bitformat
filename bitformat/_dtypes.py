@@ -307,9 +307,13 @@ class Dtype:
             else:
                 return self._get_fn(b[: self.bit_length])
         else:
+            items = self.items
+            if items == 0:
+                # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
+                items = len(b) // self.bits_per_item
             return tuple(
                 self._get_fn(b[i * self._bits_per_item : (i + 1) * self._bits_per_item])
-                for i in range(self.items)
+                for i in range(items)
             )
 
     def __str__(self) -> str:
@@ -437,7 +441,7 @@ class DtypeDefinition:
                     else:
                         raise ValueError(
                             f"A size of {size} was supplied for the '{self.name}' dtype which "
-                            f"is not one of its possible sizes (must be one of {self.allowed_sizes})."
+                            f"is not one of its possible sizes. Must be one of {self.allowed_sizes}."
                         )
         if endianness != Endianness.UNSPECIFIED:
             if not self.endianness_variants:

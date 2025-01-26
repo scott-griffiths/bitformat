@@ -273,3 +273,15 @@ def test_str():
     s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s
     assert repr(nt) == s
+
+def test_unpacking_dtype_array_with_no_length():
+    d = Dtype('[bool;]')
+    assert d.unpack('0b110') == (True, True, False)
+    assert Dtype('[u8;]').unpack('0x0001f') == (0, 1)
+
+def test_unpacking_dtypetuple_array_with_no_length():
+    # We shouldn't even be able to create the dtypetuple with no length array
+    with pytest.raises(ValueError):
+        _ = DtypeTuple('[bool;], u8')
+    with pytest.raises(ValueError):
+        _ = DtypeTuple('[u8;],')

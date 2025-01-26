@@ -742,3 +742,11 @@ def test_from_random():
     a = Bits.from_random(10000, 12)
     b = Bits.from_random(10000, 12)
     assert a == b
+
+def test_unpacking_array_dtype_with_no_length():
+    a = Bits.from_dtype('[u8; 10]', range(10))
+    assert a.unpack('[u8; 10]') == tuple(range(10))
+    assert a.unpack('[u8;]') == tuple(range(10))
+    b = a + '0b1'
+    assert b.unpack('[u8;]') == tuple(range(10))
+    assert len(b.unpack('[bool;]')) == 81
