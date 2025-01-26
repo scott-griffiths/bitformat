@@ -4,8 +4,11 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union
 import inspect
 import bitformat
+import re
 from bitformat import _utils
 from ._common import Expression, Endianness, byteorder
+from typing import Pattern
+
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
@@ -13,6 +16,24 @@ BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 __all__ = ["Dtype", "DtypeTuple", "DtypeDefinition", "Register", "DtypeWithExpression"]
 
 CACHE_SIZE = 256
+
+# A token name followed by an integer number
+NAME_INT_RE: Pattern[str] = re.compile(r"^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$")
+
+def parse_name_size_token(fmt: str) -> tuple[str, int]:
+    if not (match := NAME_INT_RE.match(fmt)):
+        raise ValueError(f"Can't parse Dtype token '{fmt}' as 'name[length]'.")
+    name, length_str = match.groups()
+    return name, int(length_str) if length_str else 0
+
+# A token name followed by a string that starts with '{' and ends with '}'
+NAME_EXPRESSION_RE: Pattern[str] = re.compile(r"^([a-zA-Z][a-zA-Z0-9_]*?)({.*})$")
+
+def parse_name_expression_token(fmt: str) -> tuple[str, str]:
+    if not (match := NAME_EXPRESSION_RE.match(fmt)):
+        raise ValueError(f"Can't parse Dtype expression token '{fmt}'.")
+    name, expression = match.groups()
+    return name, expression
 
 
 class Dtype:
@@ -85,13 +106,13 @@ class Dtype:
                 )
             t = token[p + 1 : -1]
             items = int(t) if t else 0
-            name, size = _utils.parse_name_size_token(token[1:p])
+            name, size = parse_name_size_token(token[1:p])
             name, modifier = _utils.parse_name_to_name_and_modifier(name)
             endianness = Endianness(modifier)
             return Register().get_array_dtype(name, size, items, endianness)
         else:
             try:
-                name, size = _utils.parse_name_size_token(token)
+                name, size = parse_name_size_token(token)
             except ValueError as e:
                 if "," in token:
                     raise ValueError(
@@ -658,7 +679,7 @@ class DtypeWithExpression:
             except ValueError:
                 x.items_expression = Expression(t)
                 items = 1
-            name, size_str = _utils.parse_name_expression_token(token[1:p])
+            name, size_str = parse_name_expression_token(token[1:p])
             try:
                 size = int(size_str)
                 x.size_expression = None
@@ -670,7 +691,7 @@ class DtypeWithExpression:
             x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
             return x
         else:
-            name, size_str = _utils.parse_name_expression_token(token)
+            name, size_str = parse_name_expression_token(token)
             try:
                 size = int(size_str)
                 x.size_expression = None
