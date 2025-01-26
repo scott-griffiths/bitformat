@@ -87,7 +87,7 @@ class Bits:
     * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
-    * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` randomly set bits.
+    * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
     * ``Bits.from_joined(iterable)`` - Concatenate an iterable of ``Bits`` objects.
 
@@ -303,7 +303,7 @@ class Bits:
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> Bits:
         """
-        Create a new Bits with all bits randomly set.
+        Create a new Bits with all bits pseudo-randomly set.
 
         :param n: The number of bits.
         :type n: int
@@ -311,6 +311,9 @@ class Bits:
         :type seed: int | None
         :return: A Bits object with all bits set to zero.
         :rtype: Bits
+
+        Note that this uses Python's pseudo-random number generator and so is
+        not suitable for cryptographic or other more serious purposes.
 
         .. code-block:: python
 
