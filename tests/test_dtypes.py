@@ -285,3 +285,10 @@ def test_unpacking_dtypetuple_array_with_no_length():
         _ = DtypeTuple('[bool;], u8')
     with pytest.raises(ValueError):
         _ = DtypeTuple('[u8;],')
+
+def test_creating_dtype_with_no_size():
+    d = Dtype('f')
+    with pytest.raises(ValueError):
+        _ = Dtype('[u;4]')
+    with pytest.raises(ValueError):
+        _ = Dtype('[i;]')

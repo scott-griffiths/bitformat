@@ -285,7 +285,7 @@ class Dtype:
                     f"Expected {self.bit_length} bits, but got {len(value)} bits."
                 )
             return value
-        if len(value) != self._items:
+        if len(value) != self._items and self._items != 0:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.from_joined(self._create_fn(v) for v in value)
 
@@ -466,6 +466,8 @@ class DtypeDefinition:
     ) -> Dtype:
         size, endianness = self.sanitize(size, endianness)
         d = Dtype._create(self, size, True, items, endianness)
+        if size == 0:
+            raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. Note that the number of items in the array dtype can be unknown, but the dtype of each item must have a known size.")
         return d
 
     def __repr__(self) -> str:

@@ -750,3 +750,11 @@ def test_unpacking_array_dtype_with_no_length():
     b = a + '0b1'
     assert b.unpack('[u8;]') == tuple(range(10))
     assert len(b.unpack('[bool;]')) == 81
+
+def test_creating_from_array_dtype_with_no_length():
+    a = Bits.from_dtype('[u8;]', [1, 2, 3, 4])
+    assert a.unpack('[u8;]') == (1, 2, 3, 4)
+    a += '0b1111111'
+    assert a.unpack('[u8;]') == (1, 2, 3, 4)
+    a += '0b1'
+    assert a.unpack('[u8;]') == (1, 2, 3, 4, 255)
