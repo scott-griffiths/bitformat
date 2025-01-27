@@ -4,9 +4,9 @@
 .. image:: bitformat_logo.png
    :width: 400px
 
-`bitformat <https://github.com/scott-griffiths/bitformat/>`_ is a Python module for creating and parsing file formats, especially at the bit rather than byte level.
+`bitformat <https://github.com/scott-griffiths/bitformat/>`_ is a Python library for creating and parsing file formats, especially at the bit rather than byte level.
 
-It is from the author of the `bitstring <https://github.com/scott-griffiths/bitstring>`_ module.
+It is from the author of the `bitstring <https://github.com/scott-griffiths/bitstring>`_ library.
 
 ----
 
@@ -28,12 +28,16 @@ Features
 Installation and download
 -------------------------
 
-The first product release was made in September 2024, with a further releases planned for 2025.
-If you wish to try it out now then you may prefer to use the main branch on GitHub as that will be ahead of the release on PyPI. ::
+The first product release was made in September 2024, with a 0.2 release in January 2025 that moved the core of the library to be compiled in Rust.
+Further releases are planned for 2025.
 
-    pip install git+https://github.com/scott-griffiths/bitformat
+To install the module, use pip:
 
-To download the module, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
+    pip install bitformat
+
+There are pre-built wheels for Windows, Linux and MacOS, and more will be added later. It is compatible with Python 3.11 and later.
+
+To download the library, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
 
 ----
 
