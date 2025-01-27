@@ -644,3 +644,39 @@ def test_wrong_arguments():
     with pytest.raises(TypeError):
         f.pack(1)
     f.pack([1])
+
+def test_slicing_fields():
+    f = Format.from_string("x = (u8, u7, u6, u5, u4, u3, u2, u1)")
+    f.pack([8, 7, 6, 5, 4, 3, 2, 1])
+    assert f[0].value == 8
+    assert f[-1].value == 1
+    assert f[:2].value == [8, 7]
+    assert f[2::-1].value == [6, 7, 8]
+    assert f[::2].value == [8, 6, 4, 2]
+    f2 = f[::2]
+    assert f2[1].dtype == Dtype("u6")
+    assert f2[1].value == 6
+    f2[1].value = 7
+    assert f2[1].value == 7
+    assert f[2].value == 6
+    with pytest.raises(IndexError):
+        _ = f[8]
+    for field in f:
+        assert field.value == field.dtype.bit_length
+
+def test_deleting_fields():
+    f = Format.from_params(["x: u8", "y: u8", "z: u8"])
+    del f[1]
+    assert len(f) == 2
+    assert f[1].name == "z"
+
+def test_setting_fields():
+    f = Format.from_params(["x: u8", "y: u8", "z: u8", "q:i4"])
+    g = Format.from_params(["a: u8", "b: u8", "c: u8"])
+    f[2] = Field("u15 = 5")
+    assert f[2].value == 5
+    f[0:2] = g[:]
+    assert f[0].name == "a"
+    assert len(f) == 5
+
+

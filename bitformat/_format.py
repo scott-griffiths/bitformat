@@ -300,7 +300,7 @@ class Format(FieldType):
         except KeyError:
             raise KeyError(f"Field with name '{key}' not found.")
 
-    def __setitem__(self, name: str, value: str | FieldType) -> None:
+    def __setitem__(self, key: slice | str | int, value: str | FieldType) -> None:
         if isinstance(value, str):
             try:
                 field = FieldType.from_string(value)
@@ -310,11 +310,33 @@ class Format(FieldType):
             field = value
         else:
             raise ValueError(f"Can't create and set field from type '{type(value)}'.")
-        for i in range(len(self._fields)):
-            if self._fields[i].name == name:
-                self._fields[i] = field
-                return
-        raise KeyError(f"Field with name '{name}' not found.")
+        if isinstance(key, int):
+            self._fields[key] = field
+        elif isinstance(key, slice):
+            self._fields[key] = field
+        elif isinstance(key, str):
+            for i in range(len(self._fields)):
+                if self._fields[i].name == key:
+                    self._fields[i] = field
+                    return
+            raise KeyError(f"Field with name '{key}' not found.")
+        else:
+            raise TypeError(f"Invalid key type {type(key)}.")
+
+    def __delitem__(self, key: slice | int | str):
+        if isinstance(key, int):
+            del self._fields[key]
+        elif isinstance(key, slice):
+            del self._fields[key]
+        elif isinstance(key, str):
+            for i in range(len(self._fields)):
+                # TODO: Can we use _field_names here?
+                if self._fields[i].name == key:
+                    del self._fields[i]
+                    return
+            raise KeyError(f"Field with name '{key}' not found.")
+        else:
+            raise TypeError(f"Invalid key type {type(key)}.")
 
     @override
     def _str(self, indent: Indenter) -> str:
