@@ -30,17 +30,13 @@ def token_to_bitstore(token: str) -> BitRust:
         try:
             dtype = Dtype.from_string(dtype_str)
         except ValueError:
-            raise ValueError(
-                f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
-                "'u8 = 44') or a literal starting with '0b', '0o' or '0x'."
-            )
+            raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
+                             "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
         if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
             try:
                 value = literal_eval(value_str)
             except ValueError:
-                raise ValueError(
-                    f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type."
-                )
+                raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
             return dtype.pack(value)._bitstore
         else:
             return dtype.pack(value_str)._bitstore
@@ -50,9 +46,7 @@ def token_to_bitstore(token: str) -> BitRust:
         return BitRust.from_bin_checked(token)
     if token.startswith("0o"):
         return BitRust.from_oct_checked(token)
-    raise ValueError(
-        f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?"
-    )
+    raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
 
 @functools.lru_cache(CACHE_SIZE)
@@ -210,9 +204,7 @@ class Bits:
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitRust.join(
-            [Bits._from_any(item)._bitstore for item in sequence]
-        )
+        x._bitstore = BitRust.join([Bits._from_any(item)._bitstore for item in sequence])
         return x
 
     @classmethod
@@ -262,9 +254,7 @@ class Bits:
         try:
             x = dtype.pack(value)
         except (ValueError, TypeError) as e:
-            raise ValueError(
-                f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}"
-            )
+            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         return x
 
     @classmethod
@@ -352,10 +342,8 @@ class Bits:
         :rtype: Bits
         """
         if len(self) % 8 != 0:
-            raise ValueError(
-                f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
-                "This error can be caused by using an endianness modifier on non-whole byte data."
-            )
+            raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
+                             "This error can be caused by using an endianness modifier on non-whole byte data.")
         if bytelength is None:
             bytelength = len(self) // 8
         if bytelength == 0:
@@ -505,13 +493,9 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitRust.join(
-            [
-                self._bitstore.getslice(0, pos),
-                bs._bitstore,
-                self._bitstore.getslice(pos, None),
-            ]
-        )
+        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+                                    bs._bitstore,
+                                    self._bitstore.getslice(pos, None)])
         return x
 
     def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
@@ -553,24 +537,13 @@ class Bits:
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
         x = self.__class__()
-        x._bitstore = BitRust.join(
-            [
-                self._bitstore.getslice(0, pos),
-                bs._bitstore,
-                self._bitstore.getslice(pos + len(bs), None),
-            ]
-        )
+        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+                                    bs._bitstore,
+                                    self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def pp(
-        self,
-        dtype1: str | Dtype | DtypeTuple | None = None,
-        dtype2: str | Dtype | DtypeTuple | None = None,
-        groups: int | None = None,
-        width: int = 80,
-        show_offset: bool = True,
-        stream: TextIO = sys.stdout,
-    ) -> None:
+    def pp(self, dtype1: str | Dtype | DtypeTuple | None = None, dtype2: str | Dtype | DtypeTuple | None = None,
+           groups: int | None = None, width: int = 80, show_offset: bool = True,stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
         :param dtype1: First data type to display.
@@ -613,9 +586,7 @@ class Bits:
                 dtype2 = Dtype.from_string(dtype2)
 
         bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
-        trailing_bit_length = (
-            len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
-        )
+        trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0:-trailing_bit_length]
         sep = " "  # String to insert between groups
         format_sep = " : "  # String to insert on each line between multiple formats
@@ -625,41 +596,17 @@ class Bits:
             dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
         output_stream = io.StringIO()
         len_str = colour.green + str(len(self)) + colour.off
-        output_stream.write(
-            f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n"
-        )
-        data._pp(
-            dtype1,
-            dtype2,
-            bits_per_group,
-            width,
-            sep,
-            format_sep,
-            show_offset,
-            output_stream,
-            1,
-            groups,
-        )
+        output_stream.write(f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n")
+        data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset, output_stream, 1, groups)
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(
-                " + trailing_bits = 0b"
-                + Dtype("bin").unpack(self[-trailing_bit_length:])
-            )
+            output_stream.write(" + trailing_bits = 0b" + Dtype("bin").unpack(self[-trailing_bit_length:]))
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return
 
-    def replace(
-        self,
-        old: BitsType,
-        new: BitsType,
-        /,
-        start: int | None = None,
-        end: int | None = None,
-        count: int | None = None,
-        byte_aligned: bool | None = None,
-    ) -> Bits:
+    def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
+                count: int | None = None, byte_aligned: bool | None = None) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.
 
         :param old: The Bits to replace.
@@ -707,16 +654,10 @@ class Bits:
         replacement_list = [self._bitstore.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new._bitstore)
-            replacement_list.append(
-                self._bitstore.getslice(
-                    starting_points[i] + len(old), starting_points[i + 1]
-                )
-            )
+            replacement_list.append(self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
         # Final replacement
         replacement_list.append(new._bitstore)
-        replacement_list.append(
-            self._bitstore.getslice(starting_points[-1] + len(old), None)
-        )
+        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
         x = self.__class__()
         x._bitstore = BitRust.join(replacement_list)
         return x
@@ -777,14 +718,10 @@ class Bits:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        return Bits.from_joined(
-            [
-                self._slice(0, start),
-                self._slice(start + n, end),
-                self._slice(start, start + n),
-                self._slice(end, len(self)),
-            ]
-        )
+        return Bits.from_joined([self._slice(0, start),
+                                 self._slice(start + n, end),
+                                 self._slice(start, start + n),
+                                 self._slice(end, len(self))])
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
         """Return new Bits with bit pattern rotated to the right.
@@ -964,9 +901,7 @@ class Bits:
     def _get_bytes(self) -> bytes:
         """Return the data as an ordinary bytes object."""
         if len(self) % 8:
-            raise ValueError(
-                f"Cannot interpret as bytes - length of {len(self)} is not a multiple of 8 bits."
-            )
+            raise ValueError(f"Cannot interpret as bytes - length of {len(self)} is not a multiple of 8 bits.")
         return self._bitstore.to_bytes()
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
@@ -976,28 +911,20 @@ class Bits:
         """Return an approximation of the data as a string of printable characters."""
         bytes_ = self._get_bytes()
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
-        string = "".join(
-            chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_
-        )
+        string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
 
     def _set_u(self, u: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
         u = int(u)
         if length is None or length == 0:
-            raise ValueError(
-                "A non-zero length must be specified with a 'u' initialiser."
-            )
+            raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
         try:
             if u >= (1 << length):
-                raise ValueError(
-                    f"{u} is too large an unsigned integer for a Bits of length {length}. "
-                    f"The allowed range is [0, {(1 << length) - 1}]."
-                )
+                raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
+                                 f"The allowed range is [0, {(1 << length) - 1}].")
             if u < 0:
-                raise ValueError(
-                    f"Unsigned integers cannot be initialised with the negative number {u}."
-                )
+                raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
             b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
             offset = 8 - (length % 8)
             if offset == 8:
@@ -1006,14 +933,10 @@ class Bits:
                 self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if u >= (1 << length):
-                raise ValueError(
-                    f"{u} is too large an unsigned integer for a Bits of length {length}. "
-                    f"The allowed range is [0, {(1 << length) - 1}]."
-                )
+                raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
+                                 f"The allowed range is [0, {(1 << length) - 1}].")
             if u < 0:
-                raise ValueError(
-                    f"Unsigned integers cannot be initialised with the negative number {u}."
-                )
+                raise ValueError(f"Cannot initialise an unsigned integer with the negative number {u}.")
             raise e
 
     def _get_u(self) -> int:
@@ -1026,15 +949,11 @@ class Bits:
         """Reset the Bits to have given signed int interpretation."""
         i = int(i)
         if length is None or length == 0:
-            raise ValueError(
-                "A non-zero length must be specified with an 'i' initialiser."
-            )
+            raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
         try:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(
-                    f"{i} is too large a signed integer for a Bits of length {length}. "
-                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}]."
-                )
+                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
+                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
             b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
             offset = 8 - (length % 8)
             if offset == 8:
@@ -1043,10 +962,8 @@ class Bits:
                 self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
         except OverflowError as e:
             if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(
-                    f"{i} is too large a signed integer for a Bits of length {length}. "
-                    f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}]."
-                )
+                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
+                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
             raise e
 
     def _get_i(self) -> int:
@@ -1098,9 +1015,7 @@ class Bits:
     def _get_oct(self) -> str:
         """Return interpretation as an octal string."""
         if len(self) % 3 != 0:
-            raise ValueError(
-                f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits."
-            )
+            raise ValueError(f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits.")
         return self._bitstore.to_oct()
 
     def _set_hex(self, hexstring: str, _length: None = None) -> None:
@@ -1110,9 +1025,7 @@ class Bits:
     def _get_hex(self) -> str:
         """Return the hexadecimal representation as a string."""
         if len(self) % 4 != 0:
-            raise ValueError(
-                f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits."
-            )
+            raise ValueError(f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits.")
         return self._bitstore.to_hex()
 
     def _slice(self: Bits, start: int, end: int) -> Bits:
@@ -1145,37 +1058,20 @@ class Bits:
         return s
 
     @staticmethod
-    def _format_bits(
-        bits: Bits,
-        bits_per_group: int,
-        sep: str,
-        dtype: Dtype | DtypeTuple,
-        colour_start: str,
-        colour_end: str,
-        width: int | None = None,
-    ) -> tuple[str, int]:
+    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype | DtypeTuple, colour_start: str,
+                     colour_end: str,  width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, Dtype):
-            if (
-                dtype.name == "bytes"
-            ):  # Special case for bytes to print one character each.
+            if dtype.name == "bytes":  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
-            if (
-                dtype.name == "bool"
-            ):  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+            if  dtype.name == "bool":  # Special case for bool to print '1' or '0' instead of `True` or `False`.
                 get_fn = Register().get_single_dtype("u", bits_per_group).unpack
             align = "<" if dtype.name in ["bin", "oct", "hex", "bits", "bytes"] else ">"
             if dtype.name == "bits":
-                x = sep.join(
-                    f"{b._simple_str(): {align}{chars_per_group}}"
-                    for b in bits.chunks(bits_per_group)
-                )
+                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
-                x = sep.join(
-                    f"{str(get_fn(b)): {align}{chars_per_group}}"
-                    for b in bits.chunks(bits_per_group)
-                )
+                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
 
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
@@ -1189,9 +1085,7 @@ class Bits:
             for b in bits.chunks(bits_per_group):
                 chars_per_dtype = [Bits._chars_per_dtype(d, d.bit_length) for d in dtype]
                 values = get_fn(b)
-                strings = [
-                    f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)
-                ]
+                strings = [f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)]
                 s.append(f"[{', '.join(strings)}]")
             x = sep.join(s)
             chars_used = len(x)
@@ -1207,42 +1101,24 @@ class Bits:
         if isinstance(dtype, Dtype):
             return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
-        chars = (
-            sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype)
-            + 2
-            + 2 * (len(dtype) - 1)
-        )
+        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (len(dtype) - 1)
         return chars
 
-    def _pp(
-        self,
-        dtype1: Dtype | DtypeTuple,
-        dtype2: Dtype | DtypeTuple | None,
-        bits_per_group: int,
-        width: int,
-        sep: str,
-        format_sep: str,
-        show_offset: bool,
-        stream: TextIO,
-        offset_factor: int,
-        groups: int | None,
-    ) -> None:
+    def _pp(self, dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None, bits_per_group: int,
+            width: int, sep: str, format_sep: str, show_offset: bool, stream: TextIO, offset_factor: int,
+            groups: int | None) -> None:
         """Internal pretty print method."""
         if dtype2 is not None:
             if dtype1.bit_length != 0:
                 try:
                     _ = dtype2.unpack(Bits.from_zeros(dtype1.bit_length))
                 except ValueError:
-                    raise ValueError(
-                        f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length."
-                    )
+                    raise ValueError(f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length.")
             if dtype2.bit_length != 0:
                 try:
                     _ = dtype1.unpack(Bits.from_zeros(dtype2.bit_length))
                 except ValueError:
-                    raise ValueError(
-                        f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length."
-                    )
+                    raise ValueError(f"The Dtype '{dtype1}' can't be used alongside '{dtype2}' as it's not compatible with it's length.")
         colour = Colour(not Options().no_color)
         offset_width = 0
         offset_sep = ": "
@@ -1250,32 +1126,16 @@ class Bits:
             # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
             offset_width = len(str(len(self))) + len(offset_sep)
         group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
-        group_chars2 = (
-            0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
-        )
+        group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
         # The number of characters that get added when we add an extra group (after the first one)
-        total_group_chars = (
-            group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
-        )
-        width_excluding_offset_and_final_group = (
-            width
-            - offset_width
-            - group_chars1
-            - group_chars2
-            - len(format_sep) * bool(group_chars2)
-        )
-        width_excluding_offset_and_final_group = max(
-            width_excluding_offset_and_final_group, 0
-        )
+        total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
+        width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(format_sep) * bool(group_chars2)
+        width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
         if groups is None:
-            groups_per_line = (
-                1 + width_excluding_offset_and_final_group // total_group_chars
-            )
+            groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
         else:
             groups_per_line = groups
-        max_bits_per_line = (
-            groups_per_line * bits_per_group
-        )  # Number of bits represented on each line
+        max_bits_per_line = groups_per_line * bits_per_group  # Number of bits represented on each line
         assert max_bits_per_line > 0
 
         bitpos = 0
@@ -1285,34 +1145,13 @@ class Bits:
             if show_offset:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
-                offset_str = (
-                    colour.green
-                    + f"{offset: >{offset_width - len(offset_sep)}}"
-                    + offset_sep
-                    + colour.off
-                )
-            fb1, chars_used = Bits._format_bits(
-                bits,
-                bits_per_group,
-                sep,
-                dtype1,
-                colour.purple,
-                colour.off,
-                first_fb_width,
-            )
+                offset_str = colour.green + f"{offset: >{offset_width - len(offset_sep)}}" + offset_sep + colour.off
+            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
             if first_fb_width is None:
                 first_fb_width = chars_used
             fb2 = ""
             if dtype2 is not None:
-                fb2, chars_used = Bits._format_bits(
-                    bits,
-                    bits_per_group,
-                    sep,
-                    dtype2,
-                    colour.blue,
-                    colour.off,
-                    second_fb_width,
-                )
+                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
                 if second_fb_width is None:
                     second_fb_width = chars_used
                 fb2 = format_sep + fb2
@@ -1335,36 +1174,24 @@ class Bits:
         bits_per_group = Bits._bits_per_item(dtype1)
 
         if dtype2 is not None:
-            if 0 not in {
-                Bits._bits_per_item(dtype1),
-                Bits._bits_per_item(dtype2),
-            } and Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2):
-                raise ValueError(
-                    f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
-                    f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively."
-                )
+            if (0 not in {Bits._bits_per_item(dtype1), Bits._bits_per_item(dtype2)} and
+                    Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2)):
+                raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
+                                 f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively.")
             if bits_per_group == 0:
                 bits_per_group = Bits._bits_per_item(dtype2)
 
         if bits_per_group == 0:
             has_length_in_fmt = False
             if dtype2 is None:
-                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(
-                    dtype1.name, 0
-                )
+                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.name, 0)
                 if bits_per_group == 0:
-                    raise ValueError(
-                        f"No length or default length available for pp() dtype '{dtype1}'."
-                    )
+                    raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
             else:
                 try:
-                    bits_per_group = (
-                        2 * dtype1.bits_per_character * dtype2.bits_per_character
-                    )
+                    bits_per_group = 2 * dtype1.bits_per_character * dtype2.bits_per_character
                 except ValueError:
-                    raise ValueError(
-                        f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'."
-                    )
+                    raise ValueError(f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
                 if bits_per_group >= 24:
                     bits_per_group //= 2
         return bits_per_group, has_length_in_fmt
