@@ -223,6 +223,11 @@ def test_unpack():
     with pytest.raises(ValueError):
         _ = f.unpack()
 
+def test_unpack_with_unknown_items():
+    f = Field("[i9; ]")
+    assert str(f) == "[i9;]"
+    f.pack([5, -5, 0, 100])
+    assert f.unpack() == (5, -5, 0, 100)
 
 def test_field_with_comment():
     f = Field.from_params("u8", name="x", comment="  This is a comment ")

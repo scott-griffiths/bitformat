@@ -276,6 +276,7 @@ def test_str():
 
 def test_unpacking_dtype_array_with_no_length():
     d = Dtype('[bool;]')
+    assert str(d) == '[bool;]'
     assert d.unpack('0b110') == (True, True, False)
     assert Dtype('[u8;]').unpack('0x0001f') == (0, 1)
 
