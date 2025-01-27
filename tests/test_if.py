@@ -26,11 +26,11 @@ def test_simple_parse():
     f = Format.from_params(("x: u8", If.from_params("{x > 50}", "u8")))
     b = f.parse("0xabfe")
     assert b == 16
-    assert f.fields[0].value == 0xAB
-    assert f.fields[1].value == 0xFE
+    assert f[0].value == 0xAB
+    assert f[1].value == 0xFE
     b = f.parse("0x0044")
     assert b == 8
-    assert f.fields[0].value == 0
+    assert f[0].value == 0
 
 
 def test_explicit_pass():
@@ -57,7 +57,7 @@ def test_slightly_more_complex_things():
     """)
     g = Format.from_string(str(f))
     assert f == g
-    h = Format.from_params(f.fields, f.name)
+    h = Format.from_params(f, f.name)
     assert f == h
     i = eval(repr(f))
     assert f == i

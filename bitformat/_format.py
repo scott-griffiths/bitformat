@@ -42,14 +42,14 @@ class Format(FieldType):
     A sequence of :class:`FieldType` objects, used to group fields together.
 
     """
-    fields: list[FieldType]
+    _fields: list[FieldType]
     name: str
     vars: dict[str, Any]
 
     def __new__(cls, s: str | None = None) -> Format:
         if s is None:
             x = super().__new__(cls)
-            x.fields = []
+            x._fields = []
             x.name = ""
             x.vars = {}
             x._field_names = {}
@@ -71,7 +71,7 @@ class Format(FieldType):
         :rtype: Format
         """
         x = super().__new__(cls)
-        x.fields = []
+        x._fields = []
         if fields is None:
             fields = []
         x.name = name
@@ -97,7 +97,7 @@ class Format(FieldType):
                     stretchy_field = str(fieldtype)
             except ValueError:
                 pass
-            x.fields.append(fieldtype)
+            x._fields.append(fieldtype)
             if fieldtype.name != "":
                 x._field_names[fieldtype.name] = fieldtype
         return x
@@ -219,7 +219,7 @@ class Format(FieldType):
     @override
     def _get_bit_length(self) -> int:
         """Return the total length of the Format in bits."""
-        return sum(f.bit_length for f in self.fields)
+        return sum(f.bit_length for f in self._fields)
 
     @override
     def _pack(
@@ -231,7 +231,7 @@ class Format(FieldType):
         if not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
 
-        fields = iter(self.fields)
+        fields = iter(self._fields)
         for value in values:
             next_field = next(fields)
             while hasattr(next_field, 'const') and next_field.const:
@@ -241,7 +241,7 @@ class Format(FieldType):
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         pos = startbit
-        for fieldtype in self.fields:
+        for fieldtype in self._fields:
             pos += fieldtype._parse(b, pos, vars_)
         return pos - startbit
 
@@ -249,22 +249,22 @@ class Format(FieldType):
     def _copy(self) -> Format:
         x = Format()
         x.name = self.name
-        x.fields = [f._copy() for f in self.fields]
+        x._fields = [f._copy() for f in self._fields]
         x._field_names = {}
-        for field in x.fields:
+        for field in x._fields:
             if field.name != "":
                 x._field_names[field.name] = field
         return x
 
     @override
     def clear(self) -> None:
-        for fieldtype in self.fields:
+        for fieldtype in self._fields:
             fieldtype.clear()
 
     @override
     def _get_value(self) -> list[Any]:
         vals = []
-        for i, f in enumerate(self.fields):
+        for i, f in enumerate(self._fields):
             if f.value is None:
                 raise ValueError(
                     f"When getting Format value, cannot find value of this field:\n{f}"
@@ -274,27 +274,31 @@ class Format(FieldType):
 
     @override
     def _set_value(self, val: Sequence[Any]) -> None:
-        if len(val) != len(self.fields):
+        if len(val) != len(self._fields):
             raise ValueError(
-                f"Can't set {len(self.fields)} fields from {len(val)} values."
+                f"Can't set {len(self._fields)} fields from {len(val)} values."
             )
-        for fieldtype, v in zip(self.fields, val):
+        for fieldtype, v in zip(self._fields, val):
             fieldtype._get_value(v)
 
     value = property(_get_value, _set_value)
 
     @override
     def to_bits(self) -> Bits:
-        return Bits().from_joined(fieldtype.to_bits() for fieldtype in self.fields)
+        return Bits().from_joined(fieldtype.to_bits() for fieldtype in self._fields)
 
     def __len__(self) -> int:
-        return len(self.fields)
+        return len(self._fields)
 
-    def __getitem__(self, name: str) -> Any:
+    def __getitem__(self, key: slice | str | int) -> Any:
+        if isinstance(key, int):
+            return self._fields[key]
+        if isinstance(key, slice):
+            return self.__class__.from_params(self._fields[key])
         try:
-            return self._field_names[name]
+            return self._field_names[key]
         except KeyError:
-            raise KeyError(f"Field with name '{name}' not found.")
+            raise KeyError(f"Field with name '{key}' not found.")
 
     def __setitem__(self, name: str, value: str | FieldType) -> None:
         if isinstance(value, str):
@@ -306,9 +310,9 @@ class Format(FieldType):
             field = value
         else:
             raise ValueError(f"Can't create and set field from type '{type(value)}'.")
-        for i in range(len(self.fields)):
-            if self.fields[i].name == name:
-                self.fields[i] = field
+        for i in range(len(self._fields)):
+            if self._fields[i].name == name:
+                self._fields[i] = field
                 return
         raise KeyError(f"Field with name '{name}' not found.")
 
@@ -321,7 +325,7 @@ class Format(FieldType):
         s = ""
         s += indent(f"{name_str}(\n")
         with indent:
-            for i, fieldtype in enumerate(self.fields):
+            for i, fieldtype in enumerate(self._fields):
                 s += fieldtype._str(indent)
         s += indent(")")
         return s
@@ -330,9 +334,9 @@ class Format(FieldType):
     def _repr(self) -> str:
         name_str = "" if self.name == "" else f", {self.name!r}"
         s = f"{self.__class__.__name__}.from_params(["
-        for i, fieldtype in enumerate(self.fields):
+        for i, fieldtype in enumerate(self._fields):
             s += fieldtype._repr()
-            if i != len(self.fields) - 1:
+            if i != len(self._fields) - 1:
                 s += ", "
         s += f"]{name_str})"
         return s
@@ -342,14 +346,14 @@ class Format(FieldType):
             other = FieldType.from_string(other)
         if other.name != "":
             self._field_names[other.name] = other
-        self.fields.append(copy.copy(other))
+        self._fields.append(copy.copy(other))
         return self
 
     def __copy__(self) -> Format:
         x = Format()
         x.name = self.name
         x.vars = self.vars
-        x.fields = [copy.copy(f) for f in self.fields]
+        x._fields = [copy.copy(f) for f in self._fields]
         return x
 
     def __add__(self, other: FieldType | str) -> Format:
@@ -392,6 +396,6 @@ class Format(FieldType):
             return False
         if self.vars != other.vars:
             return False
-        if self.fields != other.fields:
+        if self._fields != other._fields:
             return False
         return True
