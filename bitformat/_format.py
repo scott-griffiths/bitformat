@@ -77,11 +77,11 @@ class Format(FieldType):
         x.name = name
         x.vars = {}
         x._field_names = {}
-        stetchy_field = ""
+        stretchy_field = ""
         for fieldtype in fields:
-            if stetchy_field:
+            if stretchy_field:
                 raise ValueError(
-                    f"A Field with no length can only occur at the end of a Format. Field '{stetchy_field}' is before the end."
+                    f"A Field with unknown length may only occur at the end of a Format. Field '{stretchy_field}' is before the end."
                 )
             if isinstance(fieldtype, FieldType):
                 fieldtype = fieldtype._copy()
@@ -94,7 +94,7 @@ class Format(FieldType):
                 continue
             try:
                 if fieldtype.bit_length == 0:
-                    stetchy_field = str(fieldtype)
+                    stretchy_field = str(fieldtype)
             except ValueError:
                 pass
             x.fields.append(fieldtype)
