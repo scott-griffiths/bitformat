@@ -1127,11 +1127,11 @@ class Bits:
             offset_width = len(str(len(self))) + len(offset_sep)
         group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
         group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
-        # The number of characters that get added when we add an extra group (after the first one)
-        total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
-        width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(format_sep) * bool(group_chars2)
-        width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
         if groups is None:
+            # The number of characters that get added when we add an extra group (after the first one)
+            total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
+            width_excluding_offset_and_final_group = width - offset_width - group_chars1 - group_chars2 - len(format_sep) * bool(group_chars2)
+            width_excluding_offset_and_final_group = max(width_excluding_offset_and_final_group, 0)
             groups_per_line = 1 + width_excluding_offset_and_final_group // total_group_chars
         else:
             groups_per_line = groups

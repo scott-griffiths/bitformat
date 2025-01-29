@@ -758,3 +758,8 @@ def test_creating_from_array_dtype_with_no_length():
     assert a.unpack('[u8;]') == (1, 2, 3, 4)
     a += '0b1'
     assert a.unpack('[u8;]') == (1, 2, 3, 4, 255)
+
+# def test_pp_hex_issue():
+#     # These should work
+#     Bits('0b000011111').pp('bin', 'hex')
+#     Bits('0b000011111').pp('bin', 'u')
