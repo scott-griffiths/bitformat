@@ -9,6 +9,31 @@ included in each section.
 
 For a more structured introduction to the library see the `Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_.
 
+.. mermaid::
+
+    ---
+    title: Classes in bitformat
+    ---
+    classDiagram
+        class Bits {
+        }
+        class Dtype {
+            + str name
+            + int size
+        }
+        class FieldType{
+            + str name
+        }
+        class Field{
+            + Dtype dtype
+            + Any value
+        }
+        class Format{
+            + List[FieldType] fields
+        }
+        FieldType <|-- Field
+        FieldType <|-- Format
+
 The Basics
 ----------
 The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to use and understand.
