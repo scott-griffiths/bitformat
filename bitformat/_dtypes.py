@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union
 import inspect
@@ -41,6 +42,398 @@ def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
     if len(modifiers) == 2:
         return modifiers[0], modifiers[1]
     raise ValueError(f"Can't parse Dtype name '{name}' as more than one '_' is present.")
+
+
+class DtypeType(abc.ABC):
+
+    def __new__(cls, token: str, /) -> DtypeType:
+        return cls.from_string(token)
+
+    @classmethod
+    def from_string(cls, s: str) -> DtypeType:
+        """Create a new Dtype from a token string.
+
+        Some token string examples:
+
+        * ``'u12'``: An unsigned 12-bit integer.
+        * ``'bytes'``: A ``bytes`` object with no explicit size.
+        * ``'[i6; 5]'``: An array of 5 signed 6-bit integers.
+
+        As a shortcut the ``Dtype`` constructor can be used directly with a token string.
+
+        ``Dtype(s)`` is equivalent to ``Dtype.from_string(s)``.
+
+        """
+        # Delegate to the appropriate class
+        if s.startswith("["):
+            return ArrayDtype.from_string(s)
+        else:
+            return SimpleDtype.from_string(s)
+
+    @classmethod
+    @abc.abstractmethod
+    def from_params(cls) -> DtypeType:
+        ...
+
+    @abc.abstractmethod
+    def pack(self, value: Any, /) -> bitformat.Bits:
+        """Create and return a new Bits from a value.
+
+        The value parameter should be of a type appropriate to the data type.
+
+        """
+        ...
+
+    @abc.abstractmethod
+    def unpack(self, b: BitsType, /):
+        """Unpack a Bits to find its value.
+
+        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+
+        """
+        ...
+
+    @property
+    def name(self) -> str:
+        """A string giving the name of the data type."""
+        return self._name
+
+    @property
+    def endianness(self) -> Endianness:
+        """The endianness of the data type."""
+        return self._endianness
+
+    @property
+    def bits_per_item(self) -> int:
+        """The number of bits needed to represent a single item of the underlying data type.
+
+        .. code-block:: pycon
+
+            >>> Dtype('f64').bits_per_item
+            64
+            >>> Dtype('hex10').bits_per_item
+            40
+            >>> Dtype('[u5; 1001]').bits_per_item
+            5
+
+        See also :attr:`bit_length` and :attr:`size`.
+
+        """
+        return self._bits_per_item
+
+    @property
+    def items(self) -> int:
+        """The number of items in the data type. Will be 1 unless it's an array.
+
+        An items equal to 0 means it's an array data type but with items currently unset.
+
+        """
+        return self._items
+
+    @property
+    def is_array(self) -> bool:
+        """Returns bool indicating if the data type represents an array of items.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u32').is_array
+            False
+            >>> Dtype('[u32; 3]').is_array
+            True
+        """
+        return self._is_array
+
+    @property
+    def size(self) -> int:
+        """The size of the data type.
+
+        This is the number used immediately after the data type name in a dtype string.
+        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
+        though they have bitlengths of 10, 40 and 30 respectively.
+
+        See also :attr:`bits_per_item` and :attr:`bit_length`.
+
+        """
+        return self._size
+
+    @property
+    def bit_length(self) -> int:
+        """The total length of the data type in bits.
+
+        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u12').bit_length
+            12
+            >>> Dtype('[u12; 5]').bit_length
+            60
+            >>> Dtype('hex5').bit_length
+            20
+
+        See also :attr:`bits_per_item` and :attr:`size`.
+
+        """
+        return self._bits_per_item * self._items
+
+    @property
+    def return_type(self) -> Any:
+        """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
+        return self._return_type
+
+    @property
+    def is_signed(self) -> bool:
+        """Returns bool indicating if the data type represents a signed quantity."""
+        return self._is_signed
+
+    @property
+    def bits_per_character(self) -> int | None:
+        """The number of bits represented by a single character of the underlying data type.
+
+        For binary this is 1, for octal 3, hex 4 and for bytes this is 8. For types that don't
+        have a direct relationship between bits and characters this will be None.
+
+        """
+        return self._bits_per_character
+
+    def __hash__(self) -> int:
+        return hash(
+            (self._name, self._bits_per_item, self._items, self.is_array)
+        )
+
+    def __len__(self):
+        raise TypeError(
+            "'Dtype' has no len() method. Use 'size', 'items' or 'bit_length' properties instead."
+        )
+
+
+class SimpleDtype(DtypeType):
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
+    def _create(cls, definition: DtypeDefinition, size: int, endianness: Endianness = Endianness.UNSPECIFIED,
+    ) -> Dtype:
+        x = super().__new__(cls)
+        x._name = definition.name
+        x._bits_per_item = x._size = size
+        x._bits_per_character = definition.bits_per_character
+        if definition.bits_per_character is not None:
+            x._bits_per_item *= definition.bits_per_character
+        little_endian: bool = endianness == Endianness.LITTLE or (
+            endianness == Endianness.NATIVE and bitformat.byteorder == "little"
+        )
+        x._endianness = endianness
+        x._get_fn = (
+            (lambda b: definition.get_fn(b.byte_swap()))
+            if little_endian
+            else definition.get_fn
+        )
+        if "length" in inspect.signature(definition.set_fn).parameters:
+            set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
+        else:
+            set_fn = definition.set_fn
+
+        def create_bits(v):
+            b = bitformat.Bits()
+            # The set_fn will do the length check for big endian too.
+            set_fn(b, v)
+            return b
+
+        def create_bits_le(v):
+            b = bitformat.Bits()
+            set_fn(b, v)
+            return b.byte_swap()
+
+        x._create_fn = create_bits_le if little_endian else create_bits
+
+        x._return_type = definition.return_type
+        x._is_signed = definition.is_signed
+        return x
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
+    def from_string(cls, token: str, /) -> Dtype:
+        token = "".join(token.split())  # Remove whitespace
+        try:
+            name, size = parse_name_size_token(token)
+        except ValueError as e:
+            if "," in token:
+                raise ValueError(
+                    f"Can't parse token '{token}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
+                )
+            else:
+                raise e
+        name, modifier = parse_name_to_name_and_modifier(name)
+        endianness = Endianness(modifier)
+        return Register().get_single_dtype(name, size, endianness)
+
+
+    def pack(self, value: Any, /) -> bitformat.Bits:
+        # Single item to pack
+        b = self._create_fn(value)
+        if self.bits_per_item != 0 and len(b) != self.bits_per_item:
+            raise ValueError(
+                f"Dtype '{self}' has a bit_length of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits."
+            )
+        return b
+
+    def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
+        b = bitformat.Bits._from_any(b)
+        if self.bit_length > len(b):
+            raise ValueError(
+                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
+            )
+        if self.bit_length == 0:
+            # Try to unpack everything
+            return self._get_fn(b)
+        else:
+            return self._get_fn(b[: self.bit_length])
+
+    def __str__(self) -> str:
+        hide_length = (
+            Register().name_to_def[self._name].allowed_sizes.only_one_value()
+            or self.size == 0
+        )
+        size_str = "" if hide_length else str(self.size)
+        endianness = (
+            ""
+            if self._endianness == Endianness.UNSPECIFIED
+            else "_" + self._endianness.value
+        )
+        return f"{self._name}{endianness}{size_str}"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{self.__str__()}')"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            other = Dtype.from_string(other)
+        if isinstance(other, Dtype):
+            return (
+                self._name == other._name
+                and self._size == other._size
+                and self._endianness == other._endianness
+            )
+        return False
+
+
+class ArrayDtype(DtypeType):
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
+    def _create(cls, definition: DtypeDefinition, size: int,
+        items: int = 1, endianness: Endianness = Endianness.UNSPECIFIED,
+    ) -> Dtype:
+        x = super().__new__(cls)
+        x._name = definition.name
+        x._items = items
+        x._bits_per_item = x._size = size
+        x._bits_per_character = definition.bits_per_character
+        if definition.bits_per_character is not None:
+            x._bits_per_item *= definition.bits_per_character
+        little_endian: bool = endianness == Endianness.LITTLE or (
+            endianness == Endianness.NATIVE and bitformat.byteorder == "little"
+        )
+        x._endianness = endianness
+        x._get_fn = (
+            (lambda b: definition.get_fn(b.byte_swap()))
+            if little_endian
+            else definition.get_fn
+        )
+        if "length" in inspect.signature(definition.set_fn).parameters:
+            set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
+        else:
+            set_fn = definition.set_fn
+
+        def create_bits(v):
+            b = bitformat.Bits()
+            # The set_fn will do the length check for big endian too.
+            set_fn(b, v)
+            return b
+
+        def create_bits_le(v):
+            b = bitformat.Bits()
+            set_fn(b, v)
+            return b.byte_swap()
+
+        x._create_fn = create_bits_le if little_endian else create_bits
+
+        x._return_type = tuple
+        x._is_signed = definition.is_signed
+        return x
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
+    def from_string(cls, token: str, /) -> Dtype:
+        token = "".join(token.split())  # Remove whitespace
+        if token.startswith("[") and token.endswith("]"):
+            if (p := token.find(";")) == -1:
+                raise ValueError(
+                    f"Array Dtype strings should be of the form '[dtype; items]' but can't find the ';'. Got '{token}'."
+                )
+            t = token[p + 1 : -1]
+            items = int(t) if t else 0
+            name, size = parse_name_size_token(token[1:p])
+            name, modifier = parse_name_to_name_and_modifier(name)
+            endianness = Endianness(modifier)
+            return Register().get_array_dtype(name, size, items, endianness)
+        raise ValueError  # TODO
+
+
+    def pack(self, value: Any, /) -> bitformat.Bits:
+        if isinstance(value, bitformat.Bits):
+            if len(value) != self.bit_length:
+                raise ValueError(
+                    f"Expected {self.bit_length} bits, but got {len(value)} bits."
+                )
+            return value
+        if len(value) != self._items and self._items != 0:
+            raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
+        return bitformat.Bits.from_joined(self._create_fn(v) for v in value)
+
+    def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
+        b = bitformat.Bits._from_any(b)
+        if self.bit_length > len(b):
+            raise ValueError(
+                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
+            )
+        items = self.items
+        if items == 0:
+            # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
+            items = len(b) // self.bits_per_item
+        return tuple(
+            self._get_fn(b[i * self._bits_per_item : (i + 1) * self._bits_per_item])
+            for i in range(items)
+        )
+
+    def __str__(self) -> str:
+        hide_length = (
+            Register().name_to_def[self._name].allowed_sizes.only_one_value()
+            or self.size == 0
+        )
+        size_str = "" if hide_length else str(self.size)
+        endianness = (
+            ""
+            if self._endianness == Endianness.UNSPECIFIED
+            else "_" + self._endianness.value
+        )
+        items_str = "" if self._items == 0 else f" {self._items}"
+        return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{self.__str__()}')"
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, str):
+            other = Dtype.from_string(other)
+        if isinstance(other, Dtype):
+            return (
+                self._name == other._name
+                and self._size == other._size
+                and self._items == other._items
+                and self._endianness == other._endianness
+            )
+        return False
 
 
 class Dtype:
@@ -374,6 +767,7 @@ class Dtype:
                 and self._endianness == other._endianness
             )
         return False
+
 
 
 class AllowedSizes:
