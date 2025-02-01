@@ -52,6 +52,7 @@ class Dtype(abc.ABC):
             return x
         return cls.from_string(token)
 
+
     @classmethod
     def from_string(cls, s: str) -> DtypeType:
         """Create a new Dtype from a token string.
@@ -1056,19 +1057,20 @@ class SimpleDtypeWithExpression(SimpleDtype):
     size_expression: Expression | None
     base_dtype: Dtype
 
-    @classmethod
-    def create(cls, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> SimpleDtypeWithExpression:
-        x = super().__new__(cls)
+    def __init__(self, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
         if isinstance(size, Expression):
-            x.size_expression = size
+            self.size_expression = size
             size = 0
         else:
-            x.size_expression = None
-        x.base_dtype = Register().get_single_dtype(name, size, endianness)
+            self.size_expression = None
+        self.base_dtype = Register().get_single_dtype(name, size, endianness)
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls)
 
     @classmethod
     def from_string(cls, token: str, /) -> Dtype:
-        x = cls.__new__(cls)
+        x = super().__new__(cls)
         p = token.find("{")
         if p == -1:
             raise ValueError  # TODO
@@ -1108,9 +1110,22 @@ class ArrayDtypeWithExpression(ArrayDtype):
     items_expression: Expression | None
     base_dtype: Dtype
 
+
+    # TODO: This should be written and used. Currently copy and paster of SimpleDtypeWithExpression version
+    @classmethod
+    def create(cls, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> SimpleDtypeWithExpression:
+        x = super().__new__(cls)
+        if isinstance(size, Expression):
+            x.size_expression = size
+            size = 0
+        else:
+            x.size_expression = None
+        x.base_dtype = Register().get_single_dtype(name, size, endianness)
+
+
     @classmethod
     def from_string(cls, token: str, /) -> ArrayDtypeWithExpression:
-        x = cls.__new__(cls)
+        x = super().__new__(cls)
         p = token.find("{")
         if p == -1:
             raise ValueError  # TODO
@@ -1138,7 +1153,6 @@ class ArrayDtypeWithExpression(ArrayDtype):
             return x
         else:
             raise ValueError
-
 
     def evaluate(self, vars_: dict[str, Any]) -> Dtype:
         if self.size_expression is None and self.items_expression is None:

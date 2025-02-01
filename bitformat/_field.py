@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from bitformat import Bits
-from ._dtypes import Dtype, SimpleDtypeWithExpression, ArrayDtypeWithExpression
+from ._dtypes import Dtype, SimpleDtypeWithExpression, ArrayDtypeWithExpression, Register
 from ast import literal_eval
 from ._common import override, Indenter, Colour, lark_parser
 from typing import Any, Iterable
@@ -52,6 +52,7 @@ class FieldVisitor(Visitor):
 class Field(FieldType):
     const: bool
     _bits: Bits | None
+    _dtype: Dtype
 
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
@@ -88,21 +89,20 @@ class Field(FieldType):
         x.comment = comment.strip()
         if isinstance(dtype, str):
             try:
-                # x._dtype_expression = DtypeWithExpression.from_string(dtype)
-                x._dtype_expression = Dtype.from_string(dtype)
+                x._dtype = Dtype.from_string(dtype)
             except ValueError as e:
                 raise ValueError(
                     f"Can't convert the string '{dtype}' to a Dtype: {str(e)}"
                 )
         else:
-            x._dtype_expression = dtype
+            x._dtype = dtype
         x.name = name
         if const is True and value is None:
             raise ValueError("Fields with no value cannot be set to be const.")
         if isinstance(value, str):
             # Special cases converting from strings to bytes and bools.
             value_str = value
-            if x.dtype.return_type is bytes:
+            if x._dtype.return_type is bytes:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, bytes):
@@ -112,7 +112,7 @@ class Field(FieldType):
                         f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                         f"as it can't be converted to a bytes object."
                     )
-            if x.dtype.return_type is bool:
+            if x._dtype.return_type is bool:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, int) or value not in (0, 1):
@@ -124,18 +124,21 @@ class Field(FieldType):
                     )
         if value is not None:
             x._set_value_no_const_check(value)
-        if x.dtype.size == 0:
-            if x.dtype.name in ["bits", "bytes"] and x.value is not None:
-                x._dtype_expression = SimpleDtypeWithExpression.create(
-                    x.dtype.name,
-                    len(x.value),
-                    x.dtype.endianness,
-                )
+        if x._dtype.size == 0:
+            if x._dtype.name in ["bits", "bytes"] and x.value is not None:
+                x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
+                # TODO: Is this simple or array dtype?
+                # c._dtype._size = len(x.value)
+                # x._dtype = SimpleDtype(
+                #     x._dtype.name,
+                #     len(x.value),
+                #     x._dtype.endianness,
+                # )
         return x
 
     @override
     def _get_bit_length(self) -> int:
-        return self.dtype.bit_length
+        return self._dtype.bit_length
 
     @classmethod
     def from_string_lark(cls, s: str, /) -> Field:
@@ -255,10 +258,10 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if isinstance(self._dtype_expression, (SimpleDtypeWithExpression, ArrayDtypeWithExpression)):
-            dtype = self._dtype_expression.evaluate(vars_)
+        if isinstance(self._dtype, (SimpleDtypeWithExpression, ArrayDtypeWithExpression)):
+            dtype = self._dtype.evaluate(vars_)
         else:
-            dtype = self._dtype_expression
+            dtype = self._dtype
         if len(b) - startbit < dtype.bit_length:
             raise ValueError(
                 f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
@@ -317,8 +320,7 @@ class Field(FieldType):
     value = property(_get_value, _set_value)
 
     def _get_dtype(self) -> Dtype:
-        return self._dtype_expression
-        # return self._dtype_expression.evaluate({})
+        return self._dtype
 
     dtype = property(_get_dtype)
 
@@ -326,7 +328,7 @@ class Field(FieldType):
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
         const_str = "const " if self.const else ""
-        dtype_str = str(self._dtype_expression)
+        dtype_str = str(self._dtype)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
         v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
@@ -338,7 +340,7 @@ class Field(FieldType):
     def _repr(self) -> str:
         const_str = "const " if self.const else ""
         n = "" if self.name == "" else f"{self.name}: "
-        dtype = f"{const_str}{self._dtype_expression}"
+        dtype = f"{const_str}{self._dtype}"
         v = "" if self.value is None else f" = {self.value}"
         return f"'{n}{dtype}{v}'"
 
