@@ -91,7 +91,7 @@ jobs:
 
       - name: Publish package files
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os.runs-on }}-${{ matrix.python.action }}
           path: dist/*
@@ -128,7 +128,7 @@ jobs:
           path: repo
 
       - name: Download package files
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: packages-${{ matrix.os.runs-on }}-${{ matrix.python.action }}
           path: dist
@@ -185,7 +185,7 @@ jobs:
         run: mkdir -p dist
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: artifacts  # Download to a temporary directory first
 
