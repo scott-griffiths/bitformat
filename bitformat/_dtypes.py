@@ -69,9 +69,15 @@ class Dtype(abc.ABC):
         """
         # Delegate to the appropriate class
         if s.startswith("["):
-            return ArrayDtype.from_string(s)
+            if "{" in s:
+                return ArrayDtypeWithExpression.from_string(s)
+            else:
+                return ArrayDtype.from_string(s)
         else:
-            return SimpleDtype.from_string(s)
+            if "{" in s:
+                return SimpleDtypeWithExpression.from_string(s)
+            else:
+                return SimpleDtype.from_string(s)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -1044,6 +1050,115 @@ class Register:
                 f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}"
             )
         return "\n".join(s)
+
+
+class SimpleDtypeWithExpression(SimpleDtype):
+    size_expression: Expression | None
+    base_dtype: Dtype
+
+    @classmethod
+    def create(cls, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> SimpleDtypeWithExpression:
+        x = super().__new__(cls)
+        if isinstance(size, Expression):
+            x.size_expression = size
+            size = 0
+        else:
+            x.size_expression = None
+        x.base_dtype = Register().get_single_dtype(name, size, endianness)
+
+    @classmethod
+    def from_string(cls, token: str, /) -> Dtype:
+        x = cls.__new__(cls)
+        p = token.find("{")
+        if p == -1:
+            raise ValueError  # TODO
+        token = "".join(token.split())  # Remove whitespace
+        name, size_str = parse_name_expression_token(token)
+        try:
+            size = int(size_str)
+            x.size_expression = None
+        except ValueError:
+            x.size_expression = Expression(size_str)
+            size = 0
+        name, modifier = parse_name_to_name_and_modifier(name)
+        endianness = Endianness(modifier)
+        x.base_dtype = Register().get_single_dtype(name, size, endianness)
+        return x
+
+    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
+        if self.size_expression is None and self.items_expression is None:
+            return self.base_dtype
+        if not vars_:
+            return self.base_dtype
+        name = self.base_dtype.name
+        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
+        endianness = self.base_dtype.endianness
+        return Register().get_single_dtype(name, size, endianness)
+
+    def __str__(self) -> str:
+        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
+        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
+        hide_size = only_one_value or no_value_given
+        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
+        return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
+
+
+class ArrayDtypeWithExpression(ArrayDtype):
+    size_expression: Expression | None
+    items_expression: Expression | None
+    base_dtype: Dtype
+
+    @classmethod
+    def from_string(cls, token: str, /) -> ArrayDtypeWithExpression:
+        x = cls.__new__(cls)
+        p = token.find("{")
+        if p == -1:
+            raise ValueError  # TODO
+        token = "".join(token.split())  # Remove whitespace
+        if token.startswith("[") and token.endswith("]"):
+            if (p := token.find(";")) == -1:
+                raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
+            t = token[p + 1 : -1]
+            try:
+                items = int(t) if t else 0
+                x.items_expression = None
+            except ValueError:
+                x.items_expression = Expression(t)
+                items = 1
+            name, size_str = parse_name_expression_token(token[1:p])
+            try:
+                size = int(size_str)
+                x.size_expression = None
+            except ValueError:
+                x.size_expression = Expression(size_str)
+                size = 0
+            name, modifier = parse_name_to_name_and_modifier(name)
+            endianness = Endianness(modifier)
+            x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
+            return x
+        else:
+            raise ValueError
+
+
+    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
+        if self.size_expression is None and self.items_expression is None:
+            return self.base_dtype
+        if not vars_:
+            return self.base_dtype
+        name = self.base_dtype.name
+        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
+        items = self.items_expression.evaluate(vars_) if (self.items_expression and vars_) else self.base_dtype.items
+        endianness = self.base_dtype.endianness
+        return Register().get_array_dtype(name, size, items, endianness)
+
+    def __str__(self) -> str:
+        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
+        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
+        hide_size = only_one_value or no_value_given
+        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
+        hide_items = self.base_dtype.items == 0 and self.items_expression is None
+        items_str = "" if hide_items else (" " + self.items_expression if self.items_expression else " " + str(self.base_dtype.items))
+        return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str};{items_str}]"
 
 
 class DtypeWithExpression:
