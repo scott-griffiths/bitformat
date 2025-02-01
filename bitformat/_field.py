@@ -127,13 +127,6 @@ class Field(FieldType):
         if x._dtype.size == 0:
             if x._dtype.name in ["bits", "bytes"] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
-                # TODO: Is this simple or array dtype?
-                # c._dtype._size = len(x.value)
-                # x._dtype = SimpleDtype(
-                #     x._dtype.name,
-                #     len(x.value),
-                #     x._dtype.endianness,
-                # )
         return x
 
     @override

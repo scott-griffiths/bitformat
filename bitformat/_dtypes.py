@@ -53,6 +53,10 @@ class Dtype(abc.ABC):
     >>> float16 = Dtype('f16')
 
     """
+
+    _name: str
+    _size: int
+
     def __new__(cls, token: str | None = None, /) -> DtypeType:
         if token is None:
             x = super().__new__(cls)
@@ -330,6 +334,8 @@ class SimpleDtype(Dtype):
 
 class ArrayDtype(Dtype):
 
+    _items: int | None
+
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int,
@@ -473,6 +479,224 @@ class ArrayDtype(Dtype):
 
         """
         return self._items
+
+# TODO: Note this class isn't properly used yet, so don't expect it to really work.
+class SimpleDtypeWithExpression(SimpleDtype):
+    size_expression: Expression | None
+    base_dtype: Dtype
+
+    def __init__(self, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
+        if isinstance(size, Expression):
+            self.size_expression = size
+            size = 0
+        else:
+            self.size_expression = None
+        self.base_dtype = Register().get_single_dtype(name, size, endianness)
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls)
+
+    @classmethod
+    def from_string(cls, token: str, /) -> Dtype:
+        x = super().__new__(cls)
+        name, size_str = parse_name_expression_token(token)
+        try:
+            size = int(size_str)
+            x.size_expression = None
+        except ValueError:
+            x.size_expression = Expression(size_str)
+            size = 0
+        name, modifier = parse_name_to_name_and_modifier(name)
+        endianness = Endianness(modifier)
+        x.base_dtype = Register().get_single_dtype(name, size, endianness)
+        return x
+
+    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
+        if self.size_expression is None and self.items_expression is None:
+            return self.base_dtype
+        if not vars_:
+            return self.base_dtype
+        name = self.base_dtype.name
+        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
+        endianness = self.base_dtype.endianness
+        return Register().get_single_dtype(name, size, endianness)
+
+    def __str__(self) -> str:
+        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
+        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
+        hide_size = only_one_value or no_value_given
+        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
+        return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
+
+# TODO: Note this class isn't really used, so things like __init__ won't even work yet.
+class ArrayDtypeWithExpression(ArrayDtype):
+    size_expression: Expression | None
+    items_expression: Expression | None
+    base_dtype: Dtype
+
+    def __init__(self, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
+        if isinstance(size, Expression):
+            self.size_expression = size
+            size = 0
+        else:
+            self.size_expression = None
+        self.base_dtype = Register().get_single_dtype(name, size, endianness)
+
+    def __new__(cls, *args, **kwargs):
+        super().__new__(cls)
+
+    @classmethod
+    def from_string(cls, token: str, /) -> ArrayDtypeWithExpression:
+        x = super().__new__(cls)
+        p = token.find("{")
+        if p == -1:
+            raise ValueError  # TODO
+        token = "".join(token.split())  # Remove whitespace
+        if token.startswith("[") and token.endswith("]"):
+            if (p := token.find(";")) == -1:
+                raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
+            t = token[p + 1 : -1]
+            try:
+                items = int(t) if t else 0
+                x.items_expression = None
+            except ValueError:
+                x.items_expression = Expression(t)
+                items = 1
+            name, size_str = parse_name_expression_token(token[1:p])
+            try:
+                size = int(size_str)
+                x.size_expression = None
+            except ValueError:
+                x.size_expression = Expression(size_str)
+                size = 0
+            name, modifier = parse_name_to_name_and_modifier(name)
+            endianness = Endianness(modifier)
+            x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
+            return x
+        else:
+            raise ValueError
+
+    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
+        if self.size_expression is None and self.items_expression is None:
+            return self.base_dtype
+        if not vars_:
+            return self.base_dtype
+        name = self.base_dtype.name
+        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
+        items = self.items_expression.evaluate(vars_) if (self.items_expression and vars_) else self.base_dtype.items
+        endianness = self.base_dtype.endianness
+        return Register().get_array_dtype(name, size, items, endianness)
+
+    def __str__(self) -> str:
+        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
+        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
+        hide_size = only_one_value or no_value_given
+        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
+        hide_items = self.base_dtype.items == 0 and self.items_expression is None
+        items_str = "" if hide_items else (" " + self.items_expression if self.items_expression else " " + str(self.base_dtype.items))
+        return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str};{items_str}]"
+
+
+class DtypeTuple:
+    """A data type class, representing a tuple of concrete interpretations of binary data.
+
+    DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
+
+    >>> a = DtypeTuple('u12, u8, bool')
+    >>> b = DtypeTuple.from_params(['u12', 'u8', 'bool'])
+
+    """
+
+    _dtypes: list[Dtype]
+    _bit_length: int
+
+    def __new__(cls, s: str) -> DtypeTuple:
+        return cls.from_string(s)
+
+    @classmethod
+    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
+        x = super().__new__(cls)
+        x._dtypes = []
+        for d in dtypes:
+            dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
+            if dtype.bit_length == 0:
+                raise ValueError(f"Can't create a DtypeTuple from dtype '{d}' as it has an unknown length.")
+            x._dtypes.append(dtype)
+        x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
+        return x
+
+    @classmethod
+    def from_string(cls, s: str, /) -> DtypeTuple:
+        tokens = [t.strip() for t in s.split(",")]
+        dtypes = [Dtype.from_string(token) for token in tokens]
+        return cls.from_params(dtypes)
+
+    def pack(self, values: Sequence[Any]) -> bitformat.Bits:
+        if len(values) != len(self):
+            raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
+        return bitformat.Bits.from_joined(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
+
+    def unpack(
+        self,
+        b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview,
+        /,
+    ) -> tuple[tuple[Any] | Any]:
+        """Unpack a Bits to find its value.
+
+        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+
+        """
+        b = bitformat.Bits._from_any(b)
+        if self.bit_length > len(b):
+            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
+        vals = []
+        pos = 0
+        for dtype in self:
+            if dtype.name != "pad":
+                vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
+            pos += dtype.bit_length
+        return tuple(vals)
+
+    def _getbitlength(self) -> int:
+        return self._bit_length
+
+    bit_length = property(
+        _getbitlength, doc="The total length of all the dtypes in bits."
+    )
+    bits_per_item = bit_length  # You can't do an array-like DtypeTuple so this is the same as bit_length
+
+    def __len__(self) -> int:
+        return len(self._dtypes)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, DtypeTuple):
+            return self._dtypes == other._dtypes
+        return False
+
+    def __hash__(self) -> int:
+        return hash(
+            tuple(self._dtypes)
+        )
+
+    @overload
+    def __getitem__(self, key: int) -> Dtype: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> DtypeTuple: ...
+
+    def __getitem__(self, key: int | slice) -> Dtype | DtypeTuple:
+        if isinstance(key, int):
+            return self._dtypes[key]
+        return DtypeTuple.from_params(self._dtypes[key])
+
+    def __iter__(self):
+        return iter(self._dtypes)
+
+    def __str__(self) -> str:
+        return ", ".join(str(dtype) for dtype in self._dtypes)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{str(self)}')"
 
 
 class AllowedSizes:
@@ -719,226 +943,3 @@ class Register:
             )
         return "\n".join(s)
 
-
-class SimpleDtypeWithExpression(SimpleDtype):
-    size_expression: Expression | None
-    base_dtype: Dtype
-
-    def __init__(self, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
-        if isinstance(size, Expression):
-            self.size_expression = size
-            size = 0
-        else:
-            self.size_expression = None
-        self.base_dtype = Register().get_single_dtype(name, size, endianness)
-
-    def __new__(cls, *args, **kwargs):
-        super().__new__(cls)
-
-    @classmethod
-    def from_string(cls, token: str, /) -> Dtype:
-        x = super().__new__(cls)
-        p = token.find("{")
-        if p == -1:
-            raise ValueError  # TODO
-        token = "".join(token.split())  # Remove whitespace
-        name, size_str = parse_name_expression_token(token)
-        try:
-            size = int(size_str)
-            x.size_expression = None
-        except ValueError:
-            x.size_expression = Expression(size_str)
-            size = 0
-        name, modifier = parse_name_to_name_and_modifier(name)
-        endianness = Endianness(modifier)
-        x.base_dtype = Register().get_single_dtype(name, size, endianness)
-        return x
-
-    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
-        if self.size_expression is None and self.items_expression is None:
-            return self.base_dtype
-        if not vars_:
-            return self.base_dtype
-        name = self.base_dtype.name
-        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
-        endianness = self.base_dtype.endianness
-        return Register().get_single_dtype(name, size, endianness)
-
-    def __str__(self) -> str:
-        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
-        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
-        hide_size = only_one_value or no_value_given
-        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
-        return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
-
-
-class ArrayDtypeWithExpression(ArrayDtype):
-    size_expression: Expression | None
-    items_expression: Expression | None
-    base_dtype: Dtype
-
-
-    # TODO: This should be written and used. Currently copy and paster of SimpleDtypeWithExpression version
-    @classmethod
-    def create(cls, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> SimpleDtypeWithExpression:
-        x = super().__new__(cls)
-        if isinstance(size, Expression):
-            x.size_expression = size
-            size = 0
-        else:
-            x.size_expression = None
-        x.base_dtype = Register().get_single_dtype(name, size, endianness)
-
-
-    @classmethod
-    def from_string(cls, token: str, /) -> ArrayDtypeWithExpression:
-        x = super().__new__(cls)
-        p = token.find("{")
-        if p == -1:
-            raise ValueError  # TODO
-        token = "".join(token.split())  # Remove whitespace
-        if token.startswith("[") and token.endswith("]"):
-            if (p := token.find(";")) == -1:
-                raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
-            t = token[p + 1 : -1]
-            try:
-                items = int(t) if t else 0
-                x.items_expression = None
-            except ValueError:
-                x.items_expression = Expression(t)
-                items = 1
-            name, size_str = parse_name_expression_token(token[1:p])
-            try:
-                size = int(size_str)
-                x.size_expression = None
-            except ValueError:
-                x.size_expression = Expression(size_str)
-                size = 0
-            name, modifier = parse_name_to_name_and_modifier(name)
-            endianness = Endianness(modifier)
-            x.base_dtype = Register().get_array_dtype(name, size, items, endianness)
-            return x
-        else:
-            raise ValueError
-
-    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
-        if self.size_expression is None and self.items_expression is None:
-            return self.base_dtype
-        if not vars_:
-            return self.base_dtype
-        name = self.base_dtype.name
-        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
-        items = self.items_expression.evaluate(vars_) if (self.items_expression and vars_) else self.base_dtype.items
-        endianness = self.base_dtype.endianness
-        return Register().get_array_dtype(name, size, items, endianness)
-
-    def __str__(self) -> str:
-        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
-        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
-        hide_size = only_one_value or no_value_given
-        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
-        hide_items = self.base_dtype.items == 0 and self.items_expression is None
-        items_str = "" if hide_items else (" " + self.items_expression if self.items_expression else " " + str(self.base_dtype.items))
-        return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str};{items_str}]"
-
-
-class DtypeTuple:
-    """A data type class, representing a tuple of concrete interpretations of binary data.
-
-    DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
-
-    >>> a = DtypeTuple('u12, u8, bool')
-    >>> b = DtypeTuple.from_params(['u12', 'u8', 'bool'])
-
-    """
-
-    _dtypes: list[Dtype]
-    _bit_length: int
-
-    def __new__(cls, s: str) -> DtypeTuple:
-        return cls.from_string(s)
-
-    @classmethod
-    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
-        x = super().__new__(cls)
-        x._dtypes = []
-        for d in dtypes:
-            dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
-            if dtype.bit_length == 0:
-                raise ValueError(f"Can't create a DtypeTuple from dtype '{d}' as it has an unknown length.")
-            x._dtypes.append(dtype)
-        x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
-        return x
-
-    @classmethod
-    def from_string(cls, s: str, /) -> DtypeTuple:
-        tokens = [t.strip() for t in s.split(",")]
-        dtypes = [Dtype.from_string(token) for token in tokens]
-        return cls.from_params(dtypes)
-
-    def pack(self, values: Sequence[Any]) -> bitformat.Bits:
-        if len(values) != len(self):
-            raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
-        return bitformat.Bits.from_joined(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
-
-    def unpack(
-        self,
-        b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview,
-        /,
-    ) -> tuple[tuple[Any] | Any]:
-        """Unpack a Bits to find its value.
-
-        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
-
-        """
-        b = bitformat.Bits._from_any(b)
-        if self.bit_length > len(b):
-            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
-        vals = []
-        pos = 0
-        for dtype in self:
-            if dtype.name != "pad":
-                vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
-            pos += dtype.bit_length
-        return tuple(vals)
-
-    def _getbitlength(self) -> int:
-        return self._bit_length
-
-    bit_length = property(
-        _getbitlength, doc="The total length of all the dtypes in bits."
-    )
-    bits_per_item = bit_length  # You can't do an array-like DtypeTuple so this is the same as bit_length
-
-    def __len__(self) -> int:
-        return len(self._dtypes)
-
-    def __eq__(self, other) -> bool:
-        if isinstance(other, DtypeTuple):
-            return self._dtypes == other._dtypes
-        return False
-
-    def __hash__(self) -> int:
-        return hash(
-            tuple(self._dtypes)
-        )
-
-    @overload
-    def __getitem__(self, key: int) -> Dtype: ...
-
-    @overload
-    def __getitem__(self, key: slice) -> DtypeTuple: ...
-
-    def __getitem__(self, key: int | slice) -> Dtype | DtypeTuple:
-        if isinstance(key, int):
-            return self._dtypes[key]
-        return DtypeTuple.from_params(self._dtypes[key])
-
-    def __iter__(self):
-        return iter(self._dtypes)
-
-    def __str__(self) -> str:
-        return ", ".join(str(dtype) for dtype in self._dtypes)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self)}')"
