@@ -20,6 +20,12 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
         class Dtype {
             + str name
             + int size
+            + endianness
+        }
+        class SimpleDtype {
+        }
+        class ArrayDtype {
+            + int items
         }
         class FieldType{
             + str name
@@ -31,8 +37,14 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
         class Format{
             + List[FieldType] fields
         }
-        FieldType <|-- Field
-        FieldType <|-- Format
+        Field --|> FieldType
+        Format --|> FieldType
+        If --|> FieldType
+        Repeat --|> FieldType
+        Pass --|> FieldType
+        SimpleDtype --|> Dtype
+        ArrayDtype --|> Dtype
+
 
 The Basics
 ----------

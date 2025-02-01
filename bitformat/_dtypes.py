@@ -13,7 +13,7 @@ from typing import Pattern
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
-__all__ = ["Dtype", "DtypeTuple", "DtypeDefinition", "Register", "DtypeWithExpression"]
+__all__ = ["Dtype", "SimpleDtype", "ArrayDtype", "DtypeTuple", "DtypeDefinition", "Register"]
 
 CACHE_SIZE = 256
 
@@ -139,6 +139,27 @@ class Dtype(abc.ABC):
     def endianness(self) -> Endianness:
         """The endianness of the data type."""
         return self._endianness
+
+    @property
+    @abc.abstractmethod
+    def bit_length(self) -> int:
+        """The total length of the data type in bits.
+
+        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u12').bit_length
+            12
+            >>> Dtype('[u12; 5]').bit_length
+            60
+            >>> Dtype('hex5').bit_length
+            20
+
+        See also :attr:`bits_per_item` and :attr:`size`.
+
+        """
+    ...
 
     @property
     def bits_per_item(self) -> int:
@@ -313,22 +334,6 @@ class SimpleDtype(Dtype):
 
     @property
     def bit_length(self) -> int:
-        """The total length of the data type in bits.
-
-        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
-
-        .. code-block:: pycon
-
-            >>> Dtype('u12').bit_length
-            12
-            >>> Dtype('[u12; 5]').bit_length
-            60
-            >>> Dtype('hex5').bit_length
-            20
-
-        See also :attr:`bits_per_item` and :attr:`size`.
-
-        """
         return self._bits_per_item
 
 
@@ -453,22 +458,6 @@ class ArrayDtype(Dtype):
 
     @property
     def bit_length(self) -> int:
-        """The total length of the data type in bits.
-
-        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
-
-        .. code-block:: pycon
-
-            >>> Dtype('u12').bit_length
-            12
-            >>> Dtype('[u12; 5]').bit_length
-            60
-            >>> Dtype('hex5').bit_length
-            20
-
-        See also :attr:`bits_per_item` and :attr:`size`.
-
-        """
         return self._bits_per_item * self._items
 
     @property
