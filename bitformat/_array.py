@@ -5,7 +5,7 @@ from collections.abc import Sized
 from typing import Union, Iterable, Any, overload, TextIO
 
 from bitformat._bits import Bits, BitsType
-from bitformat._dtypes import Dtype, Register, DtypeTuple
+from bitformat._dtypes import Dtype, Register, DtypeTuple, SimpleDtype, ArrayDtype
 from bitformat._options import Options
 from bitformat._common import Colour
 import operator
@@ -450,7 +450,7 @@ class Array:
         elif not isinstance(dtype, (Dtype, DtypeTuple)):
             raise TypeError(f"Invalid dtype parameter: {dtype}")
         if dtype.bit_length == 0:
-            if dtype.is_array:
+            if not isinstance(dtype, SimpleDtype):
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
                 # No length supplied - use the current length instead
@@ -677,7 +677,7 @@ class Array:
         if token_length == 0:
             token_length = self.item_size
 
-        if dtype1.is_array or (dtype2 is not None and dtype2.is_array):
+        if not isinstance(dtype1, SimpleDtype) or (dtype2 is not None and not isinstance(dtype2, SimpleDtype)):
             raise ValueError(
                 "Array.pp() only supports simple Dtypes, not ones which represent arrays."
             )

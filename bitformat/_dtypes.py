@@ -44,9 +44,12 @@ def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
     raise ValueError(f"Can't parse Dtype name '{name}' as more than one '_' is present.")
 
 
-class DtypeType(abc.ABC):
+class Dtype(abc.ABC):
 
-    def __new__(cls, token: str, /) -> DtypeType:
+    def __new__(cls, token: str | None = None, /) -> DtypeType:
+        if token is None:
+            x = super().__new__(cls)
+            return x
         return cls.from_string(token)
 
     @classmethod
@@ -71,9 +74,25 @@ class DtypeType(abc.ABC):
             return SimpleDtype.from_string(s)
 
     @classmethod
-    @abc.abstractmethod
-    def from_params(cls) -> DtypeType:
-        ...
+    @functools.lru_cache(CACHE_SIZE)
+    def from_params(
+        cls,
+        name: str,
+        size: int = 0,
+        is_array: bool = False,
+        items: int = 1,
+        endianness: Endianness = Endianness.UNSPECIFIED,
+    ) -> Dtype:
+        """Create a new Dtype from its name, size and items.
+
+        It's usually clearer to use the Dtype constructor directly with a dtype str, but
+        this builder will be more efficient and is used internally to avoid string parsing.
+
+        """
+        if is_array:
+            return Register().get_array_dtype(name, size, items, endianness)
+        else:
+            return Register().get_single_dtype(name, size, endianness)
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
@@ -122,28 +141,6 @@ class DtypeType(abc.ABC):
         return self._bits_per_item
 
     @property
-    def items(self) -> int:
-        """The number of items in the data type. Will be 1 unless it's an array.
-
-        An items equal to 0 means it's an array data type but with items currently unset.
-
-        """
-        return self._items
-
-    @property
-    def is_array(self) -> bool:
-        """Returns bool indicating if the data type represents an array of items.
-
-        .. code-block:: pycon
-
-            >>> Dtype('u32').is_array
-            False
-            >>> Dtype('[u32; 3]').is_array
-            True
-        """
-        return self._is_array
-
-    @property
     def size(self) -> int:
         """The size of the data type.
 
@@ -155,26 +152,6 @@ class DtypeType(abc.ABC):
 
         """
         return self._size
-
-    @property
-    def bit_length(self) -> int:
-        """The total length of the data type in bits.
-
-        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
-
-        .. code-block:: pycon
-
-            >>> Dtype('u12').bit_length
-            12
-            >>> Dtype('[u12; 5]').bit_length
-            60
-            >>> Dtype('hex5').bit_length
-            20
-
-        See also :attr:`bits_per_item` and :attr:`size`.
-
-        """
-        return self._bits_per_item * self._items
 
     @property
     def return_type(self) -> Any:
@@ -196,24 +173,19 @@ class DtypeType(abc.ABC):
         """
         return self._bits_per_character
 
-    def __hash__(self) -> int:
-        return hash(
-            (self._name, self._bits_per_item, self._items, self.is_array)
-        )
-
     def __len__(self):
         raise TypeError(
             "'Dtype' has no len() method. Use 'size', 'items' or 'bit_length' properties instead."
         )
 
 
-class SimpleDtype(DtypeType):
+class SimpleDtype(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int, endianness: Endianness = Endianness.UNSPECIFIED,
     ) -> Dtype:
-        x = super().__new__(cls)
+        x = SimpleDtype.__new__(SimpleDtype)
         x._name = definition.name
         x._bits_per_item = x._size = size
         x._bits_per_character = definition.bits_per_character
@@ -316,8 +288,33 @@ class SimpleDtype(DtypeType):
             )
         return False
 
+    def __hash__(self) -> int:
+        return hash(
+            (self._name, self._size)
+        )
 
-class ArrayDtype(DtypeType):
+    @property
+    def bit_length(self) -> int:
+        """The total length of the data type in bits.
+
+        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u12').bit_length
+            12
+            >>> Dtype('[u12; 5]').bit_length
+            60
+            >>> Dtype('hex5').bit_length
+            20
+
+        See also :attr:`bits_per_item` and :attr:`size`.
+
+        """
+        return self._bits_per_item
+
+
+class ArrayDtype(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -435,8 +432,42 @@ class ArrayDtype(DtypeType):
             )
         return False
 
+    def __hash__(self) -> int:
+        return hash(
+            (self._name, self._size, self._items)
+        )
 
-class Dtype:
+    @property
+    def bit_length(self) -> int:
+        """The total length of the data type in bits.
+
+        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u12').bit_length
+            12
+            >>> Dtype('[u12; 5]').bit_length
+            60
+            >>> Dtype('hex5').bit_length
+            20
+
+        See also :attr:`bits_per_item` and :attr:`size`.
+
+        """
+        return self._bits_per_item * self._items
+
+    @property
+    def items(self) -> int:
+        """The number of items in the data type.
+
+        An items equal to 0 means it's an array data type but with items currently unset.
+
+        """
+        return self._items
+
+
+class DtypeOld:
     """A data type class, representing a concrete interpretation of binary data.
 
     Dtype instances are immutable. They are often created implicitly elsewhere via a token string.
@@ -870,14 +901,14 @@ class DtypeDefinition:
         self, size: int = 0, endianness: Endianness = Endianness.UNSPECIFIED
     ) -> Dtype:
         size, endianness = self.sanitize(size, endianness)
-        d = Dtype._create(self, size, False, 1, endianness)
+        d = SimpleDtype._create(self, size, endianness)
         return d
 
     def get_array_dtype(
         self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED
     ) -> Dtype:
         size, endianness = self.sanitize(size, endianness)
-        d = Dtype._create(self, size, True, items, endianness)
+        d = ArrayDtype._create(self, size, items, endianness)
         if size == 0:
             raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. "
                              f"Note that the number of items in the array dtype can be unknown, but the dtype of each item must have a known size.")
@@ -1126,7 +1157,6 @@ class DtypeTuple:
 
     _dtypes: list[Dtype]
     _bit_length: int
-    is_array: bool = False
 
     def __new__(cls, s: str) -> DtypeTuple:
         return cls.from_string(s)
