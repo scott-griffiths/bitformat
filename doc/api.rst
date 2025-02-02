@@ -12,38 +12,46 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
 .. mermaid::
 
     ---
-    title: Classes in bitformat
+    title: Basic bitformat classes
     ---
     classDiagram
+        direction BT
         class Bits {
+            + from_string()
+            + from_dtype()
+            + from_bytes()
+        }
+        class Array {
+            + int size
+            + Dtype dtype
+            + from_iterable()
         }
         class Dtype {
+            <<abstract>>
             + str name
             + int size
             + endianness
+            + from_string()
         }
         class SimpleDtype {
         }
         class ArrayDtype {
             + int items
         }
-        class FieldType{
-            + str name
+        class DtypeTuple {
+            + List[Dtype] dtypes
         }
-        class Field{
-            + Dtype dtype
-            + Any value
+        class Reader {
+            + Bits bits
+            + int pos
         }
-        class Format{
-            + List[FieldType] fields
-        }
-        Field --|> FieldType
-        Format --|> FieldType
-        If --|> FieldType
-        Repeat --|> FieldType
-        Pass --|> FieldType
         SimpleDtype --|> Dtype
         ArrayDtype --|> Dtype
+        Array --* "1" Dtype
+        Array --> Bits
+        Bits <..> Dtype
+        DtypeTuple --o "1..*" Dtype
+        Reader --* "1" Bits
 
 
 The Basics
@@ -55,6 +63,45 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
 * :ref:`DtypeTuple <dtypetuple>` -- A sequence of :class:`Dtype` objects.
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
 * :ref:`Reader <reader>` -- Read and parse :class:`Bits` as a bit stream with a bit position.
+
+
+.. mermaid::
+
+    ---
+    title: Field and Format classes
+    ---
+    classDiagram
+        direction BT
+        class Bits {
+        }
+        class Dtype {
+        }
+        class FieldType{
+            <<abstract>>
+            + str name
+        }
+        class Field{
+            + Dtype dtype
+        }
+        class If{
+            + Expression condition
+            + FieldType then_
+            + FieldType else_
+        }
+        class Repeat{
+            + int n
+            + FieldType field
+        }
+        class Format{
+            + List[FieldType] fields
+        }
+        Field --|> FieldType
+        Format --|> FieldType
+        If --|> FieldType
+        Repeat --|> FieldType
+        Field --* "1" Dtype
+        Field --> Bits
+
 
 Field Types
 -----------
