@@ -2,6 +2,7 @@ import keyword
 
 import pytest
 from bitformat import Dtype, Bits, Field, Expression
+from bitformat._common import DtypeName
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
@@ -53,11 +54,11 @@ class TestCreation:
 
     def test_creation_from_strings(self):
         f = Field.from_string(" flag_12 : bool")
-        assert f.dtype.name == "bool"
+        assert f.dtype.name == DtypeName.BOOL
         assert f.name == "flag_12"
         assert f.value is None
         f = Field.from_string("const u3 = 3")
-        assert f.dtype.name == "u"
+        assert f.dtype.name == DtypeName.UNSIGNED_INT
         assert f.value == 3
         assert f.name == ""
         assert f.to_bits() == "0b011"
@@ -67,13 +68,13 @@ class TestCreation:
         f = Field.from_params("bytes", name="hello", value=b)
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype.name == "bytes"
+        assert f.dtype.name == DtypeName.BYTES
         assert f.dtype.bit_length == len(b) * 8
 
         f = Field.from_bytes(b, name="hello")
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype.name == "bytes"
+        assert f.dtype.name == DtypeName.BYTES
         assert f.dtype.bit_length == len(b) * 8
 
     @given(st.binary())
@@ -83,7 +84,7 @@ class TestCreation:
             f = Field.from_bits(b, "hello")
             assert f.value == b
             assert f.name == "hello"
-            assert f.dtype.name == "bits"
+            assert f.dtype.name == DtypeName.BITS
             assert f.dtype.bit_length == len(b)
 
     def test_string_creation_with_const(self):

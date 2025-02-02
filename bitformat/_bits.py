@@ -10,7 +10,7 @@ from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
 from bitformat._dtypes import Dtype, Register, DtypeTuple
-from bitformat._common import Colour
+from bitformat._common import Colour, DtypeName
 from bitformat._options import Options
 from bitformat.bit_rust import BitRust
 
@@ -886,7 +886,7 @@ class Bits:
             else:
                 u_str = f"u{length} == {u:_}"
                 i_str = f"i{length} == {i:_}"
-        if length in Register().name_to_def["f"].allowed_sizes:
+        if length in Register().name_to_def[DtypeName.FLOAT].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -1063,12 +1063,12 @@ class Bits:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, Dtype):
-            if dtype.name == "bytes":  # Special case for bytes to print one character each.
+            if dtype.name == DtypeName.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
-            if  dtype.name == "bool":  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+            if  dtype.name == DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
                 get_fn = Register().get_single_dtype("u", bits_per_group).unpack
-            align = "<" if dtype.name in ["bin", "oct", "hex", "bits", "bytes"] else ">"
-            if dtype.name == "bits":
+            align = "<" if dtype.name in [DtypeName.BIN, DtypeName.OCT, DtypeName.HEX, DtypeName.BITS, DtypeName.BYTES] else ">"
+            if dtype.name == DtypeName.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
                 x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
@@ -1184,7 +1184,7 @@ class Bits:
         if bits_per_group == 0:
             has_length_in_fmt = False
             if dtype2 is None:
-                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.name, 0)
+                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.name.value, 0)
                 if bits_per_group == 0:
                     raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
             else:

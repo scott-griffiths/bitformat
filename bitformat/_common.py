@@ -6,6 +6,7 @@ import enum
 from ._options import Options
 import os
 from lark import Lark
+from enum import Enum
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
@@ -19,6 +20,21 @@ else:
     def final(f):
         return f
 
+
+class DtypeName(Enum):
+    UNSIGNED_INT = 'u'  # unsigned int
+    SIGNED_INT = 'i'  # signed int
+    BIN = 'bin'  # binary string
+    OCT = 'oct'  # octal string
+    HEX = 'hex'  # hexadecimal string
+    BYTES = 'bytes'  # bytes object
+    FLOAT = 'f'  # IEEE floating point
+    BITS = 'bits'  # Bits object
+    BOOL = 'bool'  # boolean
+    PAD = 'pad'  # padding
+
+    def __str__(self):
+        return self.value
 
 class Indenter:
     def __init__(self, indent_size: int | None = None, max_depth: int | None = None):

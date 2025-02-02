@@ -41,7 +41,7 @@ from ._if import If
 from ._pass import Pass
 from ._repeat import Repeat
 from ._options import Options
-from ._common import Expression, Endianness, byteorder
+from ._common import Expression, Endianness, byteorder, DtypeName
 from ._reader import Reader
 from typing import Literal
 
@@ -81,7 +81,7 @@ def bool_bits2chars(_: Literal[1]):
 dtype_definitions = [
     # Integer types
     DtypeDefinition(
-        "u",
+        DtypeName.UNSIGNED_INT,
         "a two's complement unsigned int",
         Bits._set_u,
         Bits._get_u,
@@ -91,7 +91,7 @@ dtype_definitions = [
         endianness_variants=True,
     ),
     DtypeDefinition(
-        "i",
+        DtypeName.SIGNED_INT,
         "a two's complement signed int",
         Bits._set_i,
         Bits._get_i,
@@ -102,7 +102,7 @@ dtype_definitions = [
     ),
     # Literal types
     DtypeDefinition(
-        "bin",
+        DtypeName.BIN,
         "a binary string",
         Bits._set_bin_safe,
         Bits._get_bin,
@@ -111,7 +111,7 @@ dtype_definitions = [
         bits_per_character=1,
     ),
     DtypeDefinition(
-        "oct",
+        DtypeName.OCT,
         "an octal string",
         Bits._set_oct,
         Bits._get_oct,
@@ -120,7 +120,7 @@ dtype_definitions = [
         bits_per_character=3,
     ),
     DtypeDefinition(
-        "hex",
+        DtypeName.HEX,
         "a hexadecimal string",
         Bits._set_hex,
         Bits._get_hex,
@@ -129,7 +129,7 @@ dtype_definitions = [
         bits_per_character=4,
     ),
     DtypeDefinition(
-        "bytes",
+        DtypeName.BYTES,
         "a bytes object",
         Bits._set_bytes,
         Bits._get_bytes,
@@ -139,7 +139,7 @@ dtype_definitions = [
     ),
     # Float types
     DtypeDefinition(
-        "f",
+        DtypeName.FLOAT,
         "an IEEE floating point number",
         Bits._set_f,
         Bits._get_f,
@@ -151,7 +151,7 @@ dtype_definitions = [
     ),
     # Other known length types
     DtypeDefinition(
-        "bits",
+        DtypeName.BITS,
         "a Bits object",
         Bits._set_bits,
         Bits._get_bits,
@@ -160,7 +160,7 @@ dtype_definitions = [
         bits_bits2chars,
     ),
     DtypeDefinition(
-        "bool",
+        DtypeName.BOOL,
         "a bool (True or False)",
         Bits._set_bool,
         Bits._get_bool,
@@ -171,7 +171,7 @@ dtype_definitions = [
     ),
     # Special case pad type
     DtypeDefinition(
-        "pad",
+        DtypeName.PAD,
         "a skipped section of padding",
         Bits._set_pad,
         Bits._get_pad,

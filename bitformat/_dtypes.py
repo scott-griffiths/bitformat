@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, Sequence, overload, Union
 import inspect
 import bitformat
 import re
-from ._common import Expression, Endianness, byteorder
+from ._common import Expression, Endianness, byteorder, DtypeName
 from typing import Pattern
 
 
@@ -54,7 +54,7 @@ class Dtype(abc.ABC):
 
     """
 
-    _name: str
+    _name: DtypeName
     _size: int
 
     def __new__(cls, token: str | None = None, /) -> DtypeType:
@@ -131,8 +131,8 @@ class Dtype(abc.ABC):
         ...
 
     @property
-    def name(self) -> str:
-        """A string giving the name of the data type."""
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
         return self._name
 
     @property
@@ -453,7 +453,7 @@ class DtypeArray(Dtype):
 
     def __hash__(self) -> int:
         return hash(
-            (self._name, self._size, self._items)
+            (self._name.value, self._size, self._items)
         )
 
     @property
@@ -644,7 +644,7 @@ class DtypeTuple:
         vals = []
         pos = 0
         for dtype in self:
-            if dtype.name != "pad":
+            if dtype.name != DtypeName.PAD:
                 vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
             pos += dtype.bit_length
         return tuple(vals)
@@ -719,7 +719,7 @@ class DtypeDefinition:
 
     def __init__(
         self,
-        name: str,
+        name: DtypeName,
         description: str,
         set_fn: Callable,
         get_fn: Callable,
@@ -829,7 +829,7 @@ class Register:
     """
 
     _instance: Register | None = None
-    name_to_def: dict[str, DtypeDefinition] = {}
+    name_to_def: dict[DtypeName, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
         # Singleton. Only one Register instance can ever exist.
@@ -843,7 +843,7 @@ class Register:
         cls.name_to_def[name] = definition
         setattr(
             bitformat.Bits,
-            name,
+            name.value,
             property(
                 fget=definition.get_fn,
                 doc=f"The Bits as {definition.description}. Read only.",
@@ -864,7 +864,7 @@ class Register:
             fget_ne = fget_le if byteorder == "little" else fget_be
             setattr(
                 bitformat.Bits,
-                name + "_le",
+                name.value + "_le",
                 property(
                     fget=fget_le,
                     doc=f"The Bits as {definition.description} in little-endian byte order. Read only.",
@@ -872,7 +872,7 @@ class Register:
             )
             setattr(
                 bitformat.Bits,
-                name + "_be",
+                name.value + "_be",
                 property(
                     fget=fget_be,
                     doc=f"The Bits as {definition.description} in big-endian byte order. Read only.",
@@ -880,7 +880,7 @@ class Register:
             )
             setattr(
                 bitformat.Bits,
-                name + "_ne",
+                name.value + "_ne",
                 property(
                     fget=fget_ne,
                     doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only.",
@@ -896,7 +896,7 @@ class Register:
         endianness: Endianness = Endianness.UNSPECIFIED,
     ) -> Dtype:
         try:
-            definition = cls.name_to_def[name]
+            definition = cls.name_to_def[DtypeName(name)]
         except KeyError:
             aliases = {"int": "i", "uint": "u", "float": "f"}
             extra = f"Did you mean '{aliases[name]}'? " if name in aliases else ""
@@ -914,7 +914,7 @@ class Register:
         endianness: Endianness = Endianness.UNSPECIFIED,
     ) -> Dtype:
         try:
-            definition = cls.name_to_def[name]
+            definition = cls.name_to_def[DtypeName(name)]
         except KeyError:
             raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.name_to_def.keys())}.")
         else:

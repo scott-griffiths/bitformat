@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingleWithExpression, DtypeArrayWithExpression, Register
 from ast import literal_eval
-from ._common import override, Indenter, Colour, lark_parser
+from ._common import override, Indenter, Colour, lark_parser, DtypeName
 from typing import Any, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
@@ -125,7 +125,7 @@ class Field(FieldType):
         if value is not None:
             x._set_value_no_const_check(value)
         if x._dtype.size == 0:
-            if x._dtype.name in ["bits", "bytes"] and x.value is not None:
+            if x._dtype.name in [DtypeName.BITS, DtypeName.BYTES] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
         return x
 
@@ -339,7 +339,7 @@ class Field(FieldType):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        if self.dtype.name == "bytes":
+        if self.dtype.name == DtypeName.BYTES:
             const_str = ", const=True" if self.const else ""
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
@@ -350,7 +350,7 @@ class Field(FieldType):
             return False
         if self.dtype != other.dtype:
             return False
-        if self.dtype.name != "pad" and self._bits != other._bits:
+        if self.dtype.name != DtypeName.PAD and self._bits != other._bits:
             return False
         if self.const != other.const:
             return False
