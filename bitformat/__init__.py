@@ -26,7 +26,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.2"
 
 __author__ = "Scott Griffiths"
 
@@ -47,7 +47,6 @@ from typing import Literal
 
 
 # These methods convert a bit length to the number of characters needed to print it for different interpretations.
-
 
 def uint_bits2chars(bit_length: int):
     # How many characters is largest possible int of this length?
@@ -80,105 +79,44 @@ def bool_bits2chars(_: Literal[1]):
 
 dtype_definitions = [
     # Integer types
-    DtypeDefinition(
-        DtypeName.UNSIGNED_INT,
-        "a two's complement unsigned int",
-        Bits._set_u,
-        Bits._get_u,
-        int,
-        False,
-        uint_bits2chars,
-        endianness_variants=True,
-    ),
-    DtypeDefinition(
-        DtypeName.SIGNED_INT,
-        "a two's complement signed int",
-        Bits._set_i,
-        Bits._get_i,
-        int,
-        True,
-        int_bits2chars,
-        endianness_variants=True,
-    ),
+    DtypeDefinition(DtypeName.UNSIGNED_INT, "a two's complement unsigned int",
+                    Bits._set_u, Bits._get_u, int,
+                    False, uint_bits2chars, endianness_variants=True),
+    DtypeDefinition(DtypeName.SIGNED_INT, "a two's complement signed int",
+                    Bits._set_i, Bits._get_i, int,
+                    True, int_bits2chars, endianness_variants=True),
+
     # Literal types
-    DtypeDefinition(
-        DtypeName.BIN,
-        "a binary string",
-        Bits._set_bin_safe,
-        Bits._get_bin,
-        str,
-        False,
-        bits_per_character=1,
-    ),
-    DtypeDefinition(
-        DtypeName.OCT,
-        "an octal string",
-        Bits._set_oct,
-        Bits._get_oct,
-        str,
-        False,
-        bits_per_character=3,
-    ),
-    DtypeDefinition(
-        DtypeName.HEX,
-        "a hexadecimal string",
-        Bits._set_hex,
-        Bits._get_hex,
-        str,
-        False,
-        bits_per_character=4,
-    ),
-    DtypeDefinition(
-        DtypeName.BYTES,
-        "a bytes object",
-        Bits._set_bytes,
-        Bits._get_bytes,
-        bytes,
-        False,
-        bits_per_character=8,
-    ),
+    DtypeDefinition(DtypeName.BIN, "a binary string",
+                    Bits._set_bin_safe, Bits._get_bin, str,
+                    False, bits_per_character=1),
+    DtypeDefinition(DtypeName.OCT, "an octal string",
+                    Bits._set_oct, Bits._get_oct, str,
+                    False, bits_per_character=3),
+    DtypeDefinition(DtypeName.HEX, "a hexadecimal string",
+                    Bits._set_hex, Bits._get_hex, str,
+                    False, bits_per_character=4),
+    DtypeDefinition(DtypeName.BYTES, "a bytes object",
+                    Bits._set_bytes, Bits._get_bytes, bytes,
+                    False, bits_per_character=8),
+
     # Float types
-    DtypeDefinition(
-        DtypeName.FLOAT,
-        "an IEEE floating point number",
-        Bits._set_f,
-        Bits._get_f,
-        float,
-        True,
-        float_bits2chars,
-        endianness_variants=True,
-        allowed_sizes=(16, 32, 64),
-    ),
+    DtypeDefinition(DtypeName.FLOAT, "an IEEE floating point number",
+                    Bits._set_f, Bits._get_f, float,
+                    True, float_bits2chars, endianness_variants=True, allowed_sizes=(16, 32, 64)),
+
     # Other known length types
-    DtypeDefinition(
-        DtypeName.BITS,
-        "a Bits object",
-        Bits._set_bits,
-        Bits._get_bits,
-        Bits,
-        False,
-        bits_bits2chars,
-    ),
-    DtypeDefinition(
-        DtypeName.BOOL,
-        "a bool (True or False)",
-        Bits._set_bool,
-        Bits._get_bool,
-        bool,
-        False,
-        bool_bits2chars,
-        allowed_sizes=(1,),
-    ),
+    DtypeDefinition(DtypeName.BITS, "a Bits object",
+                    Bits._set_bits, Bits._get_bits, Bits,
+                    False, bits_bits2chars),
+    DtypeDefinition(DtypeName.BOOL, "a bool (True or False)",
+                    Bits._set_bool, Bits._get_bool, bool,
+                    False, bool_bits2chars, allowed_sizes=(1,)),
+
     # Special case pad type
-    DtypeDefinition(
-        DtypeName.PAD,
-        "a skipped section of padding",
-        Bits._set_pad,
-        Bits._get_pad,
-        None,
-        False,
-        None,
-    ),
+    DtypeDefinition(DtypeName.PAD, "a skipped section of padding",
+                    Bits._set_pad, Bits._get_pad, None,
+                    False, None),
 ]
 
 
@@ -186,24 +124,8 @@ for dt in dtype_definitions:
     Register().add_dtype(dt)
 
 
-__all__ = [
-    "Bits",
-    "Dtype",
-    "DtypeTuple",
-    "Format",
-    "FieldType",
-    "Field",
-    "Array",
-    "BitsProxy",
-    "Expression",
-    "Options",
-    "Repeat",
-    "Register",
-    "Endianness",
-    "If",
-    "Pass",
-    "Reader",
-]
+__all__ = ["Bits", "Dtype", "DtypeTuple", "Format", "FieldType", "Field", "Array", "BitsProxy", "Expression",
+           "Options", "Repeat", "Register", "Endianness", "If", "Pass", "Reader"]
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:
