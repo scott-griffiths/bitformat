@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from bitformat import Bits
-from ._dtypes import Dtype, SimpleDtypeWithExpression, ArrayDtypeWithExpression, Register
+from ._dtypes import Dtype, DtypeSingleWithExpression, DtypeArrayWithExpression, Register
 from ast import literal_eval
 from ._common import override, Indenter, Colour, lark_parser
 from typing import Any, Iterable
@@ -251,7 +251,7 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if isinstance(self._dtype, (SimpleDtypeWithExpression, ArrayDtypeWithExpression)):
+        if isinstance(self._dtype, (DtypeSingleWithExpression, DtypeArrayWithExpression)):
             dtype = self._dtype.evaluate(vars_)
         else:
             dtype = self._dtype

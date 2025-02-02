@@ -241,7 +241,7 @@ def test_dtype_str_with_le():
     assert str(d) == "f_be16"
     d = Dtype("i_ne16")
     assert str(d) == "i_ne16"
-    assert repr(d) == "SimpleDtype('i_ne16')"
+    assert repr(d) == "DtypeSingle('i_ne16')"
 
 
 def test_hashing():
@@ -262,7 +262,7 @@ def test_str():
     b = DtypeTuple('[bool, [i5; 1]]')
     assert str(a) == 'u_le8'
     assert str(b) == '[bool, [i5; 1]]'
-    assert repr(a) == "SimpleDtype('u_le8')"
+    assert repr(a) == "DtypeSingle('u_le8')"
     assert repr(b) == "DtypeTuple('[bool, [i5; 1]]')"
     nt = DtypeDefinition("pingu", "A new type", Bits._set_u, Bits._get_u)
     s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"

@@ -13,7 +13,7 @@ from typing import Pattern
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
-__all__ = ["Dtype", "SimpleDtype", "ArrayDtype", "DtypeTuple", "DtypeDefinition", "Register"]
+__all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register"]
 
 CACHE_SIZE = 256
 
@@ -82,14 +82,14 @@ class Dtype(abc.ABC):
         # Delegate to the appropriate class
         if s.startswith("["):
             if "{" in s:
-                return ArrayDtypeWithExpression.from_string(s)
+                return DtypeArrayWithExpression.from_string(s)
             else:
-                return ArrayDtype.from_string(s)
+                return DtypeArray.from_string(s)
         else:
             if "{" in s:
-                return SimpleDtypeWithExpression.from_string(s)
+                return DtypeSingleWithExpression.from_string(s)
             else:
-                return SimpleDtype.from_string(s)
+                return DtypeSingle.from_string(s)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -218,13 +218,13 @@ class Dtype(abc.ABC):
         )
 
 
-class SimpleDtype(Dtype):
+class DtypeSingle(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int, endianness: Endianness = Endianness.UNSPECIFIED,
     ) -> Dtype:
-        x = SimpleDtype.__new__(SimpleDtype)
+        x = DtypeSingle.__new__(DtypeSingle)
         x._name = definition.name
         x._bits_per_item = x._size = size
         x._bits_per_character = definition.bits_per_character
@@ -337,7 +337,7 @@ class SimpleDtype(Dtype):
         return self._bits_per_item
 
 
-class ArrayDtype(Dtype):
+class DtypeArray(Dtype):
 
     _items: int | None
 
@@ -470,7 +470,7 @@ class ArrayDtype(Dtype):
         return self._items
 
 # TODO: Note this class isn't properly used yet, so don't expect it to really work.
-class SimpleDtypeWithExpression(SimpleDtype):
+class DtypeSingleWithExpression(DtypeSingle):
     size_expression: Expression | None
     base_dtype: Dtype
 
@@ -518,7 +518,7 @@ class SimpleDtypeWithExpression(SimpleDtype):
         return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
 
 # TODO: Note this class isn't really used, so things like __init__ won't even work yet.
-class ArrayDtypeWithExpression(ArrayDtype):
+class DtypeArrayWithExpression(DtypeArray):
     size_expression: Expression | None
     items_expression: Expression | None
     base_dtype: Dtype
@@ -535,7 +535,7 @@ class ArrayDtypeWithExpression(ArrayDtype):
         super().__new__(cls)
 
     @classmethod
-    def from_string(cls, token: str, /) -> ArrayDtypeWithExpression:
+    def from_string(cls, token: str, /) -> DtypeArrayWithExpression:
         x = super().__new__(cls)
         p = token.find("{")
         if p == -1:
@@ -791,14 +791,14 @@ class DtypeDefinition:
         self, size: int = 0, endianness: Endianness = Endianness.UNSPECIFIED
     ) -> Dtype:
         size, endianness = self.sanitize(size, endianness)
-        d = SimpleDtype._create(self, size, endianness)
+        d = DtypeSingle._create(self, size, endianness)
         return d
 
     def get_array_dtype(
         self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED
     ) -> Dtype:
         size, endianness = self.sanitize(size, endianness)
-        d = ArrayDtype._create(self, size, items, endianness)
+        d = DtypeArray._create(self, size, items, endianness)
         if size == 0:
             raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. "
                              f"Note that the number of items in the array dtype can be unknown, but the dtype of each item must have a known size.")
