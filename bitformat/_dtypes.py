@@ -591,7 +591,7 @@ class DtypeTuple:
 
     DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
 
-    >>> a = DtypeTuple('u12, u8, bool')
+    >>> a = DtypeTuple('[u12, u8, bool]')
     >>> b = DtypeTuple.from_params(['u12', 'u8', 'bool'])
 
     """
@@ -616,7 +616,10 @@ class DtypeTuple:
 
     @classmethod
     def from_string(cls, s: str, /) -> DtypeTuple:
-        tokens = [t.strip() for t in s.split(",")]
+        s = "".join(s.split())  # Remove whitespace
+        if not s.startswith("[") or not s.endswith("]"):
+            raise ValueError(f"DtypeTuple strings should be of the form '[dtype1, dtype2, ...]'. Got '{s}'.")
+        tokens = [t.strip() for t in s[1: -1].split(",")]
         dtypes = [Dtype.from_string(token) for token in tokens]
         return cls.from_params(dtypes)
 
@@ -682,7 +685,7 @@ class DtypeTuple:
         return iter(self._dtypes)
 
     def __str__(self) -> str:
-        return ", ".join(str(dtype) for dtype in self._dtypes)
+        return "[" + ", ".join(str(dtype) for dtype in self._dtypes) + "]"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{str(self)}')"
