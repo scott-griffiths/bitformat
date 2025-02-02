@@ -75,7 +75,7 @@ class TestChangingTheRegister:
         u2 = r.name_to_def[DtypeName("u")]
         assert u == u2
         with pytest.raises(KeyError):
-            i = r.name_to_def["integer"]
+            i = r.name_to_def["bool"]
 
     # def test_removing_type(self):
     #     del Register()['bool']
@@ -87,6 +87,7 @@ class TestChangingTheRegister:
 
 # class TestCreatingNewDtypes:
 #     def test_new_type(self):
+#
 #         md = DtypeDefinition("uintr", "A new type", Bits._set_u, Bits._get_u)
 #         Register().add_dtype(md)
 #         a = Bits("0xf")
@@ -105,17 +106,17 @@ class TestChangingTheRegister:
 #         a = Bits.from_string("0x010f")
 #         assert a.counter == 5
 #         with pytest.raises(AttributeError):
-#             a.counter = 4
-#
-#     def test_invalid_dtypes(self):
-#         with pytest.raises(TypeError):
-#             _ = Dtype()
-#         with pytest.raises(ValueError):
-#             _ = Dtype("float17")
-#         with pytest.raises(ValueError):
-#             _ = Dtype("[u8]")
-#         with pytest.raises(ValueError):
-#             _ = Dtype("u8, i8")
+            a.counter = 4
+
+    def test_invalid_dtypes(self):
+        with pytest.raises(TypeError):
+            _ = Dtype()
+        with pytest.raises(ValueError):
+            _ = Dtype("float17")
+        with pytest.raises(ValueError):
+            _ = Dtype("[u8]")
+        with pytest.raises(ValueError):
+            _ = Dtype("u8, i8")
 
 
 def test_len():
