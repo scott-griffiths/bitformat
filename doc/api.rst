@@ -13,6 +13,9 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
 
     ---
     title: Basic bitformat classes
+    config:
+        class:
+            hideEmptyMembersBox: true
     ---
     classDiagram
         direction BT
@@ -28,14 +31,16 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
         }
         class Dtype {
             <<abstract>>
-            + str name
-            + int size
             + endianness
             + from_string()
         }
-        class SimpleDtype {
+        class DtypeSingle {
+            + str name
+            + int size
         }
-        class ArrayDtype {
+        class DtypeArray {
+            + str name
+            + int size
             + int items
         }
         class DtypeTuple {
@@ -45,13 +50,12 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
             + Bits bits
             + int pos
         }
-        SimpleDtype --|> Dtype
-        ArrayDtype --|> Dtype
-        Array --* "1" Dtype
-        Array --> Bits
-        Bits <..> Dtype
-        DtypeTuple --o "1..*" Dtype
-        Reader --* "1" Bits
+        DtypeSingle --|> Dtype
+        DtypeArray --|> Dtype
+        DtypeTuple --|> Dtype
+        Array --* "1" Dtype : contains
+        Array --> Bits : interprets
+        Reader --* "1" Bits : contains
 
 
 The Basics
@@ -68,14 +72,15 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
 .. mermaid::
 
     ---
-    title: Field and Format classes
+    title: Field types
+    config:
+        class:
+            hideEmptyMembersBox: true
     ---
     classDiagram
         direction BT
-        class Bits {
-        }
-        class Dtype {
-        }
+        class Bits
+        class Dtype
         class FieldType{
             <<abstract>>
             + str name
@@ -99,8 +104,8 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         Format --|> FieldType
         If --|> FieldType
         Repeat --|> FieldType
-        Field --* "1" Dtype
-        Field --> Bits
+        Field --* "1" Dtype : contains
+        Field --* "0..1" Bits : contains
 
 
 Field Types
