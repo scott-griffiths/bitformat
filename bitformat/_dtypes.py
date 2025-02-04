@@ -9,7 +9,6 @@ import re
 from ._common import Expression, Endianness, byteorder, DtypeName
 from typing import Pattern
 
-
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
@@ -57,7 +56,7 @@ class Dtype(abc.ABC):
     _name: DtypeName
     _size: int
 
-    def __new__(cls, token: str | None = None, /) -> DtypeType:
+    def __new__(cls, token: str | None = None, /) -> Dtype:
         if token is None:
             x = super().__new__(cls)
             return x
@@ -65,7 +64,7 @@ class Dtype(abc.ABC):
 
 
     @classmethod
-    def from_string(cls, s: str) -> DtypeType:
+    def from_string(cls, s: str) -> Dtype:
         """Create a new Dtype from a token string.
 
         Some token string examples:
@@ -934,4 +933,3 @@ class Register:
                 f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}"
             )
         return "\n".join(s)
-

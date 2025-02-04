@@ -37,7 +37,7 @@ class TestCreation:
         assert a[-1] == 7
 
     def test_creation_from_bytes_explicit(self):
-        a = Array("hex2", Bits.from_bytes(b"ABCD"))
+        a = Array.from_bytes("hex2", b"ABCD")
         assert a[0] == "41"
         assert a[1] == "42"
         assert a[2] == "43"
@@ -45,7 +45,7 @@ class TestCreation:
 
     def test_creation_from_bits_format(self):
         a = Bits.from_string("0x000102030405")
-        b = Array("bits8", a)
+        b = Array.from_bits("bits8", a)
         c = Array(
             "bits8", [Bits.from_string("0x00"), "0x01", "0x02", "0x03", "0x04", "0x05"]
         )
@@ -101,7 +101,7 @@ class TestCreation:
         assert len(b) == 2
         with pytest.raises(ValueError):
             b.append("f")
-        b = Array(b.dtype, b.data[1:])
+        b = Array.from_bits(b.dtype, b.data[1:])
         b.append("f")
         assert len(b) == 3
 
@@ -129,7 +129,7 @@ class TestCreation:
 
     def test_creation_from_bits(self):
         a = Bits.from_joined([Bits.from_dtype("i19", x) for x in range(-10, 10)])
-        b = Array("i19", a)
+        b = Array.from_bits("i19", a)
         assert b.unpack() == list(range(-10, 10))
 
     def test_format_changes(self):
@@ -166,7 +166,7 @@ class TestArrayMethods:
     def test_from_bytes(self):
         a = Array("i16")
         assert len(a) == 0
-        a = Array(a.dtype, a.to_bits() + bytearray([0, 0, 0, 55]))
+        a = Array.from_bits(a.dtype, a.to_bits() + bytearray([0, 0, 0, 55]))
         assert len(a) == 2
         assert a[0] == 0
         assert a[1] == 55
@@ -194,9 +194,9 @@ class TestArrayMethods:
         assert not b.equals(a)
         b.dtype = "u20"
         assert a.equals(b)
-        a = Array(a.dtype, a.data + "0b1")
+        a = Array.from_bits(a.dtype, a.data + "0b1")
         assert not a.equals(b)
-        b = Array(b.dtype, b.data + "0b1")
+        b = Array.from_bits(b.dtype, b.data + "0b1")
         assert a.equals(b)
 
         c = Array("u8", [1, 2])
@@ -205,10 +205,10 @@ class TestArrayMethods:
 
     def test_equals_with_trailing_bits(self):
         a = Array("hex1", ["a", "b", "c", "d", "e", "f"])
-        c = Array("hex1", Bits.from_string("0xabcdef, 0b11"))
+        c = Array.from_bits("hex1", Bits.from_string("0xabcdef, 0b11"))
         assert a.unpack() == c.unpack()
         assert a != c
-        a = Array(a.dtype, a.data + "0b11")
+        a = Array.from_bits(a.dtype, a.data + "0b11")
         assert a.unpack() == c.unpack()
         assert a.equals(c)
 
@@ -254,7 +254,7 @@ class TestArrayMethods:
         b = Array("i3", [0])
         with pytest.raises(TypeError):
             a.extend(b)
-        a = Array(a.dtype, a.data[1:])
+        a = Array.from_bits(a.dtype, a.data[1:])
         with pytest.raises(ValueError):
             a.extend([1, 0])
         a = Array(a.dtype)
@@ -284,7 +284,7 @@ class TestArrayMethods:
         a.insert(-1, "111")
         assert a[-1] == "def"
         assert a[-2] == "111"
-        a = Array(a.dtype, a.data + "0b1")
+        a = Array.from_bits(a.dtype, a.data + "0b1")
         assert a[-1] == "def"
         a.insert(1, "111")
         assert a.unpack() == ["000", "111", "abc", "111", "def"]
@@ -331,7 +331,7 @@ class TestArrayMethods:
         assert x == 999
         a.reverse()
         assert a.unpack() == list(range(0, 999))
-        a = Array(a.dtype, a.data + "0b1")
+        a = Array.from_bits(a.dtype, a.data + "0b1")
         with pytest.raises(ValueError):
             a.reverse()
 
@@ -400,7 +400,7 @@ class TestArrayMethods:
         b = eval(a.__repr__())
         assert a.equals(b)
 
-        a = Array(a.dtype, a.data + "0b000")
+        a = Array.from_bits(a.dtype, a.data + "0b000")
         b = eval(a.__repr__())
         assert a.equals(b)
 
@@ -433,10 +433,10 @@ class TestArrayMethods:
         assert not 89 in a
 
     def test__copy__(self):
-        a = Array("i4", Bits.from_string("0x123451234561"))
+        a = Array.from_bits("i4", Bits.from_string("0x123451234561"))
         b = copy.copy(a)
         assert a.equals(b)
-        a = Array(a.dtype, a.data + "0b1010")
+        a = Array.from_bits(a.dtype, a.data + "0b1010")
         assert not a.equals(b)
 
     def test__iadd__(self):
@@ -635,7 +635,7 @@ class TestArrayOperations:
         a ^= "0b00, 0x0f"
 
     def test_rshift(self):
-        a = Array("u8", Bits.from_string("0x00010206"))
+        a = Array.from_bits("u8", Bits("0x00010206"))
         b = a >> 1
         assert a.unpack() == [0, 1, 2, 6]
         assert b.unpack() == [0, 0, 1, 3]
@@ -861,8 +861,8 @@ class TestMisc:
         assert b.data == b"\x00" * 5
 
     def test_bytes_trailing_bits(self):
-        b = Bits.from_string("0x000000, 0b111")
-        a = Array("bytes1", b)
+        b = Bits("0x000000, 0b111")
+        a = Array.from_bits("bytes1", b)
         assert a.trailing_bits == "0b111"
 
     def test_operation_with_bool(self):
@@ -1012,3 +1012,8 @@ def test_more_unpacking_to_dtypes():
     with pytest.raises(ValueError):
         a.unpack('i, bool')
     assert a.unpack(DtypeTuple('[u8]')) == [(71,)]
+
+def test_array_from_bits():
+    b = Bits('0xff')
+    a = Array("u8", b)
+    assert a.unpack() == [1, 1, 1, 1, 1, 1, 1, 1]

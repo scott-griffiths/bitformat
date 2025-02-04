@@ -155,6 +155,8 @@ class Array:
       gives the leftovers at the end of the data.
     """
 
+    _proxy: BitsProxy
+
     def __new__(cls, dtype: str | Dtype | DtypeTuple, iterable: Iterable | None = None) -> Array:
         x = cls.from_iterable(dtype, [] if iterable is None else iterable)
         return x
@@ -454,7 +456,7 @@ class Array:
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
                 # No length supplied - use the current length instead
-                dtype = Dtype.from_params(dtype.name, self.dtype.size)
+                dtype = Dtype.from_params(dtype.name.value, self.dtype.size)
         return [
             dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(
@@ -496,9 +498,6 @@ class Array:
             self._bitstore = BitRust.join(
                 [self._bitstore, Bits.from_bytes(iterable)._bitstore]
             )
-            return
-        if isinstance(iterable, Bits):
-            self._bitstore = BitRust.join([self._bitstore, iterable._bitstore])
             return
         if len(self._proxy) % self._dtype.bit_length != 0:
             raise ValueError(
@@ -748,7 +747,7 @@ class Array:
             start += self._dtype.bit_length
 
     def __copy__(self) -> Array:
-        a_copy = self.__class__(self._dtype, self.to_bits())
+        a_copy = self.__class__.from_bits(self._dtype, self.to_bits())
         return a_copy
 
     def _apply_op_to_all_elements(

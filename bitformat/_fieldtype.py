@@ -243,10 +243,10 @@ class FieldType(abc.ABC):
         if val != "":
             if not val.isidentifier():
                 raise ValueError(
-                    f"The FieldType name '{val}' is not a valid Python identifier."
+                    f"The FieldType name '{val}' is not permitted as  it is not a valid Python identifier."
                 )
             if keyword.iskeyword(val):
-                raise ValueError(f"The FieldType name '{val}' is a Python keyword.")
+                raise ValueError(f"The FieldType name '{val}' is not permitted as it is a Python keyword.")
             if "__" in val:
                 raise ValueError(
                     f"The FieldType name '{val}' contains a double underscore which is not permitted."
