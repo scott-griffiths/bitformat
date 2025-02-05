@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from bitformat import Bits
-from ._dtypes import Dtype, DtypeSingleWithExpression, DtypeArrayWithExpression, Register
+from ._dtypes import Dtype, DtypeSingle, DtypeSingleWithExpression, DtypeArrayWithExpression, Register
 from ast import literal_eval
 from ._common import override, Indenter, Colour, lark_parser, DtypeName
 from typing import Any, Iterable
@@ -185,7 +185,7 @@ class Field(FieldType):
         b = Bits._from_any(b)
         if len(b) == 0:
             raise ValueError("Can't create a Field from an empty Bits object.")
-        return cls.from_params(Dtype.from_params("bits", len(b)), name, b, const=True)
+        return cls.from_params(DtypeSingle.from_params("bits", len(b)), name, b, const=True)
 
     @classmethod
     def from_bytes(
@@ -203,7 +203,7 @@ class Field(FieldType):
         :return: The Field instance.
         :rtype: Field
         """
-        return cls.from_params(Dtype.from_params("bytes", len(b)), name, b, const)
+        return cls.from_params(DtypeSingle.from_params("bytes", len(b)), name, b, const)
 
     @override
     def to_bits(self) -> Bits:

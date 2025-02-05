@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, Bits, Field, Register
+from bitformat import Format, DtypeSingle, DtypeArray, Bits, Field, Register
 from bitformat._common import DtypeName
 from hypothesis import given, settings
 import hypothesis.strategies as st
@@ -31,7 +31,7 @@ def compare_fields(f, f2):
 )
 def test_field_consistency(dtype_name, length, const, int_value):
     length = get_allowed_length(dtype_name, length)
-    f = Field.from_params(Dtype.from_params(dtype_name, length))
+    f = Field.from_params(DtypeSingle.from_params(dtype_name, length))
     f2 = Field.from_string(str(f))
     compare_fields(f, f2)
 
@@ -63,7 +63,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
 def test_field_array_consistency(dtype_name, length, int_value, items):
     length = get_allowed_length(dtype_name, length)
 
-    f = Field.from_params(Dtype.from_params(dtype_name, length, True, items))
+    f = Field.from_params(DtypeArray.from_params(dtype_name, length, items))
     f2 = Field.from_string(str(f))
     assert f == f2
 
@@ -112,7 +112,7 @@ def test_format_consistency(dtype_names, lengths):
     zipped = list(zip(dtype_names, als, bits_per_characters))
     for i in range(6):
         dtypes = [
-            Dtype.from_params(dtype_name, length * bits_per_character)
+            DtypeSingle.from_params(dtype_name, length * bits_per_character)
             for dtype_name, length, bits_per_character in zipped[:i]
         ]
         f = Format.from_params([Field.from_params(dtype) for dtype in dtypes])

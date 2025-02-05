@@ -9,7 +9,7 @@ import functools
 from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
-from bitformat._dtypes import Dtype, Register, DtypeTuple
+from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple
 from bitformat._common import Colour, DtypeName
 from bitformat._options import Options
 from bitformat.bit_rust import BitRust
@@ -307,7 +307,7 @@ class Bits:
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
-        x = Bits.from_dtype(Dtype.from_params("u", n), value)
+        x = Bits.from_dtype(DtypeSingle.from_params("u", n), value)
         return x
 
     # ----- Instance Methods -----
@@ -571,9 +571,9 @@ class Bits:
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
-            dtype1 = Dtype.from_params("bin")
+            dtype1 = DtypeSingle.from_params("bin")
             if len(self) % 8 == 0 and len(self) >= 8:
-                dtype2 = Dtype.from_params("hex")
+                dtype2 = DtypeSingle.from_params("hex")
         if isinstance(dtype1, str):
             if "," in dtype1:
                 dtype1 = DtypeTuple.from_string(dtype1)

@@ -7,7 +7,7 @@ from bitformat import Array, Bits
 import copy
 import itertools
 import io
-from bitformat._dtypes import Dtype, DtypeTuple
+from bitformat._dtypes import Dtype, DtypeTuple, DtypeSingle
 import re
 import collections
 
@@ -64,7 +64,7 @@ class TestCreation:
             _ = Array("2*float16")
 
     def test_changing_fmt(self):
-        d = Dtype.from_params("u", 8)
+        d = DtypeSingle.from_params("u", 8)
         a = Array(d, [255] * 100)
         assert len(a) == 100
         a.dtype = Dtype("i4")
@@ -845,7 +845,7 @@ class TestMisc:
             a[0:5:2] = [1, 0]
 
     def test_set_out_of_range_element(self):
-        a = Array(Dtype.from_params("f", 16), [1, 2, 3, 4.5])
+        a = Array(DtypeSingle.from_params("f", 16), [1, 2, 3, 4.5])
         a[3] = 100.0
         a[-4] = 100.0
         with pytest.raises(IndexError):

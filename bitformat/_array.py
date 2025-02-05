@@ -456,7 +456,7 @@ class Array:
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
                 # No length supplied - use the current length instead
-                dtype = Dtype.from_params(dtype.name.value, self.dtype.size)
+                dtype = DtypeSingle.from_params(dtype.name.value, self.dtype.size)
         return [
             dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(

@@ -90,27 +90,6 @@ class Dtype(abc.ABC):
             else:
                 return DtypeSingle.from_string(s)
 
-    @classmethod
-    @functools.lru_cache(CACHE_SIZE)
-    def from_params(
-        cls,
-        name: str,
-        size: int = 0,
-        is_array: bool = False,
-        items: int = 1,
-        endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
-        """Create a new Dtype from its name, size and items.
-
-        It's usually clearer to use the Dtype constructor directly with a dtype str, but
-        this builder will be more efficient and is used internally to avoid string parsing.
-
-        """
-        if is_array:
-            return Register().get_array_dtype(name, size, items, endianness)
-        else:
-            return Register().get_single_dtype(name, size, endianness)
-
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
         """Create and return a new Bits from a value.
@@ -262,6 +241,22 @@ class DtypeSingle(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
+    def from_params(
+        cls,
+        name: str,
+        size: int = 0,
+        endianness: Endianness = Endianness.UNSPECIFIED,
+    ) -> Dtype:
+        """Create a new Dtype from its name and size.
+
+        It's usually clearer to use the Dtype constructor directly with a dtype str, but
+        this builder will be more efficient and is used internally to avoid string parsing.
+
+        """
+        return Register().get_single_dtype(name, size, endianness)
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
     def from_string(cls, token: str, /) -> Dtype:
         token = "".join(token.split())  # Remove whitespace
         try:
@@ -382,6 +377,23 @@ class DtypeArray(Dtype):
         x._return_type = tuple
         x._is_signed = definition.is_signed
         return x
+
+    @classmethod
+    @functools.lru_cache(CACHE_SIZE)
+    def from_params(
+        cls,
+        name: str,
+        size: int = 0,
+        items: int | None = None,
+        endianness: Endianness = Endianness.UNSPECIFIED,
+    ) -> Dtype:
+        """Create a new Dtype from its name, size and items.
+
+        It's usually clearer to use the Dtype constructor directly with a dtype str, but
+        this builder will be more efficient and is used internally to avoid string parsing.
+
+        """
+        return Register().get_array_dtype(name, size, items, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
