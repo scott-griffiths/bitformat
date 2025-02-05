@@ -53,6 +53,7 @@ class Dtype(abc.ABC):
 
     """
 
+    _name: DtypeName
     _endianness: Endianness
 
     def __new__(cls, token: str | None = None, /) -> Dtype:
@@ -105,6 +106,11 @@ class Dtype(abc.ABC):
 
         """
         ...
+
+    @property
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return self._name
 
     @property
     def endianness(self) -> Endianness:
@@ -191,13 +197,7 @@ class Dtype(abc.ABC):
 
 class DtypeSingle(Dtype):
 
-    _name: DtypeName
     _size: int
-
-    @property
-    def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        return self._name
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -336,14 +336,8 @@ class DtypeSingle(Dtype):
 
 class DtypeArray(Dtype):
 
-    _name: DtypeName
     _size: int
     _items: int | None
-
-    @property
-    def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        return self._name
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -632,6 +626,7 @@ class DtypeTuple(Dtype):
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
         x = super().__new__(cls)
         x._dtypes = []
+        x._name = DtypeName.TUPLE
         for d in dtypes:
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
             if dtype.bit_length == 0:
@@ -654,11 +649,7 @@ class DtypeTuple(Dtype):
             raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
         return bitformat.Bits.from_joined(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
 
-    def unpack(
-        self,
-        b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview,
-        /,
-    ) -> tuple[tuple[Any] | Any]:
+    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[tuple[Any] | Any]:
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
