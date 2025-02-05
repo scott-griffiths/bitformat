@@ -53,15 +53,13 @@ class Dtype(abc.ABC):
 
     """
 
-    _name: DtypeName
-    _size: int
+    _endianness: Endianness
 
     def __new__(cls, token: str | None = None, /) -> Dtype:
         if token is None:
             x = super().__new__(cls)
             return x
         return cls.from_string(token)
-
 
     @classmethod
     def from_string(cls, s: str) -> Dtype:
@@ -107,11 +105,6 @@ class Dtype(abc.ABC):
 
         """
         ...
-
-    @property
-    def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        return self._name
 
     @property
     def endianness(self) -> Endianness:
@@ -197,6 +190,14 @@ class Dtype(abc.ABC):
 
 
 class DtypeSingle(Dtype):
+
+    _name: DtypeName
+    _size: int
+
+    @property
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return self._name
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -333,7 +334,14 @@ class DtypeSingle(Dtype):
 
 class DtypeArray(Dtype):
 
+    _name: DtypeName
+    _size: int
     _items: int | None
+
+    @property
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return self._name
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
