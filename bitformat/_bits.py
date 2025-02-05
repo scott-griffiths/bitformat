@@ -1062,7 +1062,7 @@ class Bits:
                      colour_end: str,  width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
-        if isinstance(dtype, Dtype):
+        if not isinstance(dtype, DtypeTuple):
             if dtype.name == DtypeName.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
             if  dtype.name == DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
@@ -1098,7 +1098,7 @@ class Bits:
     @staticmethod
     def _chars_per_dtype(dtype: Dtype | DtypeTuple, bits_per_group: int):
         """How many characters are needed to represent a number of bits with a given Dtype."""
-        if isinstance(dtype, Dtype):
+        if not isinstance(dtype, DtypeTuple):
             return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
         chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (len(dtype) - 1)

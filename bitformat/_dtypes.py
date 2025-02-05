@@ -605,7 +605,7 @@ class DtypeArrayWithExpression(DtypeArray):
         return f"[{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str};{items_str}]"
 
 
-class DtypeTuple:
+class DtypeTuple(Dtype):
     """A data type class, representing a tuple of concrete interpretations of binary data.
 
     DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
