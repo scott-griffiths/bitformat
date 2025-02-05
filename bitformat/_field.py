@@ -185,7 +185,7 @@ class Field(FieldType):
         b = Bits._from_any(b)
         if len(b) == 0:
             raise ValueError("Can't create a Field from an empty Bits object.")
-        return cls.from_params(DtypeSingle.from_params("bits", len(b)), name, b, const=True)
+        return cls.from_params(DtypeSingle.from_params(DtypeName.BITS, len(b)), name, b, const=True)
 
     @classmethod
     def from_bytes(
@@ -203,7 +203,7 @@ class Field(FieldType):
         :return: The Field instance.
         :rtype: Field
         """
-        return cls.from_params(DtypeSingle.from_params("bytes", len(b)), name, b, const)
+        return cls.from_params(DtypeSingle.from_params(DtypeName.BYTES, len(b)), name, b, const)
 
     @override
     def to_bits(self) -> Bits:

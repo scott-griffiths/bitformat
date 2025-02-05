@@ -307,7 +307,7 @@ class Bits:
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
-        x = Bits.from_dtype(DtypeSingle.from_params("u", n), value)
+        x = Bits.from_dtype(DtypeSingle.from_params(DtypeName.UNSIGNED_INT, n), value)
         return x
 
     # ----- Instance Methods -----
@@ -571,9 +571,9 @@ class Bits:
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
-            dtype1 = DtypeSingle.from_params("bin")
+            dtype1 = DtypeSingle.from_params(DtypeName.BIN)
             if len(self) % 8 == 0 and len(self) >= 8:
-                dtype2 = DtypeSingle.from_params("hex")
+                dtype2 = DtypeSingle.from_params(DtypeName.HEX)
         if isinstance(dtype1, str):
             if "," in dtype1:
                 dtype1 = DtypeTuple.from_string(dtype1)
@@ -1066,7 +1066,7 @@ class Bits:
             if dtype.name == DtypeName.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
             if  dtype.name == DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-                get_fn = Register().get_single_dtype("u", bits_per_group).unpack
+                get_fn = Register().get_single_dtype(DtypeName.UNSIGNED_INT, bits_per_group).unpack
             align = "<" if dtype.name in [DtypeName.BIN, DtypeName.OCT, DtypeName.HEX, DtypeName.BITS, DtypeName.BYTES] else ">"
             if dtype.name == DtypeName.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))

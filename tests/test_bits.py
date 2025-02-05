@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple, DtypeSingle, DtypeArray
+from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple, DtypeSingle, DtypeArray, DtypeName
 
 
 def test_build():
@@ -83,13 +83,13 @@ class TestCreation:
         assert (s.unpack(Dtype("i")), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.from_dtype(DtypeSingle.from_params("i", length), value)
+                s = Bits.from_dtype(DtypeSingle.from_params(DtypeName.SIGNED_INT, length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.from_dtype(DtypeSingle.from_params("int", length), int_)
+            _ = Bits.from_dtype(DtypeSingle.from_params(DtypeName.SIGNED_INT, length), int_)
 
     def test_creation_from_bool(self):
         a = Bits.from_dtype("bool", False)
@@ -631,7 +631,7 @@ def test_float_errors():
         _ = a.f
     for le in (8, 10, 12, 18, 30, 128, 200):
         with pytest.raises(ValueError):
-            _ = Bits.from_dtype(DtypeSingle.from_params("f", le), 1.0)
+            _ = Bits.from_dtype(DtypeSingle.from_params(DtypeName.FLOAT, le), 1.0)
 
 
 def test_little_endian_uint():
@@ -685,10 +685,10 @@ def test_native_endian_floats():
         assert a.f_le == 0.55
         assert a.f_ne == 0.55
         d = Dtype("f_ne64")
-        d2 = DtypeSingle.from_params("f", 64, endianness=Endianness.NATIVE)
+        d2 = DtypeSingle.from_params(DtypeName.FLOAT, 64, endianness=Endianness.NATIVE)
         assert d == d2
         assert d.endianness == Endianness.NATIVE
-        d3 = DtypeSingle.from_params("f", 64, endianness=Endianness.LITTLE)
+        d3 = DtypeSingle.from_params(DtypeName.FLOAT, 64, endianness=Endianness.LITTLE)
         assert d != d3
 
 

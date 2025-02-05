@@ -201,8 +201,8 @@ class DtypeSingle(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, size: int, endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
+    def _create(cls, definition: DtypeDefinition, size: int,
+                endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         x = DtypeSingle.__new__(DtypeSingle)
         x._name = definition.name
         x._bits_per_item = x._size = size
@@ -242,12 +242,8 @@ class DtypeSingle(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def from_params(
-        cls,
-        name: str,
-        size: int = 0,
-        endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
+    def from_params(cls, name: DtypeName, size: int = 0,
+                    endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         """Create a new Dtype from its name and size.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -269,10 +265,16 @@ class DtypeSingle(Dtype):
                 )
             else:
                 raise e
-        name, modifier = parse_name_to_name_and_modifier(name)
-        endianness = Endianness(modifier)
-        return Register().get_single_dtype(name, size, endianness)
+        name_str, modifier = parse_name_to_name_and_modifier(name)
 
+        endianness = Endianness(modifier)
+        try:
+            name = DtypeName(name_str)
+        except ValueError:
+            aliases = {"int": "i", "uint": "u", "float": "f"}
+            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+            raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+        return Register().get_single_dtype(name, size, endianness)
 
     def pack(self, value: Any, /) -> bitformat.Bits:
         # Single item to pack
@@ -806,9 +808,7 @@ class DtypeDefinition:
                 raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
         return size, endianness
 
-    def get_single_dtype(
-        self, size: int = 0, endianness: Endianness = Endianness.UNSPECIFIED
-    ) -> Dtype:
+    def get_single_dtype(self, size: int = 0, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeSingle._create(self, size, endianness)
         return d
@@ -908,20 +908,10 @@ class Register:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_single_dtype(
-        cls,
-        name: str,
-        size: int | None,
-        endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
-        try:
-            definition = cls.name_to_def[DtypeName(name)]
-        except KeyError:
-            aliases = {"int": "i", "uint": "u", "float": "f"}
-            extra = f"Did you mean '{aliases[name]}'? " if name in aliases else ""
-            raise ValueError(f"Unknown Dtype name '{name}'. {extra}Names available: {list(cls.name_to_def.keys())}.")
-        else:
-            return definition.get_single_dtype(size, endianness)
+    def get_single_dtype(cls, name: DtypeName, size: int | None,
+                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
+        definition = cls.name_to_def[name]
+        return definition.get_single_dtype(size, endianness)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)

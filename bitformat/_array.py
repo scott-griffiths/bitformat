@@ -7,7 +7,7 @@ from typing import Union, Iterable, Any, overload, TextIO
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle, DtypeArray
 from bitformat._options import Options
-from bitformat._common import Colour
+from bitformat._common import Colour, DtypeName
 import operator
 import sys
 from bitformat.bit_rust import BitRust
@@ -456,7 +456,7 @@ class Array:
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
                 # No length supplied - use the current length instead
-                dtype = DtypeSingle.from_params(dtype.name.value, self.dtype.size)
+                dtype = DtypeSingle.from_params(dtype.name, self.dtype.size)
         return [
             dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(
@@ -854,7 +854,7 @@ class Array:
                 msg += " Use equals() method to compare Arrays for a single boolean result."
             raise ValueError(msg)
         if is_comparison:
-            new_type = Register().get_single_dtype("bool", 1)
+            new_type = Register().get_single_dtype(DtypeName.BOOL, 1)
         else:
             new_type = self._promote_type(self._dtype, other._dtype)
         new_array = self.__class__(new_type)

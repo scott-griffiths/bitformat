@@ -9,7 +9,7 @@ import hypothesis.strategies as st
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        d = DtypeSingle.from_params("bytes", 2)
+        d = DtypeSingle.from_params(DtypeName.BYTES, 2)
         assert d.size == 2
         assert d.bit_length == 16
         assert d.bits_per_item

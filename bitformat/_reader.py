@@ -5,6 +5,7 @@ from typing import Any
 from bitformat._bits import Bits
 from bitformat._fieldtype import FieldType
 from bitformat._dtypes import Dtype, DtypeSingle, DtypeTuple
+from bitformat._common import DtypeName
 
 
 class Reader:
@@ -77,7 +78,7 @@ class Reader:
     ) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Read from the current bit position, and interpret according to the given dtype."""
         if isinstance(dtype, int):
-            dtype = DtypeSingle.from_params('bits', dtype)
+            dtype = DtypeSingle.from_params(DtypeName.BITS, dtype)
         elif isinstance(dtype, str):
             if "," in dtype:
                 dtype = DtypeTuple.from_string(dtype)
