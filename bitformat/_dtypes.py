@@ -347,9 +347,8 @@ class DtypeArray(Dtype):
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, size: int,
-        items: int = 1, endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
+    def _create(cls, definition: DtypeDefinition, size: int, items: int = 1,
+                endianness: Endianness = Endianness.UNSPECIFIED,) -> DtypeArray:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
@@ -392,7 +391,7 @@ class DtypeArray(Dtype):
     @functools.lru_cache(CACHE_SIZE)
     def from_params(
         cls,
-        name: str,
+        name: DtypeName,
         size: int = 0,
         items: int | None = None,
         endianness: Endianness = Endianness.UNSPECIFIED,
@@ -413,11 +412,17 @@ class DtypeArray(Dtype):
             raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
         t = token[p + 1 : -1]
         items = int(t) if t else 0
-        name, size = parse_name_size_token(token[1:p])
-        name, modifier = parse_name_to_name_and_modifier(name)
+        name_str, size = parse_name_size_token(token[1:p])
+        name_str, modifier = parse_name_to_name_and_modifier(name_str)
         endianness = Endianness(modifier)
-        return Register().get_array_dtype(name, size, items, endianness)
 
+        try:
+            name = DtypeName(name_str)
+        except ValueError:
+            aliases = {"int": "i", "uint": "u", "float": "f"}
+            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+            raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+        return Register().get_array_dtype(name, size, items, endianness)
 
     def pack(self, value: Any, /) -> bitformat.Bits:
         if isinstance(value, bitformat.Bits):
@@ -813,9 +818,7 @@ class DtypeDefinition:
         d = DtypeSingle._create(self, size, endianness)
         return d
 
-    def get_array_dtype(
-        self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED
-    ) -> Dtype:
+    def get_array_dtype(self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeArray._create(self, size, items, endianness)
         if size == 0:
@@ -915,20 +918,10 @@ class Register:
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(
-        cls,
-        name: str,
-        size: int,
-        items: int,
-        endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
-        try:
-            definition = cls.name_to_def[DtypeName(name)]
-        except KeyError:
-            raise ValueError(f"Unknown Dtype name '{name}'. Names available: {list(cls.name_to_def.keys())}.")
-        else:
-            d = definition.get_array_dtype(size, items, endianness)
-            return d
+    def get_array_dtype(cls, name: DtypeName, size: int, items: int,
+                        endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
+        definition = cls.name_to_def[name]
+        return definition.get_array_dtype(size, items, endianness)
 
     def __repr__(self) -> str:
         s = [
