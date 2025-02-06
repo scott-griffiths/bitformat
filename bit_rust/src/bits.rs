@@ -21,19 +21,20 @@ type BS = BitSlice<u8, Msb0>;
 
 // An implementation of the KMP algorithm for bit slices.
 fn compute_lps(pattern: &BS) -> Vec<usize> {
-    let mut lps = vec![0; pattern.len()];
-    let mut length = 0;
+    let len = pattern.len();
+    let mut lps = vec![0; len];
     let mut i = 1;
+    let mut len_prev = 0;
 
-    while i < pattern.len() {
-        if pattern[i] == pattern[length] {
-            length += 1;
-            lps[i] = length;
-            i += 1;
-        } else {
-            if length != 0 {
-                length = lps[length - 1];
-            } else {
+    while i < len {
+        match pattern[i] == pattern[len_prev] {
+            true => {
+                len_prev += 1;
+                lps[i] = len_prev;
+                i += 1;
+            }
+            false if len_prev != 0 => len_prev = lps[len_prev - 1],
+            false => {
                 lps[i] = 0;
                 i += 1;
             }
