@@ -31,15 +31,14 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
         }
         class Dtype {
             <<abstract>>
+            + DtypeName name
             + endianness
             + from_string()
         }
         class DtypeSingle {
-            + str name
             + int size
         }
         class DtypeArray {
-            + str name
             + int size
             + int items
         }
