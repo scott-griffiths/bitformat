@@ -685,7 +685,7 @@ impl BitRust {
 
         let mut count = 0;
 
-        // Handle any bits before first complete byte
+        // Handle any bits before the first complete byte
         if first_complete_byte * 8 > start_bit {
             for i in start_bit..(first_complete_byte * 8).min(end_bit) {
                 if self.owned_data[i] {
@@ -695,10 +695,9 @@ impl BitRust {
         }
 
         // Use hamming::weight for complete bytes
-        // TODO: This is *much* slower when we use a slice
         if last_complete_byte > first_complete_byte {
-            let raw_slice = self.owned_data.as_raw_slice();
-            count += hamming::weight(&raw_slice[first_complete_byte..last_complete_byte]) as usize;
+            let raw_slice = &self.owned_data.as_raw_slice()[first_complete_byte..last_complete_byte];
+            count += hamming::weight(raw_slice) as usize;
         }
 
         // Handle any remaining bits
