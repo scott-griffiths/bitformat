@@ -445,15 +445,33 @@ impl BitRust {
     // An unchecked version of from_bin. Used when you're sure the input is valid.
     #[staticmethod]
     pub fn from_bin(binary_str: &str) -> Self {
-        let mut b: BV = BV::with_capacity(binary_str.len());
-        for c in binary_str.chars() {
-            match c {
-                '0' => b.push(false),
-                '1' => b.push(true),
-                _ => panic!("Invalid character"),
-            }
+        let len = binary_str.len();
+        let mut b: BV = BV::with_capacity(len);
+
+        // Process bytes at a time when possible
+        let bytes = binary_str.as_bytes();
+        let chunks = bytes.chunks_exact(8);
+        let remainder = chunks.remainder();
+
+        for chunk in chunks {
+            let mut byte = 0u8;
+            // Unroll the loop for better performance
+            byte = (byte << 1) | ((chunk[0] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[1] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[2] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[3] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[4] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[5] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[6] == b'1') as u8);
+            byte = (byte << 1) | ((chunk[7] == b'1') as u8);
+            b.extend_from_raw_slice(&[byte]);
         }
-        b.set_uninitialized(false);
+
+        // Handle remaining bits
+        for &bit in remainder {
+            b.push(bit == b'1');
+        }
+
         BitRust::new(b)
     }
 
