@@ -950,7 +950,11 @@ impl BitRust {
 
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> Self {
-        BitRust::new(self.get_bv_clone())
+        BitRust {
+            owned_data: Arc::new((*self.owned_data).clone()),
+            offset: self.offset,
+            length: self.length
+        }
     }
 
     pub fn set_mutable_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
@@ -1158,6 +1162,17 @@ fn test_set_mutable_slice() {
     a.set_mutable_slice(8, 16, &b).unwrap();
     assert_eq!(a.to_hex().unwrap(), "00ff223344");
 }
+
+#[test]
+fn test_get_mutable_slice() {
+    let a = BitRust::from_hex("01ffff");
+    assert_eq!(a.len(), 24);
+    let b = a.getslice(1, None).unwrap();
+    assert_eq!(b.len(), 23);
+    let c = b.get_mutable_copy();
+    assert_eq!(c.len(), 23);
+}
+
 
 #[test]
 fn test_getslice() {

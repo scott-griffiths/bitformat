@@ -102,7 +102,11 @@ class TestCreation:
         assert len(b) == 2
         with pytest.raises(ValueError):
             b.append("f")
-        b = Array.from_bits(b.dtype, b.data[1:])
+        assert len(b.data) == 9
+        a_slice = b.data[1:]
+        assert len(a_slice) == 8
+        b = Array.from_bits(b.dtype, a_slice)
+        assert len(b.data) == 8
         b.append("f")
         assert len(b) == 3
 
