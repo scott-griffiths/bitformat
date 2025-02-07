@@ -62,8 +62,10 @@ The Basics
 The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to use and understand.
 
 * :ref:`Bits <bits>` -- An immutable container for storing binary data.
-* :ref:`Dtype <dtype>` -- A data type used to interpret binary data.
-* :ref:`DtypeTuple <dtypetuple>` -- A sequence of :class:`Dtype` objects.
+* :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
+* :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
+* :ref:`DtypeArray <dtypearray>` -- A sequence of :class:`Dtype` objects of the same type.
+* :ref:`DtypeTuple <dtypetuple>` -- A sequence of :class:`Dtype` objects of different types.
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
 * :ref:`Reader <reader>` -- Read and parse :class:`Bits` as a bit stream with a bit position.
 
@@ -135,7 +137,6 @@ Miscellaneous
 
     bits.rst
     dtype.rst
-    dtypetuple.rst
     array.rst
     reader.rst
     fieldtype.rst

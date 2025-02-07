@@ -14,3 +14,4 @@ You shouldn't usually need to deal with this type directly, but its methods are 
    :members:
    :undoc-members:
    :member-order: groupwise
+   :show-inheritance:

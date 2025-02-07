@@ -473,9 +473,7 @@ class Array:
         :return: None
         """
         if len(self._proxy) % self._dtype.bit_length != 0:
-            raise ValueError(
-                "Cannot append to Array as its length is not a multiple of the format length."
-            )
+            raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._bitstore = BitRust.join(
             [self._bitstore, self._create_element(x)._bitstore]
         )

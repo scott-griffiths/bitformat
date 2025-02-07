@@ -62,3 +62,4 @@ The next two are named 12 bit unsigned integer fields, and the final field is an
    :inherited-members:
    :undoc-members:
    :member-order: groupwise
+   :show-inheritance:

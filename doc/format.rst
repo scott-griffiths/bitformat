@@ -13,4 +13,5 @@ A :class:`Format` is a sequence of :class:`FieldType` objects, which allows comp
    :undoc-members:
    :inherited-members:
    :member-order: groupwise
+   :show-inheritance:
 

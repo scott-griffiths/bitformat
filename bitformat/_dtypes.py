@@ -44,12 +44,16 @@ def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
 
 
 class Dtype(abc.ABC):
-    """A data type class, representing a concrete interpretation of binary data.
+    """An abstract data type class.
 
-    Dtype instances are immutable. They are often created implicitly elsewhere via a token string.
+    Although this base class is abstract, the __init__ method can be used to construct its
+    sub-classes via a formatted string.
 
-    >>> u12 = Dtype('u12')
-    >>> float16 = Dtype('f16')
+    Dtype instances are immutable. They are often created implicitly via a token string.
+
+    >>> a_12bit_int = Dtype('i12')  # Creates a DtypeSingle
+    >>> five_16_bit_floats = Dtype('[f16; 5]')  # Creates a DtypeArray
+    >>> a_tuple = Dtype('(bool, u7)')  # Creates a DtypeTuple
 
     """
 
@@ -64,13 +68,12 @@ class Dtype(abc.ABC):
 
     @classmethod
     def from_string(cls, s: str) -> Dtype:
-        """Create a new Dtype from a token string.
+        """Create a new Dtype sub-class from a token string.
 
         Some token string examples:
 
-        * ``'u12'``: An unsigned 12-bit integer.
-        * ``'bytes'``: A ``bytes`` object with no explicit size.
-        * ``'[i6; 5]'``: An array of 5 signed 6-bit integers.
+        * ``'u12'``: A DtypeSingle representing an unsigned 12-bit integer.
+        * ``'[i6; 5]'``: A DtypeArray of 5 signed 6-bit integers.
 
         As a shortcut the ``Dtype`` constructor can be used directly with a token string.
 

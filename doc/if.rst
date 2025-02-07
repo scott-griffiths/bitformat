@@ -12,4 +12,5 @@ An :class:`If` uses a condition to choose between a pair of :class:`FieldType` o
    :members:
    :undoc-members:
    :member-order: groupwise
+   :show-inheritance:
 

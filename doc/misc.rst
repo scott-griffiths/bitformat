@@ -8,7 +8,10 @@ A collection of items that don't fit into any other category.
 
 ----
 
-.. autoclass:: bitformat.Endianness
+.. autoenum:: bitformat.DtypeName
    :members:
-   :undoc-members:
-   :member-order: groupwise
+
+----
+
+.. autoenum:: bitformat.Endianness
+   :members:
