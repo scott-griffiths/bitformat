@@ -141,9 +141,8 @@ def test_building():
     assert f8.value == [7, (8, (9, 10, 11))]
 
 
-@pytest.mark.skip
 def test_packing_bug():
-    f = Format("bug = [u8, [u8, u8]]")
+    f = Format("bug = (u8, (u8, u8))")
     f.pack([10, [20, 30]])
     assert f.value == [10, [20, 30]]
 
@@ -199,25 +198,25 @@ class TestArray:
         assert f["pixels"].value == p
 
 
-@pytest.mark.skip
+
 def test_example_from_docs():
-    f = Format(["x: u8", "y: u{x}"])
-    b = Bits.from_string("u8=10, u10=987")
+    f = Format("(x: u8, y: u{x}, bool)")
+    b = Bits.from_string("u8=10, u10=987, bool=1")
     f.parse(b)
     assert f["y"].value == 987
 
-    f = Format(
-        [
-            "sync_byte: const hex8 = 0xff",
-            "items: u16",
-            "flags: [bool ; {items + 1} ] ",
-            Repeat(
-                "{items + 1}", ["byte_cluster_size: u4", "bytes{byte_cluster_size}"]
-            ),
-            "u8",
-        ]
-    )
-    f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
+    # f = Format(
+    #     [
+    #         "sync_byte: const hex8 = 0xff",
+    #         "items: u16",
+    #         "flags: [bool ; {items + 1} ] ",
+    #         Repeat(
+    #             "{items + 1}", ["byte_cluster_size: u4", "bytes{byte_cluster_size}"]
+    #         ),
+    #         "u8",
+    #     ]
+    # )
+    # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
 
 
 @pytest.mark.skip

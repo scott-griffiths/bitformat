@@ -93,7 +93,7 @@ class Format(FieldType):
                 # Don't bother appending if it's the Pass singleton.
                 continue
             try:
-                if fieldtype.bit_length == 0:
+                if fieldtype.is_stretchy():
                     stretchy_field = str(fieldtype)
             except ValueError:
                 pass

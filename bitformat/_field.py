@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import re
 from bitformat import Bits
-from ._dtypes import Dtype, DtypeSingle, DtypeSingleWithExpression, DtypeArrayWithExpression, Register
+from ._dtypes import Dtype, DtypeSingle, Register
 from ast import literal_eval
-from ._common import override, Indenter, Colour, lark_parser, DtypeName
+from ._common import override, Indenter, Colour, lark_parser, DtypeName, Expression
 from typing import Any, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
@@ -53,19 +53,14 @@ class Field(FieldType):
     const: bool
     _bits: Bits | None
     _dtype: Dtype
+    _size_expr: Expression | None
 
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
 
     @classmethod
-    def from_params(
-        cls,
-        dtype: Dtype | str,
-        name: str = "",
-        value: Any = None,
-        const: bool = False,
-        comment: str = "",
-    ) -> Field:
+    def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False,
+                    size_expr: Expression | None = None, comment: str = "") -> Field:
         """
         Create a Field instance from parameters.
 
@@ -86,14 +81,13 @@ class Field(FieldType):
         x = super().__new__(cls)
         x._bits = None
         x.const = const
+        x._size_expr = size_expr
         x.comment = comment.strip()
         if isinstance(dtype, str):
             try:
                 x._dtype = Dtype.from_string(dtype)
             except ValueError as e:
-                raise ValueError(
-                    f"Can't convert the string '{dtype}' to a Dtype: {str(e)}"
-                )
+                raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         else:
             x._dtype = dtype
         x.name = name
@@ -150,8 +144,6 @@ class Field(FieldType):
                 values = visitor._values[0]
             return cls.from_params(dtype, visitor._field_name, values, visitor._const)
 
-
-
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:
@@ -159,11 +151,14 @@ class Field(FieldType):
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
         if "," in dtype_str:
-            raise ValueError(
-                f"Field strings can only have one Dtype and should not contain commas. "
-                f"Perhaps you meant to use Format('({s})') instead?"
-            )
-        return cls.from_params(dtype_str, name, value, const, comment)
+            raise ValueError(f"Field strings can only have one Dtype and should not contain commas. "
+                             f"Perhaps you meant to use Format('({s})') instead?")
+        if (p := dtype_str.find("{")) == -1:
+            size_expr = None
+        else:
+            size_expr = Expression(dtype_str[p:])
+            dtype_str = dtype_str[:p]
+        return cls.from_params(dtype_str, name, value, const, size_expr, comment)
 
     @classmethod
     def from_bits(
@@ -221,7 +216,7 @@ class Field(FieldType):
     @override
     def _copy(self) -> Field:
         x = self.__class__.from_params(
-            self.dtype, self.name, self.value, self.const, self.comment
+            self.dtype, self.name, self.value, self.const, self._size_expr, self.comment
         )
         return x
 
@@ -251,8 +246,10 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if isinstance(self._dtype, (DtypeSingleWithExpression, DtypeArrayWithExpression)):
-            dtype = self._dtype.evaluate(vars_)
+        if self._size_expr is not None:
+            size = self._size_expr.evaluate(vars_)
+            # TODO: A bit hacky, needs to be revised for other dtypes.
+            dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
         else:
             dtype = self._dtype
         if len(b) - startbit < dtype.bit_length:
@@ -321,7 +318,7 @@ class Field(FieldType):
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
         const_str = "const " if self.const else ""
-        dtype_str = str(self._dtype)
+        dtype_str = str(self._dtype) + ("" if self._size_expr is None else str(self._size_expr))
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
         v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
@@ -333,7 +330,7 @@ class Field(FieldType):
     def _repr(self) -> str:
         const_str = "const " if self.const else ""
         n = "" if self.name == "" else f"{self.name}: "
-        dtype = f"{const_str}{self._dtype}"
+        dtype = f"{const_str}{self._dtype}" + ("" if self._size_expr is None else str(self._size_expr))
         v = "" if self.value is None else f" = {self.value}"
         return f"'{n}{dtype}{v}'"
 

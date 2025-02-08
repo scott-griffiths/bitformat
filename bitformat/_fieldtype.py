@@ -96,6 +96,17 @@ class FieldType(abc.ABC):
         """
         return self._repr()
 
+    def is_stretchy(self) -> bool:
+        """
+        Return True if the field is stretchy, False otherwise.
+
+        :return: True if stretchy, False otherwise.
+        :rtype: bool
+        """
+        if hasattr(self, "_size_expr") and self._size_expr is not None:
+            return False
+        return self.bit_length == 0
+
     def pp(
         self,
         stream: TextIO = sys.stdout,

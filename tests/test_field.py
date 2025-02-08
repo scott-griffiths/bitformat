@@ -202,17 +202,14 @@ def test_const_equality():
     assert a != b
 
 
-# def test_size_expression():
-#     f = Field("x: u{5}")
-#     assert str(f._dtype) == "u{5}"
-#     assert f._dtype.size_expression == Expression("{5}")
-    # assert f._dtype.items_expression is None
-    # with pytest.raises(ValueError):
-    #     _ = Field('x: u8{5}')
-    # g = Field('p5:  [i{x}; {x + 2}]')
-    # assert g._dtype.size_expression == Expression('{x}')
-    # assert g._dtype.items_expression == Expression('{x+2}')
-    # assert g._dtype == Dtype('i')
+def test_size_expression():
+    f = Field.from_params(Dtype('u'), size_expr=Expression('{5}'))
+    assert f.dtype == Dtype("u")
+    assert f._size_expr == Expression('{5}')
+    assert str(f) == "u{5}"
+    g = Field(" u { 5 } ")
+    assert str(g) == "u{5}"
+    assert f == g
 
 
 def test_unpack():

@@ -505,54 +505,6 @@ class DtypeArray(Dtype):
         return self._items
 
 
-# TODO: Note this class isn't properly used yet, so don't expect it to really work.
-class DtypeSingleWithExpression(DtypeSingle):
-    size_expression: Expression | None
-    base_dtype: Dtype
-
-    def __init__(self, name: str, size: int | Expression, endianness: Endianness = Endianness.UNSPECIFIED):
-        if isinstance(size, Expression):
-            self.size_expression = size
-            size = 0
-        else:
-            self.size_expression = None
-        self.base_dtype = Register().get_single_dtype(name, size, endianness)
-
-    def __new__(cls, *args, **kwargs):
-        super().__new__(cls)
-
-    @classmethod
-    def from_string(cls, token: str, /) -> Dtype:
-        x = super().__new__(cls)
-        name, size_str = parse_name_expression_token(token)
-        try:
-            size = int(size_str)
-            x.size_expression = None
-        except ValueError:
-            x.size_expression = Expression(size_str)
-            size = 0
-        name, modifier = parse_name_to_name_and_modifier(name)
-        endianness = Endianness(modifier)
-        x.base_dtype = Register().get_single_dtype(name, size, endianness)
-        return x
-
-    def evaluate(self, vars_: dict[str, Any]) -> Dtype:
-        if self.size_expression is None and self.items_expression is None:
-            return self.base_dtype
-        if not vars_:
-            return self.base_dtype
-        name = self.base_dtype.name
-        size = self.size_expression.evaluate(vars_) if (self.size_expression and vars_) else self.base_dtype.size
-        endianness = self.base_dtype.endianness
-        return Register().get_single_dtype(name, size, endianness)
-
-    def __str__(self) -> str:
-        only_one_value = Register().name_to_def[self.base_dtype.name].allowed_sizes.only_one_value()
-        no_value_given = self.base_dtype.size == 0 and self.size_expression is None
-        hide_size = only_one_value or no_value_given
-        size_str = "" if hide_size else (self.size_expression if self.size_expression else str(self.base_dtype.size))
-        return f"{self.base_dtype.name}{self.base_dtype.endianness.value}{size_str}"
-
 # TODO: Note this class isn't really used, so things like __init__ won't even work yet.
 class DtypeArrayWithExpression(DtypeArray):
     size_expression: Expression | None
