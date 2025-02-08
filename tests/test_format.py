@@ -205,17 +205,12 @@ def test_example_from_docs():
     f.parse(b)
     assert f["y"].value == 987
 
-    # f = Format(
-    #     [
-    #         "sync_byte: const hex8 = 0xff",
-    #         "items: u16",
-    #         "flags: [bool ; {items + 1} ] ",
-    #         Repeat(
-    #             "{items + 1}", ["byte_cluster_size: u4", "bytes{byte_cluster_size}"]
-    #         ),
-    #         "u8",
-    #     ]
-    # )
+    # f = Format("(sync_byte: const hex8 = 0xff,"
+    #            "items: u16,"
+    #            "flags: [bool ; {items + 1} ],"
+    #            "Repeat({items + 1},"
+    #            "    (byte_cluster_size: u4, bytes{byte_cluster_size})),"
+    #            "u8)")
     # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
 
 
@@ -226,7 +221,6 @@ def test_creating_with_keyword_value():
     assert b == "u10=6, u10=12"
 
 
-@pytest.mark.skip
 def test_items():
     f = Format.from_params(["q:i5", "[u3; {q + 1}]"])
     b = Bits.from_string("i5=1, u3=2, u3=0")
@@ -234,11 +228,11 @@ def test_items():
     assert f[0].value == 1
     assert f[1].value == [2, 0]
     f.clear()
-    b2 = f.pack([1, [2, 0]])
-    assert b2 == b
+    f.pack([1, [2, 0]])
+    assert b == f.to_bits()
     f.clear()
-    b3 = f.pack([3, [1, 2, 3, 4]])
-    assert b3 == Bits.from_string("i5=3, u3=1, u3=2, u3=3, u3=4")
+    f.pack([3, [1, 2, 3, 4]])
+    assert f.to_bits() == Bits.from_string("i5=3, u3=1, u3=2, u3=3, u3=4")
 
 
 class TestMethods:

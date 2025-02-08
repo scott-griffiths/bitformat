@@ -118,7 +118,7 @@ class Field(FieldType):
                     )
         if value is not None:
             x._set_value_no_const_check(value)
-        if x._dtype.size == 0:
+        if isinstance(x._dtype, DtypeSingle) and x._dtype.size == 0:
             if x._dtype.name in [DtypeName.BITS, DtypeName.BYTES] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
         return x
@@ -150,14 +150,14 @@ class Field(FieldType):
         s, comment = s.split("#", 1) if "#" in s else (s, "")
         comment = comment.strip()
         dtype_str, name, value, const = cls._parse_field_str(s)
-        if "," in dtype_str:
-            raise ValueError(f"Field strings can only have one Dtype and should not contain commas. "
-                             f"Perhaps you meant to use Format('({s})') instead?")
         if (p := dtype_str.find("{")) == -1:
             size_expr = None
         else:
-            size_expr = Expression(dtype_str[p:])
-            dtype_str = dtype_str[:p]
+            q = dtype_str.find("}")
+            if q == -1 or q < p:
+                raise ValueError(f"Field string '{s}' has mismatched braces.")
+            size_expr = Expression(dtype_str[p:q + 1])
+            dtype_str = dtype_str[:p] + dtype_str[q + 1:]
         return cls.from_params(dtype_str, name, value, const, size_expr, comment)
 
     @classmethod
