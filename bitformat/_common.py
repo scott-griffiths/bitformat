@@ -22,8 +22,8 @@ else:
 
 
 class DtypeName(Enum):
-    UNSIGNED_INT = 'u'  # unsigned int
-    SIGNED_INT = 'i'  # signed int
+    UINT = 'u'  # unsigned int
+    INT = 'i'  # signed int
     BIN = 'bin'  # binary string
     OCT = 'oct'  # octal string
     HEX = 'hex'  # hexadecimal string

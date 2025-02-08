@@ -65,7 +65,7 @@ class TestCreation:
             _ = Array("2*float16")
 
     def test_changing_fmt(self):
-        d = DtypeSingle.from_params(DtypeName.UNSIGNED_INT, 8)
+        d = DtypeSingle.from_params(DtypeName.UINT, 8)
         a = Array(d, [255] * 100)
         assert len(a) == 100
         a.dtype = Dtype("i4")

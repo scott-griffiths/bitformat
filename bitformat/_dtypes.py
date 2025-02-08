@@ -88,56 +88,51 @@ class Dtype(abc.ABC):
         """
         s = "".join(s.split())  # Remove whitespace
         # Delegate to the appropriate class
+        if s.startswith("["):
+            # DtypeArray
+            if not s.endswith("]") or (p := s.find(";")) == -1:
+                raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
+            t = s[p + 1: -1]
+            items = int(t) if t else 0
+            name_str, size = parse_name_size_token(s[1:p])
+            name_str, modifier = parse_name_to_name_and_modifier(name_str)
+            endianness = Endianness(modifier)
+
+            try:
+                name = DtypeName(name_str)
+            except ValueError:
+                aliases = {"int": "i", "uint": "u", "float": "f"}
+                extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+                raise ValueError(
+                    f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+            return Register().get_array_dtype(name, size, items, endianness)
         if s.startswith("("):
             if not s.endswith(")"):
                 raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Missing closing ')': '{s}'.")
             tokens = s[1: -1].split(",")
             dtypes = [Dtype.from_string(token) for token in tokens if token != '']
             return DtypeTuple.from_params(dtypes)
-        if s.startswith("["):
-            if "{" in s:
-                return DtypeArrayWithExpression.from_string(s)
-            else:
-                if not s.startswith("[") or not s.endswith("]") or (p := s.find(";")) == -1:
-                    raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{s}'.")
-                t = s[p + 1: -1]
-                items = int(t) if t else 0
-                name_str, size = parse_name_size_token(s[1:p])
-                name_str, modifier = parse_name_to_name_and_modifier(name_str)
-                endianness = Endianness(modifier)
-
-                try:
-                    name = DtypeName(name_str)
-                except ValueError:
-                    aliases = {"int": "i", "uint": "u", "float": "f"}
-                    extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-                    raise ValueError(
-                        f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
-                return Register().get_array_dtype(name, size, items, endianness)
         else:
-            if "{" in s:
-                return DtypeSingleWithExpression.from_string(s)
-            else:
-                try:
-                    name, size = parse_name_size_token(s)
-                except ValueError as e:
-                    if "," in s:
-                        raise ValueError(
-                            f"Can't parse token '{s}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
-                        )
-                    else:
-                        raise e
-                name_str, modifier = parse_name_to_name_and_modifier(name)
-
-                endianness = Endianness(modifier)
-                try:
-                    name = DtypeName(name_str)
-                except ValueError:
-                    aliases = {"int": "i", "uint": "u", "float": "f"}
-                    extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+            try:
+                name, size = parse_name_size_token(s)
+            except ValueError as e:
+                if "," in s:
                     raise ValueError(
-                        f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
-                return Register().get_single_dtype(name, size, endianness)
+                        f"Can't parse token '{s}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
+                    )
+                else:
+                    raise e
+            name_str, modifier = parse_name_to_name_and_modifier(name)
+
+            endianness = Endianness(modifier)
+            try:
+                name = DtypeName(name_str)
+            except ValueError:
+                aliases = {"int": "i", "uint": "u", "float": "f"}
+                extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+                raise ValueError(
+                    f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+            return Register().get_single_dtype(name, size, endianness)
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:

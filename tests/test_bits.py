@@ -83,13 +83,13 @@ class TestCreation:
         assert (s.unpack(Dtype("i")), len(s)) == (-243, 108)
         for length in range(6, 10):
             for value in range(-17, 17):
-                s = Bits.from_dtype(DtypeSingle.from_params(DtypeName.SIGNED_INT, length), value)
+                s = Bits.from_dtype(DtypeSingle.from_params(DtypeName.INT, length), value)
                 assert (s.i, len(s)) == (value, length)
 
     @pytest.mark.parametrize("int_, length", [[-1, 0], [12, 0], [4, 3], [-5, 3]])
     def test_creation_from_int_errors(self, int_, length):
         with pytest.raises(ValueError):
-            _ = Bits.from_dtype(DtypeSingle.from_params(DtypeName.SIGNED_INT, length), int_)
+            _ = Bits.from_dtype(DtypeSingle.from_params(DtypeName.INT, length), int_)
 
     def test_creation_from_bool(self):
         a = Bits.from_dtype("bool", False)
@@ -570,7 +570,7 @@ def test_unpack_single():
 
 
 def test_pack_array():
-    d = DtypeArray.from_params(DtypeName.UNSIGNED_INT, 33, 5)
+    d = DtypeArray.from_params(DtypeName.UINT, 33, 5)
     a = Bits.from_dtype(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
     assert d.return_type == tuple

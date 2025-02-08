@@ -57,7 +57,7 @@ class TestCreation:
         assert f.name == "flag_12"
         assert f.value is None
         f = Field.from_string("const u3 = 3")
-        assert f.dtype.name == DtypeName.UNSIGNED_INT
+        assert f.dtype.name == DtypeName.UINT
         assert f.value == 3
         assert f.name == ""
         assert f.to_bits() == "0b011"

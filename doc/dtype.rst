@@ -21,7 +21,7 @@ In places where a ``Dtype`` is expected as a parameter you can just supply the s
 
 Some examples of equivalent types, going from most verbose to least::
 
-    DtypeSingle.from_params(DtypeName.UNSIGNED_INT, 8)
+    DtypeSingle.from_params(DtypeName.UINT, 8)
     DtypeSingle.from_string('u8')
     DtypeSingle('u8')
     Dtype('u8')
@@ -37,11 +37,12 @@ Some examples of equivalent types, going from most verbose to least::
 
 ::
 
-    DtypeTuple.from_params([DtypeSingle.from_params(DtypeName.UNSIGNED_INT, 8), DtypeArray.from_params(DtypeName.FLOAT, 16, 20)])
-    DtypeTuple.from_string('[u8, [f16; 20]]')
-    DtypeTuple('[u8, [f16; 20]]')
-    Dtype('[u8, [f16; 20]]')
-    '[u8, [f16; 20]]'  # When used as a parameter
+    DtypeTuple.from_params([DtypeSingle.from_params(DtypeName.UINT, 8), DtypeArray.from_params(DtypeName.FLOAT, 16, 20)])
+    DtypeTuple.from_params(['u8', '[f16; 20]'])
+    DtypeTuple.from_string('(u8, [f16; 20])')
+    DtypeTuple('(u8, [f16; 20])')
+    Dtype('(u8, [f16; 20])')
+    '(u8, [f16; 20])'  # When used as a parameter
 
 ----
 
