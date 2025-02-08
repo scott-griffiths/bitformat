@@ -128,8 +128,6 @@ class Dtype(abc.ABC):
     def bit_length(self) -> int:
         """The total length of the data type in bits.
 
-        The ``bit_length`` for any dtype equals its :attr:`bits_per_item` multiplied by its :attr:`items`.
-
         .. code-block:: pycon
 
             >>> Dtype('u12').bit_length
@@ -138,8 +136,6 @@ class Dtype(abc.ABC):
             60
             >>> Dtype('hex5').bit_length
             20
-
-        See also :attr:`bits_per_item` and :attr:`size`.
 
         """
     ...
@@ -161,19 +157,6 @@ class Dtype(abc.ABC):
 
         """
         return self._bits_per_item
-
-    @property
-    def size(self) -> int:
-        """The size of the data type.
-
-        This is the number used immediately after the data type name in a dtype string.
-        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
-        though they have bitlengths of 10, 40 and 30 respectively.
-
-        See also :attr:`bits_per_item` and :attr:`bit_length`.
-
-        """
-        return self._size
 
     @property
     def return_type(self) -> Any:
@@ -339,6 +322,19 @@ class DtypeSingle(Dtype):
     def bit_length(self) -> int:
         return self._bits_per_item
 
+    @property
+    def size(self) -> int:
+        """The size of the data type.
+
+        This is the number used immediately after the data type name in a dtype string.
+        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
+        though they have bitlengths of 10, 40 and 30 respectively.
+
+        See also :attr:`bit_length`.
+
+        """
+        return self._size
+
 
 class DtypeArray(Dtype):
 
@@ -487,6 +483,19 @@ class DtypeArray(Dtype):
         return self._bits_per_item * self._items
 
     @property
+    def size(self) -> int:
+        """The size of the data type.
+
+        This is the number used immediately after the data type name in a dtype string.
+        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
+        though they have bitlengths of 10, 40 and 30 respectively.
+
+        See also :attr:`bit_length`.
+
+        """
+        return self._size
+
+    @property
     def items(self) -> int:
         """The number of items in the data type.
 
@@ -494,6 +503,7 @@ class DtypeArray(Dtype):
 
         """
         return self._items
+
 
 # TODO: Note this class isn't properly used yet, so don't expect it to really work.
 class DtypeSingleWithExpression(DtypeSingle):
