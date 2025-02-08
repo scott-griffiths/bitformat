@@ -68,11 +68,6 @@ class Dtype(abc.ABC):
 
     @classmethod
     @abc.abstractmethod
-    def _from_string(cls, s:str) -> Self:
-        ...
-
-    @classmethod
-    @abc.abstractmethod
     def from_params(cls, *args, **kwargs) -> Self:
         ...
 
@@ -84,6 +79,7 @@ class Dtype(abc.ABC):
 
         * ``'u12'``: A DtypeSingle representing an unsigned 12-bit integer.
         * ``'[i6; 5]'``: A DtypeArray of 5 signed 6-bit integers.
+        * ``'(bool, hex4, f16)'``: A DtypeTuple of a boolean, a 4-char hex value and a 16-bit float.
 
         As a shortcut the ``Dtype`` constructor can be used directly with a token string.
 
@@ -93,17 +89,55 @@ class Dtype(abc.ABC):
         s = "".join(s.split())  # Remove whitespace
         # Delegate to the appropriate class
         if s.startswith("("):
-            return DtypeTuple._from_string(s)
+            if not s.endswith(")"):
+                raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Missing closing ')': '{s}'.")
+            tokens = s[1: -1].split(",")
+            dtypes = [Dtype.from_string(token) for token in tokens if token != '']
+            return DtypeTuple.from_params(dtypes)
         if s.startswith("["):
             if "{" in s:
-                return DtypeArrayWithExpression._from_string(s)
+                return DtypeArrayWithExpression.from_string(s)
             else:
-                return DtypeArray._from_string(s)
+                if not s.startswith("[") or not s.endswith("]") or (p := s.find(";")) == -1:
+                    raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{s}'.")
+                t = s[p + 1: -1]
+                items = int(t) if t else 0
+                name_str, size = parse_name_size_token(s[1:p])
+                name_str, modifier = parse_name_to_name_and_modifier(name_str)
+                endianness = Endianness(modifier)
+
+                try:
+                    name = DtypeName(name_str)
+                except ValueError:
+                    aliases = {"int": "i", "uint": "u", "float": "f"}
+                    extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+                    raise ValueError(
+                        f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+                return Register().get_array_dtype(name, size, items, endianness)
         else:
             if "{" in s:
-                return DtypeSingleWithExpression._from_string(s)
+                return DtypeSingleWithExpression.from_string(s)
             else:
-                return DtypeSingle._from_string(s)
+                try:
+                    name, size = parse_name_size_token(s)
+                except ValueError as e:
+                    if "," in s:
+                        raise ValueError(
+                            f"Can't parse token '{s}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
+                        )
+                    else:
+                        raise e
+                name_str, modifier = parse_name_to_name_and_modifier(name)
+
+                endianness = Endianness(modifier)
+                try:
+                    name = DtypeName(name_str)
+                except ValueError:
+                    aliases = {"int": "i", "uint": "u", "float": "f"}
+                    extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+                    raise ValueError(
+                        f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+                return Register().get_single_dtype(name, size, endianness)
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
@@ -235,30 +269,6 @@ class DtypeSingle(Dtype):
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        return Register().get_single_dtype(name, size, endianness)
-
-    @classmethod
-    @override
-    @final
-    def _from_string(cls, token: str, /) -> Self:
-        try:
-            name, size = parse_name_size_token(token)
-        except ValueError as e:
-            if "," in token:
-                raise ValueError(
-                    f"Can't parse token '{token}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
-                )
-            else:
-                raise e
-        name_str, modifier = parse_name_to_name_and_modifier(name)
-
-        endianness = Endianness(modifier)
-        try:
-            name = DtypeName(name_str)
-        except ValueError:
-            aliases = {"int": "i", "uint": "u", "float": "f"}
-            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-            raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
         return Register().get_single_dtype(name, size, endianness)
 
     @override
@@ -404,26 +414,6 @@ class DtypeArray(Dtype):
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        return Register().get_array_dtype(name, size, items, endianness)
-
-    @classmethod
-    @override
-    @final
-    def _from_string(cls, token: str, /) -> Self:
-        if not token.startswith("[") or not token.endswith("]") or (p := token.find(";")) == -1:
-            raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
-        t = token[p + 1 : -1]
-        items = int(t) if t else 0
-        name_str, size = parse_name_size_token(token[1:p])
-        name_str, modifier = parse_name_to_name_and_modifier(name_str)
-        endianness = Endianness(modifier)
-
-        try:
-            name = DtypeName(name_str)
-        except ValueError:
-            aliases = {"int": "i", "uint": "u", "float": "f"}
-            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-            raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
         return Register().get_array_dtype(name, size, items, endianness)
 
     @override
@@ -665,16 +655,6 @@ class DtypeTuple(Dtype):
             x._dtypes.append(dtype)
         x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
         return x
-
-    @override
-    @final
-    @classmethod
-    def _from_string(cls, s: str, /) -> Self:
-        if not s.startswith("(") or not s.endswith(")"):
-            raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Got '{s}'.")
-        tokens = [t.strip() for t in s[1: -1].split(",")]
-        dtypes = [Dtype.from_string(token) for token in tokens if token != '']
-        return cls.from_params(dtypes)
 
     @override
     @final
