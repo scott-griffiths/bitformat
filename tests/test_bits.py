@@ -463,8 +463,8 @@ oworld!!helloworld!!
 def test_pp_with_dtypetuple():
     a = Bits("0b1, 0xfe, f32=3.5")
     s = io.StringIO()
-    a.pp("[bool, hex2, f32]", show_offset=False, stream=s)
-    expected_output = """<Bits, dtype1='[bool, hex2, f32]', length=41 bits> [
+    a.pp("(bool, hex2, f32)", show_offset=False, stream=s)
+    expected_output = """<Bits, dtype1='(bool, hex2, f32)', length=41 bits> [
 [True, fe,                     3.5]
 ]
 """
@@ -696,15 +696,15 @@ def test_unpack_field():
     f = Field("tadpole: u12")
     a = Bits("u12=100")
     assert f.unpack(a) == 100
-    assert a.unpack(f) == 100
+    assert a.unpack(f) == 100  # TODO: Does unpack allow Field in definition?
 
     a = Bits("0x000001b3, u12=352, u12=288, bool=1")
     v = a.unpack(["hex8", "[u12; 2]", "bool"])
     assert v == ["000001b3", (352, 288), True]
 
 
-def test_unpack_dtype_list():
-    f = "[u8, u8, u8, bool]"
+def test_unpack_dtype_tuple():
+    f = "(u8, u8, u8, bool)"
     d = DtypeTuple(f)
     b = d.pack([55, 33, 11, 0])
     assert b.unpack(d) == [55, 33, 11, False]

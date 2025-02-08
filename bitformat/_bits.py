@@ -232,12 +232,12 @@ class Bits:
         return x
 
     @classmethod
-    def from_dtype(cls, dtype: Dtype | DtypeTuple | str, value: Any, /) -> Bits:
+    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits:
         """
         Pack a value according to a data type or data type tuple.
 
         :param dtype: The data type to pack.
-        :type dtype: Dtype | DtypeTuple | str
+        :type dtype: Dtype | str
         :param value: A value appropriate for the data type.
         :type value: Any
         :returns: A newly constructed ``Bits``.
@@ -250,7 +250,7 @@ class Bits:
 
         """
         if isinstance(dtype, str):
-            dtype = DtypeTuple.from_string(dtype) if ',' in dtype else Dtype.from_string(dtype)
+            dtype = Dtype.from_string(dtype)
         try:
             x = dtype.pack(value)
         except (ValueError, TypeError) as e:
@@ -542,7 +542,7 @@ class Bits:
                                     self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def pp(self, dtype1: str | Dtype | DtypeTuple | None = None, dtype2: str | Dtype | DtypeTuple | None = None,
+    def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
            groups: int | None = None, width: int = 80, show_offset: bool = True,stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
@@ -575,15 +575,9 @@ class Bits:
             if len(self) % 8 == 0 and len(self) >= 8:
                 dtype2 = DtypeSingle.from_params(DtypeName.HEX)
         if isinstance(dtype1, str):
-            if "," in dtype1:
-                dtype1 = DtypeTuple.from_string(dtype1)
-            else:
-                dtype1 = Dtype.from_string(dtype1)
+            dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
-            if "," in dtype2:
-                dtype2 = DtypeTuple.from_string(dtype2)
-            else:
-                dtype2 = Dtype.from_string(dtype2)
+            dtype2 = Dtype.from_string(dtype2)
 
         bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
@@ -807,16 +801,8 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-    @overload
-    def unpack(self, fmt: Dtype | str, /) -> Any:
-        ...
-
-    @overload
-    def unpack(self, fmt: DtypeTuple | list[str], /) -> list[Any]:
-        ...
-
     def unpack(
-        self, fmt: Dtype | str | DtypeTuple | list[Dtype | str], /
+        self, fmt: Dtype | str | list[Dtype | str], /
     ) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
@@ -846,10 +832,7 @@ class Bits:
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.
         if isinstance(fmt, str):
-            if "," in fmt:
-                fmt = DtypeTuple.from_string(fmt)
-            else:
-                fmt = Dtype.from_string(fmt)
+            fmt = Dtype.from_string(fmt)
         elif isinstance(fmt, list):
             fmt = DtypeTuple.from_params(fmt)
         if isinstance(fmt, DtypeTuple):

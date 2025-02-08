@@ -194,21 +194,8 @@ def test_endianness_errors():
         _ = DtypeSingle.from_params(DtypeName.BYTES, 16, endianness=Endianness.LITTLE)
 
 
-def test_dtype_list_creation():
-    d = DtypeTuple("[u8, u16, u32, bool]")
-    assert len(d) == 4
-    assert d.bit_length == 8 + 16 + 32 + 1
-
-    d2 = DtypeTuple.from_params(d)
-    assert d == d2
-    d = DtypeTuple.from_params(["i5", *d[1:]])
-    assert d[0] == "i5"
-    assert d.bit_length == 5 + 16 + 32 + 1
-    assert d != d2
-
-
-def test_dtype_list_packing():
-    d = DtypeTuple("[bool, u8, f16]")
+def test_dtype_tuple_packing():
+    d = DtypeTuple("(bool, u8, f16)")
     a = d.pack([1, 254, 0.5])
     assert a == "0b1, 0xfe, 0x3800"
     with pytest.raises(ValueError):
@@ -217,23 +204,23 @@ def test_dtype_list_packing():
         _ = d.pack([0, 0])
 
 
-def test_dtype_list_unpacking():
-    d = DtypeTuple("[bool, u8, f16]")
+def test_dtype_tuple_unpacking():
+    d = Dtype("(bool, u8, f16)")
     a = d.unpack("0b1, 0xfe, 0x3800")
     assert a == (1, 254, 0.5)
 
 
-def test_dtype_list_unpacking_with_pad():
+def test_dtype_tuple_unpacking_with_pad():
     s = Bits.from_string("0b111000111")
-    d = DtypeTuple("[bits3, pad3, bits3]")
+    d = Dtype(" ( bits3 , pad3 , bits3 , ) ")
     x, y = d.unpack(s)
     assert (x, y.unpack("u")) == ("0b111", 7)
 
 
-def test_dtype_list_slicing():
-    d = DtypeTuple("[u1, u2, u3, u4, u5]")
+def test_dtype_tuple_slicing():
+    d = DtypeTuple("(u1, u2, u3, u4, u5)")
     d2 = d[1:4]
-    assert d2 == DtypeTuple("[u2, u3, u4]")
+    assert d2 == DtypeTuple("(u2, u3, u4)")
 
 
 def test_dtype_str_with_le():
@@ -254,18 +241,18 @@ def test_hashing():
     e = Dtype('i8')
     f = Dtype('[u8; 1]')
     g = Dtype('[u8; 2]')
-    h = DtypeTuple('[u8]')
-    i = DtypeTuple('[u8, u8]')
+    h = Dtype('(u8)')
+    i = Dtype('(u8, u8)')
     s = {a, b, c, d, e, f, g, h, i}
     assert len(s) == 9
 
 def test_str():
     a = Dtype('u_le8')
-    b = DtypeTuple('[bool, [i5; 1]]')
+    b = Dtype('(bool, [i5; 1])')
     assert str(a) == 'u_le8'
-    assert str(b) == '[bool, [i5; 1]]'
+    assert str(b) == '(bool, [i5; 1])'
     assert repr(a) == "DtypeSingle('u_le8')"
-    assert repr(b) == "DtypeTuple('[bool, [i5; 1]]')"
+    assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
     nt = DtypeDefinition("pingu", "A new type", Bits._set_u, Bits._get_u)
     s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s
@@ -280,9 +267,9 @@ def test_unpacking_dtype_array_with_no_length():
 def test_unpacking_dtypetuple_array_with_no_length():
     # We shouldn't even be able to create the dtypetuple with no length array
     with pytest.raises(ValueError):
-        _ = DtypeTuple('[[bool;], u8]')
+        _ = DtypeTuple('([bool;], u8)')
     with pytest.raises(ValueError):
-        _ = DtypeTuple('[[u8;],]')
+        _ = DtypeTuple('([u8;],)')
 
 def test_creating_dtype_with_no_size():
     d = Dtype('f')

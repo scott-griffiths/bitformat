@@ -54,7 +54,7 @@ def test_parse():
 
 def test_read_tuple():
     r = Reader(Bits('0x00ffff'))
-    x = r.peek('[hex3, u4]')
+    x = r.peek(DtypeTuple('(hex3, u4)'))
     assert x == ('00f', 15)
-    x = r.read(DtypeTuple('[u8, bool, bool]'))
+    x = r.read('(u8, bool, bool)')
     assert x == (0, True, True)

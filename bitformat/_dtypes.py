@@ -80,7 +80,10 @@ class Dtype(abc.ABC):
         ``Dtype(s)`` is equivalent to ``Dtype.from_string(s)``.
 
         """
+        s = "".join(s.split())  # Remove whitespace
         # Delegate to the appropriate class
+        if s.startswith("("):
+            return DtypeTuple.from_string(s)
         if s.startswith("["):
             if "{" in s:
                 return DtypeArrayWithExpression.from_string(s)
@@ -641,10 +644,10 @@ class DtypeTuple(Dtype):
     @classmethod
     def from_string(cls, s: str, /) -> DtypeTuple:
         s = "".join(s.split())  # Remove whitespace
-        if not s.startswith("[") or not s.endswith("]"):
-            raise ValueError(f"DtypeTuple strings should be of the form '[dtype1, dtype2, ...]'. Got '{s}'.")
+        if not s.startswith("(") or not s.endswith(")"):
+            raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Got '{s}'.")
         tokens = [t.strip() for t in s[1: -1].split(",")]
-        dtypes = [Dtype.from_string(token) for token in tokens]
+        dtypes = [Dtype.from_string(token) for token in tokens if token != '']
         return cls.from_params(dtypes)
 
     def pack(self, values: Sequence[Any]) -> bitformat.Bits:
@@ -705,7 +708,7 @@ class DtypeTuple(Dtype):
         return iter(self._dtypes)
 
     def __str__(self) -> str:
-        return "[" + ", ".join(str(dtype) for dtype in self._dtypes) + "]"
+        return "(" + ", ".join(str(dtype) for dtype in self._dtypes) + ")"
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{str(self)}')"

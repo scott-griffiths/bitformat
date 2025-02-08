@@ -157,12 +157,12 @@ class Array:
 
     _proxy: BitsProxy
 
-    def __new__(cls, dtype: str | Dtype | DtypeTuple, iterable: Iterable | None = None) -> Array:
+    def __new__(cls, dtype: str | Dtype, iterable: Iterable | None = None) -> Array:
         x = cls.from_iterable(dtype, [] if iterable is None else iterable)
         return x
 
     @classmethod
-    def _partial_init(cls, dtype: str | Dtype | DtypeTuple) -> Array:
+    def _partial_init(cls, dtype: str | Dtype) -> Array:
         """Code common to the various constructor methods."""
         x = super().__new__(cls)
         x._proxy = BitsProxy(x)
@@ -170,11 +170,11 @@ class Array:
         return x
 
     @classmethod
-    def from_bytes(cls, dtype: str | Dtype | DtypeTuple, b: bytes | bytearray | memoryview) -> Array:
+    def from_bytes(cls, dtype: str | Dtype, b: bytes | bytearray | memoryview) -> Array:
         """Create a new :class:`Array` from a data type and a bytes object.
 
         :param dtype: The data type of the elements in the ``Array``.
-        :type dtype: Dtype | DtypeTuple | str
+        :type dtype: Dtype | str
         :param b: The bytes object to convert to a :class:`Bits`.
         :type b: bytes
         :rtype: Array
@@ -189,20 +189,20 @@ class Array:
         return x
 
     @classmethod
-    def from_bits(cls, dtype: str | Dtype | DtypeTuple, b: Bits) -> Array:
+    def from_bits(cls, dtype: str | Dtype, b: Bits) -> Array:
         x = cls._partial_init(dtype)
         # We may change the internal BitRust, so need to make a copy here.
         x._bitstore = b._bitstore.get_mutable_copy()
         return x
 
     @classmethod
-    def from_zeros(cls, dtype: str | Dtype | DtypeTuple, n: int) -> Array:
+    def from_zeros(cls, dtype: str | Dtype, n: int) -> Array:
         x = cls._partial_init(dtype)
         x._bitstore = BitRust.from_zeros(n * x._dtype.bits_per_item)
         return x
 
     @classmethod
-    def from_iterable(cls, dtype: str | Dtype | DtypeTuple, iterable: Iterable) -> Array:
+    def from_iterable(cls, dtype: str | Dtype, iterable: Iterable) -> Array:
         x = cls._partial_init(dtype)
         x._bitstore = BitRust.from_zeros(0)
         x.extend(iterable)
@@ -245,17 +245,12 @@ class Array:
     def dtype(self, new_dtype: str | Dtype) -> None:
         self._set_dtype(new_dtype)
 
-    def _set_dtype(self, new_dtype: str | Dtype | DtypeTuple) -> None:
+    def _set_dtype(self, new_dtype: str | Dtype) -> None:
         if isinstance(new_dtype, Dtype):
-            self._dtype = new_dtype
-        elif isinstance(new_dtype, DtypeTuple):
             self._dtype = new_dtype
         else:
             try:
-                if "," in new_dtype:
-                    dtype = DtypeTuple.from_string(new_dtype)
-                else:
-                    dtype = Dtype.from_string(new_dtype)
+                dtype = Dtype.from_string(new_dtype)
             except ValueError as e:
                 raise ValueError(f"Inappropriate Dtype for Array: '{new_dtype}': {e}")
             self._dtype = dtype
@@ -428,7 +423,7 @@ class Array:
         new_array = self.__class__(dtype, self.unpack())
         return new_array
 
-    def unpack(self, dtype: str | Dtype | DtypeTuple | None = None) -> list[ElementType]:
+    def unpack(self, dtype: str | Dtype | None = None) -> list[ElementType]:
         """Interpret the Array as a list of elements of a given dtype, defaulting to the Array's current dtype.
 
         .. code-block:: pycon
@@ -445,12 +440,7 @@ class Array:
         if dtype is None:
             dtype = self._dtype
         elif isinstance(dtype, str):
-            if "," in dtype:
-                dtype = DtypeTuple.from_string(dtype)
-            else:
-                dtype = Dtype.from_string(dtype)
-        elif not isinstance(dtype, (Dtype, DtypeTuple)):
-            raise TypeError(f"Invalid dtype parameter: {dtype}")
+            dtype = Dtype.from_string(dtype)
         if dtype.bit_length == 0:
             if not isinstance(dtype, DtypeSingle):
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
@@ -612,8 +602,8 @@ class Array:
 
     def pp(
         self,
-        dtype1: str | Dtype | DtypeTuple | None = None,
-        dtype2: str | Dtype | DtypeTuple | None = None,
+        dtype1: str | Dtype | None = None,
+        dtype2: str | Dtype | None = None,
         groups: int | None = None,
         width: int = 80,
         show_offset: bool = True,
@@ -626,9 +616,9 @@ class Array:
         The output can be customized with various parameters to control the format, width, and display options.
 
         :param dtype1: Data type to display. Defaults to the current Array dtype.
-        :type dtype1: str or Dtype or DtypeTuple or None
+        :type dtype1: str or Dtype or None
         :param dtype2: Data type for addition display data.
-        :type dtype2: str or Dtype or DtypeTuple or None
+        :type dtype2: str or Dtype or None
         :param groups: How many groups of bits to display on each line. This overrides any value given for width.
         :type groups: int or None
         :param width: Maximum width of printed lines in characters. Defaults to 80, but ignored if groups parameter is set.
@@ -647,15 +637,9 @@ class Array:
         if dtype1 is None:
             dtype1 = self.dtype
         if isinstance(dtype1, str):
-            if "," in dtype1:
-                dtype1 = DtypeTuple.from_string(dtype1)
-            else:
-                dtype1 = Dtype.from_string(dtype1)
+            dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
-            if "," in dtype2:
-                dtype2 = DtypeTuple.from_string(dtype2)
-            else:
-                dtype2 = Dtype.from_string(dtype2)
+            dtype2 = Dtype.from_string(dtype2)
 
         token_length = dtype1.bits_per_item
         if dtype2 is not None:
