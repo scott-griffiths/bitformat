@@ -12,7 +12,6 @@ class TestCreation:
         d = DtypeSingle.from_params(DtypeName.BYTES, 2)
         assert d.size == 2
         assert d.bit_length == 16
-        assert d.bits_per_item
 
         ds = [Dtype.from_string(x) for x in ["bytes3", "u9", "i4", "f32", "bits11"]]
         for d in ds:

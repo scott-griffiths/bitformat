@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import Any, Callable, Iterable, Sequence, overload, Union
+from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
 import re
-from ._common import Expression, Endianness, byteorder, DtypeName
+from ._common import Expression, Endianness, byteorder, DtypeName, override, final
 from typing import Pattern
 
 # Things that can be converted to Bits when a Bits type is needed
@@ -60,14 +60,24 @@ class Dtype(abc.ABC):
     _name: DtypeName
     _endianness: Endianness
 
-    def __new__(cls, token: str | None = None, /) -> Dtype:
+    def __new__(cls, token: str | None = None, /) -> Self:
         if token is None:
             x = super().__new__(cls)
             return x
         return cls.from_string(token)
 
     @classmethod
-    def from_string(cls, s: str) -> Dtype:
+    @abc.abstractmethod
+    def _from_string(cls, s:str) -> Self:
+        ...
+
+    @classmethod
+    @abc.abstractmethod
+    def from_params(cls, *args, **kwargs) -> Self:
+        ...
+
+    @classmethod
+    def from_string(cls, s: str) -> Self:
         """Create a new Dtype sub-class from a token string.
 
         Some token string examples:
@@ -83,17 +93,17 @@ class Dtype(abc.ABC):
         s = "".join(s.split())  # Remove whitespace
         # Delegate to the appropriate class
         if s.startswith("("):
-            return DtypeTuple.from_string(s)
+            return DtypeTuple._from_string(s)
         if s.startswith("["):
             if "{" in s:
-                return DtypeArrayWithExpression.from_string(s)
+                return DtypeArrayWithExpression._from_string(s)
             else:
-                return DtypeArray.from_string(s)
+                return DtypeArray._from_string(s)
         else:
             if "{" in s:
-                return DtypeSingleWithExpression.from_string(s)
+                return DtypeSingleWithExpression._from_string(s)
             else:
-                return DtypeSingle.from_string(s)
+                return DtypeSingle._from_string(s)
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
@@ -141,24 +151,6 @@ class Dtype(abc.ABC):
     ...
 
     @property
-    def bits_per_item(self) -> int:
-        """The number of bits needed to represent a single item of the underlying data type.
-
-        .. code-block:: pycon
-
-            >>> Dtype('f64').bits_per_item
-            64
-            >>> Dtype('hex10').bits_per_item
-            40
-            >>> Dtype('[u5; 1001]').bits_per_item
-            5
-
-        See also :attr:`bit_length` and :attr:`size`.
-
-        """
-        return self._bits_per_item
-
-    @property
     def return_type(self) -> Any:
         """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
         return self._return_type
@@ -178,26 +170,29 @@ class Dtype(abc.ABC):
         """
         return self._bits_per_character
 
-    def __len__(self):
-        raise TypeError(
-            "'Dtype' has no len() method. Use 'size', 'items' or 'bit_length' properties instead."
-        )
+    @abc.abstractmethod
+    def __str__(self) -> str:
+        ...
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}('{self.__str__()}')"
 
 
 class DtypeSingle(Dtype):
 
     _size: int
+    _bit_length: int
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int,
-                endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
+                endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = DtypeSingle.__new__(DtypeSingle)
         x._name = definition.name
-        x._bits_per_item = x._size = size
+        x._bit_length = x._size = size
         x._bits_per_character = definition.bits_per_character
         if definition.bits_per_character is not None:
-            x._bits_per_item *= definition.bits_per_character
+            x._bit_length *= definition.bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (
             endianness == Endianness.NATIVE and bitformat.byteorder == "little"
         )
@@ -208,7 +203,7 @@ class DtypeSingle(Dtype):
             else definition.get_fn
         )
         if "length" in inspect.signature(definition.set_fn).parameters:
-            set_fn = functools.partial(definition.set_fn, length=x._bits_per_item)
+            set_fn = functools.partial(definition.set_fn, length=x._bit_length)
         else:
             set_fn = definition.set_fn
 
@@ -230,9 +225,10 @@ class DtypeSingle(Dtype):
         return x
 
     @classmethod
-    @functools.lru_cache(CACHE_SIZE)
+    @override
+    @final
     def from_params(cls, name: DtypeName, size: int = 0,
-                    endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
+                    endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name and size.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -242,9 +238,9 @@ class DtypeSingle(Dtype):
         return Register().get_single_dtype(name, size, endianness)
 
     @classmethod
-    @functools.lru_cache(CACHE_SIZE)
-    def from_string(cls, token: str, /) -> Dtype:
-        token = "".join(token.split())  # Remove whitespace
+    @override
+    @final
+    def _from_string(cls, token: str, /) -> Self:
         try:
             name, size = parse_name_size_token(token)
         except ValueError as e:
@@ -265,27 +261,33 @@ class DtypeSingle(Dtype):
             raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
         return Register().get_single_dtype(name, size, endianness)
 
+    @override
+    @final
     def pack(self, value: Any, /) -> bitformat.Bits:
         # Single item to pack
         b = self._create_fn(value)
-        if self.bits_per_item != 0 and len(b) != self.bits_per_item:
+        if self._bit_length != 0 and len(b) != self._bit_length:
             raise ValueError(
-                f"Dtype '{self}' has a bit_length of {self.bits_per_item} bits, but value '{value}' has {len(b)} bits."
+                f"Dtype '{self}' has a bit_length of {self._bit_length} bits, but value '{value}' has {len(b)} bits."
             )
         return b
 
+    @override
+    @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
-        if self.bit_length > len(b):
+        if self._bit_length > len(b):
             raise ValueError(
-                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
+                f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack."
             )
-        if self.bit_length == 0:
+        if self._bit_length == 0:
             # Try to unpack everything
             return self._get_fn(b)
         else:
-            return self._get_fn(b[: self.bit_length])
+            return self._get_fn(b[: self._bit_length])
 
+    @override
+    @final
     def __str__(self) -> str:
         hide_length = (
             Register().name_to_def[self._name].allowed_sizes.only_one_value()
@@ -299,13 +301,12 @@ class DtypeSingle(Dtype):
         )
         return f"{self._name}{endianness}{size_str}"
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self.__str__()}')"
-
+    @override
+    @final
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
             other = Dtype.from_string(other)
-        if isinstance(other, Dtype):
+        if isinstance(other, DtypeSingle):
             return (
                 self._name == other._name
                 and self._size == other._size
@@ -313,14 +314,17 @@ class DtypeSingle(Dtype):
             )
         return False
 
+    # TODO: move to base class as requirement?
     def __hash__(self) -> int:
         return hash(
             (self._name, self._size)
         )
 
+    @override
+    @final
     @property
     def bit_length(self) -> int:
-        return self._bits_per_item
+        return self._bit_length
 
     @property
     def size(self) -> int:
@@ -340,11 +344,12 @@ class DtypeArray(Dtype):
 
     _size: int
     _items: int | None
+    _bits_per_item: int
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int, items: int = 1,
-                endianness: Endianness = Endianness.UNSPECIFIED,) -> DtypeArray:
+                endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
         x = super().__new__(cls)
         x._name = definition.name
         x._items = items
@@ -384,14 +389,15 @@ class DtypeArray(Dtype):
         return x
 
     @classmethod
-    @functools.lru_cache(CACHE_SIZE)
+    @override
+    @final
     def from_params(
         cls,
         name: DtypeName,
         size: int = 0,
         items: int | None = None,
         endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Dtype:
+    ) -> Self:
         """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -401,9 +407,9 @@ class DtypeArray(Dtype):
         return Register().get_array_dtype(name, size, items, endianness)
 
     @classmethod
-    @functools.lru_cache(CACHE_SIZE)
-    def from_string(cls, token: str, /) -> Dtype:
-        token = "".join(token.split())  # Remove whitespace
+    @override
+    @final
+    def _from_string(cls, token: str, /) -> Self:
         if not token.startswith("[") or not token.endswith("]") or (p := token.find(";")) == -1:
             raise ValueError(f"Array Dtype strings should be of the form '[dtype; items]'. Got '{token}'.")
         t = token[p + 1 : -1]
@@ -420,6 +426,8 @@ class DtypeArray(Dtype):
             raise ValueError(f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
         return Register().get_array_dtype(name, size, items, endianness)
 
+    @override
+    @final
     def pack(self, value: Any, /) -> bitformat.Bits:
         if isinstance(value, bitformat.Bits):
             if len(value) != self.bit_length:
@@ -429,6 +437,8 @@ class DtypeArray(Dtype):
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.from_joined(self._create_fn(v) for v in value)
 
+    @override
+    @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
         if self.bit_length > len(b):
@@ -438,12 +448,14 @@ class DtypeArray(Dtype):
         items = self.items
         if items == 0:
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
-            items = len(b) // self.bits_per_item
+            items = len(b) // self._bits_per_item
         return tuple(
             self._get_fn(b[i * self._bits_per_item : (i + 1) * self._bits_per_item])
             for i in range(items)
         )
 
+    @override
+    @final
     def __str__(self) -> str:
         hide_length = (
             Register().name_to_def[self._name].allowed_sizes.only_one_value()
@@ -458,9 +470,8 @@ class DtypeArray(Dtype):
         items_str = "" if self._items == 0 else f" {self._items}"
         return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
 
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self.__str__()}')"
-
+    @override
+    @final
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
             other = Dtype.from_string(other)
@@ -473,11 +484,15 @@ class DtypeArray(Dtype):
             )
         return False
 
+    @override
+    @final
     def __hash__(self) -> int:
         return hash(
             (self._name.value, self._size, self._items)
         )
 
+    @override
+    @final
     @property
     def bit_length(self) -> int:
         return self._bits_per_item * self._items
@@ -635,11 +650,11 @@ class DtypeTuple(Dtype):
     _dtypes: list[Dtype]
     _bit_length: int
 
-    def __new__(cls, s: str) -> DtypeTuple:
+    def __new__(cls, s: str) -> Self:
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, dtypes: Sequence[Dtype | str]) -> DtypeTuple:
+    def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)
         x._dtypes = []
         x._name = DtypeName.TUPLE
@@ -651,20 +666,25 @@ class DtypeTuple(Dtype):
         x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
         return x
 
+    @override
+    @final
     @classmethod
-    def from_string(cls, s: str, /) -> DtypeTuple:
-        s = "".join(s.split())  # Remove whitespace
+    def _from_string(cls, s: str, /) -> Self:
         if not s.startswith("(") or not s.endswith(")"):
             raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Got '{s}'.")
         tokens = [t.strip() for t in s[1: -1].split(",")]
         dtypes = [Dtype.from_string(token) for token in tokens if token != '']
         return cls.from_params(dtypes)
 
+    @override
+    @final
     def pack(self, values: Sequence[Any]) -> bitformat.Bits:
         if len(values) != len(self):
             raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
         return bitformat.Bits.from_joined(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
 
+    @override
+    @final
     def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[tuple[Any] | Any]:
         """Unpack a Bits to find its value.
 
@@ -682,22 +702,25 @@ class DtypeTuple(Dtype):
             pos += dtype.bit_length
         return tuple(vals)
 
-    def _getbitlength(self) -> int:
+    @override
+    @final
+    @property
+    def bit_length(self) -> int:
         return self._bit_length
 
-    bit_length = property(
-        _getbitlength, doc="The total length of all the dtypes in bits."
-    )
-    bits_per_item = bit_length  # You can't do an array-like DtypeTuple so this is the same as bit_length
-
+    # TODO: This is defined as not allowed in the base class
     def __len__(self) -> int:
         return len(self._dtypes)
 
+    @override
+    @final
     def __eq__(self, other) -> bool:
         if isinstance(other, DtypeTuple):
             return self._dtypes == other._dtypes
         return False
 
+    @override
+    @final
     def __hash__(self) -> int:
         return hash(
             tuple(self._dtypes)
@@ -717,11 +740,10 @@ class DtypeTuple(Dtype):
     def __iter__(self):
         return iter(self._dtypes)
 
+    @override
+    @final
     def __str__(self) -> str:
         return "(" + ", ".join(str(dtype) for dtype in self._dtypes) + ")"
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{str(self)}')"
 
 
 class AllowedSizes:

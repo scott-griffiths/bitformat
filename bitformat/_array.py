@@ -198,7 +198,7 @@ class Array:
     @classmethod
     def from_zeros(cls, dtype: str | Dtype, n: int) -> Array:
         x = cls._partial_init(dtype)
-        x._bitstore = BitRust.from_zeros(n * x._dtype.bits_per_item)
+        x._bitstore = BitRust.from_zeros(n * x._dtype.bit_length)
         return x
 
     @classmethod
@@ -225,13 +225,15 @@ class Array:
     @property
     def item_size(self) -> int:
         """The length of a single item in bits. Read only."""
-        return self._dtype.bits_per_item
+        if isinstance(self._dtype, DtypeArray):
+            return self._dtype.bit_length // self._dtype.items
+        return self._dtype.bit_length
 
     @property
     def trailing_bits(self) -> Bits:
         """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
         bitstore_length = len(self._bitstore)
-        trailing_bit_length = bitstore_length % self._dtype.bits_per_item
+        trailing_bit_length = bitstore_length % self._dtype.bit_length
         if trailing_bit_length == 0:
             return Bits()
         return self._get_bit_slice(bitstore_length - trailing_bit_length, bitstore_length)
@@ -641,20 +643,20 @@ class Array:
         if isinstance(dtype2, str):
             dtype2 = Dtype.from_string(dtype2)
 
-        token_length = dtype1.bits_per_item
+        token_length = dtype1.bit_length
         if dtype2 is not None:
             if (
-                dtype1.bits_per_item != 0
-                and dtype2.bits_per_item != 0
-                and dtype1.bits_per_item != dtype2.bits_per_item
+                dtype1.bit_length != 0
+                and dtype2.bit_length != 0
+                and dtype1.bit_length != dtype2.bit_length
             ):
                 raise ValueError(
                     f"If two Dtypes are given to pp() they must have the same length,"
-                    f" but '{dtype1}' has a length of {dtype1.bits_per_item} and '{dtype2}' has a "
-                    f"length of {dtype2.bits_per_item}."
+                    f" but '{dtype1}' has a length of {dtype1.bit_length} and '{dtype2}' has a "
+                    f"length of {dtype2.bit_length}."
                 )
             if token_length == 0:
-                token_length = dtype2.bits_per_item
+                token_length = dtype2.bit_length
         if token_length == 0:
             token_length = self.item_size
 
@@ -894,20 +896,20 @@ class Array:
             )
         # If same type choose the widest
         if type1.name == type2.name:
-            return type1 if type1.bits_per_item > type2.bits_per_item else type2
+            return type1 if type1.bit_length > type2.bit_length else type2
         # We choose floats above integers, irrespective of the widths
         if is_float(type1) and is_int(type2):
             return type1
         if is_int(type1) and is_float(type2):
             return type2
         if is_float(type1) and is_float(type2):
-            return type2 if type2.bits_per_item > type1.bits_per_item else type1
+            return type2 if type2.bit_length > type1.bit_length else type1
         assert is_int(type1) and is_int(type2)
         if type1.is_signed and not type2.is_signed:
             return type1
         if type2.is_signed and not type1.is_signed:
             return type2
-        return type2 if type2.bits_per_item > type1.bits_per_item else type1
+        return type2 if type2.bit_length > type1.bit_length else type1
 
     # Operators between Arrays or an Array and scalar value
 

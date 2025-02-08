@@ -696,7 +696,9 @@ def test_unpack_field():
     f = Field("tadpole: u12")
     a = Bits("u12=100")
     assert f.unpack(a) == 100
-    assert a.unpack(f) == 100  # TODO: Does unpack allow Field in definition?
+    # TODO: Should this work? Not sure if we want to allow unpacking a Bits with a Field - seems confusing?
+    # Currently works as Dtype and Field both have an unpack that accepts a Bits.
+    assert a.unpack(f) == 100
 
     a = Bits("0x000001b3, u12=352, u12=288, bool=1")
     v = a.unpack(["hex8", "[u12; 2]", "bool"])

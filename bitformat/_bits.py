@@ -1144,25 +1144,18 @@ class Bits:
         return
 
     @staticmethod
-    def _bits_per_item(d: Dtype | DtypeTuple) -> int:
-        if isinstance(d, Dtype):
-            return d.bits_per_item
-        return sum(x.bits_per_item for x in d)
-
-    @staticmethod
     def _process_pp_tokens(
         dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None
     ) -> tuple[int, bool]:
         has_length_in_fmt = True
-        bits_per_group = Bits._bits_per_item(dtype1)
+        bits_per_group = dtype1.bit_length
 
         if dtype2 is not None:
-            if (0 not in {Bits._bits_per_item(dtype1), Bits._bits_per_item(dtype2)} and
-                    Bits._bits_per_item(dtype1) != Bits._bits_per_item(dtype2)):
+            if 0 not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:
                 raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
-                                 f"bit lengths of {Bits._bits_per_item(dtype1)} and {Bits._bits_per_item(dtype2)} respectively.")
+                                 f"bit lengths of {dtype1.bit_length} and {dtype2.bit_length} respectively.")
             if bits_per_group == 0:
-                bits_per_group = Bits._bits_per_item(dtype2)
+                bits_per_group = dtype2.bit_length
 
         if bits_per_group == 0:
             has_length_in_fmt = False
