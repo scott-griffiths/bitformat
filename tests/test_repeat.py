@@ -22,10 +22,10 @@ def test_from_string():
     # """
     s = """
     Repeat {2}:
-        fred = (
+        fred = [
             bool,
             john: i7
-        )
+        ]
     """
 
     q = Repeat(s)

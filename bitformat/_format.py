@@ -13,7 +13,7 @@ from ._options import Options
 
 __all__ = ["Format"]
 
-format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\((?P<content>.*)\)\s*$"
+format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\[(?P<content>.*)\]\s*$"
 compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
 
 
@@ -108,25 +108,21 @@ class Format(FieldType):
             name = match.group("name")
             content = match.group("content")
         else:
-            return (
-                "",
-                [],
-                f"Invalid Format string '{format_str}'. It should be in the form '(field1, field2, ...)' or 'name = (field1, field2, ...)'.",
-            )
+            return ("", [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'.",)
         name = "" if name is None else name.strip()
         field_strs = []
         # split by ',' but ignore any ',' that are inside ()
         start = 0
         inside_brackets = 0
         for i, p in enumerate(content):
-            if p == "(":
+            if p == "[":
                 inside_brackets += 1
-            elif p == ")":
+            elif p == "]":
                 if inside_brackets == 0:
                     return (
                         "",
                         [],
-                        f"Unbalanced parenthesis in Format string '({content})'.",
+                        f"Unbalanced parenthesis in Format string '[{content}]'.",
                     )
                 inside_brackets -= 1
             elif p == "," or p == "\n":
@@ -139,11 +135,11 @@ class Format(FieldType):
             if len(field_strs) == 0:
                 if s == "":
                     raise ValueError(
-                        "Format strings must contain a comma even when empty. Try '(,)' instead."
+                        "Format strings must contain a comma even when empty. Try '[,]' instead."
                     )
                 else:
                     raise ValueError(
-                        f"Format strings must contain a comma even with only one item. Try '({content},)' instead."
+                        f"Format strings must contain a comma even with only one item. Try '[{content},]' instead."
                     )
             if s:
                 field_strs.append(s)
@@ -157,7 +153,7 @@ class Format(FieldType):
         """
         Create a :class:`Format` instance from a string.
 
-        The string should be of the form ``'(field1, field2, ...)'`` or ``'name = (field1, field2, ...)'``,
+        The string should be of the form ``'[field1, field2, ...]'`` or ``'name = [field1, field2, ...]'``,
         with commas separating strings that will be used to create other :class:`FieldType` instances.
 
         At least one comma must be present, even if less than two fields are present.
@@ -169,9 +165,9 @@ class Format(FieldType):
 
         .. code-block:: python
 
-            f1 = Format.from_string('(u8, bool=True, val: i7)')
-            f2 = Format.from_string('my_format = (float16,)')
-            f3 = Format.from_string('(u16, another_format = ([u8; 64], [bool; 8]))')
+            f1 = Format.from_string('[u8, bool=True, val: i7]')
+            f2 = Format.from_string('my_format = [float16,]')
+            f3 = Format.from_string('[u16, another_format = [[u8; 64], [bool; 8]]]')
 
         """
         # parse_lark_format(s)
@@ -345,11 +341,11 @@ class Format(FieldType):
             "" if self.name == "" else f"{colour.green}{self.name}{colour.off} = "
         )
         s = ""
-        s += indent(f"{name_str}(\n")
+        s += indent(f"{name_str}[\n")
         with indent:
             for i, fieldtype in enumerate(self._fields):
                 s += fieldtype._str(indent)
-        s += indent(")")
+        s += indent("]")
         return s
 
     @override

@@ -45,7 +45,7 @@ def test_explicit_pass():
 
 
 def test_slightly_more_complex_things():
-    f = Format("""my_format = (
+    f = Format("""my_format = [
         header: hex2 = 0x47
         flag: bool
         If {flag}:
@@ -53,7 +53,7 @@ def test_slightly_more_complex_things():
         Else:
             data: bool
         f32
-    )
+    ]
     """)
     g = Format.from_string(str(f))
     assert f == g

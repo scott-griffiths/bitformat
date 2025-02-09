@@ -150,13 +150,15 @@ class FieldType(abc.ABC):
         if (x := fieldtype_classes["Repeat"]._possibly_from_string(s)) is not None:
             return x
 
-        # Finally, check for a Field.
-        # Should start with either a `(` or a name followed by a `=` followed by a `(`.
-        # It should end with a `)`
-        # format_regex = r'([a-zA-Z][a-zA-Z0-9_]*?)\s*=\s*\('
-        if s.endswith(")"):
-            # If it's legal it must be a Format.
-            return fieldtype_classes["Format"].from_string(s)
+        # Both Format and Field arrays can end in a ']'.
+        if s.endswith("]"):
+            # If it's part of a DtypeArray then a ';' will appear before any ',' or ']'
+            for c in s[1:]:
+                if c == ";":
+                    return fieldtype_classes["Field"].from_string(s)
+                if c == "]" or c == ",":
+                    return fieldtype_classes["Format"].from_string(s)
+        # Otherwise, it's a plain Field.
         return fieldtype_classes["Field"].from_string(s)
 
     @abc.abstractmethod
