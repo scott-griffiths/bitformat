@@ -132,15 +132,6 @@ class Format(FieldType):
                     start = i + 1
         if inside_brackets == 0:
             s = content[start:].strip()
-            if len(field_strs) == 0:
-                if s == "":
-                    raise ValueError(
-                        "Format strings must contain a comma even when empty. Try '[,]' instead."
-                    )
-                else:
-                    raise ValueError(
-                        f"Format strings must contain a comma even with only one item. Try '[{content},]' instead."
-                    )
             if s:
                 field_strs.append(s)
         if inside_brackets != 0:
@@ -155,8 +146,6 @@ class Format(FieldType):
 
         The string should be of the form ``'[field1, field2, ...]'`` or ``'name = [field1, field2, ...]'``,
         with commas separating strings that will be used to create other :class:`FieldType` instances.
-
-        At least one comma must be present, even if less than two fields are present.
 
         :param s: The string to parse.
         :type s: str

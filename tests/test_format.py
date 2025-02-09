@@ -33,11 +33,11 @@ class TestCreation:
         assert f.name == "x"
 
     def test_create_from_dtype_string(self):
-        with pytest.raises(ValueError):
-            _ = Format("[x: f16]")  # No comma
-        f = Format("[x: f16,]")
-        assert f[0].name == "x"
-        assert f[0].dtype == DtypeSingle.from_params(DtypeName.FLOAT, 16)
+        f1 = Format("[x: f16]")  # No comma
+        f2 = Format("[x: f16,]") # With comma
+        assert f1 == f2
+        assert f1[0].name == "x"
+        assert f1[0].dtype == DtypeSingle.from_params(DtypeName.FLOAT, 16)
 
     @given(name=st.sampled_from(["f16", "u12", "bool", "f64"]))
     def test_building_field(self, name):
@@ -205,12 +205,12 @@ def test_example_from_docs():
     f.parse(b)
     assert f["y"].value == 987
 
-    # f = Format("(sync_byte: const hex8 = 0xff,"
+    # f = Format("[sync_byte: const hex8 = 0xff,"
     #            "items: u16,"
     #            "flags: [bool ; {items + 1} ],"
     #            "Repeat({items + 1},"
-    #            "    (byte_cluster_size: u4, bytes{byte_cluster_size})),"
-    #            "u8)")
+    #            "    [byte_cluster_size: u4, bytes{byte_cluster_size}]),"
+    #            "u8]")
     # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
 
 
@@ -594,7 +594,7 @@ x = [ i5,
 q: u8,
 [u3, 
 u4
-]
+],
 u5
 ]
 """
@@ -623,8 +623,8 @@ def test_eq():
     assert f != Format("[u8, u8, u8]")
     assert f != Format("[u8, const u8 = 10]")
     assert f != Format("[u8, x: u8]")
-    assert Format("[u8 = 3,]") == Format("[u8 = 3,]")
-    assert Format("[u8 = 3,]") != Format("[u8 = 4,]")
+    assert Format("[u8 = 3]") == Format("[u8 = 3,]")
+    assert Format("[u8 = 3]") != Format("[u8 = 4]")
 
 def test_wrong_arguments():
     f = Format("[bool, bool, [i3, q: i3], [f64; 1]]")
