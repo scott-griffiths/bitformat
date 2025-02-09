@@ -131,15 +131,15 @@ Bits('0b000101101111110111111100101101')
 The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
 
 ```pycon
->>> f = Format('(width: u12, height: u12, flags: [bool; 4])')
+>>> f = Format('[width: u12, height: u12, flags: [bool; 4]]')
 >>> f.pack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
 >>> print(f)
-(
+[
     width: u12 = 320
     height: u12 = 240
     flags: [bool; 4] = (True, False, True, False)
-)
+]
 >>> f['height'].value /= 2
 >>> f.to_bits()
 Bits('0x140078a')
@@ -184,4 +184,4 @@ The (unordered) :todo: list includes:
 * **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
 * **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
 
-<sub>Copyright (c) 2024 Scott Griffiths</sub>
+<sub>Copyright (c) 2024-2025 Scott Griffiths</sub>

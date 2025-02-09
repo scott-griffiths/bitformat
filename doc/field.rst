@@ -37,7 +37,7 @@ or ::
 When ``const`` is used the `value` must be set.
 
 
-For example instead of ``Field.from_parameters(Dtype.from_parameters('uint', 12), 'width', 100)`` you could say ``Field('width: u12 = 100')``.
+For example instead of ``Field.from_params(Dtype.from_params(DtypeName.UINT, 12), 'width', 100)`` you could say ``Field('width: u12 = 100')``.
 The whitespace between the elements is optional.
 
 An example for a bit literal would be instead of ``Field(Bits(bytes=b'\0x00\x00\x01\xb3'), 'sequence_header')`` you could use ``Field.from_string('sequence_header: bits32 = 0x000001b3')``.

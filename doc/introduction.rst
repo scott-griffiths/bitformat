@@ -92,13 +92,13 @@ As well as packing and unpacking bits with a dtype, you can also equivalently pa
     Bits('0110')
     >>> Dtype('f16').unpack('0x439a')
     3.80078125
-    >>> DtypeTuple('u1, u2, u3, u4').pack([1, 1, 1, 1])
+    >>> Dtype('u1, u2, u3, u4').pack([1, 1, 1, 1])
     Bits('0b1010010001')
-    >>> DtypeTuple('hex2, u4, [bool; 4]').unpack('0x439a')
+    >>> Dtype('hex2, u4, [bool; 4]').unpack('0x439a')
     ['43', 9, (True, False, True, False)]
 
 Here the value of ``-2`` was packed into a 3 bit signed integer ``Dtype`` to create a 3 bit ``Bits`` object.
-Then a 16 bit ``Bits`` was implicitly created from the hexadecimal string ``'0x439a'`` and unpacked as a 16 bit IEEE float value. For packing and unpacking multiple values in one go the :class:`DtypeTuple` class is available.
+Then a 16 bit ``Bits`` was implicitly created from the hexadecimal string ``'0x439a'`` and unpacked as a 16 bit IEEE float value. Packing and unpacking multiple values in one go can also be done.
 
 A very convenient feature is 'auto' initialisation, where various types will be promoted to a :class:`Bits` when appropriate.
 This has already happened in some of the examples above, but some more examples are::
@@ -180,7 +180,7 @@ The format strings for these are borrowed from the Rust programming language::
     >>> a = Bits.from_dtype('[u8; 5]', (104, 101, 108, 108, 111))
     >>> f = Bits.from_dtype('[bool; 4]', [True, True, False, True])
 
-The :class:`Dtype` made from the string ``'[u8; 5]'`` represents an array of five 8-bit unsigned integers, and ``'[bool; 4]'`` is an array of four single bit booleans.
+The :class:`DtypeArray` made from the string ``'[u8; 5]'`` represents an array of five 8-bit unsigned integers, and ``'[bool; 4]'`` is an array of four single bit booleans.
 Of course these array data types also work when unpacking::
 
     >>> a.unpack('[i4; 10]')
@@ -193,12 +193,12 @@ c) A sequence of Dtypes
 
 The array Dtype above can only be used for a sequence of data types that are the same. You can also mix and match data types in a :class:`DtypeTuple`. ::
 
-    >>> dt = DtypeTuple('[bool; 4], u12, u12')
+    >>> dt = Dtype('[bool; 4], u12, u12')
     >>> t = Bits.from_dtype(dt, [[1, 1, 0, 1], 160, 120])
     >>> t.bin
     '1101000010100000000001111000'
 
-We've been a bit more explicit when creating the ``DtypeTuple`` here, as we could have just supplied the initialisation string to the ``from_dtype`` method and it would have worked just as well. We are going to use the data type again though, so creating the ``DtypeTuple`` object means it won't have to parse the string more than once ::
+We've been a bit more explicit when creating the ``Dtype`` here, as we could have just supplied the initialisation string to the ``from_dtype`` method and it would have worked just as well. We are going to use the data type again though, so creating the ``Dtype`` object means it won't have to parse the string more than once ::
 
     >>> t.unpack(dt)
     [(True, True, False, True), 160, 120]
@@ -211,14 +211,14 @@ For more complex needs the :class:`Format` class allows a rich specification lan
 
 Combining some of our earlier creations we could make this format::
 
-    >>> fmt = Format("header = (const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
+    >>> fmt = Format("header = [const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12]")
     >>> print(fmt)
-    header = (
+    header = [
         const hex4 = 0147
         flags: [bool; 4]
         w: u12
         h: u12
-    )
+    ]
 
 Here we have introduced named fields and const fields. It's then easy to set and get the named fields::
 
@@ -226,12 +226,12 @@ Here we have introduced named fields and const fields. It's then easy to set and
     >>> fmt['w'].value = 160
     >>> fmt['h'].value = 120
     >>> print(fmt)
-    header = (
+    header = [
         const hex4 = 0147
         flags: [bool; 4] = (True, True, False, True)
         w: u12 = 160
         h: u12 = 120
-    )
+    ]
     >>> fmt.unpack()
     ['0147', (True, True, False, True), 160, 120]
     >>> fmt.to_bytes()
@@ -243,12 +243,12 @@ Another way to create using the format is via the :meth:`Format.pack` method::
     >>> fmt.clear()
     >>> fmt.pack([[0, 0, 0, 0], 999, 5])
     >>> print(fmt)
-    header = (
+    header = [
         const hex4 = 0147
         flags: [bool; 4] = (False, False, False, False)
         w: u12 = 999
         h: u12 = 5
-    )
+    ]
 
 
 Case 2: Manipulating binary data

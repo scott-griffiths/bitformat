@@ -668,5 +668,3 @@ def test_setting_fields():
     f[0:2] = g[:]
     assert f[0].name == "a"
     assert len(f) == 5
-
-
