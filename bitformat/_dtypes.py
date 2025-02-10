@@ -152,10 +152,6 @@ class Dtype(abc.ABC):
         """
         ...
 
-    @property
-    def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        return self._name
 
     @property
     def endianness(self) -> Endianness:
@@ -179,26 +175,6 @@ class Dtype(abc.ABC):
         """
     ...
 
-    @property
-    def return_type(self) -> Any:
-        """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
-        return self._return_type
-
-    @property
-    def is_signed(self) -> bool:
-        """Returns bool indicating if the data type represents a signed quantity."""
-        return self._is_signed
-
-    @property
-    def bits_per_character(self) -> int | None:
-        """The number of bits represented by a single character of the underlying data type.
-
-        For binary this is 1, for octal 3, hex 4 and for bytes this is 8. For types that don't
-        have a direct relationship between bits and characters this will be None.
-
-        """
-        return self._bits_per_character
-
     @abc.abstractmethod
     def __str__(self) -> str:
         ...
@@ -206,20 +182,38 @@ class Dtype(abc.ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
+    @property
+    @abc.abstractmethod
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        ...
+
 
 class DtypeSingle(Dtype):
 
     _size: int
     _bit_length: int
+    _definition: DtypeDefinition
+
+    @property
+    @override
+    @final
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return self._definition.name
+
+    @property
+    def return_type(self) -> Any:
+        """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
+        return self._definition.return_type
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int,
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = DtypeSingle.__new__(DtypeSingle)
-        x._name = definition.name
+        x._definition = definition
         x._bit_length = x._size = size
-        x._bits_per_character = definition.bits_per_character
         if definition.bits_per_character is not None:
             x._bit_length *= definition.bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (
@@ -248,9 +242,6 @@ class DtypeSingle(Dtype):
             return b.byte_swap()
 
         x._create_fn = create_bits_le if little_endian else create_bits
-
-        x._return_type = definition.return_type
-        x._is_signed = definition.is_signed
         return x
 
     @classmethod
@@ -295,7 +286,7 @@ class DtypeSingle(Dtype):
     @final
     def __str__(self) -> str:
         hide_length = (
-            Register().name_to_def[self._name].allowed_sizes.only_one_value()
+            Register().name_to_def[self._definition.name].allowed_sizes.only_one_value()
             or self.size == 0
         )
         size_str = "" if hide_length else str(self.size)
@@ -304,7 +295,7 @@ class DtypeSingle(Dtype):
             if self._endianness == Endianness.UNSPECIFIED
             else "_" + self._endianness.value
         )
-        return f"{self._name}{endianness}{size_str}"
+        return f"{self._definition.name}{endianness}{size_str}"
 
     @override
     @final
@@ -313,7 +304,7 @@ class DtypeSingle(Dtype):
             other = Dtype.from_string(other)
         if isinstance(other, DtypeSingle):
             return (
-                self._name == other._name
+                self._definition.name == other._definition.name
                 and self._size == other._size
                 and self._endianness == other._endianness
             )
@@ -322,7 +313,7 @@ class DtypeSingle(Dtype):
     # TODO: move to base class as requirement?
     def __hash__(self) -> int:
         return hash(
-            (self._name, self._size)
+            (self._definition.name, self._size)
         )
 
     @override
@@ -351,6 +342,14 @@ class DtypeArray(Dtype):
     _items: int | None
     _bits_per_item: int
 
+    @property
+    @override
+    @final
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return self._name
+
+
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int, items: int = 1,
@@ -359,7 +358,6 @@ class DtypeArray(Dtype):
         x._name = definition.name
         x._items = items
         x._bits_per_item = x._size = size
-        x._bits_per_character = definition.bits_per_character
         if definition.bits_per_character is not None:
             x._bits_per_item *= definition.bits_per_character
         little_endian: bool = endianness == Endianness.LITTLE or (
@@ -388,9 +386,6 @@ class DtypeArray(Dtype):
             return b.byte_swap()
 
         x._create_fn = create_bits_le if little_endian else create_bits
-
-        x._return_type = tuple
-        x._is_signed = definition.is_signed
         return x
 
     @classmethod
@@ -520,6 +515,14 @@ class DtypeTuple(Dtype):
 
     def __new__(cls, s: str) -> Self:
         return cls.from_string(s)
+
+    @property
+    @override
+    @final
+    def name(self) -> DtypeName:
+        """An Enum giving the name of the data type."""
+        return DtypeName.TUPLE
+
 
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:

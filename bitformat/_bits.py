@@ -1165,7 +1165,7 @@ class Bits:
                     raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
             else:
                 try:
-                    bits_per_group = 2 * dtype1.bits_per_character * dtype2.bits_per_character
+                    bits_per_group = 2 * dtype1._definition.bits_per_character * dtype2._definition.bits_per_character
                 except ValueError:
                     raise ValueError(f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
                 if bits_per_group >= 24:

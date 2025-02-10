@@ -573,7 +573,6 @@ def test_pack_array():
     d = DtypeArray.from_params(DtypeName.UINT, 33, 5)
     a = Bits.from_dtype(d, [10, 100, 1000, 32, 1])
     assert a.unpack(d) == (10, 100, 1000, 32, 1)
-    assert d.return_type == tuple
 
 
 def test_from_iterable():

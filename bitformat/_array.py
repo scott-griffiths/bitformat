@@ -812,9 +812,9 @@ class Array:
         if is_float(type1) and is_float(type2):
             return type2 if type2.bit_length > type1.bit_length else type1
         assert is_int(type1) and is_int(type2)
-        if type1.is_signed and not type2.is_signed:
+        if type1._definition.is_signed and not type2._definition.is_signed:
             return type1
-        if type2.is_signed and not type1.is_signed:
+        if type2._definition.is_signed and not type1._definition.is_signed:
             return type2
         return type2 if type2.bit_length > type1.bit_length else type1
 
