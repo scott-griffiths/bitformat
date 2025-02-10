@@ -88,50 +88,34 @@ class Dtype(abc.ABC):
         """
         s = "".join(s.split())  # Remove whitespace
         # Delegate to the appropriate class
-        if s.startswith("["):
-            # DtypeArray
-            if not s.endswith("]") or (p := s.find(";")) == -1:
-                raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
-            t = s[p + 1: -1]
-            items = int(t) if t else 0
-            name_str, size = parse_name_size_token(s[1:p])
-            name_str, modifier = parse_name_to_name_and_modifier(name_str)
-            endianness = Endianness(modifier)
-
-            try:
-                name = DtypeName(name_str)
-            except ValueError:
-                aliases = {"int": "i", "uint": "u", "float": "f"}
-                extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-                raise ValueError(
-                    f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
-            return Register().get_array_dtype(name, size, items, endianness)
         if s.startswith("("):
             if not s.endswith(")"):
                 raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Missing closing ')': '{s}'.")
             tokens = s[1: -1].split(",")
             dtypes = [Dtype.from_string(token) for token in tokens if token != '']
             return DtypeTuple.from_params(dtypes)
+        is_array = False
+        name_modifier_size = s
+        if s.startswith("["):
+            is_array = True
+            if not s.endswith("]") or (p := s.find(";")) == -1:
+                raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
+            t = s[p + 1: -1]
+            items = int(t) if t else 0
+            name_modifier_size = s[1:p]
+        name_modifier, size = parse_name_size_token(name_modifier_size)
+        name_str, modifier = parse_name_to_name_and_modifier(name_modifier)
+        endianness = Endianness(modifier)
+        try:
+            name = DtypeName(name_str)
+        except ValueError:
+            aliases = {"int": "i", "uint": "u", "float": "f"}
+            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+            raise ValueError(
+                f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+        if is_array:
+            return Register().get_array_dtype(name, size, items, endianness)
         else:
-            try:
-                name, size = parse_name_size_token(s)
-            except ValueError as e:
-                if "," in s:
-                    raise ValueError(
-                        f"Can't parse token '{s}' as a single 'name[length]'. Did you mean to use a DtypeTuple instead?"
-                    )
-                else:
-                    raise e
-            name_str, modifier = parse_name_to_name_and_modifier(name)
-
-            endianness = Endianness(modifier)
-            try:
-                name = DtypeName(name_str)
-            except ValueError:
-                aliases = {"int": "i", "uint": "u", "float": "f"}
-                extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-                raise ValueError(
-                    f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
             return Register().get_single_dtype(name, size, endianness)
 
     @abc.abstractmethod
@@ -199,7 +183,6 @@ class DtypeSingle(Dtype):
     @override
     @final
     def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
         return self._definition.name
 
     @property
@@ -341,21 +324,20 @@ class DtypeArray(Dtype):
     _size: int
     _items: int | None
     _bits_per_item: int
+    _definition: DtypeDefinition
 
     @property
     @override
     @final
     def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        return self._name
-
+        return self._definition.name
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int, items: int = 1,
                 endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
         x = super().__new__(cls)
-        x._name = definition.name
+        x._definition = definition
         x._items = items
         x._bits_per_item = x._size = size
         if definition.bits_per_character is not None:
@@ -438,7 +420,7 @@ class DtypeArray(Dtype):
     @final
     def __str__(self) -> str:
         hide_length = (
-            Register().name_to_def[self._name].allowed_sizes.only_one_value()
+            Register().name_to_def[self._definition.name].allowed_sizes.only_one_value()
             or self.size == 0
         )
         size_str = "" if hide_length else str(self.size)
@@ -448,7 +430,7 @@ class DtypeArray(Dtype):
             else "_" + self._endianness.value
         )
         items_str = "" if self._items == 0 else f" {self._items}"
-        return f"[{self._name}{self._endianness.value}{size_str};{items_str}]"
+        return f"[{self._definition.name}{endianness}{size_str};{items_str}]"
 
     @override
     @final
@@ -457,7 +439,7 @@ class DtypeArray(Dtype):
             other = Dtype.from_string(other)
         if isinstance(other, Dtype):
             return (
-                self._name == other._name
+                self._definition.name == other._definition.name
                 and self._size == other._size
                 and self._items == other._items
                 and self._endianness == other._endianness
@@ -467,9 +449,7 @@ class DtypeArray(Dtype):
     @override
     @final
     def __hash__(self) -> int:
-        return hash(
-            (self._name.value, self._size, self._items)
-        )
+        return hash((self._definition.name.value, self._size, self._items))
 
     @override
     @final
@@ -505,7 +485,7 @@ class DtypeTuple(Dtype):
 
     DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
 
-    >>> a = DtypeTuple('[u12, u8, bool]')
+    >>> a = Dtype('[u12, u8, bool]')
     >>> b = DtypeTuple.from_params(['u12', 'u8', 'bool'])
 
     """
@@ -520,9 +500,7 @@ class DtypeTuple(Dtype):
     @override
     @final
     def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
         return DtypeName.TUPLE
-
 
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
