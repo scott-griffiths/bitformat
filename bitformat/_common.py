@@ -37,6 +37,7 @@ class DtypeName(Enum):
     def __str__(self):
         return self.value
 
+
 class Indenter:
     def __init__(self, indent_size: int | None = None, max_depth: int | None = None):
         """
@@ -87,7 +88,6 @@ class Indenter:
 
 class ExpressionError(ValueError):
     """Exception raised when failing to create or parse an Expression."""
-
     pass
 
 

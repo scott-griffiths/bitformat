@@ -32,7 +32,7 @@ def token_to_bitstore(token: str) -> BitRust:
         except ValueError:
             raise ValueError(f"Can't parse token '{token}'. It should be in the form 'name[length]=value' (e.g. "
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-        if dtype.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
+        if dtype._definition.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
             try:
                 value = literal_eval(value_str)
             except ValueError:

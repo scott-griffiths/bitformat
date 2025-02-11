@@ -54,13 +54,15 @@ class Field(FieldType):
     _bits: Bits | None
     _dtype: Dtype
     _size_expr: Expression | None
+    _items_expr: Expression | None
 
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
 
     @classmethod
     def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False,
-                    size_expr: Expression | None = None, comment: str = "") -> Field:
+                    size_expr: Expression | None = None, items_expr: Expression | None = None,
+                    comment: str = "") -> Field:
         """
         Create a Field instance from parameters.
 
@@ -82,6 +84,7 @@ class Field(FieldType):
         x._bits = None
         x.const = const
         x._size_expr = size_expr
+        x._items_expr = items_expr
         x.comment = comment.strip()
         if isinstance(dtype, str):
             try:
@@ -96,7 +99,7 @@ class Field(FieldType):
         if isinstance(value, str):
             # Special cases converting from strings to bytes and bools.
             value_str = value
-            if x._dtype.return_type is bytes:
+            if x._dtype._definition.return_type is bytes:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, bytes):
@@ -106,7 +109,7 @@ class Field(FieldType):
                         f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                         f"as it can't be converted to a bytes object."
                     )
-            if x._dtype.return_type is bool:
+            if x._dtype._definition.return_type is bool:
                 try:
                     value = literal_eval(value)
                     if not isinstance(value, int) or value not in (0, 1):
@@ -215,9 +218,7 @@ class Field(FieldType):
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(
-            self.dtype, self.name, self.value, self.const, self._size_expr, self.comment
-        )
+        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self._size_expr, self.comment)
         return x
 
     @staticmethod

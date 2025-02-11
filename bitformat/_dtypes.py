@@ -184,11 +184,6 @@ class DtypeSingle(Dtype):
         """The endianness of the data type."""
         return self._endianness
 
-    @property
-    def return_type(self) -> Any:
-        """The type of the value returned by the parse method, such as ``int``, ``float`` or ``str``."""
-        return self._definition.return_type
-
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: int,
@@ -321,7 +316,7 @@ class DtypeArray(Dtype):
 
     @property
     def endianness(self) -> Endianness:
-        """The endianness of the data type."""
+        """The endianness of the data type stored in the array."""
         return self._dtype_single.endianness
 
     @classmethod
@@ -385,13 +380,8 @@ class DtypeArray(Dtype):
     def __eq__(self, other: Any) -> bool:
         if isinstance(other, str):
             other = Dtype.from_string(other)
-        if isinstance(other, Dtype):
-            return (
-                self.name == other.name
-                and self.size == other.size
-                and self.items == other.items
-                and self.endianness == other.endianness
-            )
+        if isinstance(other, DtypeArray):
+            return self._dtype_single == other._dtype_single and self.items == other.items
         return False
 
     @override
