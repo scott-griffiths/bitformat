@@ -246,9 +246,7 @@ class DtypeSingle(Dtype):
         # Single item to pack
         b = self._create_fn(value)
         if self._bit_length != 0 and len(b) != self._bit_length:
-            raise ValueError(
-                f"Dtype '{self}' has a bit_length of {self._bit_length} bits, but value '{value}' has {len(b)} bits."
-            )
+            raise ValueError(f"Dtype '{self}' has a bit_length of {self._bit_length} bits, but value '{value}' has {len(b)} bits.")
         return b
 
     @override
@@ -256,9 +254,7 @@ class DtypeSingle(Dtype):
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
         if self._bit_length > len(b):
-            raise ValueError(
-                f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack."
-            )
+            raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         if self._bit_length == 0:
             # Try to unpack everything
             return self._get_fn(b)
@@ -268,16 +264,9 @@ class DtypeSingle(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        hide_length = (
-            Register().name_to_def[self._definition.name].allowed_sizes.only_one_value()
-            or self.size == 0
-        )
+        hide_length = self.size == 0 or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
-        endianness = (
-            ""
-            if self._endianness == Endianness.UNSPECIFIED
-            else "_" + self._endianness.value
-        )
+        endianness = "" if self._endianness == Endianness.UNSPECIFIED else "_" + self._endianness.value
         return f"{self._definition.name}{endianness}{size_str}"
 
     @override
@@ -373,13 +362,8 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(
-        cls,
-        name: DtypeName,
-        size: int = 0,
-        items: int | None = None,
-        endianness: Endianness = Endianness.UNSPECIFIED,
-    ) -> Self:
+    def from_params(cls, name: DtypeName, size: int = 0, items: int | None = None,
+                    endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
@@ -404,9 +388,7 @@ class DtypeArray(Dtype):
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
         if self.bit_length > len(b):
-            raise ValueError(
-                f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack."
-            )
+            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self.items
         if items == 0:
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
@@ -419,16 +401,9 @@ class DtypeArray(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        hide_length = (
-            Register().name_to_def[self._definition.name].allowed_sizes.only_one_value()
-            or self.size == 0
-        )
+        hide_length = self.size == 0 or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
-        endianness = (
-            ""
-            if self._endianness == Endianness.UNSPECIFIED
-            else "_" + self._endianness.value
-        )
+        endianness = "" if self._endianness == Endianness.UNSPECIFIED else "_" + self._endianness.value
         items_str = "" if self._items == 0 else f" {self._items}"
         return f"[{self._definition.name}{endianness}{size_str};{items_str}]"
 
@@ -611,19 +586,10 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(
-        self,
-        name: DtypeName,
-        description: str,
-        set_fn: Callable,
-        get_fn: Callable,
-        return_type: Any = Any,
-        is_signed: bool = False,
-        bitlength2chars_fn=None,
-        allowed_sizes: tuple[int, ...] = tuple(),
-        bits_per_character: int | None = None,
-        endianness_variants: bool = False,
-    ):
+    def __init__(self, name: DtypeName, description: str, set_fn: Callable, get_fn: Callable,
+                 return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
+                 allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
+                 endianness_variants: bool = False):
         self.name = name
         self.description = description
         self.return_type = return_type
@@ -643,9 +609,7 @@ class DtypeDefinition:
                         raise ValueError(f"'{self.name}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
                 return get_fn(bs)
 
-            self.get_fn = (
-                allowed_size_checked_get_fn  # Interpret everything and check the size
-            )
+            self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
         else:
             self.get_fn = get_fn  # Interpret everything
         if bits_per_character is not None:
@@ -695,15 +659,13 @@ class DtypeDefinition:
         return d
 
     def __repr__(self) -> str:
-        s = (
-            f"{self.__class__.__name__}(name='{self.name}', description='{self.description}', "
-            f"return_type={self.return_type.__name__}, "
-        )
-        s += (
-            f"is_signed={self.is_signed}, "
-            f"allowed_lengths={self.allowed_sizes!s}, bits_per_character={self.bits_per_character})"
-        )
-        return s
+        s = [f"{self.__class__.__name__}(name='{self.name}'",
+             f"description='{self.description}'",
+             f"return_type={self.return_type.__name__}",
+             f"is_signed={self.is_signed}",
+             f"allowed_lengths={self.allowed_sizes!s}",
+             f"bits_per_character={self.bits_per_character})"]
+        return ", ".join(s)
 
 
 class Register:
@@ -731,14 +693,8 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         name = definition.name
         cls.name_to_def[name] = definition
-        setattr(
-            bitformat.Bits,
-            name.value,
-            property(
-                fget=definition.get_fn,
-                doc=f"The Bits as {definition.description}. Read only.",
-            ),
-        )
+        setattr(bitformat.Bits, name.value, property(fget=definition.get_fn,
+                                                     doc=f"The Bits as {definition.description}. Read only."))
         if definition.endianness_variants:
 
             def fget_be(b):
@@ -752,30 +708,12 @@ class Register:
                 return definition.get_fn(b.byte_swap())
 
             fget_ne = fget_le if byteorder == "little" else fget_be
-            setattr(
-                bitformat.Bits,
-                name.value + "_le",
-                property(
-                    fget=fget_le,
-                    doc=f"The Bits as {definition.description} in little-endian byte order. Read only.",
-                ),
-            )
-            setattr(
-                bitformat.Bits,
-                name.value + "_be",
-                property(
-                    fget=fget_be,
-                    doc=f"The Bits as {definition.description} in big-endian byte order. Read only.",
-                ),
-            )
-            setattr(
-                bitformat.Bits,
-                name.value + "_ne",
-                property(
-                    fget=fget_ne,
-                    doc=f"The Bits as {definition.description} in native-endian (i.e. {byteorder}-endian) byte order. Read only.",
-                ),
-            )
+
+            for modifier, fget, desc in [("_le", fget_le, f"little-endian"),
+                                         ("_be", fget_be, f"big-endian"),
+                                         ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
+                doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
+                setattr(bitformat.Bits, name.value + modifier, property(fget=fget, doc=doc))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
