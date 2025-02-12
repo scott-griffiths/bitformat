@@ -59,11 +59,11 @@ class Dtype(abc.ABC):
 
     _name: DtypeName
 
-    def __new__(cls, token: str | None = None, /) -> Self:
-        if token is None:
+    def __new__(cls, s: str | None = None, /) -> Self:
+        if s is None:
             x = super().__new__(cls)
             return x
-        return cls.from_string(token)
+        return cls.from_string(s)
 
     @classmethod
     @abc.abstractmethod
@@ -90,32 +90,13 @@ class Dtype(abc.ABC):
         if s.startswith("("):
             if not s.endswith(")"):
                 raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Missing closing ')': '{s}'.")
-            tokens = s[1: -1].split(",")
-            dtypes = [Dtype.from_string(token) for token in tokens if token != '']
-            return DtypeTuple.from_params(dtypes)
-        is_array = False
-        name_modifier_size = s
+            return DtypeTuple._from_string(s)
         if s.startswith("["):
-            is_array = True
             if not s.endswith("]") or (p := s.find(";")) == -1:
                 raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
-            t = s[p + 1: -1]
-            items = int(t) if t else 0
-            name_modifier_size = s[1:p]
-        name_modifier, size = parse_name_size_token(name_modifier_size)
-        name_str, modifier = parse_name_to_name_and_modifier(name_modifier)
-        endianness = Endianness(modifier)
-        try:
-            name = DtypeName(name_str)
-        except ValueError:
-            aliases = {"int": "i", "uint": "u", "float": "f"}
-            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
-            raise ValueError(
-                f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
-        if is_array:
-            return Register().get_array_dtype(name, size, items, endianness)
+            return DtypeArray._from_string(s, p)
         else:
-            return Register().get_single_dtype(name, size, endianness)
+            return DtypeSingle._from_string(s)
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
@@ -183,6 +164,26 @@ class DtypeSingle(Dtype):
     def endianness(self) -> Endianness:
         """The endianness of the data type."""
         return self._endianness
+
+    @classmethod
+    def _from_string(cls, s: str) -> Self:
+        name_modifier, size = parse_name_size_token(s)
+        name_str, modifier = parse_name_to_name_and_modifier(name_modifier)
+        endianness = Endianness(modifier)
+        try:
+            name = DtypeName(name_str)
+        except ValueError:
+            aliases = {"int": "i", "uint": "u", "float": "f"}
+            extra = f"Did you mean '{aliases[name_str]}'? " if name_str in aliases else ""
+            raise ValueError(
+                f"Unknown Dtype name '{name_str}'. {extra}Names available: {list(Register().name_to_def.keys())}.")
+        return Register().get_single_dtype(name, size, endianness)
+
+    @override
+    @classmethod
+    def from_string(cls, s:str, /) -> Self:
+        s = "".join(s.split())  # Remove whitespace
+        return cls._from_string(s)
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)
@@ -328,6 +329,22 @@ class DtypeArray(Dtype):
         return x
 
     @classmethod
+    def _from_string(cls, s: str, p: int) -> Self:
+        """Assumes the string is well formatted, and ';' is at position p."""
+        t = s[p + 1: -1]
+        items = int(t) if t else 0
+        ds = DtypeSingle._from_string(s[1:p])
+        return Register().get_array_dtype(ds.name, ds.size, items, ds.endianness)
+
+    @override
+    @classmethod
+    def from_string(cls, s: str, /) -> Self:
+        s = "".join(s.split())
+        if not s.startswith("[") or not s.endswith("]") or (p := s.find(";")) == -1:
+                raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
+        return cls._from_string(s, p)
+
+    @classmethod
     @override
     @final
     def from_params(cls, name: DtypeName, size: int = 0, items: int | None = None,
@@ -439,6 +456,21 @@ class DtypeTuple(Dtype):
     @final
     def name(self) -> DtypeName:
         return DtypeName.TUPLE
+
+    @classmethod
+    def _from_string(cls, s: str) -> Self:
+        """Assumes the string is well formatted."""
+        tokens = s[1:-1].split(",")
+        dtypes = [Dtype.from_string(token) for token in tokens if token != '']
+        return DtypeTuple.from_params(dtypes)
+
+    @classmethod
+    def from_string(cls, s: str, /) -> Self:
+        s = "".join(s.split())  # Remove whitespace
+        # Delegate to the appropriate class
+        if not s.startswith("(") or not s.endswith(")"):
+            raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)', received '{s}'.")
+        return cls._from_string(s)
 
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
