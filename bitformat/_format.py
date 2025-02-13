@@ -1,40 +1,117 @@
 from __future__ import annotations
 
 from ._bits import Bits
-from typing import Sequence, Any, Iterable
+from typing import Sequence, Any, Iterable, Self
 import copy
-import re
-from lark.visitors import Interpreter
-
-from ._common import override, Indenter, Colour
+from ._common import override, Indenter, Colour, lark_parser
 from ._fieldtype import FieldType
+from ._field import Field
+from ._dtypes import Dtype, DtypeArray, DtypeSingle, Expression, DtypeName
 from ._pass import Pass
+from ._repeat import Repeat
+from ._if import If
 from ._options import Options
+from lark import Transformer
+
+
+class FormatTransformer(Transformer):
+    def format(self, items) -> Format:
+        items = [i for i in items if i is not None]
+
+        # First item might be format name
+        if len(items) >= 2 and isinstance(items[0], str):
+            name = items[0]
+            fields = items[1:]
+        else:
+            name = ''
+            fields = items
+
+        # Create Format from the field definitions
+        return Format.from_params(fields, name)
+
+    def expression(self, items) -> Expression:
+        x = Expression('{' + items[0] + '}')
+        return x
+
+    def repeat(self, items) -> Repeat:
+        expr = items[0]
+        count = expr.evaluate()
+        return Repeat.from_params(count, items[1])
+
+    def pass_(self, items) -> Pass:
+        return Pass()
+
+    def if_(self, items) -> If:
+        pass
+
+    def field_name(self, items) -> str:
+        return items[0]
+
+    def format_name(self, items) -> str:
+        return str(items[0])
+
+    def dtype_name(self, items) -> DtypeName:
+        return DtypeName(items[0])
+
+    def dtype_size(self, items) -> int | Expression:
+        if isinstance(items[0], Expression):
+            return items[0]
+        else:
+            return int(items[0])
+
+    def dtype_single(self, items) -> DtypeSingle:
+        name = items[0]
+        size = items[1] if len(items) > 1 else None
+        return DtypeSingle.from_params(name, 0 if size is None else size)
+
+    def items(self, items) -> int:
+        return int(items[0])
+
+    def dtype_array(self, items) -> DtypeArray:
+        dtype = items[0]
+        items_count = items[1] if len(items) > 1 else None
+        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
+
+    def const_field(self, items) -> Field:
+        items = [i for i in items if i is not None]
+        # Final value is the value itself
+        value = items[-1]
+        # Penultimate value is the dtype
+        dtype = items[-2]
+        # Name is the first value if it exists
+        name = items[0] if len(items) > 2 else ''
+        return Field.from_params(dtype, name, value, const=True)
+
+    def mutable_field(self, items) -> Field:
+        items = [i for i in items if i is not None]
+        if len(items) == 2:
+            if isinstance(items[0], Dtype):
+                # dtype and value
+                dtype = items[0]
+                value = items[1]
+                return Field.from_params(dtype, value=value)
+            else:
+                name = items[0]
+                dtype = items[1]
+                return Field.from_params(dtype, name)
+        elif len(items) == 3:
+            name = items[0]
+            dtype = items[1]
+            value = items[2]
+            return Field.from_params(dtype, name, value)
+        elif len(items) == 1:
+            dtype = items[0]
+            return Field.from_params(dtype)
+        raise ValueError
+
+    def simple_value(self, items) -> str:
+        return str(items[0])
+
+    def list_of_values(self, items):
+        return str(items[0])
+
 
 __all__ = ["Format"]
-
-format_str_pattern = r"^(?:(?P<name>[^=]+)=)?\s*\[(?P<content>.*)\]\s*$"
-compiled_format_str_pattern = re.compile(format_str_pattern, re.DOTALL)
-
-
-class FormatInterpreter(Interpreter):
-    def __init__(self):
-        self.name = ""
-        self.fieldtypes = []
-
-    def format_name(self, tree):
-        self.name = tree.children[0].value
-        print(self.name)
-
-    def field_type(self, tree):
-        self.fieldtypes.append(FieldType.from_string(tree.children[0].value))
-
-
-# def parse_lark_format(s: str) -> Format:
-#     tree = lark_parser.parse(s, start="format")
-#     format_interpreter = FormatInterpreter()
-#     x = format_interpreter.visit(tree)
-#     return None
 
 
 class Format(FieldType):
@@ -46,7 +123,7 @@ class Format(FieldType):
     name: str
     vars: dict[str, Any]
 
-    def __new__(cls, s: str | None = None) -> Format:
+    def __new__(cls, s: str | None = None) -> Self:
         if s is None:
             x = super().__new__(cls)
             x._fields = []
@@ -57,9 +134,7 @@ class Format(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(
-        cls, fields: Sequence[FieldType | str] | None = None, name: str = ""
-    ) -> Format:
+    def from_params(cls, fields: Sequence[FieldType | str] | None = None, name: str = "") -> Self:
         """
         Create a Format instance.
 
@@ -102,45 +177,10 @@ class Format(FieldType):
                 x._field_names[fieldtype.name] = fieldtype
         return x
 
-    @staticmethod
-    def _parse_format_str(format_str: str) -> tuple[str, list[str], str]:
-        if match := compiled_format_str_pattern.match(format_str):
-            name = match.group("name")
-            content = match.group("content")
-        else:
-            return ("", [], f"Invalid Format string '{format_str}'. It should be in the form '[field1, field2, ...]' or 'name = [field1, field2, ...]'.",)
-        name = "" if name is None else name.strip()
-        field_strs = []
-        # split by ',' but ignore any ',' that are inside ()
-        start = 0
-        inside_brackets = 0
-        for i, p in enumerate(content):
-            if p == "[":
-                inside_brackets += 1
-            elif p == "]":
-                if inside_brackets == 0:
-                    return (
-                        "",
-                        [],
-                        f"Unbalanced parenthesis in Format string '[{content}]'.",
-                    )
-                inside_brackets -= 1
-            elif p == "," or p == "\n":
-                if inside_brackets == 0:
-                    if s := content[start:i].strip():
-                        field_strs.append(s)
-                    start = i + 1
-        if inside_brackets == 0:
-            s = content[start:].strip()
-            if s:
-                field_strs.append(s)
-        if inside_brackets != 0:
-            return "", [], f"Unbalanced parenthesis in Format string '[{content}]'."
-        return name, field_strs, ""
 
     @classmethod
     @override
-    def from_string(cls, s: str, /) -> Format:
+    def from_string(cls, s: str, /) -> Self:
         """
         Create a :class:`Format` instance from a string.
 
@@ -159,47 +199,15 @@ class Format(FieldType):
             f3 = Format.from_string('[u16, another_format = [[u8; 64], [bool; 8]]]')
 
         """
-        # parse_lark_format(s)
-        name, field_strs, err_msg = cls._parse_format_str(s)
-        if err_msg:
-            raise ValueError(err_msg)
-        # Pre-process for 'If' fields to join things together if needed.
-        processed_fields_strs = []
-        just_had_if = False
-        just_had_else = False
-        for fs in field_strs:
-            if just_had_if or just_had_else:
-                processed_fields_strs[-1] += "\n" + fs
-                just_had_if = just_had_else = False
-                continue
-            if fs.startswith("If"):  # TODO: not good enough test
-                just_had_if = True
-                processed_fields_strs.append(fs)
-            elif fs.startswith("Else"):  # TODO: also not good enough
-                just_had_else = True
-                processed_fields_strs[-1] += (
-                    "\n" + fs
-                )  # TODO: Will fail if Else before If.
-            else:
-                just_had_if = just_had_else = False
-                processed_fields_strs.append(fs)
-        field_strs = processed_fields_strs
-
-        fieldtypes = []
-        for fs in field_strs:
-            try:
-                f = FieldType.from_string(fs)
-            except ValueError as e:
-                no_of_notes = len(getattr(e, "__notes__", []))
-                max_notes = 2
-                if no_of_notes < max_notes:
-                    e.add_note(f" -- when parsing Format string '{s}'.")
-                if no_of_notes == max_notes:
-                    e.add_note(" -- ...")
-                raise e
-            else:
-                fieldtypes.append(f)
-        return cls.from_params(fieldtypes, name)
+        try:
+            tree = lark_parser.parse(s, start='format')
+        except Exception as e:
+            raise ValueError(f"Error when parsing Format string '{s}'.") from e
+        transformer = FormatTransformer()
+        try:
+            return transformer.transform(tree)
+        except Exception as e:
+            raise ValueError(f"Error when parsing Format string '{s}'.") from e
 
     @override
     def _get_bit_length(self) -> int:

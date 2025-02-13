@@ -2,9 +2,6 @@ from lark import Lark, Transformer
 from bitformat import Format, Field, DtypeName, DtypeSingle, Dtype, DtypeArray, Pass, Repeat, Expression
 from typing import List, Union, Any
 
-# Load the grammar from the .lark file
-with open("format_parser.lark") as f:
-    GRAMMAR = f.read()
 
 class FormatTransformer(Transformer):
     def format(self, items):
@@ -78,25 +75,15 @@ class FormatTransformer(Transformer):
         # Remove None values
         items = [item for item in items if item is not None]
 
-        if len(items) == 2:
-            if isinstance(items[0], Dtype):
-                # dtype and value
-                dtype = items[0]
-                value = items[1]
-                return Field.from_params(dtype, value=value)
-            else:
-                name = items[0]
-                dtype = items[1]
-                return Field.from_params(dtype, name)
-        elif len(items) == 3:
+        if len(items) >= 2:  # name and dtype
             name = items[0]
             dtype = items[1]
-            value = items[2]
-            return Field.from_params(dtype, name, value)
-        elif len(items) == 1:
+            if len(items) > 2:  # has default value
+                raise ValueError  # TODO
+            return Field.from_params(dtype, name)
+        else:  # just dtype
             dtype = items[0]
             return Field.from_params(dtype)
-        raise ValueError
 
     def simple_value(self, items):
         return str(items[0])
@@ -105,65 +92,19 @@ class FormatTransformer(Transformer):
         return str(items[0])
 
     # Add other transformer methods as needed...
-
-def parse_format(format_string: str) -> Format:
-    """
-    Parse a format string and return a Format object.
-
-    Args:
-        format_string: The format string to parse
-
-    Returns:
-        A Format object representing the parsed format
-
-    """
-    parser = Lark(GRAMMAR, start='format', parser='earley')
-    transformer = FormatTransformer()
-    tree = parser.parse(format_string)
-    return transformer.transform(tree)
-
-def main():
-    # Simple format with basic fields
-    # format1 = parse_format("[u8, flag: bool]")
-    # print(format1)
-    #
-    # # Format with a name and constant field
-    # format2 = parse_format("header = [const bits = 0x000001b3, width: u12, height: u12]")
-    # print(format2)
-    #
-    # # Format with array fields
-    # format3 = parse_format("packet = [type: u8, [u8; 4], checksum: u16]")
-    # print(format3)
-    #
-    # # More complex format with nested structures
-    # format4 = parse_format("""
-    # main = [
-    #     header = [const u16 = 0xFFFF, version: u8],
-    #     payload: [u8; 16],
-    #     checksum: u32
-    # ]
-    # """)
-    # print(format4)
-    #
-    s = """
-    header = [
-        x: u8,
-        y: u8,
-        z: u8,
-        data: [u8; 3],
-        Repeat{2}: [
-            a: u8,
-            b: u8
-        ]
-        bool
-    ]
-    """
-
-    format5 = parse_format(s)
-    print(format5)
-
-    format6 = parse_format("[u8 = 3]")
-    print(format6)
-
-if __name__ == "__main__":
-    main()
+#
+# def parse_format(format_string: str) -> Format:
+#     """
+#     Parse a format string and return a Format object.
+#
+#     Args:
+#         format_string: The format string to parse
+#
+#     Returns:
+#         A Format object representing the parsed format
+#
+#     """
+#     parser = Lark(GRAMMAR, start='format', parser='earley')
+#     transformer = FormatTransformer()
+#     tree = parser.parse(format_string)
+#     return transformer.transform(tree)
