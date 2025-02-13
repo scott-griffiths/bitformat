@@ -97,28 +97,14 @@ class Field(FieldType):
         if const is True and value is None:
             raise ValueError("Fields with no value cannot be set to be const.")
         if isinstance(value, str):
-            # Special cases converting from strings to bytes and bools.
             value_str = value
-            if x._dtype._definition.return_type is bytes:
+            # Need to convert non-string types into their correct return types.
+            if (ret_type := x._dtype._definition.return_type) in (int, float, bytes, bool):
                 try:
-                    value = literal_eval(value)
-                    if not isinstance(value, bytes):
-                        raise ValueError()
+                    value = ret_type(literal_eval(value))
                 except ValueError:
-                    raise ValueError(
-                        f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
-                        f"as it can't be converted to a bytes object."
-                    )
-            if x._dtype._definition.return_type is bool:
-                try:
-                    value = literal_eval(value)
-                    if not isinstance(value, int) or value not in (0, 1):
-                        raise ValueError()
-                except ValueError:
-                    raise ValueError(
-                        f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
-                        f"as it can't be converted to a bool."
-                    )
+                    raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
+                                     f"as it can't be converted to a {ret_type}.")
         if value is not None:
             x._set_value_no_const_check(value)
         if isinstance(x._dtype, DtypeSingle) and x._dtype.size == 0:

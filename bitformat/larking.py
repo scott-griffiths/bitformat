@@ -1,5 +1,5 @@
 from lark import Lark, Transformer
-from bitformat import Format, Field, DtypeName, DtypeSingle, Dtype
+from bitformat import Format, Field, DtypeName, DtypeSingle, Dtype, DtypeArray, Pass, Repeat, Expression
 from typing import List, Union, Any
 
 # Load the grammar from the .lark file
@@ -21,6 +21,21 @@ class FormatTransformer(Transformer):
 
         # Create Format from the field definitions
         return Format.from_params(fields, name)
+
+    def expression(self, items):
+        x = Expression('{' + items[0] + '}')
+        return x
+
+    def repeat(self, items):
+        expr = items[0]
+        count = expr.evaluate()
+        return Repeat.from_params(count, items[1])
+
+    def pass_(self, items):
+        return Pass()
+
+    def if_(self, items):
+        pass
 
     def field_name(self, items):
         return str(items[0])
@@ -46,7 +61,7 @@ class FormatTransformer(Transformer):
     def dtype_array(self, items):
         dtype = items[0]
         items_count = items[1] if len(items) > 1 else None
-        return f"[{dtype}; {items_count if items_count is not None else ''}]"
+        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
 
     def const_field(self, items):
         # Remove None values
@@ -120,7 +135,22 @@ def main():
     """)
     print(format4)
 
+    s = """
+    header = [
+        x: u8,
+        y: u8,
+        z: u8,
+        data: [u8; 3],
+        Repeat{2}: [
+            a: u8,
+            b: u8
+        ]
+        bool
+    ]
+    """
 
+    format5 = parse_format(s)
+    print(format5)
 
 if __name__ == "__main__":
     main()

@@ -25,16 +25,17 @@ mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
 condition: /[^:]+/
-if: "If" condition ":" field_type ["Else" ":" field_type]
+if_: "If" condition ":" field_type ["Else" ":" field_type]
 
-repeat: "Repeat" condition ":" field_type
+// Note this doesn't yet have a name?
+repeat: "Repeat" expression ":" field_type
 
-pass: ["Pass"]
+pass_: ["Pass"]
 
 format_name: CNAME
 format: [format_name "="] "[" [field_type (("," | NEWLINE) field_type)*] [","] "]"
 
-?field_type: field | format | if | repeat | pass
+?field_type: field | format | if_ | repeat | pass_
 
 %import common.INT -> INT
 %import common.CNAME -> CNAME

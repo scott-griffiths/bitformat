@@ -668,3 +668,8 @@ def test_setting_fields():
     f[0:2] = g[:]
     assert f[0].name == "a"
     assert len(f) == 5
+
+# def test_dtypetuple_in_format():
+#     h = Format('[(u8, u6)]')
+#     h.pack([[10, 5]])
+#     assert h[0].value == (10, 5)
