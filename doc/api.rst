@@ -123,6 +123,7 @@ These classes build upon those above to provide richer and more complex data str
 
 Other Classes
 -------------
+* :ref:`Expression <expression>` -- Use Field values elsewhere for conditionals and other logic.
 * :ref:`Options <options>` -- Getting and setting module-wide options.
 * :ref:`BitsProxy <bitsproxy>` -- Used by :class:`Array` to allow the data to behave more like :class:`Bits`.
 * :ref:`Register <register>` -- The register of allowed :class:`Dtype` types.
@@ -146,6 +147,7 @@ Miscellaneous
     if.rst
     repeat.rst
     pass.rst
+    expression.rst
     options.rst
     bitsproxy.rst
     register.rst
