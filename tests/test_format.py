@@ -433,12 +433,11 @@ def test_recursive_from_string():
     assert fp == f
 
 
-# TODO: Failing for now with the new parser.
-# def test_interesting_types_from_string():
-#     s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
-#     f = Format.from_string(s)
-#     assert f[0].value == -375
-#     assert f["_fred"].value == b"abc\x04"
+def test_interesting_types_from_string():
+    s = "  [const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',] "
+    f = Format.from_string(s)
+    assert f[0].value == -375
+    assert f["_fred"].value == b"abc\x04"
 
 
 # def test_expression_dtypes():

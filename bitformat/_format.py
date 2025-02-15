@@ -53,6 +53,9 @@ class FormatTransformer(Transformer):
     def INT(self, item) -> int:
         return int(item)
 
+    def python_string(self, items) -> str:
+        return str(items[0])
+
     def field_name(self, items) -> str:
         return items[0]
 
@@ -76,7 +79,7 @@ class FormatTransformer(Transformer):
         return DtypeSingle.from_params(name, size, endianness)
 
     def items(self, items) -> int:
-        return int(items[0])
+        return items[0]
 
     def dtype_array(self, items) -> DtypeArray:
         assert len(items) == 2

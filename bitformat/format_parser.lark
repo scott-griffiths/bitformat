@@ -21,8 +21,8 @@ dtype_tuple: "(" dtype ("," dtype)* ")"
 
 ?field_name: CNAME -> field_name
 
-// This is too simplistic. Won't work for test like "b'some_bytes, some_other_bytes',"
-simple_value: /[a-zA-Z0-9\.\+\-]+/ -> simple_value
+?inline_string: /[a-zA-Z0-9\.\+\-]+/
+simple_value: python_string | inline_string -> simple_value
 list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_value ("," simple_value)* [","] ")")
 ?value: simple_value | list_of_values
 
@@ -46,6 +46,7 @@ format: [format_name "="] "[" [field_type (("," | NEWLINE) field_type)*] [","] "
 
 %import common.INT -> INT
 %import common.CNAME -> CNAME
+%import python.string -> python_string  // Parses Python strings, including things like b'abc' and f"abc'd'"
 %import common.WS
 %import common.NEWLINE
 %ignore WS
