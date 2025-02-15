@@ -20,21 +20,15 @@ __all__ = ["Format"]
 
 
 class FormatTransformer(Transformer):
+
     def format(self, items) -> Format:
-        items = [i for i in items if i is not None]
-
-        # First item might be format name
-        if len(items) >= 2 and isinstance(items[0], str):
-            name = items[0]
-            fields = items[1:]
-        else:
-            name = ''
-            fields = items
-
-        # Create Format from the field definitions
+        assert len(items) >= 1
+        name = items[0] if items[0] is not None else ''
+        fields = items[1:]
         return Format.from_params(fields, name)
 
     def expression(self, items) -> Expression:
+        assert len(items) == 1
         x = Expression('{' + items[0] + '}')
         return x
 
@@ -44,6 +38,7 @@ class FormatTransformer(Transformer):
         return Repeat.from_params(count, items[1])
 
     def pass_(self, items) -> Pass:
+        assert len(items) == 0
         return Pass()
 
     def if_(self, items) -> If:
@@ -52,11 +47,17 @@ class FormatTransformer(Transformer):
         else_ = items[2]
         return If.from_params(expr, then_, else_)
 
+    def CNAME(self, item) -> str:
+        return str(item)
+
+    def INT(self, item) -> int:
+        return int(item)
+
     def field_name(self, items) -> str:
-        return str(items[0])
+        return items[0]
 
     def format_name(self, items) -> str:
-        return str(items[0])
+        return items[0]
 
     def dtype_name(self, items) -> DtypeName:
         return DtypeName(items[0])
@@ -65,17 +66,14 @@ class FormatTransformer(Transformer):
         return Endianness(items[0])
 
     def dtype_size(self, items) -> int | Expression:
-        if isinstance(items[0], Expression):
-            return items[0]
-        else:
-            return int(items[0])
+        return items[0]
 
     def dtype_single(self, items) -> DtypeSingle:
         assert len(items) == 3
         name = items[0]
         endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
-        size =  0 if items[2] is None else items[2]
-        return DtypeSingle.from_params(name, 0 if size is None else size, endianness)
+        size = 0 if items[2] is None else items[2]
+        return DtypeSingle.from_params(name, size, endianness)
 
     def items(self, items) -> int:
         return int(items[0])
@@ -87,41 +85,25 @@ class FormatTransformer(Transformer):
         return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
 
     def const_field(self, items) -> Field:
-        items = [i for i in items if i is not None]
-        # Final value is the value itself
-        value = items[-1]
-        # Penultimate value is the dtype
-        dtype = items[-2]
-        # Name is the first value if it exists
-        name = items[0] if len(items) > 2 else ''
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
         return Field.from_params(dtype, name, value, const=True)
 
     def mutable_field(self, items) -> Field:
-        items = [i for i in items if i is not None]
-        if len(items) == 2:
-            if isinstance(items[0], Dtype):
-                # dtype and value
-                dtype = items[0]
-                value = items[1]
-                return Field.from_params(dtype, value=value)
-            else:
-                name = items[0]
-                dtype = items[1]
-                return Field.from_params(dtype, name)
-        elif len(items) == 3:
-            name = items[0]
-            dtype = items[1]
-            value = items[2]
-            return Field.from_params(dtype, name, value)
-        elif len(items) == 1:
-            dtype = items[0]
-            return Field.from_params(dtype)
-        raise ValueError
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
+        return Field.from_params(dtype, name, value)
 
     def simple_value(self, items) -> str:
+        assert len(items) == 1
         return str(items[0])
 
     def list_of_values(self, items):
+        # TODO
         return str(items[0])
 
 
