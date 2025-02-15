@@ -5,21 +5,18 @@ import lark.exceptions
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, lark_parser, Endianness
+from ._common import override, Indenter, Colour, field_type_parser
 from ._fieldtype import FieldType
-from ._field import Field
-from ._dtypes import Dtype, DtypeArray, DtypeSingle, Expression, DtypeName
+from ._field import FieldTypeTransformer
 from ._pass import Pass
-from ._repeat import Repeat
-from ._if import If
 from ._options import Options
-from lark import Transformer, UnexpectedInput
+from lark import UnexpectedInput
 
 
 __all__ = ["Format"]
 
 
-class FormatTransformer(Transformer):
+class FormatTransformer(FieldTypeTransformer):
 
     def format(self, items) -> Format:
         assert len(items) >= 1
@@ -27,87 +24,8 @@ class FormatTransformer(Transformer):
         fields = items[1:]
         return Format.from_params(fields, name)
 
-    def expression(self, items) -> Expression:
-        assert len(items) == 1
-        x = Expression('{' + items[0] + '}')
-        return x
-
-    def repeat(self, items) -> Repeat:
-        expr = items[0]
-        count = expr.evaluate()
-        return Repeat.from_params(count, items[1])
-
-    def pass_(self, items) -> Pass:
-        assert len(items) == 0
-        return Pass()
-
-    def if_(self, items) -> If:
-        expr = items[0]
-        then_ = items[1]
-        else_ = items[2]
-        return If.from_params(expr, then_, else_)
-
-    def CNAME(self, item) -> str:
-        return str(item)
-
-    def INT(self, item) -> int:
-        return int(item)
-
-    def python_string(self, items) -> str:
-        return str(items[0])
-
-    def field_name(self, items) -> str:
-        return items[0]
-
     def format_name(self, items) -> str:
         return items[0]
-
-    def dtype_name(self, items) -> DtypeName:
-        return DtypeName(items[0])
-
-    def dtype_modifier(self, items) -> Endianness:
-        return Endianness(items[0])
-
-    def dtype_size(self, items) -> int | Expression:
-        return items[0]
-
-    def dtype_single(self, items) -> DtypeSingle:
-        assert len(items) == 3
-        name = items[0]
-        endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
-        size = 0 if items[2] is None else items[2]
-        return DtypeSingle.from_params(name, size, endianness)
-
-    def items(self, items) -> int:
-        return items[0]
-
-    def dtype_array(self, items) -> DtypeArray:
-        assert len(items) == 2
-        dtype = items[0]
-        items_count = items[1]
-        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
-
-    def const_field(self, items) -> Field:
-        assert len(items) == 3
-        name = items[0] if items[0] is not None else ''
-        dtype = items[1]
-        value = items[2]
-        return Field.from_params(dtype, name, value, const=True)
-
-    def mutable_field(self, items) -> Field:
-        assert len(items) == 3
-        name = items[0] if items[0] is not None else ''
-        dtype = items[1]
-        value = items[2]
-        return Field.from_params(dtype, name, value)
-
-    def simple_value(self, items) -> str:
-        assert len(items) == 1
-        return str(items[0])
-
-    def list_of_values(self, items):
-        # TODO
-        return str(items[0])
 
 
 format_transformer = FormatTransformer()
@@ -220,10 +138,10 @@ class Format(FieldType):
 
         """
         try:
-            tree = lark_parser.parse(s)
+            tree = field_type_parser.parse(s)
         except UnexpectedInput as u:
             # TODO: This isn't giving quite the output I'd expect yet.
-            exc_class = u.match_examples(lark_parser.parse, {
+            exc_class = u.match_examples(field_type_parser.parse, {
                 FormatUnknownDtype: ['[uint8]',
                                      '[[z;]]',
                                      '[u1, [u1, [u1, [u1, penguin]]]]'],

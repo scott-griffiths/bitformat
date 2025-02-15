@@ -2,15 +2,102 @@ from __future__ import annotations
 
 import re
 from bitformat import Bits
-from ._dtypes import Dtype, DtypeSingle, Register
+from ._dtypes import Dtype, DtypeSingle, Register, DtypeArray
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeName, Expression
+from ._common import override, Indenter, Colour, DtypeName, Expression, Endianness
 from typing import Any, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
+from ._pass import Pass
+from ._repeat import Repeat
+from ._if import If
+from lark import Transformer, UnexpectedInput
 
 
 __all__ = ["Field"]
+
+
+class FieldTypeTransformer(Transformer):
+
+    def expression(self, items) -> Expression:
+        assert len(items) == 1
+        x = Expression('{' + items[0] + '}')
+        return x
+
+    def repeat(self, items) -> Repeat:
+        expr = items[0]
+        count = expr.evaluate()
+        return Repeat.from_params(count, items[1])
+
+    def pass_(self, items) -> Pass:
+        assert len(items) == 0
+        return Pass()
+
+    def if_(self, items) -> If:
+        expr = items[0]
+        then_ = items[1]
+        else_ = items[2]
+        return If.from_params(expr, then_, else_)
+
+    def CNAME(self, item) -> str:
+        return str(item)
+
+    def INT(self, item) -> int:
+        return int(item)
+
+    def python_string(self, items) -> str:
+        return str(items[0])
+
+    def field_name(self, items) -> str:
+        return items[0]
+
+    def dtype_name(self, items) -> DtypeName:
+        return DtypeName(items[0])
+
+    def dtype_modifier(self, items) -> Endianness:
+        return Endianness(items[0])
+
+    def dtype_size(self, items) -> int | Expression:
+        return items[0]
+
+    def dtype_single(self, items) -> DtypeSingle:
+        assert len(items) == 3
+        name = items[0]
+        endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
+        size = 0 if items[2] is None else items[2]
+        return DtypeSingle.from_params(name, size, endianness)
+
+    def items(self, items) -> int:
+        return items[0]
+
+    def dtype_array(self, items) -> DtypeArray:
+        assert len(items) == 2
+        dtype = items[0]
+        items_count = items[1]
+        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
+
+    def const_field(self, items) -> Field:
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
+        return Field.from_params(dtype, name, value, const=True)
+
+    def mutable_field(self, items) -> Field:
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
+        return Field.from_params(dtype, name, value)
+
+    def simple_value(self, items) -> str:
+        assert len(items) == 1
+        return str(items[0])
+
+    def list_of_values(self, items):
+        # TODO
+        return str(items[0])
+
 
 
 class Field(FieldType):
