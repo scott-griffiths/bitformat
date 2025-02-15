@@ -1,16 +1,22 @@
+start: field_type
 
-
+// This should reflect the DtypeName enum.
 dtype_name: /u|i|f|bool|bytes|hex|bin|oct|bits|pad/
 
+// Endian modifiers for dtypes
+dtype_modifier: /le|be|ne/
+
+// Expression strings start with a { and end with a }
 expression: "{" /[^\}]+/ "}"
 
 dtype_size: INT | expression
-dtype_single: dtype_name [dtype_size]
-
 items: INT
-dtype_array: "[" dtype_single ";" [items] "]"
 
+dtype_single: dtype_name ["_" dtype_modifier] [dtype_size]
+dtype_array: "[" dtype_single ";" [items] "]"
 dtype_tuple: "(" dtype ("," dtype)* ")"
+
+// dtype is the abstract base class for the other dtype_ above.
 ?dtype: dtype_tuple | dtype_single | dtype_array
 
 ?field_name: CNAME -> field_name
@@ -25,12 +31,12 @@ const_field.1: [field_name ":"] "const" dtype "=" value -> const_field
 mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
-condition: /[^:]+/
 if_: "If" expression ":" field_type ["Else" ":" field_type]
 
 // Note this doesn't yet have a name?
 repeat: "Repeat" expression ":" field_type
 
+// The Pass field is literally just "Pass"
 pass_: ["Pass"]
 
 format_name: CNAME

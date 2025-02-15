@@ -5,7 +5,7 @@ import lark.exceptions
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, lark_parser
+from ._common import override, Indenter, Colour, lark_parser, Endianness
 from ._fieldtype import FieldType
 from ._field import Field
 from ._dtypes import Dtype, DtypeArray, DtypeSingle, Expression, DtypeName
@@ -61,6 +61,9 @@ class FormatTransformer(Transformer):
     def dtype_name(self, items) -> DtypeName:
         return DtypeName(items[0])
 
+    def dtype_modifier(self, items) -> Endianness:
+        return Endianness(items[0])
+
     def dtype_size(self, items) -> int | Expression:
         if isinstance(items[0], Expression):
             return items[0]
@@ -68,16 +71,19 @@ class FormatTransformer(Transformer):
             return int(items[0])
 
     def dtype_single(self, items) -> DtypeSingle:
+        assert len(items) == 3
         name = items[0]
-        size = items[1] if len(items) > 1 else None
-        return DtypeSingle.from_params(name, 0 if size is None else size)
+        endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
+        size =  0 if items[2] is None else items[2]
+        return DtypeSingle.from_params(name, 0 if size is None else size, endianness)
 
     def items(self, items) -> int:
         return int(items[0])
 
     def dtype_array(self, items) -> DtypeArray:
+        assert len(items) == 2
         dtype = items[0]
-        items_count = items[1] if len(items) > 1 else None
+        items_count = items[1]
         return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
 
     def const_field(self, items) -> Field:
@@ -121,7 +127,7 @@ class FormatTransformer(Transformer):
 
 format_transformer = FormatTransformer()
 
-
+# This is experimental error code - not really working yet and probably not quite what I want to do.
 class FormatSyntaxError(SyntaxError):
     label: str = ''
     def __str__(self):
@@ -229,8 +235,9 @@ class Format(FieldType):
 
         """
         try:
-            tree = lark_parser.parse(s, start='format')
+            tree = lark_parser.parse(s)
         except UnexpectedInput as u:
+            # TODO: This isn't giving quite the output I'd expect yet.
             exc_class = u.match_examples(lark_parser.parse, {
                 FormatUnknownDtype: ['[uint8]',
                                      '[[z;]]',
