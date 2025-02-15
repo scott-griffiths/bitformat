@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 import ast
 from typing import Any
+from types import CodeType
 import enum
 from ._options import Options
 import os
@@ -112,7 +113,21 @@ class Expression:
     """
     A compiled expression that can be evaluated with a dictionary of variables.
 
-    Created with a string that starts and ends with braces, e.g. '{x + 1}'.
+    Created with a string that starts and ends with braces, e.g. ``Expression('{x + 1}')``.
+
+    Expressions are usually created when parsing fields such as :class:`Format` and :class:`If`, when
+    an ``Expression`` will be implicitly created from sections between braces.
+
+    .. code-block:: python
+
+        e = Expression('{x + 1}')
+        assert e.evaluate({'x': 5}) == 6
+
+        f = Format('[x: u8, data: [u8; {x}]]')  # The number of items in data is an Expression.
+
+    Only certain operations are permitted in an Expression - see the ``node_whitelist``. For security
+    reasons, all builtins and double underscores are disallowed in the expression string.
+
     """
 
     def __init__(self, code_str: str):
@@ -125,6 +140,7 @@ class Expression:
         self.code_str = code_str[1:-1].strip()
         self.code = self._compile_safe_eval()
 
+    """A whitelist of allowed AST nodes for the expression."""
     node_whitelist = {
         "BinOp",
         "Name",
@@ -158,7 +174,7 @@ class Expression:
         "Lt",
     }
 
-    def _compile_safe_eval(self):
+    def _compile_safe_eval(self) -> CodeType:
         """Compile the expression, but only allow a whitelist of operations."""
         if "__" in self.code_str:
             raise ExpressionError(
@@ -188,21 +204,22 @@ class Expression:
         try:
             value = eval(self.code, {"__builtins__": {}}, kwargs)
         except NameError as e:
-            raise ExpressionError(
-                f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}"
-            )
+            raise ExpressionError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
         return value
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{{{self.code_str}}}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, Expression):
             return self.code_str == other.code_str
         return False
+
+    def __hash__(self) -> int:
+        return hash(self.code_str)
 
 
 class Endianness(enum.Enum):

@@ -180,8 +180,8 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if self._size_expr is not None:
-            size = self._size_expr.evaluate(vars_)
+        if isinstance(self._dtype.size, Expression):
+            size = self._dtype.size.evaluate(vars_)
             # TODO: A bit hacky, needs to be revised for other dtypes.
             dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
         else:
@@ -191,13 +191,12 @@ class Field(FieldType):
                 f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
             )
         # Deal with a stretchy dtype
-        self._bits = (
-            b[startbit : startbit + dtype.bit_length]
-            if dtype.bit_length != 0
-            else b[startbit:]
-        )
+        self._bits = b[startbit : startbit + dtype.bit_length] if dtype.bit_length != 0 else b[startbit:]
         if self.name != "":
-            vars_[self.name] = self.value
+            if self._bits is None:
+                vars_[self.name] = None
+            else:
+                vars_[self.name] = dtype.unpack(self._bits)
         return len(self._bits)
 
     @override

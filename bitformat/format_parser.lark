@@ -26,7 +26,7 @@ mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
 condition: /[^:]+/
-if_: "If" condition ":" field_type ["Else" ":" field_type]
+if_: "If" expression ":" field_type ["Else" ":" field_type]
 
 // Note this doesn't yet have a name?
 repeat: "Repeat" expression ":" field_type

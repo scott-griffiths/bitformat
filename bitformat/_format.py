@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import lark.exceptions
+
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
@@ -11,7 +13,10 @@ from ._pass import Pass
 from ._repeat import Repeat
 from ._if import If
 from ._options import Options
-from lark import Transformer
+from lark import Transformer, UnexpectedInput
+
+
+__all__ = ["Format"]
 
 
 class FormatTransformer(Transformer):
@@ -42,10 +47,13 @@ class FormatTransformer(Transformer):
         return Pass()
 
     def if_(self, items) -> If:
-        pass
+        expr = items[0]
+        then_ = items[1]
+        else_ = items[2]
+        return If.from_params(expr, then_, else_)
 
     def field_name(self, items) -> str:
-        return items[0]
+        return str(items[0])
 
     def format_name(self, items) -> str:
         return str(items[0])
@@ -111,7 +119,28 @@ class FormatTransformer(Transformer):
         return str(items[0])
 
 
-__all__ = ["Format"]
+format_transformer = FormatTransformer()
+
+
+class FormatSyntaxError(SyntaxError):
+    label: str = ''
+    def __str__(self):
+        context, line, column = self.args
+        return '%s at line %s, column %s.\n\n%s' % (self.label, line, column, context)
+
+class FormatMissingValue(FormatSyntaxError):
+    label = 'Missing Value'
+
+class FormatUnknownDtype(FormatSyntaxError):
+    label = 'Unknown Dtype'
+
+class FormatMissingClosing(FormatSyntaxError):
+    label = 'Missing Closing'
+
+class FormatMissingComma(FormatSyntaxError):
+    label = 'Missing Comma'
+
+
 
 
 class Format(FieldType):
@@ -201,13 +230,22 @@ class Format(FieldType):
         """
         try:
             tree = lark_parser.parse(s, start='format')
-        except Exception as e:
-            raise ValueError(f"Error when parsing Format string '{s}'.") from e
-        transformer = FormatTransformer()
+        except UnexpectedInput as u:
+            exc_class = u.match_examples(lark_parser.parse, {
+                FormatUnknownDtype: ['[uint8]',
+                                     '[[z;]]',
+                                     '[u1, [u1, [u1, [u1, penguin]]]]'],
+                FormatMissingClosing: ['[u8 = 23',
+                                     '[[f16; 6]'],
+                FormatMissingComma: ['[i5 i3]'],
+            }, use_accepts=False)
+            if not exc_class:
+                raise
+            raise exc_class(u.get_context(s), u.line, u.column)
         try:
-            return transformer.transform(tree)
-        except Exception as e:
-            raise ValueError(f"Error when parsing Format string '{s}'.") from e
+            return format_transformer.transform(tree)
+        except lark.exceptions.VisitError as e:
+            raise ValueError(f"Error parsing format: {e}")
 
     @override
     def _get_bit_length(self) -> int:
