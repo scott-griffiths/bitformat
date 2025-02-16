@@ -203,14 +203,12 @@ def test_const_equality():
 
 
 def test_size_expression():
-    f = Field.from_params(Dtype('u'), size_expr=Expression('{5}'))
-    assert f.dtype == Dtype("u")
-    assert f._size_expr == Expression('{5}')
+    f = Field.from_params(DtypeSingle.from_params(DtypeName.UINT, size=Expression('{5}')))
+    assert f.dtype == Dtype("u{5}")
     assert str(f) == "u{5}"
     g = Field(" u { 5 } ")
     assert str(g) == "u{5}"
     assert f == g
-
 
 def test_unpack():
     f = Field.from_string("[i9; 4]")
@@ -237,11 +235,10 @@ def test_field_with_comment():
 
 def test_multiline_fields():
     f1 = Field.from_string("x: u8")
-    with pytest.raises(ValueError):
-        f2 = Field.from_string("x: u8\n")
-    with pytest.raises(ValueError):
-        f3 = Field.from_string("x: \nu8")
-
+    f2 = Field.from_string("x: u8\n")
+    f3 = Field.from_string("x: \nu8")
+    assert f1 == f2
+    assert f2 == f3
 
 def test_stretchy_field():
     s = Field("u")

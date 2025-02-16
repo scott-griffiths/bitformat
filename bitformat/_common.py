@@ -236,4 +236,4 @@ byteorder: str = sys.byteorder
 
 _lark_file_path = os.path.join(os.path.dirname(__file__), "format_parser.lark")
 with open(_lark_file_path, "r") as f:
-    lark_parser = Lark(f, start='field_type')
+    field_type_parser = Lark(f, start='field_type')

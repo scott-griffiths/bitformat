@@ -103,9 +103,10 @@ class FieldType(abc.ABC):
         :return: True if stretchy, False otherwise.
         :rtype: bool
         """
-        if hasattr(self, "_size_expr") and self._size_expr is not None:
+        try:
+            return self.bit_length == 0
+        except ValueError:  # It might be an Expression, and Expressions can't be stretchy.
             return False
-        return self.bit_length == 0
 
     def pp(
         self,

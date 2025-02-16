@@ -321,7 +321,7 @@ class DtypeArray(Dtype):
         return self._dtype_single.endianness
 
     @classmethod
-    def _create(cls, definition: DtypeDefinition, size: int, items: int = 1,
+    def _create(cls, definition: DtypeDefinition, size: int, items: int | None,
                 endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
         x = super().__new__(cls)
         x._dtype_single = DtypeSingle._create(definition, size, endianness)
@@ -332,7 +332,7 @@ class DtypeArray(Dtype):
     def _from_string(cls, s: str, p: int) -> Self:
         """Assumes the string is well formatted, and ';' is at position p."""
         t = s[p + 1: -1]
-        items = int(t) if t else 0
+        items = int(t) if t else None
         ds = DtypeSingle._from_string(s[1:p])
         return Register().get_array_dtype(ds.name, ds.size, items, ds.endianness)
 
@@ -364,7 +364,7 @@ class DtypeArray(Dtype):
             if len(value) != self.bit_length:
                 raise ValueError(f"Expected {self.bit_length} bits, but got {len(value)} bits.")
             return value
-        if len(value) != self._items and self._items != 0:
+        if self._items is not None and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
 
@@ -372,10 +372,10 @@ class DtypeArray(Dtype):
     @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
-        if self.bit_length > len(b):
+        if self.items is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self.items
-        if items == 0:
+        if items is None:
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
             items = len(b) // self._dtype_single.bit_length
         return tuple(
@@ -389,7 +389,7 @@ class DtypeArray(Dtype):
         hide_length = self.size == 0 or self._dtype_single._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self.endianness == Endianness.UNSPECIFIED else "_" + self.endianness.value
-        items_str = "" if self._items == 0 else f" {self._items}"
+        items_str = "" if self._items is None else f" {self._items}"
         return f"[{self.name}{endianness}{size_str};{items_str}]"
 
     @override
@@ -410,6 +410,8 @@ class DtypeArray(Dtype):
     @final
     @property
     def bit_length(self) -> int:
+        if self._items is None:
+            raise ValueError(f"The DtypeArray has no items set, so it does not have a bit length.")
         return self._dtype_single.bit_length * self._items
 
     @property
@@ -645,12 +647,12 @@ class DtypeDefinition:
         d = DtypeSingle._create(self, size, endianness)
         return d
 
-    def get_array_dtype(self, size: int, items: int, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
+    def get_array_dtype(self, size: int, items: int | None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeArray._create(self, size, items, endianness)
         if size == 0:
             raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. "
-                             f"Note that the number of items in the array dtype can be unknown, but the dtype of each item must have a known size.")
+                             f"Note that the number of items in the array dtype can be unknown or zero, but the dtype of each item must have a known size.")
         return d
 
     def __repr__(self) -> str:

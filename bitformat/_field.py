@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingle, Register, DtypeArray
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeName, Expression, Endianness
+from ._common import override, Indenter, Colour, DtypeName, Expression, Endianness, field_type_parser
 from typing import Any, Iterable
 from ._fieldtype import FieldType
 from ._options import Options
@@ -12,7 +12,7 @@ from ._pass import Pass
 from ._repeat import Repeat
 from ._if import If
 from lark import Transformer, UnexpectedInput
-
+import lark
 
 __all__ = ["Field"]
 
@@ -67,7 +67,7 @@ class FieldTypeTransformer(Transformer):
         size = 0 if items[2] is None else items[2]
         return DtypeSingle.from_params(name, size, endianness)
 
-    def items(self, items) -> int:
+    def dtype_items(self, items) -> int:
         return items[0]
 
     def dtype_array(self, items) -> DtypeArray:
@@ -99,20 +99,19 @@ class FieldTypeTransformer(Transformer):
         return str(items[0])
 
 
+field_type_transformer = FieldTypeTransformer()
+
 
 class Field(FieldType):
     const: bool
     _bits: Bits | None
     _dtype: Dtype
-    _size_expr: Expression | None
-    _items_expr: Expression | None
 
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
 
     @classmethod
     def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False,
-                    size_expr: Expression | None = None, items_expr: Expression | None = None,
                     comment: str = "") -> Field:
         """
         Create a Field instance from parameters.
@@ -134,8 +133,6 @@ class Field(FieldType):
         x = super().__new__(cls)
         x._bits = None
         x.const = const
-        x._size_expr = size_expr
-        x._items_expr = items_expr
         x.comment = comment.strip()
         if isinstance(dtype, str):
             try:
@@ -170,18 +167,14 @@ class Field(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Field:
-        s, comment = s.split("#", 1) if "#" in s else (s, "")
-        comment = comment.strip()
-        dtype_str, name, value, const = cls._parse_field_str(s)
-        if (p := dtype_str.find("{")) == -1:
-            size_expr = None
-        else:
-            q = dtype_str.find("}")
-            if q == -1 or q < p:
-                raise ValueError(f"Field string '{s}' has mismatched braces.")
-            size_expr = Expression(dtype_str[p:q + 1])
-            dtype_str = dtype_str[:p] + dtype_str[q + 1:]
-        return cls.from_params(dtype_str, name, value, const, size_expr, comment)
+        try:
+            tree = field_type_parser.parse(s)
+        except UnexpectedInput:
+            raise ValueError
+        try:
+            return field_type_transformer.transform(tree)
+        except lark.exceptions.VisitError as e:
+            raise ValueError(f"Error parsing format: {e}")
 
     @classmethod
     def from_bits(
@@ -238,7 +231,7 @@ class Field(FieldType):
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self._size_expr, self.comment)
+        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
         return x
 
     @staticmethod
@@ -308,15 +301,11 @@ class Field(FieldType):
 
     def _set_value_no_const_check(self, value: Any) -> None:
         if value is None:
-            raise ValueError(
-                "Cannot set the value of a Field to None. Perhaps you could use clear()?"
-            )
+            raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
         try:
             self._bits = self.dtype.pack(value)
         except ValueError as e:
-            raise ValueError(
-                f"Can't use the value '{value}' with the field '{self}': {e}"
-            )
+            raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 
     @override
     def _set_value(self, value: Any) -> None:
@@ -338,7 +327,7 @@ class Field(FieldType):
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
         const_str = "const " if self.const else ""
-        dtype_str = str(self._dtype) + ("" if self._size_expr is None else str(self._size_expr))
+        dtype_str = str(self._dtype)
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
         v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
@@ -350,7 +339,7 @@ class Field(FieldType):
     def _repr(self) -> str:
         const_str = "const " if self.const else ""
         n = "" if self.name == "" else f"{self.name}: "
-        dtype = f"{const_str}{self._dtype}" + ("" if self._size_expr is None else str(self._size_expr))
+        dtype = f"{const_str}{self._dtype}"
         v = "" if self.value is None else f" = {self.value}"
         return f"'{n}{dtype}{v}'"
 
