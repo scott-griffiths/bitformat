@@ -64,8 +64,7 @@ class Field(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False,
-                    comment: str = "") -> Field:
+    def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False) -> Field:
         """
         Create a Field instance from parameters.
 
@@ -78,15 +77,12 @@ class Field(FieldType):
         :param const: Whether the field is constant, optional.
         :type const: bool
         :return: The Field instance.
-        :param comment: An optional comment string
-        :type comment: str
 
         :rtype: Field
         """
         x = super().__new__(cls)
         x._bits = None
         x.const = const
-        x.comment = comment.strip()
         if isinstance(dtype, str):
             try:
                 x._dtype = Dtype.from_string(dtype)
@@ -186,7 +182,7 @@ class Field(FieldType):
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
+        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const)
         return x
 
     @override
@@ -267,8 +263,7 @@ class Field(FieldType):
         d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
         n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
         v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
-        comment = "" if self.comment == "" else f"  # {self.comment}"
-        return indent(f"{n}{d}{v}{comment}")
+        return indent(f"{n}{d}{v}")
 
     # This simple repr used when field is part of a larger object
     @override

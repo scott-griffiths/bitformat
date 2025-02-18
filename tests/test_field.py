@@ -225,15 +225,6 @@ def test_unpack_with_unknown_items():
     f.pack([5, -5, 0, 100])
     assert f.unpack() == (5, -5, 0, 100)
 
-def test_field_with_comment():
-    f = Field.from_params("u8", name="x", comment="  This is a comment ")
-    assert f.comment == "This is a comment"
-    f.comment = "   Penguins are cool  "
-    assert f.comment == "Penguins are cool"
-    assert str(f) == "x: u8  # Penguins are cool"
-    assert repr(f) == "Field('x: u8')"
-
-
 def test_multiline_fields():
     f1 = Field.from_string("x: u8")
     f2 = Field.from_string("x: u8\n")

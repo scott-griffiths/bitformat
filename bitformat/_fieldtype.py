@@ -19,7 +19,6 @@ class FieldType(abc.ABC):
     def __new__(cls, *args, **kwargs) -> FieldType:
         x = super().__new__(cls)
         x._name = ""
-        x._comment = ""
         return x
 
     def __init_subclass__(cls, **kwargs):
@@ -257,24 +256,13 @@ class FieldType(abc.ABC):
     def _set_name(self, val: str) -> None:
         if val != "":
             if not val.isidentifier():
-                raise ValueError(
-                    f"The FieldType name '{val}' is not permitted as  it is not a valid Python identifier."
-                )
+                raise ValueError(f"The FieldType name '{val}' is not permitted as it is not a valid Python identifier.")
             if keyword.iskeyword(val):
                 raise ValueError(f"The FieldType name '{val}' is not permitted as it is a Python keyword.")
             if "__" in val:
-                raise ValueError(
-                    f"The FieldType name '{val}' contains a double underscore which is not permitted."
-                )
+                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
         self._name = val
 
     name = property(_get_name, _set_name)
     value = property(_get_value, _set_value)
 
-    def _get_comment(self) -> str:
-        return self._comment
-
-    def _set_comment(self, comment: str) -> None:
-        self._comment = comment.strip()
-
-    comment = property(_get_comment, _set_comment)
