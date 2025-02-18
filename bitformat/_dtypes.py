@@ -145,8 +145,10 @@ class Dtype(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def bit_length(self) -> int:
+    def bit_length(self) -> int | None:
         """The total length of the data type in bits.
+
+        Returns ``None`` if the data type doesn't have a fixed length.
 
         .. code-block:: pycon
 
@@ -154,8 +156,10 @@ class Dtype(abc.ABC):
             12
             >>> Dtype('[u12; 5]').bit_length
             60
-            >>> Dtype('hex5').bit_length
-            20
+            >>> Dtype('(hex5, bool)').bit_length
+            21
+            >>> Dtype('i').bit_length
+            None
 
         """
     ...
@@ -307,7 +311,7 @@ class DtypeSingle(Dtype):
     @override
     @final
     @property
-    def bit_length(self) -> int:
+    def bit_length(self) -> int | None:
         return self._bit_length
 
     @property
@@ -392,7 +396,7 @@ class DtypeArray(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        hide_length = self.size == 0 or self._dtype_single._definition.allowed_sizes.only_one_value()
+        hide_length = self.size is None or self._dtype_single._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self.endianness == Endianness.UNSPECIFIED else "_" + self.endianness.value
         items_str = "" if self._items is None else f" {self._items}"
@@ -415,9 +419,9 @@ class DtypeArray(Dtype):
     @override
     @final
     @property
-    def bit_length(self) -> int:
+    def bit_length(self) -> int | None:
         if self._items is None:
-            raise ValueError(f"The DtypeArray has no items set, so it does not have a bit length.")
+            return None
         return self._dtype_single.bit_length * self._items
 
     @property

@@ -559,8 +559,6 @@ def test_unpack_errors():
         _ = a.unpack(["u4", "u4", "u4"])
     with pytest.raises(ValueError):
         _ = a.unpack("i10")
-    with pytest.raises(ValueError):
-        _ = a.unpack(["u8", "u"])
 
 
 def test_unpack_single():

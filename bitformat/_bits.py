@@ -956,6 +956,8 @@ class Bits:
         return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
 
     def _set_f(self, f: float | str, length: int | None) -> None:
+        if length is None:
+            raise ValueError("No length can be inferred for the float initialiser.")
         f = float(f)
         fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
         try:

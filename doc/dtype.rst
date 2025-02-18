@@ -13,16 +13,15 @@ The concrete data-type classes are:
 * :class:`DtypeArray` which adds an item count to represent an array of values of the same type, such as 1000 ``u8`` or 5 ``bool`` flags.
 * :class:`DtypeTuple` is a sequence of data types that can be of different value types.
 
-These classes all have a ``from_params`` method to create them, but also have a particular formatting that can be used in their ``from_string`` method.
-The base :class:`Dtype` also has a ``from_string`` method which will delegate to the correct sub-class depending on the format.
-Added to this, the ``__init__`` methods for these types all just delegate to their ``from_string`` methods, so it's usually fine to create them via a call to ``Dtype('some_formatted_string')``.
+These classes all have a ``from_params`` method to create them, but also have a particular formatting that can be used in the base :class:`Dtype` ``from_string`` method which will delegate to the correct sub-class.
+
+It's usually best to create them via a call to ``Dtype('some_formatted_string')``.
 
 In places where a ``Dtype`` is expected as a parameter you can just supply the string format and it find the correct type automatically.
 
 Some examples of equivalent types, going from most verbose to least::
 
     DtypeSingle.from_params(DtypeName.UINT, 8)
-    DtypeSingle.from_string('u8')
     DtypeSingle('u8')
     Dtype('u8')
     'u8'  # When used as a parameter
@@ -30,7 +29,6 @@ Some examples of equivalent types, going from most verbose to least::
 ::
 
     DtypeArray.from_params(DtypeName.FLOAT, 16, 20)
-    DtypeArray.from_string('[f16; 20]')
     DtypeArray('[f16; 20]')
     Dtype('[f16; 20]')
     '[f16; 20]'  # When used as a parameter
@@ -39,7 +37,6 @@ Some examples of equivalent types, going from most verbose to least::
 
     DtypeTuple.from_params([DtypeSingle.from_params(DtypeName.UINT, 8), DtypeArray.from_params(DtypeName.FLOAT, 16, 20)])
     DtypeTuple.from_params(['u8', '[f16; 20]'])
-    DtypeTuple.from_string('(u8, [f16; 20])')
     DtypeTuple('(u8, [f16; 20])')
     Dtype('(u8, [f16; 20])')
     '(u8, [f16; 20])'  # When used as a parameter

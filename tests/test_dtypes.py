@@ -106,7 +106,7 @@ class TestChangingTheRegister:
 #         a = Bits.from_string("0x010f")
 #         assert a.counter == 5
 #         with pytest.raises(AttributeError):
-            a.counter = 4
+#             a.counter = 4
 
     def test_invalid_dtypes(self):
         with pytest.raises(TypeError):
@@ -121,32 +121,48 @@ class TestChangingTheRegister:
 
 def test_len():
     a = Dtype("bytes2")
+    assert isinstance(a, DtypeSingle)
     assert a.size == 2
     assert a.bit_length == 16
     a = Dtype("[bytes1; 2]")
+    assert isinstance(a, DtypeArray)
     assert a.size == 1
     assert a.items == 2
     assert a.bit_length == 16
-    a = Dtype("u8")
+    a = DtypeSingle("u8")
     assert a.size == 8
     assert a.bit_length == 8
-    a = Dtype("bits8")
+    a = DtypeSingle("bits8")
     assert a.size == 8
     assert a.bit_length == 8
-    a = Dtype("bool")
+    a = DtypeSingle("bool")
     assert a.size == 1
     assert a.bit_length == 1
-    a = Dtype("bytes4")
+    a = DtypeSingle("bytes4")
     assert a.size == 4
     assert a.bit_length == 32
-    a = Dtype("[u8; 3]")
+    a = DtypeSingle("f")
+    assert a.size is None
+    assert a.bit_length is None
+    a = DtypeArray("[u8; 3]")
     assert a.size == 8
     assert a.bit_length == 24
     assert a.items == 3
-    a = Dtype("[bytes3; 4]")
+    a = DtypeArray("[bytes3;]")
+    assert a.size == 3
+    assert a.bit_length is None
+    assert a.items is None
+    a = DtypeArray("[bytes3; 4]")
     assert a.size == 3
     assert a.bit_length == 96
     assert a.items == 4
+    a = Dtype("(u8, f16, bool)")
+    assert isinstance(a, DtypeTuple)
+    assert a.bit_length == 25
+    assert len(a) == 3
+    a = DtypeTuple("([u8; 10], [bool; 0], i20)")
+    assert a.bit_length == 100
+    assert len(a) == 3
 
 
 def test_len_errors():
@@ -274,6 +290,27 @@ def test_unpacking_dtypetuple_array_with_no_length():
 def test_creating_dtype_with_no_size():
     d = Dtype('f')
     with pytest.raises(ValueError):
+        _ = d.pack(5.0)
+    b = Bits.from_dtype('f32', 12.5)
+    assert b.unpack(d) == 12.5
+    with pytest.raises(ValueError):
         _ = Dtype('[u;4]')
     with pytest.raises(ValueError):
         _ = Dtype('[i;]')
+
+def test_from_string_methods():
+    a = Dtype.from_string('u_le16')
+    b = Dtype.from_string('[u8; 2]')
+    c = Dtype.from_string('(bool, u15)')
+    ap = DtypeSingle('u_le16')
+    bp = DtypeArray('[u8; 2]')
+    cp = DtypeTuple('(bool, u15)')
+    assert isinstance(a, DtypeSingle)
+    assert isinstance(b, DtypeArray)
+    assert isinstance(c, DtypeTuple)
+    assert isinstance(ap, DtypeSingle)
+    assert isinstance(bp, DtypeArray)
+    assert isinstance(cp, DtypeTuple)
+    assert a == ap
+    assert b == bp
+    assert c == cp
