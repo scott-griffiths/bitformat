@@ -189,31 +189,12 @@ class Field(FieldType):
         x = self.__class__.from_params(self.dtype, self.name, self.value, self.const, self.comment)
         return x
 
-    @staticmethod
-    def _parse_field_str(field_str: str) -> tuple[str, str, str, bool | None]:
-        if "\n" in field_str:
-            raise ValueError("Field strings should not contain newline characters.")
-        pattern = r"^(?:(?P<name>.*):)?\s*(?P<const>const\s)?(?P<dtype>[^=]+)\s*(?:=\s*(?P<value>.*))?$"
-        compiled_pattern = re.compile(pattern, re.DOTALL)
-        match = compiled_pattern.match(field_str)
-        if match:
-            name = match.group("name")
-            const = match.group("const") is not None
-            dtype_str = match.group("dtype").strip()
-            value = match.group("value")
-        else:
-            raise ValueError(f"Invalid field string '{field_str}'.")
-        name = "" if name is None else name.strip()
-        return dtype_str, name, value, const
-
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if self.const:
             value = b[startbit : len(self._bits)]
             if value != self._bits:
-                raise ValueError(
-                    f"Read value '{value}' when const value '{self._bits}' was expected."
-                )
+                raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)
         # TODO: Hacky, needs to be revised for other dtypes.
         if isinstance(self._dtype, DtypeSingle) and self._dtype._size_expr is not None:

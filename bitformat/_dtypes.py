@@ -5,9 +5,7 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-import re
 from ._common import Expression, Endianness, byteorder, DtypeName, override, final, field_type_parser
-from typing import Pattern
 from lark import Transformer, UnexpectedInput
 import lark
 
@@ -73,35 +71,7 @@ class DtypeTransformer(Transformer):
 
 dtype_transformer = DtypeTransformer()
 
-
 CACHE_SIZE = 256
-
-# A token name followed by an integer number
-NAME_INT_RE: Pattern[str] = re.compile(r"^([a-zA-Z][a-zA-Z0-9_]*?)(\d*)$")
-
-def parse_name_size_token(fmt: str) -> tuple[str, int | None]:
-    if not (match := NAME_INT_RE.match(fmt)):
-        raise ValueError(f"Can't parse Dtype token '{fmt}' as 'name[length]'.")
-    name, length_str = match.groups()
-    return name, int(length_str) if length_str else None
-
-# A token name followed by a string that starts with '{' and ends with '}'
-NAME_EXPRESSION_RE: Pattern[str] = re.compile(r"^([a-zA-Z][a-zA-Z0-9_]*?)({.*})$")
-
-def parse_name_expression_token(fmt: str) -> tuple[str, Expression]:
-    if not (match := NAME_EXPRESSION_RE.match(fmt)):
-        raise ValueError(f"Can't parse Dtype expression token '{fmt}'.")
-    name, expression = match.groups()
-    expression = Expression(expression)
-    return name, expression
-
-def parse_name_to_name_and_modifier(name: str) -> tuple[str, str]:
-    modifiers = name.split("_")
-    if len(modifiers) == 1:
-        return name, ""
-    if len(modifiers) == 2:
-        return modifiers[0], modifiers[1]
-    raise ValueError(f"Can't parse Dtype name '{name}' as more than one '_' is present.")
 
 
 class Dtype(abc.ABC):
@@ -133,17 +103,6 @@ class Dtype(abc.ABC):
 
     @classmethod
     def from_string(cls, s: str, /) -> Self:
-        try:
-            tree = field_type_parser.parse(s, start="dtype")
-        except UnexpectedInput as e:
-            raise ValueError(f"Error parsing dtype: {e}")
-        try:
-            return dtype_transformer.transform(tree)
-        except lark.exceptions.VisitError as e:
-            raise ValueError(f"Error parsing dtype: {e}")
-
-    @classmethod
-    def from_string_old(cls, s: str) -> Self:
         """Create a new Dtype sub-class from a token string.
 
         Some token string examples:
@@ -157,18 +116,14 @@ class Dtype(abc.ABC):
         ``Dtype(s)`` is equivalent to ``Dtype.from_string(s)``.
 
         """
-        s = "".join(s.split())  # Remove whitespace
-        # Delegate to the appropriate class
-        if s.startswith("("):
-            if not s.endswith(")"):
-                raise ValueError(f"DtypeTuple strings should be of the form '(dtype1, dtype2, ...)'. Missing closing ')': '{s}'.")
-            return DtypeTuple._from_string(s)
-        if s.startswith("["):
-            if not s.endswith("]") or (p := s.find(";")) == -1:
-                raise ValueError(f"DtypeArray strings should be of the form '[dtype; items]'. Got '{s}'.")
-            return DtypeArray._from_string(s, p)
-        else:
-            return DtypeSingle._from_string(s)
+        try:
+            tree = field_type_parser.parse(s, start="dtype")
+        except UnexpectedInput as e:
+            raise ValueError(f"Error parsing dtype: {e}")
+        try:
+            return dtype_transformer.transform(tree)
+        except lark.exceptions.VisitError as e:
+            raise ValueError(f"Error parsing dtype: {e}")
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:
