@@ -18,7 +18,7 @@ __all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition"
 
 class DtypeTransformer(Transformer):
 
-    def CNAME(self, item) -> str:
+    def NAME(self, item) -> str:
         return str(item)
 
     def INT(self, item) -> int:

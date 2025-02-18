@@ -19,7 +19,7 @@ dtype_tuple: "(" dtype ("," dtype)* [","] ")"
 // dtype is the abstract base class for the other dtype_ above.
 ?dtype: dtype_tuple | dtype_single | dtype_array
 
-?field_name: CNAME -> field_name
+?field_name: NAME -> field_name
 
 ?inline_string: /[a-zA-Z0-9\.\+\-]+/
 simple_value: python_string | inline_string -> simple_value
@@ -39,13 +39,13 @@ repeat: "Repeat" expression ":" field_type
 // The Pass field is literally just "Pass"
 pass_: ["Pass"]
 
-format_name: CNAME
+format_name: NAME
 format: [format_name "="] "[" [field_type (("," | NEWLINE) field_type)*] [","] "]"
 
 ?field_type: field | format | if_ | repeat | pass_
 
 %import common.INT -> INT
-%import common.CNAME -> CNAME
+%import python.NAME -> NAME
 %import python.string -> python_string  // Parses Python strings, including things like b'abc' and f"abc'd'"
 %import common.WS
 %import common.NEWLINE
