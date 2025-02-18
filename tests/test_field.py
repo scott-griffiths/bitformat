@@ -204,7 +204,8 @@ def test_const_equality():
 
 def test_size_expression():
     f = Field.from_params(DtypeSingle.from_params(DtypeName.UINT, size=Expression('{5}')))
-    assert f.dtype == Dtype("u{5}")
+    s = Dtype("u{5}")
+    assert f.dtype == s
     assert str(f) == "u{5}"
     g = Field(" u { 5 } ")
     assert str(g) == "u{5}"

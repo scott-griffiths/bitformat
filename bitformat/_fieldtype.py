@@ -104,7 +104,8 @@ class FieldType(abc.ABC):
         :rtype: bool
         """
         try:
-            return self.bit_length == 0
+            return self.bit_length is None
+        # TODO: This logic doesn't work any more?!
         except ValueError:  # It might be an Expression, and Expressions can't be stretchy.
             return False
 

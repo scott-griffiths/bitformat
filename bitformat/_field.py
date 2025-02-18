@@ -64,7 +64,7 @@ class FieldTypeTransformer(Transformer):
         assert len(items) == 3
         name = items[0]
         endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
-        size = 0 if items[2] is None else items[2]
+        size = items[2]
         return DtypeSingle.from_params(name, size, endianness)
 
     def dtype_items(self, items) -> int:
@@ -153,9 +153,11 @@ class Field(FieldType):
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a {ret_type}.")
+            elif x._dtype._definition.return_type == Bits:
+                value = Bits.from_string(value)
         if value is not None:
             x._set_value_no_const_check(value)
-        if isinstance(x._dtype, DtypeSingle) and x._dtype.size == 0:
+        if isinstance(x._dtype, DtypeSingle) and x._dtype.size is None:
             if x._dtype.name in [DtypeName.BITS, DtypeName.BYTES] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
         return x
@@ -260,18 +262,18 @@ class Field(FieldType):
                     f"Read value '{value}' when const value '{self._bits}' was expected."
                 )
             return len(self._bits)
-        if isinstance(self._dtype.size, Expression):
-            size = self._dtype.size.evaluate(vars_)
-            # TODO: A bit hacky, needs to be revised for other dtypes.
+        # TODO: Hacky, needs to be revised for other dtypes.
+        if isinstance(self._dtype, DtypeSingle) and self._dtype._size_expr is not None:
+            size = self._dtype._size_expr.evaluate(vars_)
             dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
         else:
             dtype = self._dtype
-        if len(b) - startbit < dtype.bit_length:
+        if dtype.bit_length is not None and len(b) - startbit < dtype.bit_length:
             raise ValueError(
                 f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
             )
         # Deal with a stretchy dtype
-        self._bits = b[startbit : startbit + dtype.bit_length] if dtype.bit_length != 0 else b[startbit:]
+        self._bits = b[startbit : startbit + dtype.bit_length] if dtype.bit_length is not None else b[startbit:]
         if self.name != "":
             if self._bits is None:
                 vars_[self.name] = None

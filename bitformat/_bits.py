@@ -1092,12 +1092,12 @@ class Bits:
             groups: int | None) -> None:
         """Internal pretty print method."""
         if dtype2 is not None:
-            if dtype1.bit_length != 0:
+            if dtype1.bit_length is not None:
                 try:
                     _ = dtype2.unpack(Bits.from_zeros(dtype1.bit_length))
                 except ValueError:
                     raise ValueError(f"The Dtype '{dtype2}' can't be used alongside '{dtype1}' as it's not compatible with it's length.")
-            if dtype2.bit_length != 0:
+            if dtype2.bit_length is not None:
                 try:
                     _ = dtype1.unpack(Bits.from_zeros(dtype2.bit_length))
                 except ValueError:
@@ -1144,18 +1144,16 @@ class Bits:
         return
 
     @staticmethod
-    def _process_pp_tokens(
-        dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None
-    ) -> tuple[int, bool]:
+    def _process_pp_tokens(dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None) -> tuple[int, bool]:
         has_length_in_fmt = True
-        bits_per_group = dtype1.bit_length
+        bits_per_group = 0 if dtype1.bit_length is None else dtype1.bit_length
 
         if dtype2 is not None:
-            if 0 not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:
+            if None not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:
                 raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
                                  f"bit lengths of {dtype1.bit_length} and {dtype2.bit_length} respectively.")
             if bits_per_group == 0:
-                bits_per_group = dtype2.bit_length
+                bits_per_group = 0 if dtype2.bit_length is None else dtype2.bit_length
 
         if bits_per_group == 0:
             has_length_in_fmt = False

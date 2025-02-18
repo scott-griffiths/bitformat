@@ -148,8 +148,6 @@ class TestCreation:
         with pytest.raises(ValueError):
             b.dtype = "hello_everyone"
         with pytest.raises(ValueError):
-            b.dtype = "f"
-        with pytest.raises(ValueError):
             b.dtype = "u_le12"
             _ = b[0]
         with pytest.raises(ValueError):

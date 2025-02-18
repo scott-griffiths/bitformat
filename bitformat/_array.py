@@ -419,7 +419,7 @@ class Array:
             dtype = self._dtype
         elif isinstance(dtype, str):
             dtype = Dtype.from_string(dtype)
-        if dtype.bit_length == 0:
+        if dtype.bit_length is None:
             if not isinstance(dtype, DtypeSingle):
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
@@ -601,14 +601,14 @@ class Array:
         if isinstance(dtype2, str):
             dtype2 = Dtype.from_string(dtype2)
 
-        token_length = dtype1.bit_length
+        token_length = dtype1.bit_length if dtype1.bit_length is not None else 0
         if dtype2 is not None:
             if dtype1.bit_length != 0 and dtype2.bit_length != 0 and dtype1.bit_length != dtype2.bit_length:
                 raise ValueError(f"If two Dtypes are given to pp() they must have the same length,"
                                  f" but '{dtype1}' has a length of {dtype1.bit_length} and '{dtype2}' has a "
                                  f"length of {dtype2.bit_length}.")
             if token_length == 0:
-                token_length = dtype2.bit_length
+                token_length = dtype2.bit_length if dtype2.bit_length is not None else 0
         if token_length == 0:
             token_length = self.item_size
 

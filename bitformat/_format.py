@@ -93,9 +93,8 @@ class Format(FieldType):
         stretchy_field = ""
         for fieldtype in fields:
             if stretchy_field:
-                raise ValueError(
-                    f"A Field with unknown length may only occur at the end of a Format. Field '{stretchy_field}' is before the end."
-                )
+                raise ValueError(f"A Field with unknown length may only occur at the end of a Format. "
+                                 f"Field '{stretchy_field}' is before the end.")
             if isinstance(fieldtype, FieldType):
                 fieldtype = fieldtype._copy()
             elif isinstance(fieldtype, str):
