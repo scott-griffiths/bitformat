@@ -6,13 +6,73 @@ from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
 import re
-from ._common import Expression, Endianness, byteorder, DtypeName, override, final
+from ._common import Expression, Endianness, byteorder, DtypeName, override, final, field_type_parser
 from typing import Pattern
+from lark import Transformer, UnexpectedInput
+import lark
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
 __all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register"]
+
+
+
+class DtypeTransformer(Transformer):
+
+    def CNAME(self, item) -> str:
+        return str(item)
+
+    def INT(self, item) -> int:
+        return int(item)
+
+    def python_string(self, items) -> str:
+        return str(items[0])
+
+    def expression(self, items) -> Expression:
+        assert len(items) == 1
+        x = Expression('{' + items[0] + '}')
+        return x
+
+    def dtype_name(self, items) -> DtypeName:
+        return DtypeName(items[0])
+
+    def dtype_modifier(self, items) -> Endianness:
+        return Endianness(items[0])
+
+    def dtype_size(self, items) -> int | Expression:
+        return items[0]
+
+    def dtype_single(self, items) -> DtypeSingle:
+        assert len(items) == 3
+        name = items[0]
+        endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
+        size = items[2]
+        return DtypeSingle.from_params(name, size, endianness)
+
+    def dtype_items(self, items) -> int:
+        return items[0]
+
+    def dtype_array(self, items) -> DtypeArray:
+        assert len(items) == 2
+        dtype = items[0]
+        items_count = items[1]
+        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
+
+    def dtype_tuple(self, items) -> DtypeTuple:
+        return DtypeTuple.from_params(items)
+
+    def simple_value(self, items) -> str:
+        assert len(items) == 1
+        return str(items[0])
+
+    def list_of_values(self, items):
+        # TODO
+        return str(items[0])
+
+
+dtype_transformer = DtypeTransformer()
+
 
 CACHE_SIZE = 256
 
@@ -72,7 +132,18 @@ class Dtype(abc.ABC):
         ...
 
     @classmethod
-    def from_string(cls, s: str) -> Self:
+    def from_string(cls, s: str, /) -> Self:
+        try:
+            tree = field_type_parser.parse(s, start="dtype")
+        except UnexpectedInput as e:
+            raise ValueError(f"Error parsing dtype: {e}")
+        try:
+            return dtype_transformer.transform(tree)
+        except lark.exceptions.VisitError as e:
+            raise ValueError(f"Error parsing dtype: {e}")
+
+    @classmethod
+    def from_string_old(cls, s: str) -> Self:
         """Create a new Dtype sub-class from a token string.
 
         Some token string examples:

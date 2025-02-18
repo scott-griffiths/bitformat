@@ -137,7 +137,7 @@ class Format(FieldType):
 
         """
         try:
-            tree = field_type_parser.parse(s)
+            tree = field_type_parser.parse(s, start='field_type')
         except UnexpectedInput as u:
             # TODO: This isn't giving quite the output I'd expect yet.
             exc_class = u.match_examples(field_type_parser.parse, {

@@ -14,7 +14,7 @@ dtype_items: INT | expression
 
 dtype_single: dtype_name ["_" dtype_modifier] [dtype_size]
 dtype_array: "[" dtype_single ";" [dtype_items] "]"
-dtype_tuple: "(" dtype ("," dtype)* ")"
+dtype_tuple: "(" dtype ("," dtype)* [","] ")"
 
 // dtype is the abstract base class for the other dtype_ above.
 ?dtype: dtype_tuple | dtype_single | dtype_array
