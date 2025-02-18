@@ -5,7 +5,7 @@ from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingle, Register, DtypeTransformer
 from ast import literal_eval
 from ._common import override, Indenter, Colour, DtypeName, field_type_parser
-from typing import Any, Iterable
+from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
 from ._pass import Pass
@@ -64,7 +64,7 @@ class Field(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False) -> Field:
+    def from_params(cls, dtype: Dtype | str, name: str = "", value: Any = None, const: bool = False) -> Self:
         """
         Create a Field instance from parameters.
 
@@ -117,7 +117,7 @@ class Field(FieldType):
 
     @classmethod
     @override
-    def from_string(cls, s: str, /) -> Field:
+    def from_string(cls, s: str, /) -> Self:
         try:
             tree = field_type_parser.parse(s, start="field_type")
         except UnexpectedInput:
@@ -128,12 +128,7 @@ class Field(FieldType):
             raise ValueError(f"Error parsing field: {e}")
 
     @classmethod
-    def from_bits(
-        cls,
-        b: Bits | str | Iterable | bytearray | bytes | memoryview,
-        /,
-        name: str = "",
-    ) -> Field:
+    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = "") -> Self:
         """
         Create a Field instance from bits.
 

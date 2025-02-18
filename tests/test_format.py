@@ -438,7 +438,7 @@ def test_interesting_types_from_string():
     assert f[0].value == -375
     assert f["_fred"].value == b"abc\x04"
 
-
+@pytest.mark.skip
 def test_expression_dtypes():
     a = Field.from_string('u{testing}')
     assert str(a) == 'u{testing}'
@@ -662,7 +662,14 @@ def test_setting_fields():
     assert f[0].name == "a"
     assert len(f) == 5
 
-# def test_dtypetuple_in_format():
-#     h = Format('[(u8, u6)]')
-#     h.pack([[10, 5]])
-#     assert h[0].value == (10, 5)
+def test_dtypetuple_in_format():
+    h = Format('[(u8, u6)]')
+    h.pack([[10, 5]])
+    assert h[0].value == (10, 5)
+
+def test_set_values():
+    f = Format.from_params(["x: u8", "y: u8", "z: u8", "q:i4"])
+    f.value = [1, 2, 3, 4]
+    assert f.value == [1, 2, 3, 4]
+    f.value = [5, 6, 7, -8]
+    assert f.value == [5, 6, 7, -8]

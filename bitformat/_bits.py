@@ -448,9 +448,7 @@ class Bits:
         p = self._bitstore.find(bs._bitstore, 0, ba)
         return None if p == -1 else p
 
-    def find_all(
-        self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None
-    ) -> Iterable[int]:
+    def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         :param bs: The Bits to find.
@@ -1257,9 +1255,7 @@ class Bits:
         repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
         interpretations = ""
         if Options().verbose_bits_repr:
-            interpretations = "\n".join(
-                "# " + x for x in self._str_interpretations() if x != ""
-            )
+            interpretations = "\n".join("# " + x for x in self._str_interpretations() if x != "")
         return f"{repr_}\n{interpretations}" if interpretations else repr_
 
     # ----- Comparisons

@@ -215,11 +215,9 @@ class Format(FieldType):
     @override
     def _set_value(self, val: Sequence[Any]) -> None:
         if len(val) != len(self._fields):
-            raise ValueError(
-                f"Can't set {len(self._fields)} fields from {len(val)} values."
-            )
+            raise ValueError(f"Can't set {len(self._fields)} fields from {len(val)} values.")
         for fieldtype, v in zip(self._fields, val):
-            fieldtype._get_value(v)
+            fieldtype._set_value(v)
 
     value = property(_get_value, _set_value)
 
