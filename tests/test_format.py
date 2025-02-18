@@ -106,7 +106,6 @@ class TestCreation:
         assert f["main"]["v2"].value == -99
 
 
-@pytest.mark.skip
 def test_building():
     f1 = Field("u8")
     f1.pack(9)
@@ -138,7 +137,7 @@ def test_building():
 
     f8 = Format.from_params([f1, f7])
     f8.pack([7, [8, (9, 10, 11)]])
-    assert f8.value == [7, (8, (9, 10, 11))]
+    assert f8.value == [7, [8, (9, 10, 11)]]
 
 
 def test_packing_bug():
@@ -217,8 +216,8 @@ class TestArray:
 @pytest.mark.skip
 def test_creating_with_keyword_value():
     f = Format.from_params(["x: u10", "u10={2*x}"])
-    b = f.pack([6])
-    assert b == "u10=6, u10=12"
+    f.pack(6)
+    assert f.to_bits() == "u10=6, u10=12"
 
 @pytest.mark.skip
 def test_items():
@@ -296,7 +295,7 @@ def test_format_repr_and_str():
             "u8 <s>",
             Repeat(
                 "s + 1",
-                Format(
+                Format.from_params(
                     [
                         "u12 <width>",
                         "u12 <height>",
@@ -440,17 +439,17 @@ def test_interesting_types_from_string():
     assert f["_fred"].value == b"abc\x04"
 
 
-# def test_expression_dtypes():
-#     a = Field.from_string('u{testing}')
-#     assert str(a) == 'u{testing}'
-#     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
-#     assert str(d) == 'my_name: [f{4*e}; {a+b}]'
-#     f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
-#     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
-#     f.parse(b)
-#     assert f['x'].value == 3
-#     assert f[1].value == [1, 2, 3, 4]
-#     assert f.value == [3, [1, 2, 3, 4]]
+def test_expression_dtypes():
+    a = Field.from_string('u{testing}')
+    assert str(a) == 'u{testing}'
+    d = Field.from_string('my_name: [f{4*e}; {a + b}]')
+    assert str(d) == 'my_name: [f{4*e}; {a+b}]'
+    f = Format.from_string('[x: u8, [u{x}; {x + 1}]]')
+    b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
+    f.parse(b)
+    assert f['x'].value == 3
+    assert f[1].value == [1, 2, 3, 4]
+    assert f.value == [3, [1, 2, 3, 4]]
 
 
 def test_unpack():
