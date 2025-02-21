@@ -33,7 +33,6 @@ class DtypeName(Enum):
     BITS = 'bits'  # Bits object
     BOOL = 'bool'  # boolean
     PAD = 'pad'  # padding
-    TUPLE = 'tuple'  # tuple of dtypes
 
     def __str__(self):
         return self.value

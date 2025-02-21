@@ -88,8 +88,6 @@ class Dtype(abc.ABC):
 
     """
 
-    _name: DtypeName
-
     def __new__(cls, s: str | None = None, /) -> Self:
         if s is None:
             x = super().__new__(cls)
@@ -171,15 +169,10 @@ class Dtype(abc.ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
-    @property
-    @abc.abstractmethod
-    def name(self) -> DtypeName:
-        """An Enum giving the name of the data type."""
-        ...
-
 
 class DtypeSingle(Dtype):
 
+    _name: DtypeName
     _size_int: int | None
     _size_expr: Expression | None
     _bit_length: int | None
@@ -187,8 +180,6 @@ class DtypeSingle(Dtype):
     _endianness: Endianness
 
     @property
-    @override
-    @final
     def name(self) -> DtypeName:
         return self._definition.name
 
@@ -336,8 +327,6 @@ class DtypeArray(Dtype):
     _items: int | None
 
     @property
-    @override
-    @final
     def name(self) -> DtypeName:
         return self._dtype_single.name
 
@@ -463,17 +452,10 @@ class DtypeTuple(Dtype):
     def __new__(cls, s: str) -> Self:
         return cls.from_string(s)
 
-    @property
-    @override
-    @final
-    def name(self) -> DtypeName:
-        return DtypeName.TUPLE
-
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)
         x._dtypes = []
-        x._name = DtypeName.TUPLE
         for d in dtypes:
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
             if dtype.bit_length is None:
