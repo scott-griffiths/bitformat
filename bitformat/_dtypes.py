@@ -173,8 +173,7 @@ class Dtype(abc.ABC):
 class DtypeSingle(Dtype):
 
     _name: DtypeName
-    _size_int: int | None
-    _size_expr: Expression | None
+    _size: Expression
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
@@ -190,22 +189,21 @@ class DtypeSingle(Dtype):
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def _create(cls, definition: DtypeDefinition, size_int: int | None,
+    def _create(cls, definition: DtypeDefinition, size: Expression,
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = DtypeSingle.__new__(DtypeSingle)
         x._definition = definition
-        if size_int is None and definition.allowed_sizes.only_one_value():
+        if size.evaluate() is None and definition.allowed_sizes.only_one_value():
             size_int = definition.allowed_sizes.values[0]
-        x._size_int = size_int
-        x._size_expr = None
-
-        if x._size_int is None:
+            size = Expression(f"{{{size_int}}}")
+        x._size = size
+        if x._size.evaluate() is None:
             x._bit_length = None
         else:
             if definition.bits_per_character is None:
-                x._bit_length = x._size_int
+                x._bit_length = x._size.evaluate()
             else:
-                x._bit_length = x._size_int * definition.bits_per_character
+                x._bit_length = x._size.evaluate() * definition.bits_per_character
         little_endian = (endianness == Endianness.LITTLE or
                          (endianness == Endianness.NATIVE and bitformat.byteorder == "little"))
         x._endianness = endianness
@@ -244,12 +242,12 @@ class DtypeSingle(Dtype):
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        if isinstance(size, Expression):
-            x = Register().get_single_dtype(name, None, endianness)
-            x._size_expr = size
-            return x
-        else:
-            return Register().get_single_dtype(name, size, endianness)
+        if size is None:
+            size = Expression("{None}")
+        elif isinstance(size, int):
+            size = Expression(f"{{{size}}}")
+        x = Register().get_single_dtype(name, size, endianness)
+        return x
 
     @override
     @final
@@ -286,17 +284,15 @@ class DtypeSingle(Dtype):
         if isinstance(other, str):
             other = Dtype.from_string(other)
         if isinstance(other, DtypeSingle):
-            return (
-                    self._definition.name == other._definition.name
-                    and self._size_int == other._size_int
-                    and self._endianness == other._endianness
-            )
+            return (self._definition.name == other._definition.name
+                    and self._size == other._size
+                    and self._endianness == other._endianness)
         return False
 
     # TODO: move to base class as requirement?
     def __hash__(self) -> int:
         return hash(
-            (self._definition.name, self._size_int)
+            (self._definition.name, self._size)
         )
 
     @override
@@ -316,9 +312,7 @@ class DtypeSingle(Dtype):
         See also :attr:`bit_length`.
 
         """
-        if self._size_int is None:
-            return self._size_expr
-        return self._size_int
+        return self._size.evaluate()
 
 
 class DtypeArray(Dtype):
@@ -336,7 +330,7 @@ class DtypeArray(Dtype):
         return self._dtype_single.endianness
 
     @classmethod
-    def _create(cls, definition: DtypeDefinition, size: int, items: int | None,
+    def _create(cls, definition: DtypeDefinition, size: Expression, items: int | None,
                 endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
         x = super().__new__(cls)
         x._dtype_single = DtypeSingle._create(definition, size, endianness)
@@ -346,7 +340,7 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeName, size: int = 0, items: int | None = None,
+    def from_params(cls, name: DtypeName, size: Expression, items: int | None = None,
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name, size and items.
 
@@ -595,13 +589,13 @@ class DtypeDefinition:
 
         self.bitlength2chars_fn = bitlength2chars_fn
 
-    def sanitize(self, size: int | None, endianness: Endianness) -> tuple[int, Endianness]:
-        if size is not None and self.allowed_sizes:
-            if size == 0:
+    def sanitize(self, size: Expression, endianness: Endianness) -> tuple[Expression, Endianness]:
+        if size.evaluate() is not None and self.allowed_sizes:
+            if size.evaluate() == 0:
                 if self.allowed_sizes.only_one_value():
-                    size = self.allowed_sizes.values[0]
+                    size = Expression("{{{self.allowed_sizes.values[0]}}}")
             else:
-                if size not in self.allowed_sizes:
+                if size.evaluate() not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
                         raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype, but its "
                                          f"only allowed size is {self.allowed_sizes.values[0]}.")
@@ -611,19 +605,19 @@ class DtypeDefinition:
         if endianness != Endianness.UNSPECIFIED:
             if not self.endianness_variants:
                 raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
-            if size is not None and size % 8 != 0:
+            if size.evaluate() is not None and size.evaluate() % 8 != 0:
                 raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
         return size, endianness
 
-    def get_single_dtype(self, size_int: int | None = None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
-        size_int, endianness = self.sanitize(size_int, endianness)
-        d = DtypeSingle._create(self, size_int, endianness)
+    def get_single_dtype(self, size: Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
+        size_int, endianness = self.sanitize(size, endianness)
+        d = DtypeSingle._create(self, size, endianness)
         return d
 
-    def get_array_dtype(self, size: int, items: int | None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
+    def get_array_dtype(self, size: Expression, items: int | None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeArray._create(self, size, items, endianness)
-        if size is None:
+        if size.evaluate() is None:
             raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. "
                              f"Note that the number of items in the array dtype can be unknown or zero, but the dtype of each item must have a known size.")
         return d
@@ -687,16 +681,24 @@ class Register:
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_single_dtype(cls, name: DtypeName, size_int: int | None,
+    def get_single_dtype(cls, name: DtypeName, size: Expression | int | None,
                          endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         definition = cls.name_to_def[name]
-        return definition.get_single_dtype(size_int, endianness)
+        if size is None:
+            size = Expression("{None}")
+        elif isinstance(size, int):
+            size = Expression(f"{{{size}}}")
+        return definition.get_single_dtype(size, endianness)
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: DtypeName, size: int, items: int,
+    def get_array_dtype(cls, name: DtypeName, size: Expression | int | None, items: int,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         definition = cls.name_to_def[name]
+        if size is None:
+            size = Expression("{None}")
+        elif isinstance(size, int):
+            size = Expression(f"{{{size}}}")
         return definition.get_array_dtype(size, items, endianness)
 
     def __repr__(self) -> str:

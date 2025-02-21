@@ -188,8 +188,8 @@ class Field(FieldType):
                 raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)
         # TODO: Hacky, needs to be revised for other dtypes.
-        if isinstance(self._dtype, DtypeSingle) and self._dtype._size_expr is not None:
-            size = self._dtype._size_expr.evaluate(vars_)
+        if isinstance(self._dtype, DtypeSingle) and self._dtype.size is not None:
+            size = self._dtype._size.evaluate(vars_)
             dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
         else:
             dtype = self._dtype
