@@ -4,7 +4,7 @@ import re
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingle, Register, DtypeTransformer
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeName, field_type_parser
+from ._common import override, Indenter, Colour, DtypeName, field_parser
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
@@ -119,7 +119,7 @@ class Field(FieldType):
     @override
     def from_string(cls, s: str, /) -> Self:
         try:
-            tree = field_type_parser.parse(s, start="field_type")
+            tree = field_parser.parse(s)
         except UnexpectedInput:
             raise ValueError
         try:

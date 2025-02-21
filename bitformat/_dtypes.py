@@ -5,15 +5,15 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-from ._common import Expression, Endianness, byteorder, DtypeName, override, final, field_type_parser
+from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str
 from lark import Transformer, UnexpectedInput
 import lark
+
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
 __all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register"]
-
 
 
 class DtypeTransformer(Transformer):
@@ -69,7 +69,7 @@ class DtypeTransformer(Transformer):
         return str(items[0])
 
 
-dtype_transformer = DtypeTransformer()
+dtype_parser = lark.Lark(parser_str, start='dtype', parser='lalr', transformer=DtypeTransformer())
 
 CACHE_SIZE = 256
 
@@ -115,13 +115,9 @@ class Dtype(abc.ABC):
 
         """
         try:
-            tree = field_type_parser.parse(s, start="dtype")
+            return dtype_parser.parse(s)
         except UnexpectedInput as e:
-            raise ValueError(f"Error parsing dtype: {e}")
-        try:
-            return dtype_transformer.transform(tree)
-        except lark.exceptions.VisitError as e:
-            raise ValueError(f"Error parsing dtype: {e}")
+            raise ValueError(f"Error parsing dtype '{s}': {e}")
 
     @abc.abstractmethod
     def pack(self, value: Any, /) -> bitformat.Bits:

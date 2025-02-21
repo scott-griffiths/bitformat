@@ -5,7 +5,7 @@ import lark.exceptions
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, field_type_parser
+from ._common import override, Indenter, Colour, field_parser
 from ._fieldtype import FieldType
 from ._field import FieldTypeTransformer
 from ._pass import Pass
@@ -137,10 +137,10 @@ class Format(FieldType):
 
         """
         try:
-            tree = field_type_parser.parse(s, start='field_type')
+            tree = field_parser.parse(s)
         except UnexpectedInput as u:
             # TODO: This isn't giving quite the output I'd expect yet.
-            exc_class = u.match_examples(field_type_parser.parse, {
+            exc_class = u.match_examples(field_parser.parse, {
                 FormatUnknownDtype: ['[uint8]',
                                      '[[z;]]',
                                      '[u1, [u1, [u1, [u1, penguin]]]]'],
