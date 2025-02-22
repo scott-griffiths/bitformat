@@ -2,7 +2,7 @@ import pytest
 import sys
 from bitformat import Dtype, Bits, Endianness, DtypeTuple, DtypeSingle, DtypeArray
 from bitformat._dtypes import DtypeDefinition, Register
-from bitformat._common import DtypeName
+from bitformat._common import DtypeName, Expression
 
 sys.path.insert(0, "..")
 
@@ -142,7 +142,7 @@ def test_len():
     assert a.size == 4
     assert a.bit_length == 32
     a = DtypeSingle("f")
-    assert a.size is None
+    assert a.size == Expression('{None}')
     assert a.bit_length is None
     a = DtypeArray("[u8; 3]")
     assert a.size == 8
@@ -314,3 +314,9 @@ def test_from_string_methods():
     assert a == ap
     assert b == bp
     assert c == cp
+
+def test_expression_dtype_single():
+    a = Dtype('u{x}')
+    assert isinstance(a, DtypeSingle)
+    assert a.name == DtypeName.UINT
+    assert str(a) == 'u{x}'

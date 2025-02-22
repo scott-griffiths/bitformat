@@ -1,7 +1,7 @@
 import keyword
 
 import pytest
-from bitformat import Dtype, Bits, Field, DtypeSingle, Expression
+from bitformat import Dtype, Bits, Field, DtypeSingle, Expression, DtypeArray
 from bitformat._common import DtypeName
 from hypothesis import given, assume
 import hypothesis.strategies as st
@@ -53,11 +53,11 @@ class TestCreation:
 
     def test_creation_from_strings(self):
         f = Field.from_string(" flag_12 : bool")
-        assert f.dtype.name == DtypeName.BOOL
+        assert f.dtype == DtypeSingle.from_params(DtypeName.BOOL)
         assert f.name == "flag_12"
         assert f.value is None
         f = Field.from_string("const u3 = 3")
-        assert f.dtype.name == DtypeName.UINT
+        assert f.dtype == DtypeSingle.from_params(DtypeName.UINT, 3)
         assert f.value == 3
         assert f.name == ""
         assert f.to_bits() == "0b011"
@@ -67,13 +67,13 @@ class TestCreation:
         f = Field.from_params("bytes", name="hello", value=b)
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype.name == DtypeName.BYTES
+        assert f.dtype == DtypeSingle.from_params(DtypeName.BYTES, size=len(b))
         assert f.dtype.bit_length == len(b) * 8
 
         f = Field.from_bytes(b, name="hello")
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype.name == DtypeName.BYTES
+        assert f.dtype == DtypeSingle.from_params(DtypeName.BYTES, size=len(b))
         assert f.dtype.bit_length == len(b) * 8
 
     @given(st.binary())
@@ -150,7 +150,7 @@ def test_field_str():
 def test_field_array():
     f = Field.from_string("[u8; 3]")
     assert f.dtype == Dtype.from_string("[u8; 3]")
-    assert f.dtype.items == 3
+    assert f.dtype == DtypeArray.from_params(DtypeName.UINT, 8, 3)
     f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == "0x010203"

@@ -136,8 +136,17 @@ class Expression:
             raise ExpressionError(
                 f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'."
             )
+        # If the expression can be evaluated with no parameters then it's const and can be stored as such
+        # Note that the const_value can be True, False, None, an int etc, so it's only valid if has_const_value is True.
+        self.has_const_value = False
+        self.const_value = None
         self.code_str = code_str[1:-1].strip()
         self.code = self._compile_safe_eval()
+        try:
+            self.const_value = self.evaluate()
+            self.has_const_value = True
+        except ExpressionError:
+            pass
 
     """A whitelist of allowed AST nodes for the expression."""
     node_whitelist = {
@@ -200,6 +209,8 @@ class Expression:
 
     def evaluate(self, kwargs: dict[str, Any] | None = None) -> Any:
         """Evaluate the expression, disallowing all builtins."""
+        if self.has_const_value:
+            return self.const_value
         try:
             value = eval(self.code, {"__builtins__": {}}, kwargs)
         except NameError as e:
@@ -207,14 +218,18 @@ class Expression:
         return value
 
     def __str__(self) -> str:
+        if self.has_const_value:
+            return str(self.const_value)
         return f"{{{self.code_str}}}"
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{self.__str__()}')"
+        return f"{self.__class__.__name__}('{{{self.code_str}}}')"
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Expression):
             return self.code_str == other.code_str
+        if self.has_const_value and isinstance(self.const_value, int) and isinstance(other, int):
+            return self.const_value == other
         return False
 
     def __hash__(self) -> int:

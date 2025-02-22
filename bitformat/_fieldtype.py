@@ -127,6 +127,7 @@ class FieldType(abc.ABC):
         stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
         stream.write("\n")
 
+    # TODO: This should use the Lark parser!
     @classmethod
     def from_string(cls, s: str) -> FieldType:
         """

@@ -106,7 +106,8 @@ class Field(FieldType):
                 value = Bits.from_string(value)
         if value is not None:
             x._set_value_no_const_check(value)
-        if isinstance(x._dtype, DtypeSingle) and x._dtype.size is None:
+        # TODO: This is not a nice condition!
+        if isinstance(x._dtype, DtypeSingle) and x._dtype.size.has_const_value and x._dtype.size.const_value is None:
             if x._dtype.name in [DtypeName.BITS, DtypeName.BYTES] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
         return x

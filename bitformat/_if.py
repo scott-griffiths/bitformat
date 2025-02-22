@@ -162,7 +162,7 @@ class If(FieldType):
 
     @override
     def _str(self, indent: Indenter) -> str:
-        s = indent(f"If {self.condition}:\n")
+        s = indent(f"If {{{self.condition.code_str}}}:\n")
         with indent:
             s += self.then_._str(indent)
         if self.else_.bit_length != 0:

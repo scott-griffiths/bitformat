@@ -189,19 +189,18 @@ class DtypeSingle(Dtype):
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = DtypeSingle.__new__(DtypeSingle)
         x._definition = definition
-        if size.evaluate() is None and definition.allowed_sizes.only_one_value():
+        if size.has_const_value and size.const_value is None and definition.allowed_sizes.only_one_value():
             size_int = definition.allowed_sizes.values[0]
             size = Expression(f"{{{size_int}}}")
         x._size = size
-        if x._size.evaluate() is None:
-            x._bit_length = None
-        else:
+        x._bit_length = None
+        if x._size.has_const_value and x._size.const_value is not None:
             if definition.bits_per_character is None:
-                x._bit_length = x._size.evaluate()
+                x._bit_length = x._size.const_value
             else:
-                x._bit_length = x._size.evaluate() * definition.bits_per_character
+                x._bit_length = x._size.const_value * definition.bits_per_character
         little_endian = (endianness == Endianness.LITTLE or
-                         (endianness == Endianness.NATIVE and bitformat.byteorder == "little"))
+                     (endianness == Endianness.NATIVE and bitformat.byteorder == "little"))
         x._endianness = endianness
         x._get_fn = (
             (lambda b: definition.get_fn(b.byte_swap()))
@@ -269,7 +268,7 @@ class DtypeSingle(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        hide_length = self.size is None or self._definition.allowed_sizes.only_one_value()
+        hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self._endianness == Endianness.UNSPECIFIED else "_" + self._endianness.value
         return f"{self._definition.name}{endianness}{size_str}"
@@ -308,7 +307,7 @@ class DtypeSingle(Dtype):
         See also :attr:`bit_length`.
 
         """
-        return self._size.evaluate()
+        return self._size
 
 
 class DtypeArray(Dtype):
@@ -586,12 +585,12 @@ class DtypeDefinition:
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: Expression, endianness: Endianness) -> tuple[Expression, Endianness]:
-        if size.evaluate() is not None and self.allowed_sizes:
-            if size.evaluate() == 0:
+        if size.has_const_value and size.const_value is not None and self.allowed_sizes:
+            if size.const_value == 0:
                 if self.allowed_sizes.only_one_value():
                     size = Expression("{{{self.allowed_sizes.values[0]}}}")
             else:
-                if size.evaluate() not in self.allowed_sizes:
+                if size.const_value not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
                         raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype, but its "
                                          f"only allowed size is {self.allowed_sizes.values[0]}.")
@@ -606,7 +605,7 @@ class DtypeDefinition:
         return size, endianness
 
     def get_single_dtype(self, size: Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
-        size_int, endianness = self.sanitize(size, endianness)
+        size, endianness = self.sanitize(size, endianness)
         d = DtypeSingle._create(self, size, endianness)
         return d
 
