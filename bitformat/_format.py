@@ -24,9 +24,6 @@ class FormatTransformer(FieldTypeTransformer):
         fields = items[1:]
         return Format.from_params(fields, name)
 
-    def format_name(self, items) -> str:
-        return items[0]
-
 
 format_transformer = FormatTransformer()
 
