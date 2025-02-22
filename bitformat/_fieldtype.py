@@ -152,14 +152,10 @@ class FieldType(abc.ABC):
         if (x := fieldtype_classes["Repeat"]._possibly_from_string(s)) is not None:
             return x
 
-        # Both Format and Field arrays can end in a ']'.
         if s.endswith("]"):
-            # If it's part of a DtypeArray then a ';' will appear before any ',' or ']'
-            for c in s[1:]:
-                if c == ";":
-                    return fieldtype_classes["Field"].from_string(s)
-                if c == "]" or c == ",":
-                    return fieldtype_classes["Format"].from_string(s)
+            return fieldtype_classes["Field"].from_string(s)
+        if s.endswith("}"):
+            return fieldtype_classes["Format"].from_string(s)
         # Otherwise, it's a plain Field.
         return fieldtype_classes["Field"].from_string(s)
 

@@ -280,11 +280,11 @@ class Format(FieldType):
             "" if self.name == "" else f"{colour.green}{self.name}{colour.off} = "
         )
         s = ""
-        s += indent(f"{name_str}[\n")
+        s += indent(f"{name_str}{{\n")
         with indent:
             for i, fieldtype in enumerate(self._fields):
                 s += fieldtype._str(indent)
-        s += indent("]")
+        s += indent("}")
         return s
 
     @override
