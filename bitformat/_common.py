@@ -251,4 +251,4 @@ byteorder: str = sys.byteorder
 _lark_file_path = os.path.join(os.path.dirname(__file__), "format_parser.lark")
 with open(_lark_file_path, "r") as f:
     parser_str = f.read()
-    field_parser = Lark(parser_str, start='field_type')
+    field_parser = Lark(parser_str, start='field_type', parser='earley')

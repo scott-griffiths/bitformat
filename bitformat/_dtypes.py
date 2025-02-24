@@ -139,10 +139,10 @@ class Dtype(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def bit_length(self) -> int | None:
+    def bit_length(self) -> int:
         """The total length of the data type in bits.
 
-        Returns ``None`` if the data type doesn't have a fixed length.
+        Returns ``None`` if the data type doesn't have a fixed or known length.
 
         .. code-block:: pycon
 
@@ -360,7 +360,7 @@ class DtypeArray(Dtype):
     @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
-        if self.items is not None and self.bit_length > len(b):
+        if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self.items
         if items is None:
@@ -398,9 +398,10 @@ class DtypeArray(Dtype):
     @final
     @property
     def bit_length(self) -> int | None:
-        if self._items is None:
-            return None
-        return self._dtype_single.bit_length * self._items
+        # TODO: This should be done nicer!
+        if isinstance(self._dtype_single.bit_length, int) and isinstance(self._items, int):
+            return self._dtype_single.bit_length * self._items
+        return None
 
     @property
     def size(self) -> int:
@@ -612,7 +613,7 @@ class DtypeDefinition:
     def get_array_dtype(self, size: Expression, items: int | None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeArray._create(self, size, items, endianness)
-        if size.evaluate() is None:
+        if size.has_const_value and size.const_value is None:
             raise ValueError(f"Array dtypes must have a size specified. Got '{d}'. "
                              f"Note that the number of items in the array dtype can be unknown or zero, but the dtype of each item must have a known size.")
         return d

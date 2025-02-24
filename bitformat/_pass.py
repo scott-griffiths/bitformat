@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ._field import FieldType
 from ._common import override, Indenter
-from typing import Sequence, Any
+from typing import Any
 from ._bits import Bits
 
 __all__ = ["Pass"]
