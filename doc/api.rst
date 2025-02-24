@@ -36,37 +36,29 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + from_string()
             + from_dtype()
             + from_bytes()
-            + from_bools()
-            + from_zeros()
-            + from_ones()
-            + from_random()
-            + from_joined()
-            + all()
-            + any()
+            ...
             + byte_swap()
             + count()
-            + chunks()
-            + ends_with()
             + find()
-            + find_all()
             + insert()
-            + invert()
-            + overwrite()
-            + pp()
             + replace()
             + reverse()
-            + rfind()
-            + rol()
-            + ror()
-            + set()
-            + starts_with()
             + to_bytes()
             + unpack()
+            ...
         }
         class Array {
-            + int size
+            + int item_size
             + Dtype dtype
+            + BitsProxy data
             + from_iterable()
+            + from_bytes()
+            ...
+            + append()
+            + as_type()
+            + to_bytes()
+            + unpack()
+            ...
         }
         class Dtype {
             <<abstract>>
@@ -77,12 +69,12 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         }
         class DtypeSingle {
             + DtypeName name
-            + Endianess endianness
+            + Endianness endianness
             + int size
         }
         class DtypeArray {
             + DtypeName name
-            + Endianess endianness
+            + Endianness endianness
             + int size
             + int items
         }
@@ -92,6 +84,9 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         class Reader {
             + Bits bits
             + int pos
+            + read()
+            + peek()
+            + parse()
         }
         DtypeSingle --|> Dtype
         DtypeArray --|> Dtype
