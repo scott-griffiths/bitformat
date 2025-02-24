@@ -118,7 +118,7 @@ class Format(FieldType):
         """
         Create a :class:`Format` instance from a string.
 
-        The string should be of the form ``'[field1, field2, ...]'`` or ``'name = [field1, field2, ...]'``,
+        The string should be of the form ``'{field1, field2, ...}'`` or ``'name = {field1, field2, ...}'``,
         with commas separating strings that will be used to create other :class:`FieldType` instances.
 
         :param s: The string to parse.
@@ -128,9 +128,9 @@ class Format(FieldType):
 
         .. code-block:: python
 
-            f1 = Format.from_string('[u8, bool=True, val: i7]')
-            f2 = Format.from_string('my_format = [float16,]')
-            f3 = Format.from_string('[u16, another_format = [[u8; 64], [bool; 8]]]')
+            f1 = Format.from_string('{u8, bool=True, val: i7}')
+            f2 = Format.from_string('my_format = {float16,}')
+            f3 = Format.from_string('{u16, another_format = {[u8; 64], [bool; 8]}}')
 
         """
         try:
@@ -138,12 +138,12 @@ class Format(FieldType):
         except UnexpectedInput as u:
             # TODO: This isn't giving quite the output I'd expect yet.
             exc_class = u.match_examples(field_parser.parse, {
-                FormatUnknownDtype: ['[uint8]',
-                                     '[[z;]]',
-                                     '[u1, [u1, [u1, [u1, penguin]]]]'],
-                FormatMissingClosing: ['[u8 = 23',
-                                     '[[f16; 6]'],
-                FormatMissingComma: ['[i5 i3]'],
+                FormatUnknownDtype: ['{uint8}',
+                                     '{[z;]}',
+                                     '{u1, {u1, {u1, {u1, penguin}}}}'],
+                FormatMissingClosing: ['{u8 = 23',
+                                     '{[f16; 6]'],
+                FormatMissingComma: ['{i5 i3}'],
             }, use_accepts=False)
             if not exc_class:
                 raise
