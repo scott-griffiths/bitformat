@@ -171,7 +171,8 @@ class Colour:
         cls.orange = ANSIColours.BRIGHT_RED
 
         cls.off = ANSIColours.RESET
-        cls.name = ANSIColours.GREEN
+        cls.code = ANSIColours.YELLOW + ANSIColours.ITALIC
+        cls.name = ANSIColours.GREEN + ANSIColours.ITALIC
         cls.dtype = ANSIColours.MAGENTA
         cls.value = ANSIColours.CYAN
         cls.const_value = ANSIColours.CYAN + ANSIColours.UNDERLINE
@@ -294,9 +295,10 @@ class Expression:
         return value
 
     def __str__(self) -> str:
+        colour = Colour(not Options().no_color)
         if self.has_const_value:
             return str(self.const_value)
-        return f"{{{self.code_str}}}"
+        return colour.code + "{" + self.code_str + "}" + colour.off
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{{{self.code_str}}}')"
