@@ -277,7 +277,7 @@ class Format(FieldType):
     def _str(self, indent: Indenter) -> str:
         colour = Colour(not Options().no_color)
         name_str = (
-            "" if self.name == "" else f"{colour.green}{self.name}{colour.off} = "
+            "" if self.name == "" else f"{colour.name}{self.name}{colour.off} = "
         )
         s = ""
         s += indent(f"{name_str}{{\n")

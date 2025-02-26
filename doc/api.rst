@@ -36,7 +36,7 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + from_string()
             + from_dtype()
             + from_bytes()
-            ...
+            + ...()
             + byte_swap()
             + count()
             + find()
@@ -45,7 +45,7 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + reverse()
             + to_bytes()
             + unpack()
-            ...
+            + ...()
         }
         class Array {
             + int item_size
@@ -53,12 +53,12 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + BitsProxy data
             + from_iterable()
             + from_bytes()
-            ...
+            + ...()
             + append()
             + as_type()
             + to_bytes()
             + unpack()
-            ...
+            + ...()
         }
         class Dtype {
             <<abstract>>

@@ -5,7 +5,8 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str
+from ._options import Options
+from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str, Colour
 from lark import Transformer, UnexpectedInput
 import lark
 
@@ -268,10 +269,11 @@ class DtypeSingle(Dtype):
     @override
     @final
     def __str__(self) -> str:
+        colour = Colour(not Options().no_color)
         hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self._endianness == Endianness.UNSPECIFIED else "_" + self._endianness.value
-        return f"{self._definition.name}{endianness}{size_str}"
+        return f"{colour.dtype}{self._definition.name}{endianness}{size_str}{colour.off}"
 
     @override
     @final
@@ -374,11 +376,9 @@ class DtypeArray(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        hide_length = self.size is None or self._dtype_single._definition.allowed_sizes.only_one_value()
-        size_str = "" if hide_length else str(self.size)
-        endianness = "" if self.endianness == Endianness.UNSPECIFIED else "_" + self.endianness.value
-        items_str = "" if self._items is None else f" {self._items}"
-        return f"[{self.name}{endianness}{size_str};{items_str}]"
+        colour = Colour(not Options().no_color)
+        items_str = "" if self._items is None else f" {colour.dtype}{self._items}{colour.off}"
+        return f"[{self._dtype_single};{items_str}]"
 
     @override
     @final

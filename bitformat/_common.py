@@ -91,20 +91,96 @@ class ExpressionError(ValueError):
     pass
 
 
+class ANSIColours:
+    """
+    ANSI colour and style codes
+    """
+    # Reset all
+    RESET = '\033[0m'
+
+    # Regular Colours
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+
+    # Bright/Light Colours
+    BRIGHT_BLACK = '\033[90m'  # Gray
+    BRIGHT_RED = '\033[91m'
+    BRIGHT_GREEN = '\033[92m'
+    BRIGHT_YELLOW = '\033[93m'
+    BRIGHT_BLUE = '\033[94m'
+    BRIGHT_MAGENTA = '\033[95m'
+    BRIGHT_CYAN = '\033[96m'
+    BRIGHT_WHITE = '\033[97m'
+
+    # Background Colours
+    BG_BLACK = '\033[40m'
+    BG_RED = '\033[41m'
+    BG_GREEN = '\033[42m'
+    BG_YELLOW = '\033[43m'
+    BG_BLUE = '\033[44m'
+    BG_MAGENTA = '\033[45m'
+    BG_CYAN = '\033[46m'
+    BG_WHITE = '\033[47m'
+
+    # Bright Background Colours
+    BG_BRIGHT_BLACK = '\033[100m'
+    BG_BRIGHT_RED = '\033[101m'
+    BG_BRIGHT_GREEN = '\033[102m'
+    BG_BRIGHT_YELLOW = '\033[103m'
+    BG_BRIGHT_BLUE = '\033[104m'
+    BG_BRIGHT_MAGENTA = '\033[105m'
+    BG_BRIGHT_CYAN = '\033[106m'
+    BG_BRIGHT_WHITE = '\033[107m'
+
+    # Styles
+    BOLD = '\033[1m'
+    DIM = '\033[2m'
+    ITALIC = '\033[3m'
+    UNDERLINE = '\033[4m'
+    BLINK = '\033[5m'
+    REVERSE = '\033[7m'  # Swap foreground/background colours
+    HIDDEN = '\033[8m'
+    STRIKE = '\033[9m'
+
+    # Reset specific attributes
+    RESET_BOLD = '\033[22m'
+    RESET_DIM = '\033[22m'
+    RESET_ITALIC = '\033[23m'
+    RESET_UNDERLINE = '\033[24m'
+    RESET_BLINK = '\033[25m'
+    RESET_REVERSE = '\033[27m'
+    RESET_HIDDEN = '\033[28m'
+    RESET_STRIKE = '\033[29m'
+
+
 class Colour:
     """A class to hold colour codes for terminal output. If use_colour is False, all codes are empty strings."""
 
     def __new__(cls, use_colour: bool) -> Colour:
         x = super().__new__(cls)
-        if use_colour:
-            cls.blue = "\033[34m"
-            cls.purple = "\033[35m"
-            cls.green = "\033[32m"
-            cls.red = "\033[31m"
-            cls.cyan = "\033[36m"
-            cls.off = "\033[0m"
-        else:
-            cls.blue = cls.purple = cls.green = cls.red = cls.cyan = cls.off = ""
+        cls.blue = ANSIColours.BLUE
+        cls.green = ANSIColours.GREEN
+        cls.red = ANSIColours.RED
+        cls.magenta = ANSIColours.MAGENTA
+        cls.orange = ANSIColours.BRIGHT_RED
+
+        cls.off = ANSIColours.RESET
+        cls.name = ANSIColours.GREEN
+        cls.dtype = ANSIColours.MAGENTA
+        cls.value = ANSIColours.CYAN
+        cls.const_value = ANSIColours.CYAN + ANSIColours.UNDERLINE
+
+        if not use_colour:
+            # Set all the above to ""
+            for attr in dir(cls):
+                if not attr.startswith("__") and isinstance(getattr(cls, attr), str):
+                    setattr(cls, attr, "")
         return x
 
 
@@ -122,7 +198,7 @@ class Expression:
         e = Expression('{x + 1}')
         assert e.evaluate({'x': 5}) == 6
 
-        f = Format('[x: u8, data: [u8; {x}]]')  # The number of items in data is an Expression.
+        f = Format('{x: u8, data: [u8; {x}]}')  # The number of items in data is an Expression.
 
     Only certain operations are permitted in an Expression - see the ``node_whitelist``. For security
     reasons, all builtins and double underscores are disallowed in the expression string.

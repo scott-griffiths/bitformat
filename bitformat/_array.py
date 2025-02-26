@@ -617,10 +617,10 @@ class Array:
 
         trailing_bit_length = len(self._proxy) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
-        dtype1_str = colour.purple + str(dtype1) + colour.off
+        dtype1_str = str(dtype1)
         dtype2_str = ""
         if dtype2 is not None:
-            dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
+            dtype2_str = f", dtype2='{dtype2}'"
         data = self._proxy if trailing_bit_length == 0 else self._get_bit_slice(0, len(self._proxy) - trailing_bit_length)
         length = len(self._proxy) // token_length
         len_str = colour.green + str(length) + colour.off

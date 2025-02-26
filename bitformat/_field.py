@@ -256,19 +256,22 @@ class Field(FieldType):
         colour = Colour(not Options().no_color)
         const_str = "const " if self.const else ""
         dtype_str = str(self._dtype)
-        d = f"{colour.purple}{const_str}{dtype_str}{colour.off}"
-        n = "" if self.name == "" else f"{colour.green}{self.name}{colour.off}: "
-        v = "" if self.value is None else f" = {colour.cyan}{self.value}{colour.off}"
+        d = f"{const_str}{dtype_str}"
+        n = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
+        if self.value is None:
+            v = ""
+        else:
+            if self.const:
+                v = f" = {colour.const_value}{self.value}{colour.off}"
+            else:
+                v = f" = {colour.value}{self.value}{colour.off}"
         return indent(f"{n}{d}{v}")
 
     # This simple repr used when field is part of a larger object
     @override
     def _repr(self) -> str:
-        const_str = "const " if self.const else ""
-        n = "" if self.name == "" else f"{self.name}: "
-        dtype = f"{const_str}{self._dtype}"
-        v = "" if self.value is None else f" = {self.value}"
-        return f"'{n}{dtype}{v}'"
+        s = self._str(Indenter(0))
+        return f"'{s}'"
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:

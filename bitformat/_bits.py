@@ -582,10 +582,10 @@ class Bits:
         data = self if trailing_bit_length == 0 else self[0:-trailing_bit_length]
         sep = " "  # String to insert between groups
         format_sep = " : "  # String to insert on each line between multiple formats
-        dtype1_str = colour.purple + str(dtype1) + colour.off
+        dtype1_str = str(dtype1)
         dtype2_str = ""
         if dtype2 is not None:
-            dtype2_str = ", dtype2='" + colour.blue + str(dtype2) + colour.off + "'"
+            dtype2_str = f", dtype2='{dtype2}'"
         output_stream = io.StringIO()
         len_str = colour.green + str(len(self)) + colour.off
         output_stream.write(f"<{self.__class__.__name__}, dtype1='{dtype1_str}'{dtype2_str}, length={len_str} bits> [\n")
@@ -1129,7 +1129,7 @@ class Bits:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
                 offset_str = colour.green + f"{offset: >{offset_width - len(offset_sep)}}" + offset_sep + colour.off
-            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.purple, colour.off, first_fb_width)
+            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.magenta, colour.off, first_fb_width)
             if first_fb_width is None:
                 first_fb_width = chars_used
             fb2 = ""
