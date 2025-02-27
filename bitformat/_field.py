@@ -199,7 +199,8 @@ class Field(FieldType):
                 f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available."
             )
         # Deal with a stretchy dtype
-        self._bits = b[startbit : startbit + dtype.bit_length] if dtype.bit_length is not None else b[startbit:]
+        dtype_length = dtype.calculate_bit_length(vars_)
+        self._bits = b[startbit : startbit + dtype_length] if dtype_length is not None else b[startbit:]
         if self.name != "":
             if self._bits is None:
                 vars_[self.name] = None

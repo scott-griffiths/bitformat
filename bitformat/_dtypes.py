@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
 from ._options import Options
-from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str, Colour
+from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str, Colour, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
 
@@ -298,6 +298,12 @@ class DtypeSingle(Dtype):
     def bit_length(self) -> int | None:
         return self._bit_length
 
+    def calculate_bit_length(self, vars_:  dict[str, Any] | None = None) -> int | None:
+        if (x := self.bit_length) is not None:
+            return x
+        bit_length = self._size.evaluate(vars_)
+        return bit_length
+
     @property
     def size(self) -> int | Expression | None:
         """The size of the data type.
@@ -315,7 +321,7 @@ class DtypeSingle(Dtype):
 class DtypeArray(Dtype):
 
     _dtype_single: DtypeSingle
-    _items: int | None
+    _items: Expression
 
     @property
     def name(self) -> DtypeName:
@@ -327,7 +333,7 @@ class DtypeArray(Dtype):
         return self._dtype_single.endianness
 
     @classmethod
-    def _create(cls, definition: DtypeDefinition, size: Expression, items: int | None,
+    def _create(cls, definition: DtypeDefinition, size: Expression, items: Expression,
                 endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
         x = super().__new__(cls)
         x._dtype_single = DtypeSingle._create(definition, size, endianness)
@@ -337,7 +343,7 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeName, size: Expression, items: int | None = None,
+    def from_params(cls, name: DtypeName, size: Expression, items: Expression = Expression("{None}"),
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name, size and items.
 
@@ -354,7 +360,7 @@ class DtypeArray(Dtype):
             if len(value) != self.bit_length:
                 raise ValueError(f"Expected {self.bit_length} bits, but got {len(value)} bits.")
             return value
-        if self._items is not None and len(value) != self._items:
+        if self._items != Expression('{None}') and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
 
@@ -365,7 +371,7 @@ class DtypeArray(Dtype):
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self.items
-        if items is None:
+        if self._items == Expression('{None}'):
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
             items = len(b) // self._dtype_single.bit_length
         return tuple(
@@ -377,7 +383,7 @@ class DtypeArray(Dtype):
     @final
     def __str__(self) -> str:
         colour = Colour(not Options().no_color)
-        items_str = "" if self._items is None else f" {colour.dtype}{self._items}{colour.off}"
+        items_str = "" if self._items == Expression('{None}') else f" {colour.dtype}{self._items}{colour.off}"
         return f"[{self._dtype_single};{items_str}]"
 
     @override
@@ -399,9 +405,18 @@ class DtypeArray(Dtype):
     @property
     def bit_length(self) -> int | None:
         # TODO: This should be done nicer!
-        if isinstance(self._dtype_single.bit_length, int) and isinstance(self._items, int):
-            return self._dtype_single.bit_length * self._items
+        if isinstance(self._dtype_single.bit_length, int) and self._items.has_const_value and self._items.const_value is not None:
+            return self._dtype_single.bit_length * self._items.const_value
         return None
+
+    def calculate_bit_length(self, vars_: dict[str, Any]) -> int | None:
+        if (x := self.bit_length) is not None:
+            return x
+        dtype_single_length = self._dtype_single.calculate_bit_length(vars_)
+        if dtype_single_length is None:
+            return None
+        items = self._items.evaluate(vars_)
+        return dtype_single_length * items
 
     @property
     def size(self) -> int:
@@ -417,13 +432,17 @@ class DtypeArray(Dtype):
         return self._dtype_single.size
 
     @property
-    def items(self) -> int:
+    def items(self) -> int | None:
         """The number of items in the data type.
 
         An items equal to 0 means it's an array data type but with items currently unset.
 
         """
-        return self._items
+        if self._items == Expression('{None}'):
+            return None
+        if self._items.has_const_value:
+            return self._items.const_value
+        return None
 
 
 class DtypeTuple(Dtype):
@@ -610,7 +629,7 @@ class DtypeDefinition:
         d = DtypeSingle._create(self, size, endianness)
         return d
 
-    def get_array_dtype(self, size: Expression, items: int | None, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
+    def get_array_dtype(self, size: Expression, items: Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         size, endianness = self.sanitize(size, endianness)
         d = DtypeArray._create(self, size, items, endianness)
         if size.has_const_value and size.const_value is None:
@@ -688,13 +707,17 @@ class Register:
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: DtypeName, size: Expression | int | None, items: int,
+    def get_array_dtype(cls, name: DtypeName, size: Expression | int | None, items: Expression | int | None,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         definition = cls.name_to_def[name]
         if size is None:
             size = Expression("{None}")
         elif isinstance(size, int):
             size = Expression(f"{{{size}}}")
+        if items is None:
+            items = Expression("{None}")
+        elif isinstance(items, int):
+            items = Expression(f"{{{items}}}")
         return definition.get_array_dtype(size, items, endianness)
 
     def __repr__(self) -> str:

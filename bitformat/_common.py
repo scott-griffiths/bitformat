@@ -301,7 +301,7 @@ class Expression:
         return colour.code + "{" + self.code_str + "}" + colour.off
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}('{{{self.code_str}}}')"
+        return f"{self.__class__.__name__}('{self}')"
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Expression):

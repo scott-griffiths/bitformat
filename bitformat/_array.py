@@ -742,9 +742,7 @@ class Array:
                                              op(self._bitstore.getslice(start, start + self._dtype.bit_length), value._bitstore))
         return self
 
-    def _apply_op_between_arrays(
-        self, op, other: Array, is_comparison: bool = False
-    ) -> Array:
+    def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
         if len(self) != len(other):
             msg = f"Cannot operate element-wise on Arrays with different lengths ({len(self)} and {len(other)})."
             if op in [operator.add, operator.iadd]:
@@ -779,9 +777,7 @@ class Array:
         return new_array
 
     @classmethod
-    def _promote_type(
-        cls, type1: Dtype, type2: Dtype
-    ) -> Dtype:  # TODO: How does this work for array dtypes?
+    def _promote_type(cls, type1: DtypeSingle, type2: DtypeSingle) -> DtypeSingle:
         """When combining types which one wins?
 
         1. We only deal with types representing floats or integers.
