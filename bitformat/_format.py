@@ -55,12 +55,11 @@ class Format(FieldType):
 
     """
     _fields: list[FieldType]
-    name: str
     vars: dict[str, Any]
 
     def __new__(cls, s: str | None = None) -> Self:
         if s is None:
-            x = super().__new__(cls)
+            x: Self = super().__new__(cls)
             x._fields = []
             x.name = ""
             x.vars = {}
