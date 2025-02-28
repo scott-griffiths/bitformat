@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from bitformat import Bits
+from bitformat import Bits, DtypeArray
 from ._dtypes import Dtype, DtypeSingle, Register, DtypeTransformer
 from ast import literal_eval
 from ._common import override, Indenter, Colour, DtypeName, field_parser
@@ -192,6 +192,10 @@ class Field(FieldType):
         if isinstance(self._dtype, DtypeSingle) and self._dtype.size is not None:
             size = self._dtype._size.evaluate(vars_)
             dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
+        elif isinstance(self._dtype, DtypeArray):
+            size = self._dtype._dtype_single._size.evaluate(vars_)
+            items = self._dtype._items.evaluate(vars_)
+            dtype = DtypeArray.from_params(self._dtype._dtype_single.name, size, items, self._dtype.endianness)
         else:
             dtype = self._dtype
         if dtype.bit_length is not None and len(b) - startbit < dtype.bit_length:
