@@ -360,7 +360,7 @@ class DtypeArray(Dtype):
             if len(value) != self.bit_length:
                 raise ValueError(f"Expected {self.bit_length} bits, but got {len(value)} bits.")
             return value
-        if self._items != Expression('{None}') and len(value) != self._items:
+        if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
 
@@ -370,8 +370,8 @@ class DtypeArray(Dtype):
         b = bitformat.Bits._from_any(b)
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
-        items = self.items
-        if self._items == Expression('{None}'):
+        items = self._items.evaluate()
+        if self._items.is_none():
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
             items = len(b) // self._dtype_single.bit_length
         return tuple(
@@ -383,7 +383,7 @@ class DtypeArray(Dtype):
     @final
     def __str__(self) -> str:
         colour = Colour(not Options().no_color)
-        items_str = "" if self._items == Expression('{None}') else f" {colour.dtype}{self._items}{colour.off}"
+        items_str = "" if self._items.is_none() else f" {colour.dtype}{self._items}{colour.off}"
         return f"[{self._dtype_single};{items_str}]"
 
     @override
@@ -438,7 +438,7 @@ class DtypeArray(Dtype):
         An items equal to 0 means it's an array data type but with items currently unset.
 
         """
-        if self._items == Expression('{None}'):
+        if self._items.is_none():
             return None
         if self._items.has_const_value:
             return self._items.const_value

@@ -206,58 +206,34 @@ class Expression:
 
     """
 
-    def __init__(self, code_str: str):
+    code_str: str
+    has_const_value: bool
+    const_value: Any
+    code: CodeType
+
+    def __new__(cls, code_str: str) -> Expression:
         """Create an expression object from a string that starts and ends with braces."""
+        x = super().__new__(cls)
         code_str = code_str.strip()
         if len(code_str) < 2 or code_str[0] != "{" or code_str[-1] != "}":
-            raise ExpressionError(
-                f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'."
-            )
+            raise ExpressionError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
+        x.code_str = code_str[1:-1].strip()
         # If the expression can be evaluated with no parameters then it's const and can be stored as such
         # Note that the const_value can be True, False, None, an int etc, so it's only valid if has_const_value is True.
-        self.has_const_value = False
-        self.const_value = None
-        self.code_str = code_str[1:-1].strip()
-        self.code = self._compile_safe_eval()
+        x.has_const_value = False
+        x.const_value = None
+        x.code = x._compile_safe_eval()
         try:
-            self.const_value = self.evaluate()
-            self.has_const_value = True
+            x.const_value = x.evaluate()
+            x.has_const_value = True
         except ExpressionError:
             pass
+        return x
 
     """A whitelist of allowed AST nodes for the expression."""
-    node_whitelist = {
-        "BinOp",
-        "Name",
-        "Add",
-        "Expr",
-        "Mult",
-        "FloorDiv",
-        "Sub",
-        "Load",
-        "Module",
-        "Constant",
-        "UnaryOp",
-        "USub",
-        "Mod",
-        "Pow",
-        "BitAnd",
-        "BitXor",
-        "BitOr",
-        "And",
-        "Or",
-        "BoolOp",
-        "LShift",
-        "RShift",
-        "Eq",
-        "NotEq",
-        "Compare",
-        "LtE",
-        "GtE",
-        "Subscript",
-        "Gt",
-        "Lt",
-    }
+    node_whitelist = {"BinOp", "Name", "Add", "Expr", "Mult", "FloorDiv", "Sub", "Load", "Module", "Constant", "UnaryOp",
+                      "USub", "Mod", "Pow", "BitAnd", "BitXor", "BitOr", "And", "Or", "BoolOp", "LShift", "RShift",
+                      "Eq", "NotEq", "Compare", "LtE", "GtE", "Subscript", "Gt", "Lt"}
 
     def _compile_safe_eval(self) -> CodeType:
         """Compile the expression, but only allow a whitelist of operations."""
@@ -294,6 +270,10 @@ class Expression:
             raise ExpressionError(f"Failed to evaluate Expression '{self}' with kwargs={kwargs}: {e}")
         return value
 
+    def is_none(self) -> bool:
+        """Returns True if the expression evaluates to None."""
+        return self == EXPRESSION_NONE
+
     def __str__(self) -> str:
         colour = Colour(not Options().no_color)
         if self.has_const_value:
@@ -312,6 +292,8 @@ class Expression:
 
     def __hash__(self) -> int:
         return hash(self.code_str)
+
+EXPRESSION_NONE = Expression('{None}')
 
 
 class Endianness(enum.Enum):
