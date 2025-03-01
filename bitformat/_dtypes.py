@@ -192,7 +192,7 @@ class DtypeSingle(Dtype):
         x._definition = definition
         if size.has_const_value and size.const_value is None and definition.allowed_sizes.only_one_value():
             size_int = definition.allowed_sizes.values[0]
-            size = Expression(f"{{{size_int}}}")
+            size = Expression.from_int(size_int)
         x._size = size
         x._bit_length = None
         if x._size.has_const_value and x._size.const_value is not None:
@@ -241,7 +241,7 @@ class DtypeSingle(Dtype):
         if size is None:
             size = Expression("{None}")
         elif isinstance(size, int):
-            size = Expression(f"{{{size}}}")
+            size = Expression.from_int(size)
         x = Register().get_single_dtype(name, size, endianness)
         return x
 
@@ -608,7 +608,7 @@ class DtypeDefinition:
         if size.has_const_value and size.const_value is not None and self.allowed_sizes:
             if size.const_value == 0:
                 if self.allowed_sizes.only_one_value():
-                    size = Expression("{{{self.allowed_sizes.values[0]}}}")
+                    size = Expression.from_int(self.allowed_sizes.values[0])
             else:
                 if size.const_value not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
@@ -702,7 +702,7 @@ class Register:
         if size is None:
             size = Expression("{None}")
         elif isinstance(size, int):
-            size = Expression(f"{{{size}}}")
+            size = Expression.from_int(size)
         return definition.get_single_dtype(size, endianness)
 
     @classmethod
@@ -713,11 +713,11 @@ class Register:
         if size is None:
             size = Expression("{None}")
         elif isinstance(size, int):
-            size = Expression(f"{{{size}}}")
+            size = Expression.from_int(size)
         if items is None:
             items = Expression("{None}")
         elif isinstance(items, int):
-            items = Expression(f"{{{items}}}")
+            items = Expression.from_int(items)
         return definition.get_array_dtype(size, items, endianness)
 
     def __repr__(self) -> str:

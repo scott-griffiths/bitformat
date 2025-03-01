@@ -261,5 +261,11 @@ class FieldType(abc.ABC):
     def value(self, val: Any) -> None:
         self._set_value_with_kwargs(val, {})
 
-    name = property(_get_name, _set_name)
+    @property
+    def name(self) -> str:
+        return self._get_name()
+
+    @name.setter
+    def name(self, val: str) -> None:
+        self._set_name(val)
 

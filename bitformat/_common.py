@@ -230,6 +230,18 @@ class Expression:
             pass
         return x
 
+    @classmethod
+    def from_int(cls, value: int) -> Expression:
+        """Create an Expression from an integer value."""
+        x = super().__new__(cls)
+        x.has_const_value = True
+        x.const_value = value
+        x.code_str = str(value)
+        # The explicit cast to an int first is important as the compile checks are being skipped.
+        value = int(value)
+        x.code = compile(str(value), "<string>", "eval")
+        return x
+
     """A whitelist of allowed AST nodes for the expression."""
     node_whitelist = {"BinOp", "Name", "Add", "Expr", "Mult", "FloorDiv", "Sub", "Load", "Module", "Constant", "UnaryOp",
                       "USub", "Mod", "Pow", "BitAnd", "BitXor", "BitOr", "And", "Or", "BoolOp", "LShift", "RShift",

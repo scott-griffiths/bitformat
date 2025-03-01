@@ -158,12 +158,7 @@ class Format(FieldType):
         return sum(f.bit_length for f in self._fields)
 
     @override
-    def _pack(
-        self,
-        values: Sequence[Any],
-        _vars: dict[str, Any],
-        kwargs: dict[str, Any],
-    ) -> None:
+    def _pack(self, values: Sequence[Any], _vars: dict[str, Any], kwargs: dict[str, Any]) -> None:
         if not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
 
@@ -202,9 +197,7 @@ class Format(FieldType):
         vals = []
         for i, f in enumerate(self._fields):
             if f.value is None:
-                raise ValueError(
-                    f"When getting Format value, cannot find value of this field:\n{f}"
-                )
+                raise ValueError(f"When getting Format value, cannot find value of this field:\n{f}")
             vals.append(f.value)
         return vals
 
