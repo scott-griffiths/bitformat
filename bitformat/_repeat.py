@@ -119,10 +119,8 @@ class Repeat(FieldType):
         return values
 
     @override
-    def _set_value(self, val: list[Any]) -> None:
+    def _set_value_with_kwargs(self, val: list[Any], kwargs: dict[str, Any]) -> None:
         self._values = val
-
-    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

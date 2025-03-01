@@ -105,7 +105,7 @@ class Field(FieldType):
             elif x._dtype._definition.return_type == Bits:
                 value = Bits.from_string(value)
         if value is not None:
-            x._set_value_no_const_check(value)
+            x._set_value_no_const_check(value, {})
         # TODO: This is not a nice condition!
         if isinstance(x._dtype, DtypeSingle) and x._dtype.size.has_const_value and x._dtype.size.const_value is None:
             if x._dtype.name in [DtypeName.BITS, DtypeName.BYTES] and x.value is not None:
@@ -213,16 +213,11 @@ class Field(FieldType):
         return len(self._bits)
 
     @override
-    def _pack(
-        self,
-        value: Any,
-        vars_: dict[str, Any],
-        kwargs: dict[str, Any],
-    ) -> None:
+    def _pack(self, value: Any, vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
         if self.name in kwargs:
-            self._set_value(kwargs[self.name])
+            self._set_value_with_kwargs(kwargs[self.name], {})
         else:
-            self._set_value(value)
+            self._set_value_with_kwargs(value, kwargs)
         if self.name:
             vars_[self.name] = self.value
 
@@ -232,7 +227,7 @@ class Field(FieldType):
             return None
         return self.dtype.unpack(self._bits)
 
-    def _set_value_no_const_check(self, value: Any) -> None:
+    def _set_value_no_const_check(self, value: Any, kwargs: dict[str, Any]) -> None:
         if value is None:
             raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
         try:
@@ -241,15 +236,11 @@ class Field(FieldType):
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 
     @override
-    def _set_value(self, value: Any) -> None:
+    def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:
         if self.const:
-            raise ValueError(
-                f"Cannot set the value of a const Field '{self}'. "
-                f"To change the value, first set the const property of the Field to False."
-            )
-        self._set_value_no_const_check(value)
-
-    value = property(_get_value, _set_value)
+            raise ValueError(f"Cannot set the value of a const Field '{self}'. "
+                             f"To change the value, first set the const property of the Field to False.")
+        self._set_value_no_const_check(value, kwargs)
 
     def _get_dtype(self) -> Dtype:
         return self._dtype

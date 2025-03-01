@@ -71,7 +71,7 @@ class Pass(FieldType):
         raise ValueError("A Pass field has no value to get.")
 
     @override
-    def _set_value(self, val: Any) -> None:
+    def _set_value_with_kwargs(self, val: Any, kwargs: dict[str, Any]) -> None:
         raise ValueError("A Pass field cannot be set to a value.")
 
     @override
@@ -86,8 +86,6 @@ class Pass(FieldType):
     @override
     def to_bits(self) -> Bits:
         return Bits()
-
-    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

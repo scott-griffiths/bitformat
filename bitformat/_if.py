@@ -157,7 +157,7 @@ class If(FieldType):
             return self.else_._get_value()
 
     @override
-    def _set_value(self, val: Any) -> None:
+    def _set_value_with_kwargs(self, val: Any, kwargs: dict[str, Any]) -> None:
         raise NotImplementedError
 
     @override
@@ -186,8 +186,6 @@ class If(FieldType):
             return self.then_.to_bits()
         else:
             return self.else_.to_bits()
-
-    value = property(_get_value, _set_value)
 
     @override
     def __eq__(self, other) -> bool:

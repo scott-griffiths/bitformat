@@ -209,13 +209,11 @@ class Format(FieldType):
         return vals
 
     @override
-    def _set_value(self, val: Sequence[Any]) -> None:
+    def _set_value_with_kwargs(self, val: Sequence[Any], kwargs: dict[str, Any]) -> None:
         if len(val) != len(self._fields):
             raise ValueError(f"Can't set {len(self._fields)} fields from {len(val)} values.")
         for fieldtype, v in zip(self._fields, val):
-            fieldtype._set_value(v)
-
-    value = property(_get_value, _set_value)
+            fieldtype._set_value_with_kwargs(v, kwargs)
 
     @override
     def to_bits(self) -> Bits:

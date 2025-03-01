@@ -108,12 +108,7 @@ class FieldType(abc.ABC):
         except ValueError:  # It might be an Expression, and Expressions can't be stretchy.
             return False
 
-    def pp(
-        self,
-        stream: TextIO = sys.stdout,
-        indent: int | None = None,
-        depth: int | None = None,
-    ) -> None:
+    def pp(self, stream: TextIO = sys.stdout,indent: int | None = None, depth: int | None = None) -> None:
         """
         Pretty-print the fieldtype to a stream (or stdout by default).
 
@@ -170,12 +165,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _pack(
-        self,
-        value: Any | Sequence[Any],
-        vars_: dict[str, Any],
-        kwargs: dict[str, Any],
-    ) -> None:
+    def _pack(self, value: Any | Sequence[Any], vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
         """
         Build the field from the values list, starting at index.
 
@@ -223,7 +213,10 @@ class FieldType(abc.ABC):
     def _get_value(self) -> Any: ...
 
     @abc.abstractmethod
-    def _set_value(self, value: Any) -> None: ...
+    def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None: ...
+
+    def _set_value(self, value: Any):
+        self._set_value_with_kwargs(value, {})
 
     @abc.abstractmethod
     def _get_bit_length(self) -> int:
@@ -260,6 +253,13 @@ class FieldType(abc.ABC):
                 raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
         self._name = val
 
+    @property
+    def value(self) -> Any:
+        return self._get_value()
+
+    @value.setter
+    def value(self, val: Any) -> None:
+        self._set_value_with_kwargs(val, {})
+
     name = property(_get_name, _set_name)
-    value = property(_get_value, _set_value)
 
