@@ -1,52 +1,16 @@
 from __future__ import annotations
 
-import lark.exceptions
-
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, field_parser
+from ._common import override, Indenter, Colour
 from ._fieldtype import FieldType
-from ._field import FieldTypeTransformer
 from ._pass import Pass
 from ._options import Options
-from lark import UnexpectedInput
+
 
 
 __all__ = ["Format"]
-
-
-class FormatTransformer(FieldTypeTransformer):
-
-    def format(self, items) -> Format:
-        assert len(items) >= 1
-        name = items[0] if items[0] is not None else ''
-        fields = items[1:]
-        return Format.from_params(fields, name)
-
-
-format_transformer = FormatTransformer()
-
-# This is experimental error code - not really working yet and probably not quite what I want to do.
-class FormatSyntaxError(SyntaxError):
-    label: str = ''
-    def __str__(self):
-        context, line, column = self.args
-        return '%s at line %s, column %s.\n\n%s' % (self.label, line, column, context)
-
-class FormatMissingValue(FormatSyntaxError):
-    label = 'Missing Value'
-
-class FormatUnknownDtype(FormatSyntaxError):
-    label = 'Unknown Dtype'
-
-class FormatMissingClosing(FormatSyntaxError):
-    label = 'Missing Closing'
-
-class FormatMissingComma(FormatSyntaxError):
-    label = 'Missing Comma'
-
-
 
 
 class Format(FieldType):
@@ -59,7 +23,7 @@ class Format(FieldType):
 
     def __new__(cls, s: str | None = None) -> Self:
         if s is None:
-            x: Self = super().__new__(cls)
+            x = super().__new__(cls)
             x._fields = []
             x.name = ""
             x.vars = {}
@@ -132,25 +96,10 @@ class Format(FieldType):
             f3 = Format.from_string('{u16, another_format = {[u8; 64], [bool; 8]}}')
 
         """
-        try:
-            tree = field_parser.parse(s)
-        except UnexpectedInput as u:
-            # TODO: This isn't giving quite the output I'd expect yet.
-            exc_class = u.match_examples(field_parser.parse, {
-                FormatUnknownDtype: ['{uint8}',
-                                     '{[z;]}',
-                                     '{u1, {u1, {u1, {u1, penguin}}}}'],
-                FormatMissingClosing: ['{u8 = 23',
-                                     '{[f16; 6]'],
-                FormatMissingComma: ['{i5 i3}'],
-            }, use_accepts=False)
-            if not exc_class:
-                raise
-            raise exc_class(u.get_context(s), u.line, u.column)
-        try:
-            return format_transformer.transform(tree)
-        except lark.exceptions.VisitError as e:
-            raise ValueError(f"Error parsing format: {e}")
+        x = super().from_string(s)
+        if not isinstance(x, Format):
+            raise ValueError(f"Can't parse Format field from '{s}'. Instead got '{x}'.")
+        return x
 
     @override
     def _get_bit_length(self) -> int:

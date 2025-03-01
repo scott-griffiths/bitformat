@@ -45,20 +45,6 @@ class If(FieldType):
         return x
 
     @classmethod
-    def _possibly_from_string(cls, s: str, /) -> If | None:
-        # This compiled re pattern expects
-        # If {expression}: then_ \n Else: else_
-        pattern = re.compile(
-            r"\s*If\s*\{\s*(?P<expression>[^}]+)\s*\}\s*:\s*(?P<then>.*?)(?:\s*Else\s*:\s*(?P<else>.*))?\s*$"
-        )
-        if not (match := pattern.match(s)):
-            return None
-        groups = match.groupdict()
-        return cls.from_params(
-            "{" + groups["expression"] + "}", groups["then"], groups["else"]
-        )
-
-    @classmethod
     @override
     def from_string(cls, s: str, /) -> If:
         """
@@ -74,9 +60,10 @@ class If(FieldType):
         The Else clause is optional, and defaults to a :class:`Pass` field if not provided.
 
         """
-        if (x := cls._possibly_from_string(s)) is not None:
-            return x
-        raise ValueError(f"Can't parse If field from '{s}'")
+        x = super().from_string(s)
+        if not isinstance(x, If):
+            raise ValueError(f"Can't parse If field from '{s}'. Instead got '{x}'.")
+        return x
 
     @override
     def _get_bit_length(self) -> int:

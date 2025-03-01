@@ -3,16 +3,61 @@ import abc
 import sys
 
 from bitformat import Bits
+from ._dtypes import DtypeTransformer
 from ._bits import BitsType
-from ._common import final, Indenter
+from ._common import final, Indenter, field_parser
 from typing import Any, Sequence, TextIO
 import keyword
 from ._options import Options
-
+from lark import UnexpectedInput
+import lark
 
 __all__ = ["FieldType"]
 
 fieldtype_classes = {}
+
+
+class FieldTypeTransformer(DtypeTransformer):
+
+    def field_name(self, items) -> str:
+        return items[0]
+
+    def const_field(self, items) -> Field:
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
+        return fieldtype_classes['Field'].from_params(dtype, name, value, const=True)
+
+    def mutable_field(self, items) -> Field:
+        assert len(items) == 3
+        name = items[0] if items[0] is not None else ''
+        dtype = items[1]
+        value = items[2]
+        return fieldtype_classes['Field'].from_params(dtype, name, value)
+
+    def repeat(self, items) -> Repeat:
+        expr = items[0]
+        count = expr.evaluate()
+        return fieldtype_classes['Repeat'].from_params(count, items[1])
+
+    def pass_(self, items) -> Pass:
+        assert len(items) == 0
+        return fieldtype_classes['Pass']()
+
+    def if_(self, items) -> If:
+        expr = items[0]
+        then_ = items[1]
+        else_ = items[2]
+        return fieldtype_classes['If'].from_params(expr, then_, else_)
+
+    def format(self, items) -> Format:
+        assert len(items) >= 1
+        name = items[0] if items[0] is not None else ''
+        fields = items[1:]
+        return fieldtype_classes['Format'].from_params(fields, name)
+
+field_type_transformer = FieldTypeTransformer()
 
 
 class FieldType(abc.ABC):
@@ -122,7 +167,6 @@ class FieldType(abc.ABC):
         stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
         stream.write("\n")
 
-    # TODO: This should use the Lark parser!
     @classmethod
     def from_string(cls, s: str) -> FieldType:
         """
@@ -135,24 +179,14 @@ class FieldType(abc.ABC):
         :return: The FieldType instance.
         :rtype: FieldType
         """
-        s = s.strip()
-        # For each FieldType subclass check using a regex if it is of that type.
-        # First, check for a Pass:
-        if s == "":
-            return fieldtype_classes["Pass"]()
-
-        # Then, check for an If. It should start with 'if' followed by a condition in {} and a :
-        if (x := fieldtype_classes["If"]._possibly_from_string(s)) is not None:
-            return x
-        if (x := fieldtype_classes["Repeat"]._possibly_from_string(s)) is not None:
-            return x
-
-        if s.endswith("]"):
-            return fieldtype_classes["Field"].from_string(s)
-        if s.endswith("}"):
-            return fieldtype_classes["Format"].from_string(s)
-        # Otherwise, it's a plain Field.
-        return fieldtype_classes["Field"].from_string(s)
+        try:
+            tree = field_parser.parse(s)
+        except UnexpectedInput:
+            raise ValueError
+        try:
+            return field_type_transformer.transform(tree)
+        except lark.exceptions.VisitError as e:
+            raise ValueError(f"Error parsing field: {e}")
 
     @abc.abstractmethod
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

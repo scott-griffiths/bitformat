@@ -1,58 +1,14 @@
 from __future__ import annotations
 
-import re
 from bitformat import Bits, DtypeArray
-from ._dtypes import Dtype, DtypeSingle, Register, DtypeTransformer
+from ._dtypes import Dtype, DtypeSingle, Register
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeName, field_parser
+from ._common import override, Indenter, Colour, DtypeName
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
-from ._pass import Pass
-from ._repeat import Repeat
-from ._if import If
-from lark import UnexpectedInput
-import lark
 
 __all__ = ["Field"]
-
-
-class FieldTypeTransformer(DtypeTransformer):
-
-    def field_name(self, items) -> str:
-        return items[0]
-
-    def const_field(self, items) -> Field:
-        assert len(items) == 3
-        name = items[0] if items[0] is not None else ''
-        dtype = items[1]
-        value = items[2]
-        return Field.from_params(dtype, name, value, const=True)
-
-    def mutable_field(self, items) -> Field:
-        assert len(items) == 3
-        name = items[0] if items[0] is not None else ''
-        dtype = items[1]
-        value = items[2]
-        return Field.from_params(dtype, name, value)
-
-    def repeat(self, items) -> Repeat:
-        expr = items[0]
-        count = expr.evaluate()
-        return Repeat.from_params(count, items[1])
-
-    def pass_(self, items) -> Pass:
-        assert len(items) == 0
-        return Pass()
-
-    def if_(self, items) -> If:
-        expr = items[0]
-        then_ = items[1]
-        else_ = items[2]
-        return If.from_params(expr, then_, else_)
-
-
-field_type_transformer = FieldTypeTransformer()
 
 
 class Field(FieldType):
@@ -119,14 +75,10 @@ class Field(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str, /) -> Self:
-        try:
-            tree = field_parser.parse(s)
-        except UnexpectedInput:
-            raise ValueError
-        try:
-            return field_type_transformer.transform(tree)
-        except lark.exceptions.VisitError as e:
-            raise ValueError(f"Error parsing field: {e}")
+        x = super().from_string(s)
+        if not isinstance(x, Field):
+            raise ValueError(f"Can't parse Field from '{s}'. Instead got '{x}'.")
+        return x
 
     @classmethod
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = "") -> Self:
@@ -231,7 +183,10 @@ class Field(FieldType):
         if value is None:
             raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
         try:
-            self._bits = self.dtype.pack(value)
+            if not kwargs:
+                self._bits = self.dtype.pack(value)
+            else:
+                pass # TODO
         except ValueError as e:
             raise ValueError(f"Can't use the value '{value}' with the field '{self}': {e}")
 

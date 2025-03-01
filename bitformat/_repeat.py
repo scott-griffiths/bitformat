@@ -35,25 +35,12 @@ class Repeat(FieldType):
         return self.field.bit_length * self.count
 
     @classmethod
-    def _possibly_from_string(cls, s: str, /) -> Repeat | None:
-        # TODO: name is not handled yet.
-        s = s.strip()
-        repeat_regex = r"Repeat\s*\{([^}]*)\}\s*:\s(.*)"
-        pattern = re.compile(repeat_regex, re.DOTALL)
-        if not (m := pattern.match(s)):
-            return None
-        count = int(m.group(1))
-        fieldtype_str = m.group(2)
-        count = int(count)
-        fieldtype = FieldType.from_string(fieldtype_str)
-        return cls.from_params(count, fieldtype)
-
-    @classmethod
     @override
     def from_string(cls, s: str) -> Repeat:
-        if (x := cls._possibly_from_string(s)) is not None:
-            return x
-        raise ValueError(f"Can't parse Repeat field from '{s}'")
+        x = super().from_string(s)
+        if not isinstance(x, Repeat):
+            raise ValueError(f"Can't parse Repeat field from '{s}'. Instead got '{x}'.")
+        return x
 
     @override
     def _str(self, indent: Indenter) -> str:
