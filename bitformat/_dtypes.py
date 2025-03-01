@@ -239,7 +239,7 @@ class DtypeSingle(Dtype):
 
         """
         if size is None:
-            size = Expression("{None}")
+            size = Expression.from_none()
         elif isinstance(size, int):
             size = Expression.from_int(size)
         x = Register().get_single_dtype(name, size, endianness)
@@ -343,7 +343,7 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeName, size: Expression, items: Expression = Expression("{None}"),
+    def from_params(cls, name: DtypeName, size: Expression, items: Expression = Expression.from_none(),
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name, size and items.
 
@@ -700,7 +700,7 @@ class Register:
                          endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         definition = cls.name_to_def[name]
         if size is None:
-            size = Expression("{None}")
+            size = Expression.from_none()
         elif isinstance(size, int):
             size = Expression.from_int(size)
         return definition.get_single_dtype(size, endianness)
@@ -711,11 +711,11 @@ class Register:
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         definition = cls.name_to_def[name]
         if size is None:
-            size = Expression("{None}")
+            size = Expression.from_none()
         elif isinstance(size, int):
             size = Expression.from_int(size)
         if items is None:
-            items = Expression("{None}")
+            items = Expression.from_none()
         elif isinstance(items, int):
             items = Expression.from_int(items)
         return definition.get_array_dtype(size, items, endianness)

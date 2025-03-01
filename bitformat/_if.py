@@ -37,13 +37,9 @@ class If(FieldType):
         x = super().__new__(cls)
         x.condition = Expression(condition) if isinstance(condition, str) else condition
         x.condition_value = None
-        x.then_ = (
-            then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
-        )
+        x.then_ = then_ if isinstance(then_, FieldType) else FieldType.from_string(then_)
         if else_ is not None:
-            x.else_ = (
-                else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
-            )
+            x.else_ = else_ if isinstance(else_, FieldType) else FieldType.from_string(else_)
         else:
             x.else_ = Pass()
         return x

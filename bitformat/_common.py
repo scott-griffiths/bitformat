@@ -242,6 +242,11 @@ class Expression:
         x.code = compile(str(value), "<string>", "eval")
         return x
 
+    @classmethod
+    def from_none(cls) -> Expression:
+        """Create an Expression from None."""
+        return NONE
+
     """A whitelist of allowed AST nodes for the expression."""
     node_whitelist = {"BinOp", "Name", "Add", "Expr", "Mult", "FloorDiv", "Sub", "Load", "Module", "Constant", "UnaryOp",
                       "USub", "Mod", "Pow", "BitAnd", "BitXor", "BitOr", "And", "Or", "BoolOp", "LShift", "RShift",
@@ -284,7 +289,7 @@ class Expression:
 
     def is_none(self) -> bool:
         """Returns True if the expression evaluates to None."""
-        return self == EXPRESSION_NONE
+        return self == NONE
 
     def __str__(self) -> str:
         colour = Colour(not Options().no_color)
@@ -305,7 +310,7 @@ class Expression:
     def __hash__(self) -> int:
         return hash(self.code_str)
 
-EXPRESSION_NONE = Expression('{None}')
+NONE = Expression('{None}')
 
 
 class Endianness(enum.Enum):
