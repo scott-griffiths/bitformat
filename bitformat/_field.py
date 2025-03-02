@@ -99,9 +99,7 @@ class Field(FieldType):
         return cls.from_params(DtypeSingle.from_params(DtypeName.BITS, len(b)), name, b, const=True)
 
     @classmethod
-    def from_bytes(
-        cls, b: bytes | bytearray, /, name: str = "", const: bool = False
-    ) -> Field:
+    def from_bytes(cls, b: bytes | bytearray, /, name: str = "", const: bool = False) -> Field:
         """
         Create a Field instance from bytes.
 
@@ -227,7 +225,7 @@ class Field(FieldType):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        if self.dtype.name == DtypeName.BYTES:
+        if isinstance(self.dtype, DtypeSingle) and self.dtype.name is DtypeName.BYTES:
             const_str = ", const=True" if self.const else ""
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
@@ -238,7 +236,7 @@ class Field(FieldType):
             return False
         if self.dtype != other.dtype:
             return False
-        if self.dtype.name != DtypeName.PAD and self._bits != other._bits:
+        if self.dtype.name is not DtypeName.PAD and self._bits != other._bits:
             return False
         if self.const != other.const:
             return False

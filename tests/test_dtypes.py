@@ -11,7 +11,7 @@ class TestBasicFunctionality:
     def test_setting_bool(self):
         b = Dtype("bool")
         assert str(b) == "bool"
-        assert b.name == DtypeName.BOOL
+        assert b.name is DtypeName.BOOL
         assert b.size == 1
         assert b.bit_length == 1
 
@@ -23,7 +23,7 @@ class TestBasicFunctionality:
         d = DtypeSingle.from_params(DtypeName.UINT, 12)
         assert str(d) == "u12"
         assert d.size == 12
-        assert d.name == DtypeName.UINT
+        assert d.name is DtypeName.UINT
 
     def test_build_errors(self):
         dtype = Dtype.from_string("u8")
@@ -318,5 +318,5 @@ def test_from_string_methods():
 def test_expression_dtype_single():
     a = Dtype('u{x}')
     assert isinstance(a, DtypeSingle)
-    assert a.name == DtypeName.UINT
+    assert a.name is DtypeName.UINT
     assert str(a) == 'u{x}'

@@ -200,8 +200,8 @@ class DtypeSingle(Dtype):
                 x._bit_length = x._size.const_value
             else:
                 x._bit_length = x._size.const_value * definition.bits_per_character
-        little_endian = (endianness == Endianness.LITTLE or
-                     (endianness == Endianness.NATIVE and bitformat.byteorder == "little"))
+        little_endian = (endianness is Endianness.LITTLE or
+                     (endianness is Endianness.NATIVE and bitformat.byteorder == "little"))
         x._endianness = endianness
         x._get_fn = (
             (lambda b: definition.get_fn(b.byte_swap()))
@@ -272,7 +272,7 @@ class DtypeSingle(Dtype):
         colour = Colour(not Options().no_color)
         hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
-        endianness = "" if self._endianness == Endianness.UNSPECIFIED else "_" + self._endianness.value
+        endianness = "" if self._endianness is Endianness.UNSPECIFIED else "_" + self._endianness.value
         return f"{colour.dtype}{self._definition.name}{endianness}{size_str}{colour.off}"
 
     @override
@@ -283,7 +283,7 @@ class DtypeSingle(Dtype):
         if isinstance(other, DtypeSingle):
             return (self._definition.name == other._definition.name
                     and self._size == other._size
-                    and self._endianness == other._endianness)
+                    and self._endianness is other._endianness)
         return False
 
     # TODO: move to base class as requirement?
@@ -617,7 +617,7 @@ class DtypeDefinition:
                     else:
                         raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype which "
                                          f"is not one of its possible sizes. Must be one of {self.allowed_sizes}.")
-        if endianness != Endianness.UNSPECIFIED:
+        if endianness is not Endianness.UNSPECIFIED:
             if not self.endianness_variants:
                 raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
             if size.evaluate() is not None and size.evaluate() % 8 != 0:

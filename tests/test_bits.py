@@ -684,7 +684,7 @@ def test_native_endian_floats():
         d = Dtype("f_ne64")
         d2 = DtypeSingle.from_params(DtypeName.FLOAT, 64, endianness=Endianness.NATIVE)
         assert d == d2
-        assert d.endianness == Endianness.NATIVE
+        assert d.endianness is Endianness.NATIVE
         d3 = DtypeSingle.from_params(DtypeName.FLOAT, 64, endianness=Endianness.LITTLE)
         assert d != d3
 

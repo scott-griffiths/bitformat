@@ -9,7 +9,7 @@ import functools
 from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
-from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple
+from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeName
 from bitformat._options import Options
 from bitformat.bit_rust import BitRust
@@ -1045,13 +1045,16 @@ class Bits:
                      colour_end: str,  width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
-        if not isinstance(dtype, DtypeTuple):
-            if dtype.name == DtypeName.BYTES:  # Special case for bytes to print one character each.
+        if isinstance(dtype, (DtypeSingle, DtypeArray)):
+            n = dtype.name
+            if n is DtypeName.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
-            if  dtype.name == DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+            elif n is DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
                 get_fn = Register().get_single_dtype(DtypeName.UINT, bits_per_group).unpack
-            align = "<" if dtype.name in [DtypeName.BIN, DtypeName.OCT, DtypeName.HEX, DtypeName.BITS, DtypeName.BYTES] else ">"
-            if dtype.name == DtypeName.BITS:
+            align = ">"
+            if n is DtypeName.BIN or n is DtypeName.OCT or n is DtypeName.HEX or n is DtypeName.BITS or n is DtypeName.BYTES:
+                align = "<"
+            if dtype.name is DtypeName.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
                 x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))

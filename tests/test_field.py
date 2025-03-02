@@ -1,7 +1,7 @@
 import keyword
 
 import pytest
-from bitformat import Dtype, Bits, Field, DtypeSingle, Expression, DtypeArray
+from bitformat import Dtype, Bits, Field, DtypeSingle, Expression, DtypeArray, DtypeTuple
 from bitformat._common import DtypeName
 from hypothesis import given, assume
 import hypothesis.strategies as st
@@ -84,7 +84,7 @@ class TestCreation:
             f = Field.from_bits(b, "hello")
             assert f.value == b
             assert f.name == "hello"
-            assert f.dtype.name == DtypeName.BITS
+            assert f.dtype.name is DtypeName.BITS
             assert f.dtype.bit_length == len(b)
 
     def test_string_creation_with_const(self):
@@ -274,3 +274,19 @@ def test_eq():
     a = Field("bool = True")
     b = Field("bool = False")
     assert a != b
+
+
+def test_field_with_dtype_tuple():
+    f = Field("(u8, u8)")
+    assert f.dtype == DtypeTuple("(u8, u8)")
+    assert f.value is None
+    f.pack([1, 2])
+    assert f.value == (1, 2)
+    assert f.to_bits() == "0x0102"
+    f.clear()
+    assert f.value is None
+    assert str(f) == "(u8, u8)"
+    assert repr(f) == "Field('(u8, u8)')"
+    # f.parse("0x0304")
+    # assert f.value == (3, 4)
+    # assert f.bit_length == 16
