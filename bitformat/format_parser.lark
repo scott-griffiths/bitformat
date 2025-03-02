@@ -16,7 +16,7 @@ dtype_single: dtype_name ["_" dtype_modifier] [dtype_size]
 dtype_array: "[" dtype_single ";" [dtype_items] "]"
 dtype_tuple: "(" dtype ("," dtype)* [","] ")"
 
-// dtype is the abstract base class for the other dtype_ above.
+// dtype is the abstract base class for the other dtypes above.
 ?dtype: dtype_tuple | dtype_single | dtype_array
 
 ?field_name: NAME -> field_name
@@ -27,7 +27,9 @@ list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_v
 ?value: simple_value | list_of_values
 
 // Match const_field with higher priority than mutable_field
+// const fields have the 'const' keyword and always have a value
 const_field.1: [field_name ":"] "const" dtype "=" value -> const_field
+// non-const fields don't always have a value
 mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 

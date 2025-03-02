@@ -213,8 +213,8 @@ class Format(FieldType):
             raise TypeError(f"Invalid key type {type(key)}.")
 
     @override
-    def _str(self, indent: Indenter) -> str:
-        colour = Colour(not Options().no_color)
+    def _str(self, indent: Indenter, use_colour: bool) -> str:
+        colour = Colour(use_colour)
         name_str = (
             "" if self.name == "" else f"{colour.name}{self.name}{colour.off} = "
         )
@@ -222,7 +222,7 @@ class Format(FieldType):
         s += indent(f"{name_str}{{\n")
         with indent:
             for i, fieldtype in enumerate(self._fields):
-                s += fieldtype._str(indent)
+                s += fieldtype._str(indent, use_colour)
         s += indent("}")
         return s
 

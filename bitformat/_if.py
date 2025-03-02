@@ -144,19 +144,19 @@ class If(FieldType):
         raise NotImplementedError
 
     @override
-    def _str(self, indent: Indenter) -> str:
+    def _str(self, indent: Indenter, use_colour: bool) -> str:
         s = indent(f"If {{{self.condition.code_str}}}:\n")
         with indent:
-            s += self.then_._str(indent)
+            s += self.then_._str(indent, use_colour)
         if self.else_.bit_length != 0:
             s += indent("Else:\n")
             with indent:
-                s += self.else_._str(indent)
+                s += self.else_._str(indent, use_colour)
         return s
 
     @override
     def _repr(self) -> str:
-        s = self._str(Indenter(indent_size=0))
+        s = self._str(Indenter(indent_size=0), use_colour=False)
         s = s.replace("\n", " ")
         s = f"{self.__class__.__name__}('{s}')"
         return s

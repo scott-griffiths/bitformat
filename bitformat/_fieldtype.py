@@ -14,7 +14,7 @@ import lark
 
 __all__ = ["FieldType"]
 
-fieldtype_classes = {}
+fieldtype_classes: dict[str, FieldType] = {}
 
 
 class FieldTypeTransformer(DtypeTransformer):
@@ -43,9 +43,10 @@ class FieldTypeTransformer(DtypeTransformer):
 
     def pass_(self, items) -> Pass:
         assert len(items) == 0
-        return fieldtype_classes['Pass']()
+        return fieldtype_classes['Pass'].from_params()
 
     def if_(self, items) -> If:
+        assert len(items) == 3
         expr = items[0]
         then_ = items[1]
         else_ = items[2]
@@ -129,7 +130,7 @@ class FieldType(abc.ABC):
         :return: The string representation.
         :rtype: str
         """
-        return self._str(Indenter(Options().indent_size))
+        return self._str(Indenter(Options().indent_size), not Options().no_color)
 
     def __repr__(self) -> str:
         """
@@ -168,6 +169,7 @@ class FieldType(abc.ABC):
         stream.write("\n")
 
     @classmethod
+    @final
     def from_string(cls, s: str) -> FieldType:
         """
         Create a FieldType instance from a string.
@@ -186,7 +188,7 @@ class FieldType(abc.ABC):
         try:
             return field_type_transformer.transform(tree)
         except lark.exceptions.VisitError as e:
-            raise ValueError(f"Error parsing field: {e}")
+            raise ValueError(f"Error parsing FieldType: {e}")
 
     @abc.abstractmethod
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
@@ -234,8 +236,13 @@ class FieldType(abc.ABC):
         """
         ...
 
+    @classmethod
     @abc.abstractmethod
-    def _str(self, indent: Indenter) -> str: ...
+    def from_params(cls, *args, **kwargs) -> FieldType:
+        ...
+
+    @abc.abstractmethod
+    def _str(self, indent: Indenter, use_colour: bool) -> str: ...
 
     @abc.abstractmethod
     def _repr(self) -> str: ...

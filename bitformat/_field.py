@@ -77,7 +77,8 @@ class Field(FieldType):
     def from_string(cls, s: str, /) -> Self:
         x = super().from_string(s)
         if not isinstance(x, Field):
-            raise ValueError(f"Can't parse Field from '{s}'. Instead got '{x}'.")
+            raise ValueError(f"Can't parse a Field from '{s}'. Instead got '{x!r}'. "
+                             f"If this is the type you want you can use it directly or use the FieldType constructor instead.")
         return x
 
     @classmethod
@@ -203,8 +204,8 @@ class Field(FieldType):
     dtype = property(_get_dtype)
 
     @override
-    def _str(self, indent: Indenter) -> str:
-        colour = Colour(not Options().no_color)
+    def _str(self, indent: Indenter, use_colour: bool) -> str:
+        colour = Colour(use_colour)
         const_str = "const " if self.const else ""
         dtype_str = str(self._dtype)
         d = f"{const_str}{dtype_str}"
@@ -221,7 +222,7 @@ class Field(FieldType):
     # This simple repr used when field is part of a larger object
     @override
     def _repr(self) -> str:
-        s = self._str(Indenter(0))
+        s = self._str(Indenter(0), not Options().no_color)
         return f"'{s}'"
 
     # This repr is used when the field is the top level object

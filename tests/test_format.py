@@ -438,19 +438,35 @@ def test_interesting_types_from_string():
     assert f[0].value == -375
     assert f["_fred"].value == b"abc\x04"
 
+def test_expression_literals():
+    a = Field.from_string("u{4 + 4}")
+    a.pack(255)
+    assert a.to_bits() == Bits('0xff')
+    b = Field.from_string("[bool; {4 + 4}]")
+    b.pack([1, 1, 1, 1, 0, 0, 0, 0])
+    assert b.to_bits() == Bits('0b11110000')
+    c = Field.from_string("[u{5 + 5}; {4 + 4}]")
+    assert c.bit_length == 80
+    d = Format("{a: u{4 + 4}, b: [u{5 + 5}; {4 + 4}]}")
+    d.pack([255, [1, 10, 55, 4, 3, 2, 1, 0]])
+    assert d.to_bits() == Bits('0xff, u10=1, u10=10, u10=55, u10=4, u10=3, u10=2, u10=1, u10=0')
+
+def test_passed_in_value():
+    a = Field.from_string("u{x}")
+    a.pack(5, x=10)
 
 # def test_expression_dtypes():
-#     a = Field.from_string('u{testing}')
-#     assert str(a) == 'u{testing}'
-#     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
-#     assert str(d) == 'my_name: [f{4*e}; {a + b}]'
-#     f = Format('{x: u8, [u{x}; {x + 1}]}')
-#     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
-#     f.parse(b)
-#     print(f)
-#     assert f['x'].value == 3
-#     assert f[1].value == [1, 2, 3, 4]
-#     assert f.value == [3, [1, 2, 3, 4]]
+    # a = Field.from_string('u{testing}')
+    # assert str(a) == 'u{testing}'
+    # d = Field.from_string('my_name: [f{4*e}; {a + b}]')
+    # assert str(d) == 'my_name: [f{4*e}; {a + b}]'
+    # f = Format('{x: u8, [u{x}; {x + 1}]}')
+    # b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
+    # f.parse(b)
+    # print(f)
+    # assert f['x'].value == 3
+    # assert f[1].value == [1, 2, 3, 4]
+    # assert f.value == [3, [1, 2, 3, 4]]
 
 
 def test_unpack():

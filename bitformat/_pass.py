@@ -34,11 +34,7 @@ class Pass(FieldType):
 
     @classmethod
     @override
-    def from_string(cls, s: str = "", /) -> Pass:
-        if s != "":
-            raise ValueError(
-                f"The Pass field cannot be constructed from a string. Received '{s}'."
-            )
+    def from_params(cls, *args, **kwargs) -> FieldType:
         return cls()
 
     @override
@@ -75,7 +71,7 @@ class Pass(FieldType):
         raise ValueError("A Pass field cannot be set to a value.")
 
     @override
-    def _str(self, indent: Indenter) -> str:
+    def _str(self, indent: Indenter, use_colour: bool) -> str:
         s = indent("Pass")
         return s
 
