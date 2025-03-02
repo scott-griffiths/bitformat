@@ -287,6 +287,6 @@ def test_field_with_dtype_tuple():
     assert f.value is None
     assert str(f) == "(u8, u8)"
     assert repr(f) == "Field('(u8, u8)')"
-    # f.parse("0x0304")
-    # assert f.value == (3, 4)
-    # assert f.bit_length == 16
+    f.parse("0x0304")
+    assert f.value == (3, 4)
+    assert f.bit_length == 16

@@ -160,6 +160,10 @@ class Dtype(abc.ABC):
     ...
 
     @abc.abstractmethod
+    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
+        ...
+
+    @abc.abstractmethod
     def __str__(self) -> str:
         ...
 
@@ -298,7 +302,9 @@ class DtypeSingle(Dtype):
     def bit_length(self) -> int | None:
         return self._bit_length
 
-    def calculate_bit_length(self, vars_:  dict[str, Any] | None = None) -> int | None:
+    @override
+    @final
+    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
         if (x := self.bit_length) is not None:
             return x
         bit_length = self._size.evaluate(vars_)
@@ -409,6 +415,8 @@ class DtypeArray(Dtype):
             return self._dtype_single.bit_length * self._items.const_value
         return None
 
+    @override
+    @final
     def calculate_bit_length(self, vars_: dict[str, Any]) -> int | None:
         if (x := self.bit_length) is not None:
             return x
@@ -504,6 +512,13 @@ class DtypeTuple(Dtype):
     @property
     def bit_length(self) -> int:
         return self._bit_length
+
+    @override
+    @final
+    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
+        if (x := self.bit_length) is not None:
+            return x
+        return sum(dtype.calculate_bit_length(vars_) for dtype in self._dtypes)
 
     # TODO: This is defined as not allowed in the base class
     def __len__(self) -> int:
