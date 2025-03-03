@@ -3,10 +3,9 @@ from __future__ import annotations
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour
+from ._common import override, Indenter, Colour, validate_name
 from ._fieldtype import FieldType
 from ._pass import Pass
-from ._options import Options
 
 
 
@@ -18,7 +17,9 @@ class Format(FieldType):
     A sequence of :class:`FieldType` objects, used to group fields together.
 
     """
+    _name: str
     _fields: list[FieldType]
+    _field_names: dict[str, FieldType]
     vars: dict[str, Any]
 
     def __new__(cls, s: str | None = None) -> Self:
@@ -70,8 +71,8 @@ class Format(FieldType):
             except ValueError:
                 pass
             x._fields.append(fieldtype)
-            if (n := fieldtype.get_name()) is not None:
-                x._field_names[n] = fieldtype
+            if (field_name := fieldtype.get_name()) is not None:
+                x._field_names[field_name] = fieldtype
         return x
 
 
@@ -295,3 +296,11 @@ class Format(FieldType):
         if self._fields != other._fields:
             return False
         return True
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, name: str) -> None:
+        self._name = validate_name(name)

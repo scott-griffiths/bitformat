@@ -8,6 +8,7 @@ from ._options import Options
 import os
 from lark import Lark
 from enum import Enum
+import keyword
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
@@ -318,6 +319,17 @@ class Endianness(enum.Enum):
     LITTLE = "le"
     NATIVE = "ne"
     UNSPECIFIED = ""
+
+def validate_name(name: str) -> str:
+    """As names can be used as part of evaluated Expressions we restrict them for safety reasons."""
+    if name != "":
+        if not name.isidentifier():
+            raise ValueError(f"The FieldType name '{name}' is not permitted as it is not a valid Python identifier.")
+        if keyword.iskeyword(name):
+            raise ValueError(f"The FieldType name '{name}' is not permitted as it is a Python keyword.")
+        if "__" in name:
+            raise ValueError(f"The FieldType name '{name}' contains a double underscore which is not permitted.")
+    return name
 
 
 # The byte order of the system, used for the 'native' endianness modifiers ('_ne').

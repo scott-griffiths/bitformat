@@ -3,11 +3,10 @@ from __future__ import annotations
 from bitformat import Bits, DtypeArray
 from ._dtypes import Dtype, DtypeSingle, Register
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeName
+from ._common import override, Indenter, Colour, DtypeName, validate_name
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
-import keyword
 
 __all__ = ["Field"]
 
@@ -201,26 +200,13 @@ class Field(FieldType):
 
     dtype = property(_get_dtype)
 
-    def _get_name(self) -> str:
-        return self._name
-
-    def _set_name(self, val: str) -> None:
-        if val != "":
-            if not val.isidentifier():
-                raise ValueError(f"The FieldType name '{val}' is not permitted as it is not a valid Python identifier.")
-            if keyword.iskeyword(val):
-                raise ValueError(f"The FieldType name '{val}' is not permitted as it is a Python keyword.")
-            if "__" in val:
-                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
-        self._name = val
-
     @property
     def name(self) -> str:
-        return self._get_name()
+        return self._name
 
     @name.setter
-    def name(self, val: str) -> None:
-        self._set_name(val)
+    def name(self, name: str) -> None:
+        self._name = validate_name(name)
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:

@@ -690,3 +690,13 @@ def test_set_values():
     assert f.value == [1, 2, 3, 4]
     f.value = [5, 6, 7, -8]
     assert f.value == [5, 6, 7, -8]
+
+def test_bad_names():
+    f = Format('{}')
+    assert f.name == ''
+    with pytest.raises(ValueError):
+        f.name = 'if'
+    with pytest.raises(ValueError):
+        f.name = '__with_double_underscore'
+    with pytest.raises(AttributeError):
+        f.name = 5
