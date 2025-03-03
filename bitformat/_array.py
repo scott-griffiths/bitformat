@@ -424,7 +424,7 @@ class Array:
                 raise ValueError(f"Can't unpack using an array Dtype with unknown size: '{dtype}'.")
             else:
                 # No length supplied - use the current length instead
-                dtype = DtypeSingle.from_params(dtype.name, self.dtype.size)
+                dtype = DtypeSingle.from_params(dtype.kind, self.dtype.size)
         return [
             dtype.unpack(self._proxy[start : start + dtype.bit_length])
             for start in range(
@@ -798,7 +798,7 @@ class Array:
         if is_float(type1) + is_int(type1) + is_float(type2) + is_int(type2) != 2:
             raise ValueError(f"Only integer and floating point types can be combined - not '{type1}' and '{type2}'.")
         # If same type choose the widest
-        if type1.name == type2.name:
+        if type1.kind == type2.kind:
             return type1 if type1.bit_length > type2.bit_length else type2
         # We choose floats above integers, irrespective of the widths
         if is_float(type1) and is_int(type2):

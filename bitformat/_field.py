@@ -65,8 +65,8 @@ class Field(FieldType):
             x._set_value_no_const_check(value, {})
         # TODO: This is not a nice condition!
         if isinstance(x._dtype, DtypeSingle) and x._dtype.size.has_const_value and x._dtype.size.const_value is None:
-            if x._dtype.name in [DtypeKind.BITS, DtypeKind.BYTES] and x.value is not None:
-                x._dtype = Register().get_single_dtype(x._dtype.name, len(x.value), x._dtype.endianness)
+            if x._dtype.kind in [DtypeKind.BITS, DtypeKind.BYTES] and x.value is not None:
+                x._dtype = Register().get_single_dtype(x._dtype.kind, len(x.value), x._dtype.endianness)
         return x
 
     @override
@@ -143,11 +143,11 @@ class Field(FieldType):
         # TODO: Hacky, needs to be revised for other dtypes.
         if isinstance(self._dtype, DtypeSingle) and self._dtype.size is not None:
             size = self._dtype._size.evaluate(vars_)
-            dtype = DtypeSingle.from_params(self._dtype.name, size, self._dtype.endianness)
+            dtype = DtypeSingle.from_params(self._dtype.kind, size, self._dtype.endianness)
         elif isinstance(self._dtype, DtypeArray):
             size = self._dtype._dtype_single._size.evaluate(vars_)
             items = self._dtype._items.evaluate(vars_)
-            dtype = DtypeArray.from_params(self._dtype._dtype_single.name, size, items, self._dtype.endianness)
+            dtype = DtypeArray.from_params(self._dtype._dtype_single.kind, size, items, self._dtype.endianness)
         else:
             dtype = self._dtype
         if dtype.bit_length is not None and len(b) - startbit < dtype.bit_length:
@@ -232,7 +232,7 @@ class Field(FieldType):
 
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
-        if isinstance(self.dtype, DtypeSingle) and self.dtype.name is DtypeKind.BYTES:
+        if isinstance(self.dtype, DtypeSingle) and self.dtype.kind is DtypeKind.BYTES:
             const_str = ", const=True" if self.const else ""
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
@@ -243,7 +243,7 @@ class Field(FieldType):
             return False
         if self.dtype != other.dtype:
             return False
-        if self.dtype.name is not DtypeKind.PAD and self._bits != other._bits:
+        if self.dtype.kind is not DtypeKind.PAD and self._bits != other._bits:
             return False
         if self.const != other.const:
             return False

@@ -867,7 +867,7 @@ class Bits:
             else:
                 u_str = f"u{length} == {u:_}"
                 i_str = f"i{length} == {i:_}"
-        if length in Register().name_to_def[DtypeKind.FLOAT].allowed_sizes:
+        if length in Register().kind_to_def[DtypeKind.FLOAT].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -1046,7 +1046,7 @@ class Bits:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, (DtypeSingle, DtypeArray)):
-            n = dtype.name
+            n = dtype.kind
             if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
             elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
@@ -1054,7 +1054,7 @@ class Bits:
             align = ">"
             if n is DtypeKind.BIN or n is DtypeKind.OCT or n is DtypeKind.HEX or n is DtypeKind.BITS or n is DtypeKind.BYTES:
                 align = "<"
-            if dtype.name is DtypeKind.BITS:
+            if dtype.kind is DtypeKind.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
                 x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
@@ -1085,7 +1085,7 @@ class Bits:
     def _chars_per_dtype(dtype: Dtype | DtypeTuple, bits_per_group: int):
         """How many characters are needed to represent a number of bits with a given Dtype."""
         if not isinstance(dtype, DtypeTuple):
-            return Register().name_to_def[dtype.name].bitlength2chars_fn(bits_per_group)
+            return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
         chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (len(dtype) - 1)
         return chars
@@ -1161,7 +1161,7 @@ class Bits:
         if bits_per_group == 0:
             has_length_in_fmt = False
             if dtype2 is None:
-                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.name.value, 0)
+                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.kind.value, 0)
                 if bits_per_group == 0:
                     raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
             else:

@@ -11,7 +11,7 @@ class TestBasicFunctionality:
     def test_setting_bool(self):
         b = Dtype("bool")
         assert str(b) == "bool"
-        assert b.name is DtypeKind.BOOL
+        assert b.kind is DtypeKind.BOOL
         assert b.size == 1
         assert b.bit_length == 1
 
@@ -23,7 +23,7 @@ class TestBasicFunctionality:
         d = DtypeSingle.from_params(DtypeKind.UINT, 12)
         assert str(d) == "u12"
         assert d.size == 12
-        assert d.name is DtypeKind.UINT
+        assert d.kind is DtypeKind.UINT
 
     def test_build_errors(self):
         dtype = Dtype.from_string("u8")
@@ -44,7 +44,7 @@ class TestBasicFunctionality:
     def test_immutability(self):
         d = Dtype("f32")
         with pytest.raises(AttributeError):
-            d.name = "uint8"
+            d.kind = "uint8"
 
     def test_building_bits(self):
         d = Dtype("bits3")
@@ -71,11 +71,11 @@ class TestBasicFunctionality:
 class TestChangingTheRegister:
     def test_retrieving_meta_dtype(self):
         r = Register()
-        u = r.name_to_def[DtypeKind("u")]
-        u2 = r.name_to_def[DtypeKind("u")]
+        u = r.kind_to_def[DtypeKind("u")]
+        u2 = r.kind_to_def[DtypeKind("u")]
         assert u == u2
         with pytest.raises(KeyError):
-            i = r.name_to_def["bool"]
+            i = r.kind_to_def["bool"]
 
     # def test_removing_type(self):
     #     del Register()['bool']
@@ -270,7 +270,7 @@ def test_str():
     assert repr(a) == "DtypeSingle('u_le8')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
     nt = DtypeDefinition("pingu", "A new type", Bits._set_u, Bits._get_u)
-    s = "DtypeDefinition(name='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
+    s = "DtypeDefinition(kind='pingu', description='A new type', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s
     assert repr(nt) == s
 
@@ -318,5 +318,5 @@ def test_from_string_methods():
 def test_expression_dtype_single():
     a = Dtype('u{x}')
     assert isinstance(a, DtypeSingle)
-    assert a.name is DtypeKind.UINT
+    assert a.kind is DtypeKind.UINT
     assert str(a) == 'u{x}'

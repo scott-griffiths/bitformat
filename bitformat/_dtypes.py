@@ -44,10 +44,10 @@ class DtypeTransformer(Transformer):
 
     def dtype_single(self, items) -> DtypeSingle:
         assert len(items) == 3
-        name = items[0]
+        kind = items[0]
         endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
         size = items[2]
-        return DtypeSingle.from_params(name, size, endianness)
+        return DtypeSingle.from_params(kind, size, endianness)
 
     def dtype_items(self, items) -> int:
         return items[0]
@@ -56,7 +56,7 @@ class DtypeTransformer(Transformer):
         assert len(items) == 2
         dtype = items[0]
         items_count = items[1]
-        return DtypeArray.from_params(dtype.name, dtype.size, items_count, dtype.endianness)
+        return DtypeArray.from_params(dtype.kind, dtype.size, items_count, dtype.endianness)
 
     def dtype_tuple(self, items) -> DtypeTuple:
         return DtypeTuple.from_params(items)
@@ -173,15 +173,15 @@ class Dtype(abc.ABC):
 
 class DtypeSingle(Dtype):
 
-    _name: DtypeKind
+    _kind: DtypeKind
     _size: Expression
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
 
     @property
-    def name(self) -> DtypeKind:
-        return self._definition.name
+    def kind(self) -> DtypeKind:
+        return self._definition.kind
 
     @property
     def endianness(self) -> Endianness:
@@ -234,9 +234,9 @@ class DtypeSingle(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeKind, size: int | Expression | None = None,
+    def from_params(cls, kind: DtypeKind, size: int | Expression | None = None,
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
-        """Create a new Dtype from its name and size.
+        """Create a new Dtype from its kind and size.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
         this builder will be more efficient and is used internally to avoid string parsing.
@@ -246,7 +246,7 @@ class DtypeSingle(Dtype):
             size = Expression.from_none()
         elif isinstance(size, int):
             size = Expression.from_int(size)
-        x = Register().get_single_dtype(name, size, endianness)
+        x = Register().get_single_dtype(kind, size, endianness)
         return x
 
     @override
@@ -277,7 +277,7 @@ class DtypeSingle(Dtype):
         hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self._endianness is Endianness.UNSPECIFIED else "_" + self._endianness.value
-        return f"{colour.dtype}{self._definition.name}{endianness}{size_str}{colour.off}"
+        return f"{colour.dtype}{self._definition.kind}{endianness}{size_str}{colour.off}"
 
     @override
     @final
@@ -285,7 +285,7 @@ class DtypeSingle(Dtype):
         if isinstance(other, str):
             other = Dtype.from_string(other)
         if isinstance(other, DtypeSingle):
-            return (self._definition.name == other._definition.name
+            return (self._definition.kind == other._definition.kind
                     and self._size == other._size
                     and self._endianness is other._endianness)
         return False
@@ -293,7 +293,7 @@ class DtypeSingle(Dtype):
     # TODO: move to base class as requirement?
     def __hash__(self) -> int:
         return hash(
-            (self._definition.name, self._size)
+            (self._definition.kind, self._size)
         )
 
     @override
@@ -314,7 +314,7 @@ class DtypeSingle(Dtype):
     def size(self) -> int | Expression | None:
         """The size of the data type.
 
-        This is the number used immediately after the data type name in a dtype string.
+        This is the number used immediately after the data type kind in a dtype string.
         For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
         though they have bitlengths of 10, 40 and 30 respectively.
 
@@ -330,8 +330,8 @@ class DtypeArray(Dtype):
     _items: Expression
 
     @property
-    def name(self) -> DtypeKind:
-        return self._dtype_single.name
+    def kind(self) -> DtypeKind:
+        return self._dtype_single.kind
 
     @property
     def endianness(self) -> Endianness:
@@ -349,15 +349,15 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeKind, size: Expression, items: Expression = Expression.from_none(),
+    def from_params(cls, kind: DtypeKind, size: Expression, items: Expression = Expression.from_none(),
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
-        """Create a new Dtype from its name, size and items.
+        """Create a new Dtype from its kind, size and items.
 
         It's usually clearer to use the Dtype constructor directly with a dtype str, but
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        return Register().get_array_dtype(name, size, items, endianness)
+        return Register().get_array_dtype(kind, size, items, endianness)
 
     @override
     @final
@@ -430,7 +430,7 @@ class DtypeArray(Dtype):
     def size(self) -> int:
         """The size of the data type.
 
-        This is the number used immediately after the data type name in a dtype string.
+        This is the number used immediately after the data type kind in a dtype string.
         For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
         though they have bitlengths of 10, 40 and 30 respectively.
 
@@ -502,7 +502,7 @@ class DtypeTuple(Dtype):
         vals = []
         pos = 0
         for dtype in self:
-            if dtype.name != DtypeKind.PAD:
+            if dtype.kind != DtypeKind.PAD:
                 vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
             pos += dtype.bit_length
         return tuple(vals)
@@ -582,11 +582,11 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(self, name: DtypeKind, description: str, set_fn: Callable, get_fn: Callable,
+    def __init__(self, kind: DtypeKind, description: str, set_fn: Callable, get_fn: Callable,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
                  endianness_variants: bool = False):
-        self.name = name
+        self.kind = kind
         self.description = description
         self.return_type = return_type
         self.is_signed = is_signed
@@ -600,9 +600,9 @@ class DtypeDefinition:
             def allowed_size_checked_get_fn(bs):
                 if len(bs) not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
-                        raise ValueError(f"'{self.name}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {len(bs)}.")
+                        raise ValueError(f"'{self.kind}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {len(bs)}.")
                     else:
-                        raise ValueError(f"'{self.name}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
+                        raise ValueError(f"'{self.kind}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
                 return get_fn(bs)
 
             self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
@@ -627,16 +627,16 @@ class DtypeDefinition:
             else:
                 if size.const_value not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
-                        raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype, but its "
+                        raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype, but its "
                                          f"only allowed size is {self.allowed_sizes.values[0]}.")
                     else:
-                        raise ValueError(f"A size of {size} was supplied for the '{self.name}' dtype which "
+                        raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype which "
                                          f"is not one of its possible sizes. Must be one of {self.allowed_sizes}.")
         if endianness is not Endianness.UNSPECIFIED:
             if not self.endianness_variants:
-                raise ValueError(f"The '{self.name}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
+                raise ValueError(f"The '{self.kind}' dtype does not support endianness variants, but '{endianness.value}' was specified.")
             if size.evaluate() is not None and size.evaluate() % 8 != 0:
-                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.name}' has a size of {size} bits.")
+                raise ValueError(f"Endianness can only be specified for whole-byte dtypes, but '{self.kind}' has a size of {size} bits.")
         return size, endianness
 
     def get_single_dtype(self, size: Expression, endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
@@ -653,7 +653,7 @@ class DtypeDefinition:
         return d
 
     def __repr__(self) -> str:
-        s = [f"{self.__class__.__name__}(name='{self.name}'",
+        s = [f"{self.__class__.__name__}(kind='{self.kind}'",
              f"description='{self.description}'",
              f"return_type={self.return_type.__name__}",
              f"is_signed={self.is_signed}",
@@ -675,7 +675,7 @@ class Register:
     """
 
     _instance: Register | None = None
-    name_to_def: dict[DtypeKind, DtypeDefinition] = {}
+    kind_to_def: dict[DtypeKind, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
         # Singleton. Only one Register instance can ever exist.
@@ -685,9 +685,9 @@ class Register:
 
     @classmethod
     def add_dtype(cls, definition: DtypeDefinition):
-        name = definition.name
-        cls.name_to_def[name] = definition
-        setattr(bitformat.Bits, name.value, property(fget=definition.get_fn,
+        kind = definition.kind
+        cls.kind_to_def[kind] = definition
+        setattr(bitformat.Bits, kind.value, property(fget=definition.get_fn,
                                                      doc=f"The Bits as {definition.description}. Read only."))
         if definition.endianness_variants:
 
@@ -707,13 +707,13 @@ class Register:
                                          ("_be", fget_be, f"big-endian"),
                                          ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
                 doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
-                setattr(bitformat.Bits, name.value + modifier, property(fget=fget, doc=doc))
+                setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_single_dtype(cls, name: DtypeKind, size: Expression | int | None,
+    def get_single_dtype(cls, kind: DtypeKind, size: Expression | int | None,
                          endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
-        definition = cls.name_to_def[name]
+        definition = cls.kind_to_def[kind]
         if size is None:
             size = Expression.from_none()
         elif isinstance(size, int):
@@ -722,9 +722,9 @@ class Register:
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: DtypeKind, size: Expression | int | None, items: Expression | int | None,
+    def get_array_dtype(cls, kind: DtypeKind, size: Expression | int | None, items: Expression | int | None,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
-        definition = cls.name_to_def[name]
+        definition = cls.kind_to_def[kind]
         if size is None:
             size = Expression.from_none()
         elif isinstance(size, int):
@@ -737,14 +737,14 @@ class Register:
 
     def __repr__(self) -> str:
         s = [
-            f"{'key':<12}:{'name':^12}{'signed':^8}{'allowed_lengths':^16}{'bits_per_character':^12}{'return_type':<13}"
+            f"{'key':<12}:{'kind':^12}{'signed':^8}{'allowed_lengths':^16}{'bits_per_character':^12}{'return_type':<13}"
         ]
         s.append("-" * 72)
-        for key in self.name_to_def:
-            m = self.name_to_def[key]
+        for key in self.kind_to_def:
+            m = self.kind_to_def[key]
             allowed = "" if not m.allowed_sizes else m.allowed_sizes
             ret = "None" if m.return_type is None else m.return_type.__name__
             s.append(
-                f"{key:<12}:{m.name:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}"
+                f"{key:<12}:{m.kind:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}"
             )
         return "\n".join(s)

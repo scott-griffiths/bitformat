@@ -84,7 +84,7 @@ class TestCreation:
             f = Field.from_bits(b, "hello")
             assert f.value == b
             assert f.name == "hello"
-            assert f.dtype.name is DtypeKind.BITS
+            assert f.dtype.kind is DtypeKind.BITS
             assert f.dtype.bit_length == len(b)
 
     def test_string_creation_with_const(self):

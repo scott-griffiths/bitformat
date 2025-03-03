@@ -121,7 +121,7 @@ class TestSuite:
                 extra = ""
             else:
                 extra = f"({1/pair.ratio:.2f}⨉ slower)"
-            print(f'{pair.name}: {pair.ratio:.2f}⨉ faster {extra}')
+            print(f'{pair.kind}: {pair.ratio:.2f}⨉ faster {extra}')
         # For ratios we use a geometric mean
         average = math.prod(r.ratio for r in self.pairs) ** (1 / len(self.pairs))
         print(f"AVERAGE: {average:.2f}⨉ faster")
