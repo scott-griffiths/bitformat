@@ -2,14 +2,14 @@ import keyword
 
 import pytest
 from bitformat import Dtype, Bits, Field, DtypeSingle, Expression, DtypeArray, DtypeTuple
-from bitformat._common import DtypeName
+from bitformat._common import DtypeKind
 from hypothesis import given, assume
 import hypothesis.strategies as st
 
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        d = DtypeSingle.from_params(DtypeName.BYTES, 2)
+        d = DtypeSingle.from_params(DtypeKind.BYTES, 2)
         assert d.size == 2
         assert d.bit_length == 16
 
@@ -54,11 +54,11 @@ class TestCreation:
 
     def test_creation_from_strings(self):
         f = Field.from_string(" flag_12 : bool")
-        assert f.dtype == DtypeSingle.from_params(DtypeName.BOOL)
+        assert f.dtype == DtypeSingle.from_params(DtypeKind.BOOL)
         assert f.name == "flag_12"
         assert f.value is None
         f = Field.from_string("const u3 = 3")
-        assert f.dtype == DtypeSingle.from_params(DtypeName.UINT, 3)
+        assert f.dtype == DtypeSingle.from_params(DtypeKind.UINT, 3)
         assert f.value == 3
         assert f.name == ""
         assert f.to_bits() == "0b011"
@@ -68,13 +68,13 @@ class TestCreation:
         f = Field.from_params("bytes", name="hello", value=b)
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype == DtypeSingle.from_params(DtypeName.BYTES, size=len(b))
+        assert f.dtype == DtypeSingle.from_params(DtypeKind.BYTES, size=len(b))
         assert f.dtype.bit_length == len(b) * 8
 
         f = Field.from_bytes(b, name="hello")
         assert f.value == b
         assert f.name == "hello"
-        assert f.dtype == DtypeSingle.from_params(DtypeName.BYTES, size=len(b))
+        assert f.dtype == DtypeSingle.from_params(DtypeKind.BYTES, size=len(b))
         assert f.dtype.bit_length == len(b) * 8
 
     @given(st.binary())
@@ -84,7 +84,7 @@ class TestCreation:
             f = Field.from_bits(b, "hello")
             assert f.value == b
             assert f.name == "hello"
-            assert f.dtype.name is DtypeName.BITS
+            assert f.dtype.name is DtypeKind.BITS
             assert f.dtype.bit_length == len(b)
 
     def test_string_creation_with_const(self):
@@ -151,7 +151,7 @@ def test_field_str():
 def test_field_array():
     f = Field.from_string("[u8; 3]")
     assert f.dtype == Dtype.from_string("[u8; 3]")
-    assert f.dtype == DtypeArray.from_params(DtypeName.UINT, 8, 3)
+    assert f.dtype == DtypeArray.from_params(DtypeKind.UINT, 8, 3)
     f.pack([1, 2, 3])
     b = f.to_bits()
     assert b == "0x010203"
@@ -204,7 +204,7 @@ def test_const_equality():
 
 
 def test_size_expression():
-    f = Field.from_params(DtypeSingle.from_params(DtypeName.UINT, size=Expression('{5}')))
+    f = Field.from_params(DtypeSingle.from_params(DtypeKind.UINT, size=Expression('{5}')))
     s = Dtype("u{5}")
     assert f.dtype == s
     assert str(f) == "u5"

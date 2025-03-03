@@ -2,7 +2,7 @@ import pytest
 import sys
 from bitformat import Dtype, Bits, Endianness, DtypeTuple, DtypeSingle, DtypeArray
 from bitformat._dtypes import DtypeDefinition, Register
-from bitformat._common import DtypeName, Expression
+from bitformat._common import DtypeKind, Expression
 
 sys.path.insert(0, "..")
 
@@ -11,7 +11,7 @@ class TestBasicFunctionality:
     def test_setting_bool(self):
         b = Dtype("bool")
         assert str(b) == "bool"
-        assert b.name is DtypeName.BOOL
+        assert b.name is DtypeKind.BOOL
         assert b.size == 1
         assert b.bit_length == 1
 
@@ -20,10 +20,10 @@ class TestBasicFunctionality:
         # self.assertTrue(b is b2)
 
     def test_setting_with_length(self):
-        d = DtypeSingle.from_params(DtypeName.UINT, 12)
+        d = DtypeSingle.from_params(DtypeKind.UINT, 12)
         assert str(d) == "u12"
         assert d.size == 12
-        assert d.name is DtypeName.UINT
+        assert d.name is DtypeKind.UINT
 
     def test_build_errors(self):
         dtype = Dtype.from_string("u8")
@@ -71,8 +71,8 @@ class TestBasicFunctionality:
 class TestChangingTheRegister:
     def test_retrieving_meta_dtype(self):
         r = Register()
-        u = r.name_to_def[DtypeName("u")]
-        u2 = r.name_to_def[DtypeName("u")]
+        u = r.name_to_def[DtypeKind("u")]
+        u2 = r.name_to_def[DtypeKind("u")]
         assert u == u2
         with pytest.raises(KeyError):
             i = r.name_to_def["bool"]
@@ -173,9 +173,9 @@ def test_len_errors():
 
 
 def test_endianness():
-    d_le = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.LITTLE)
-    d_be = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.BIG)
-    d_ne = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.NATIVE)
+    d_le = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.LITTLE)
+    d_be = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.BIG)
+    d_ne = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.NATIVE)
 
     be = d_be.pack(0x1234)
     le = d_le.pack(0x1234)
@@ -188,9 +188,9 @@ def test_endianness():
 
 
 def test_endianness_type_str():
-    d_le = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.LITTLE)
-    d_be = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.BIG)
-    d_ne = DtypeSingle.from_params(DtypeName.UINT, 16, endianness=Endianness.NATIVE)
+    d_le = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.LITTLE)
+    d_be = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.BIG)
+    d_ne = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.NATIVE)
 
     d_le2 = Dtype("u_le16")
     d_be2 = Dtype("u_be16")
@@ -203,11 +203,11 @@ def test_endianness_type_str():
 
 def test_endianness_errors():
     with pytest.raises(ValueError):
-        _ = DtypeSingle.from_params(DtypeName.UINT, 15, endianness=Endianness.BIG)
+        _ = DtypeSingle.from_params(DtypeKind.UINT, 15, endianness=Endianness.BIG)
     with pytest.raises(ValueError):
-        _ = DtypeSingle.from_params(DtypeName.BOOL, endianness=Endianness.LITTLE)
+        _ = DtypeSingle.from_params(DtypeKind.BOOL, endianness=Endianness.LITTLE)
     with pytest.raises(ValueError):
-        _ = DtypeSingle.from_params(DtypeName.BYTES, 16, endianness=Endianness.LITTLE)
+        _ = DtypeSingle.from_params(DtypeKind.BYTES, 16, endianness=Endianness.LITTLE)
 
 
 def test_dtype_tuple_packing():
@@ -318,5 +318,5 @@ def test_from_string_methods():
 def test_expression_dtype_single():
     a = Dtype('u{x}')
     assert isinstance(a, DtypeSingle)
-    assert a.name is DtypeName.UINT
+    assert a.name is DtypeKind.UINT
     assert str(a) == 'u{x}'

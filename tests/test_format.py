@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeName
+from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -37,7 +37,7 @@ class TestCreation:
         f2 = Format("{x: f16,}") # With comma
         assert f1 == f2
         assert f1[0].name == "x"
-        assert f1[0].dtype == DtypeSingle.from_params(DtypeName.FLOAT, 16)
+        assert f1[0].dtype == DtypeSingle.from_params(DtypeKind.FLOAT, 16)
 
     @given(name=st.sampled_from(["f16", "u12", "bool", "f64"]))
     def test_building_field(self, name):

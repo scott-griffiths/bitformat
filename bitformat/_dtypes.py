@@ -6,7 +6,7 @@ from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
 from ._options import Options
-from ._common import Expression, Endianness, byteorder, DtypeName, override, final, parser_str, Colour, ExpressionError
+from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, Colour, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
 
@@ -33,8 +33,8 @@ class DtypeTransformer(Transformer):
         x = Expression('{' + items[0] + '}')
         return x
 
-    def dtype_name(self, items) -> DtypeName:
-        return DtypeName(items[0])
+    def dtype_name(self, items) -> DtypeKind:
+        return DtypeKind(items[0])
 
     def dtype_modifier(self, items) -> Endianness:
         return Endianness(items[0])
@@ -173,14 +173,14 @@ class Dtype(abc.ABC):
 
 class DtypeSingle(Dtype):
 
-    _name: DtypeName
+    _name: DtypeKind
     _size: Expression
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
 
     @property
-    def name(self) -> DtypeName:
+    def name(self) -> DtypeKind:
         return self._definition.name
 
     @property
@@ -234,7 +234,7 @@ class DtypeSingle(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeName, size: int | Expression | None = None,
+    def from_params(cls, name: DtypeKind, size: int | Expression | None = None,
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name and size.
 
@@ -330,7 +330,7 @@ class DtypeArray(Dtype):
     _items: Expression
 
     @property
-    def name(self) -> DtypeName:
+    def name(self) -> DtypeKind:
         return self._dtype_single.name
 
     @property
@@ -349,7 +349,7 @@ class DtypeArray(Dtype):
     @classmethod
     @override
     @final
-    def from_params(cls, name: DtypeName, size: Expression, items: Expression = Expression.from_none(),
+    def from_params(cls, name: DtypeKind, size: Expression, items: Expression = Expression.from_none(),
                     endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         """Create a new Dtype from its name, size and items.
 
@@ -502,7 +502,7 @@ class DtypeTuple(Dtype):
         vals = []
         pos = 0
         for dtype in self:
-            if dtype.name != DtypeName.PAD:
+            if dtype.name != DtypeKind.PAD:
                 vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
             pos += dtype.bit_length
         return tuple(vals)
@@ -582,7 +582,7 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(self, name: DtypeName, description: str, set_fn: Callable, get_fn: Callable,
+    def __init__(self, name: DtypeKind, description: str, set_fn: Callable, get_fn: Callable,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
                  endianness_variants: bool = False):
@@ -675,7 +675,7 @@ class Register:
     """
 
     _instance: Register | None = None
-    name_to_def: dict[DtypeName, DtypeDefinition] = {}
+    name_to_def: dict[DtypeKind, DtypeDefinition] = {}
 
     def __new__(cls) -> Register:
         # Singleton. Only one Register instance can ever exist.
@@ -711,7 +711,7 @@ class Register:
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_single_dtype(cls, name: DtypeName, size: Expression | int | None,
+    def get_single_dtype(cls, name: DtypeKind, size: Expression | int | None,
                          endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         definition = cls.name_to_def[name]
         if size is None:
@@ -722,7 +722,7 @@ class Register:
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
-    def get_array_dtype(cls, name: DtypeName, size: Expression | int | None, items: Expression | int | None,
+    def get_array_dtype(cls, name: DtypeKind, size: Expression | int | None, items: Expression | int | None,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         definition = cls.name_to_def[name]
         if size is None:

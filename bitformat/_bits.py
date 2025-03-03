@@ -10,7 +10,7 @@ from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
-from bitformat._common import Colour, DtypeName
+from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
 from bitformat.bit_rust import BitRust
 
@@ -307,7 +307,7 @@ class Bits:
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
-        x = Bits.from_dtype(DtypeSingle.from_params(DtypeName.UINT, n), value)
+        x = Bits.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
         return x
 
     # ----- Instance Methods -----
@@ -569,9 +569,9 @@ class Bits:
         if dtype1 is None and dtype2 is not None:
             dtype1, dtype2 = dtype2, dtype1
         if dtype1 is None:
-            dtype1 = DtypeSingle.from_params(DtypeName.BIN)
+            dtype1 = DtypeSingle.from_params(DtypeKind.BIN)
             if len(self) % 8 == 0 and len(self) >= 8:
-                dtype2 = DtypeSingle.from_params(DtypeName.HEX)
+                dtype2 = DtypeSingle.from_params(DtypeKind.HEX)
         if isinstance(dtype1, str):
             dtype1 = Dtype.from_string(dtype1)
         if isinstance(dtype2, str):
@@ -867,7 +867,7 @@ class Bits:
             else:
                 u_str = f"u{length} == {u:_}"
                 i_str = f"i{length} == {i:_}"
-        if length in Register().name_to_def[DtypeName.FLOAT].allowed_sizes:
+        if length in Register().name_to_def[DtypeKind.FLOAT].allowed_sizes:
             f_str = f'f{length} == {self.unpack("f")}'
         return [hex_str, bin_str, u_str, i_str, f_str]
 
@@ -1047,14 +1047,14 @@ class Bits:
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
         if isinstance(dtype, (DtypeSingle, DtypeArray)):
             n = dtype.name
-            if n is DtypeName.BYTES:  # Special case for bytes to print one character each.
+            if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
                 get_fn = Bits._get_bytes_printable
-            elif n is DtypeName.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-                get_fn = Register().get_single_dtype(DtypeName.UINT, bits_per_group).unpack
+            elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+                get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
             align = ">"
-            if n is DtypeName.BIN or n is DtypeName.OCT or n is DtypeName.HEX or n is DtypeName.BITS or n is DtypeName.BYTES:
+            if n is DtypeKind.BIN or n is DtypeKind.OCT or n is DtypeKind.HEX or n is DtypeKind.BITS or n is DtypeKind.BYTES:
                 align = "<"
-            if dtype.name is DtypeName.BITS:
+            if dtype.name is DtypeKind.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
             else:
                 x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))

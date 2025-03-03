@@ -7,7 +7,7 @@ from typing import Union, Iterable, Any, overload, TextIO
 from bitformat._bits import Bits, BitsType
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle, DtypeArray
 from bitformat._options import Options
-from bitformat._common import Colour, DtypeName
+from bitformat._common import Colour, DtypeKind
 import operator
 import sys
 from bitformat.bit_rust import BitRust
@@ -751,7 +751,7 @@ class Array:
                 msg += " Use equals() method to compare Arrays for a single boolean result."
             raise ValueError(msg)
         if is_comparison:
-            new_type = Register().get_single_dtype(DtypeName.BOOL, 1)
+            new_type = Register().get_single_dtype(DtypeKind.BOOL, 1)
         else:
             new_type = self._promote_type(self._dtype, other._dtype)
         new_array = self.__class__(new_type)

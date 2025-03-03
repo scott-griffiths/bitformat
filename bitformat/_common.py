@@ -23,7 +23,7 @@ else:
         return f
 
 
-class DtypeName(Enum):
+class DtypeKind(Enum):
     UINT = 'u'  # unsigned int
     INT = 'i'  # signed int
     BIN = 'bin'  # binary string

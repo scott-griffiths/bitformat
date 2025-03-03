@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from bitformat import Format, DtypeSingle, DtypeArray, Bits, Field, Register
-from bitformat._common import DtypeName
+from bitformat._common import DtypeKind
 from hypothesis import given, settings
 import hypothesis.strategies as st
 import math
@@ -47,7 +47,7 @@ def test_field_consistency(dtype_name, length, const, int_value):
         f2.value = v
     else:
         f2.clear()
-    if dtype_name is not DtypeName.PAD and not (isinstance(v, float) and math.isnan(v)):
+    if dtype_name is not DtypeKind.PAD and not (isinstance(v, float) and math.isnan(v)):
         assert f.to_bits() == f2.to_bits()
         f.const = const
         f3 = eval(repr(f))
@@ -74,7 +74,7 @@ def test_field_array_consistency(dtype_name, length, int_value, items):
     b = Bits.from_dtype("u320", int_value)[0: length * items]
     f.parse(b)
     assert f.to_bits() == b
-    if not isinstance(f.value[0], float) and f.dtype.name is not DtypeName.PAD:
+    if not isinstance(f.value[0], float) and f.dtype.name is not DtypeKind.PAD:
         # Can't compare NaN or pad
         f2.pack(f.value)
         assert f.to_bits() == f2.to_bits()
