@@ -10,7 +10,6 @@ def test_pass_creation():
     assert p.to_bytes() == b""
     with pytest.raises(ValueError):
         _ = p.value
-    assert p.name == ""
 
 
 def test_singleton():

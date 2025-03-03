@@ -7,7 +7,6 @@ from ._dtypes import DtypeTransformer
 from ._bits import BitsType
 from ._common import final, Indenter, field_parser
 from typing import Any, Sequence, TextIO
-import keyword
 from ._options import Options
 from lark import UnexpectedInput
 import lark
@@ -62,10 +61,6 @@ field_type_transformer = FieldTypeTransformer()
 
 
 class FieldType(abc.ABC):
-    def __new__(cls, *args, **kwargs) -> FieldType:
-        x = super().__new__(cls)
-        x._name = ""
-        return x
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -141,6 +136,20 @@ class FieldType(abc.ABC):
         """
         return self._repr()
 
+    def get_name(self) -> str | None:
+        """
+        Returns the name of the FieldType, if it has one.
+
+        ``Field``s and ``Format``s will always have a name (even if it is an empty string).
+        Other types, such as ``Pass`` and ``If``, will not, and this method will return None.
+
+        :return: The name of the FieldType, or None if it has no name.
+        :rtype: str or None
+        """
+        if hasattr(self, 'name'):
+            return self.name
+        return None
+
     def is_stretchy(self) -> bool:
         """
         Return True if the field is stretchy, False otherwise.
@@ -169,7 +178,6 @@ class FieldType(abc.ABC):
         stream.write("\n")
 
     @classmethod
-    @final
     def from_string(cls, s: str) -> FieldType:
         """
         Create a FieldType instance from a string.
@@ -281,19 +289,6 @@ class FieldType(abc.ABC):
     def __copy__(self) -> FieldType:
         return self._copy()
 
-    def _get_name(self) -> str:
-        return self._name
-
-    def _set_name(self, val: str) -> None:
-        if val != "":
-            if not val.isidentifier():
-                raise ValueError(f"The FieldType name '{val}' is not permitted as it is not a valid Python identifier.")
-            if keyword.iskeyword(val):
-                raise ValueError(f"The FieldType name '{val}' is not permitted as it is a Python keyword.")
-            if "__" in val:
-                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
-        self._name = val
-
     @property
     def value(self) -> Any:
         return self._get_value()
@@ -302,11 +297,4 @@ class FieldType(abc.ABC):
     def value(self, val: Any) -> None:
         self._set_value_with_kwargs(val, {})
 
-    @property
-    def name(self) -> str:
-        return self._get_name()
-
-    @name.setter
-    def name(self, val: str) -> None:
-        self._set_name(val)
 

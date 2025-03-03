@@ -4,7 +4,7 @@ from typing import Any
 
 from bitformat._bits import Bits
 from bitformat._fieldtype import FieldType
-from bitformat._dtypes import Dtype, DtypeSingle, DtypeTuple
+from bitformat._dtypes import Dtype, DtypeSingle
 from bitformat._common import DtypeName
 
 
@@ -73,9 +73,7 @@ class Reader:
     def pos(self, value: int) -> None:
         self._pos = int(value)
 
-    def read(
-        self, dtype: Dtype | str | int, /
-    ) -> Any | tuple[Any] | list[Any | tuple[Any]]:
+    def read(self, dtype: Dtype | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
         """Read from the current bit position, and interpret according to the given dtype."""
         if isinstance(dtype, int):
             dtype = DtypeSingle.from_params(DtypeName.BITS, dtype)
@@ -101,9 +99,7 @@ class Reader:
         try:
             bits_parsed = f.parse(self._bits[self._pos :])
         except AttributeError:
-            raise TypeError(
-                f"parse() requires a FieldType. Got {f!r} of type {type(f)}."
-            )
+            raise TypeError(f"parse() requires a FieldType. Got {f!r} of type {type(f)}.")
         self._pos += bits_parsed
         return bits_parsed
 

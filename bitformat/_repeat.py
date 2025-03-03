@@ -69,12 +69,7 @@ class Repeat(FieldType):
         return self.bit_length
 
     @override
-    def _pack(
-        self,
-        value: Sequence[Any],
-        vars_: dict[str, Any],
-        kwargs: dict[str, Any],
-    ) -> None:
+    def _pack(self, value: Sequence[Any], vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
         bits_list = []
         for i in range(self.count):
             self.field._pack(value[i], vars_, kwargs)
@@ -99,9 +94,7 @@ class Repeat(FieldType):
             return None
         values = []
         for i in range(self.count):
-            value = self.field.unpack(
-                self._bits[i * self.field.bit_length : (i + 1) * self.field.bit_length]
-            )
+            value = self.field.unpack(self._bits[i * self.field.bit_length : (i + 1) * self.field.bit_length])
             values.append(value)
         return values
 

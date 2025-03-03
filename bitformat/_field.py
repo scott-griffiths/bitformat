@@ -7,14 +7,16 @@ from ._common import override, Indenter, Colour, DtypeName
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
+import keyword
 
 __all__ = ["Field"]
 
 
 class Field(FieldType):
-    const: bool
+    const: bool  # TODO: Needs to be a property. Can't in general set to True.
     _bits: Bits | None
     _dtype: Dtype
+    _name: str
 
     def __new__(cls, s: str) -> Field:
         return cls.from_string(s)
@@ -198,6 +200,27 @@ class Field(FieldType):
         return self._dtype
 
     dtype = property(_get_dtype)
+
+    def _get_name(self) -> str:
+        return self._name
+
+    def _set_name(self, val: str) -> None:
+        if val != "":
+            if not val.isidentifier():
+                raise ValueError(f"The FieldType name '{val}' is not permitted as it is not a valid Python identifier.")
+            if keyword.iskeyword(val):
+                raise ValueError(f"The FieldType name '{val}' is not permitted as it is a Python keyword.")
+            if "__" in val:
+                raise ValueError(f"The FieldType name '{val}' contains a double underscore which is not permitted.")
+        self._name = val
+
+    @property
+    def name(self) -> str:
+        return self._get_name()
+
+    @name.setter
+    def name(self, val: str) -> None:
+        self._set_name(val)
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:

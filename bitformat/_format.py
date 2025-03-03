@@ -70,8 +70,8 @@ class Format(FieldType):
             except ValueError:
                 pass
             x._fields.append(fieldtype)
-            if fieldtype.name != "":
-                x._field_names[fieldtype.name] = fieldtype
+            if (n := fieldtype.get_name()) is not None:
+                x._field_names[n] = fieldtype
         return x
 
 

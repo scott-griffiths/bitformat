@@ -40,10 +40,8 @@ class Options:
         if hasattr(self, name):
             super().__setattr__(name, value)
         else:
-            raise AttributeError(
-                f"Cannot add new attribute '{name}' to Options. "
-                f"Only existing attributes can be modified:\n{self!r}"
-            )
+            raise AttributeError(f"Cannot add new attribute '{name}' to Options. "
+                                 f"Only existing attributes can be modified:\n{self!r}")
 
     def __repr__(self) -> str:
         attributes = {

@@ -42,12 +42,7 @@ class Pass(FieldType):
         return 0
 
     @override
-    def _pack(
-        self,
-        value: Any,
-        vars_: dict[str, Any],
-        kwargs: dict[str, Any],
-    ) -> None:
+    def _pack(self, value: Any, vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
         pass
 
     @override

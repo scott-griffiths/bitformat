@@ -34,7 +34,7 @@ def test_simple_parse():
 
 
 def test_explicit_pass():
-    f = If.from_params("{x > 0}", "", "bool = True")
+    f = If.from_params("{x > 0}", "Pass", "bool = True")
     f.parse(x=2)
     assert f.bit_length == 0
     f.parse("0b1", x=-1)
