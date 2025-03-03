@@ -68,12 +68,12 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + unpack()
         }
         class DtypeSingle {
-            + DtypeName name
+            + DtypeKind kind
             + Endianness endianness
             + int size
         }
         class DtypeArray {
-            + DtypeName name
+            + DtypeKind kind
             + Endianness endianness
             + int size
             + int items

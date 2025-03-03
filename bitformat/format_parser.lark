@@ -1,7 +1,7 @@
 start: field_type
 
-// This should reflect the DtypeName enum.
-dtype_name: /u|i|f|bool|bytes|hex|bin|oct|bits|pad/
+// This should reflect the DtypeKind enum.
+dtype_kind: /u|i|f|bool|bytes|hex|bin|oct|bits|pad/
 
 // Endian modifiers for dtypes
 dtype_modifier: /le|be|ne/
@@ -12,7 +12,7 @@ expression: "{" /[^\}]+/ "}"
 dtype_size: INT | expression
 dtype_items: INT | expression
 
-dtype_single: dtype_name ["_" dtype_modifier] [dtype_size]
+dtype_single: dtype_kind ["_" dtype_modifier] [dtype_size]
 dtype_array: "[" dtype_single ";" [dtype_items] "]"
 dtype_tuple: "(" dtype ("," dtype)* [","] ")"
 

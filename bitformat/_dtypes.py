@@ -33,7 +33,7 @@ class DtypeTransformer(Transformer):
         x = Expression('{' + items[0] + '}')
         return x
 
-    def dtype_name(self, items) -> DtypeKind:
+    def dtype_kind(self, items) -> DtypeKind:
         return DtypeKind(items[0])
 
     def dtype_modifier(self, items) -> Endianness:

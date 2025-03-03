@@ -82,22 +82,22 @@ def test_field_array_consistency(dtype_kind, length, int_value, items):
 
 
 @given(
-    dtype_names=st.lists(
+    dtype_kinds=st.lists(
         st.sampled_from(sorted(Register().kind_to_def.keys(), key=lambda x: x.value)), min_size=5, max_size=5
     ),
     lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5),
 )
-def test_format_consistency(dtype_names, lengths):
+def test_format_consistency(dtype_kinds, lengths):
     bits_per_characters = [
-        Register().kind_to_def[dtype_name].bits_per_character
-        for dtype_name in dtype_names
+        Register().kind_to_def[dtype_kind].bits_per_character
+        for dtype_kind in dtype_kinds
     ]
     bits_per_characters = [b if b is not None else 1 for b in bits_per_characters]
     als = []
     for al, length in zip(
         [
-            Register().kind_to_def[dtype_name].allowed_sizes
-            for dtype_name in dtype_names
+            Register().kind_to_def[dtype_kinds].allowed_sizes
+            for dtype_kinds in dtype_kinds
         ],
         lengths,
     ):
@@ -109,11 +109,11 @@ def test_format_consistency(dtype_names, lengths):
         else:
             als.append(length)
 
-    zipped = list(zip(dtype_names, als, bits_per_characters))
+    zipped = list(zip(dtype_kinds, als, bits_per_characters))
     for i in range(6):
         dtypes = [
-            DtypeSingle.from_params(dtype_name, length * bits_per_character)
-            for dtype_name, length, bits_per_character in zipped[:i]
+            DtypeSingle.from_params(dtype_kind, length * bits_per_character)
+            for dtype_kind, length, bits_per_character in zipped[:i]
         ]
         f = Format.from_params([Field.from_params(dtype) for dtype in dtypes])
         f2 = f

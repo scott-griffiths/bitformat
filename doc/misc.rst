@@ -8,7 +8,7 @@ A collection of items that don't fit into any other category.
 
 ----
 
-.. autoenum:: bitformat.DtypeName
+.. autoenum:: bitformat.DtypeKind
    :members:
 
 ----
