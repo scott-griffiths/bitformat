@@ -9,7 +9,7 @@ The :class:`Dtype` class is an abstract base class, but its constructor can be u
 
 The concrete data-type classes are:
 
-* :class:`DtypeSingle` which is used for a data type representing a single value, such as a 32-bit float, or a 10 bit integer.
+* :class:`DtypeSingle` which is used for a data type representing a single value a kind of interpretation, such as a 32-bit float, or a 10 bit integer.
 * :class:`DtypeArray` which adds an item count to represent an array of values of the same type, such as 1000 ``u8`` or 5 ``bool`` flags.
 * :class:`DtypeTuple` is a sequence of data types that can be of different value types.
 

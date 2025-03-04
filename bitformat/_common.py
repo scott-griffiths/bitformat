@@ -9,6 +9,7 @@ import os
 from lark import Lark
 from enum import Enum
 import keyword
+import enum_tools.documentation
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
@@ -23,17 +24,24 @@ else:
         return f
 
 
+@enum_tools.documentation.document_enum
 class DtypeKind(Enum):
-    UINT = 'u'  # unsigned int
-    INT = 'i'  # signed int
-    BIN = 'bin'  # binary string
-    OCT = 'oct'  # octal string
-    HEX = 'hex'  # hexadecimal string
-    BYTES = 'bytes'  # bytes object
-    FLOAT = 'f'  # IEEE floating point
-    BITS = 'bits'  # Bits object
-    BOOL = 'bool'  # boolean
-    PAD = 'pad'  # padding
+    """An enum of the different kinds of data types.
+
+    A data type is usually a combination of a kind, a length and possibly modifiers such
+    as an endianness. For example ``'f32'``, ``'f64'`` and ``'f64_le'`` are all different data types, but they
+    share the same kind (``'FLOAT'``).
+    """
+    UINT = 'u'  # doc: An unsigned integer.
+    INT = 'i'  # doc: A two's complement signed int.
+    BIN = 'bin'  # doc: A binary string, each character representing a single bit.
+    OCT = 'oct'  # doc: An octal string, each character representing 3 bits.
+    HEX = 'hex'  # doc: A hexadecimal string, each character representing 4 bits.
+    BYTES = 'bytes'  # doc: A Python ``bytes`` object.
+    FLOAT = 'f'  # doc: An IEEE floating point value. Either 16, 32 or 64 bits.
+    BITS = 'bits'  # doc: A bitformat ``Bits`` object.
+    BOOL = 'bool'  # doc: A single bit boolean value.
+    PAD = 'pad'  # doc: Padding can be used to skip over a section of data.
 
     def __str__(self):
         return self.value
