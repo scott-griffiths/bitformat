@@ -62,6 +62,8 @@ class TestCreation:
         assert f.value == 3
         assert f.name == ""
         assert f.to_bits() == "0b011"
+        with pytest.raises(ValueError):
+            _ = Field.from_string("constu3 = 3")
 
     @given(st.binary())
     def test_creation_from_bytes(self, b):

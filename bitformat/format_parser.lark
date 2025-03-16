@@ -28,7 +28,7 @@ list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_v
 
 // Match const_field with higher priority than mutable_field
 // const fields have the 'const' keyword and always have a value
-const_field.1: [field_name ":"] "const" dtype "=" value -> const_field
+const_field.1: [field_name ":"] "const " dtype "=" value -> const_field
 // non-const fields don't always have a value
 mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
