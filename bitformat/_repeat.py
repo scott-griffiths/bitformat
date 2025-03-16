@@ -46,7 +46,7 @@ class Repeat(FieldType):
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         # TODO: name is not handled yet.
         count_str = str(self.count)
-        s = indent(f"Repeat{{{count_str}}}: {self.field._str(indent, use_colour)}")
+        s = indent(f"repeat{{{count_str}}}: {self.field._str(indent, use_colour)}")
         return s
 
     @override

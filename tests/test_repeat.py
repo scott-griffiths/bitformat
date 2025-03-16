@@ -9,7 +9,7 @@ def test_creation():
 
 
 def test_from_string():
-    # p = Repeat.from_string('Repeat{3}: u8')
+    # p = Repeat.from_string('repeat{3}: u8')
     # assert p.count == 3
     # assert p.field == Field('u8')
     # s = """
@@ -21,7 +21,7 @@ def test_from_string():
     # )
     # """
     s = """
-    Repeat {2}:
+    repeat {2}:
         fred = {
             bool,
             john: i7
@@ -39,7 +39,7 @@ def test_edge_cases():
 
 
 def test_pack():
-    f = Repeat("Repeat {4}: bool")
+    f = Repeat("repeat {4}: bool")
     f.pack([True, False, True, False])
     assert f.value == [True, False, True, False]
 

@@ -36,7 +36,7 @@ mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 if_: "if" expression ":" field_type ["else" ":" field_type]
 
 // Note this doesn't yet have a name?
-repeat: "Repeat" expression ":" field_type
+repeat: "repeat" expression ":" field_type
 
 // The Pass field is literally just "Pass"
 pass_: ["Pass"]
