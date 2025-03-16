@@ -45,12 +45,12 @@ class If(FieldType):
 
         The string should be in the format:
 
-        If {expression}:
+        if {expression}:
             then_field
-        Else:
+        else:
             else_field
 
-        The Else clause is optional, and defaults to a :class:`Pass` field if not provided.
+        The else clause is optional, and defaults to a :class:`Pass` field if not provided.
 
         """
         x = super().from_string(s)
@@ -125,11 +125,11 @@ class If(FieldType):
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
-        s = indent(f"If {{{self.condition.code_str}}}:\n")
+        s = indent(f"if {{{self.condition.code_str}}}:\n")
         with indent:
             s += self.then_._str(indent, use_colour)
         if self.else_.bit_length != 0:
-            s += indent("Else:\n")
+            s += indent("else:\n")
             with indent:
                 s += self.else_._str(indent, use_colour)
         return s

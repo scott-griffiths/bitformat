@@ -211,7 +211,7 @@ class Field(FieldType):
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         colour = Colour(use_colour)
-        const_str = "const " if self.const else ""
+        const_str = f"{colour.const_value}const{colour.off} " if self.const else ""
         dtype_str = str(self._dtype)
         d = f"{const_str}{dtype_str}"
         n = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
