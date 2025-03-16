@@ -38,8 +38,8 @@ if_: "if" expression ":" field_type ["else" ":" field_type]
 // Note this doesn't yet have a name?
 repeat: "repeat" expression ":" field_type
 
-// The Pass field is literally just "Pass"
-pass_: ["Pass"]
+// The Pass field is literally just "pass"
+pass_: ["pass"]
 
 format: [field_name "="] "{" [field_type (("," | WS | NEWLINE) field_type)*] [","] "}"
 

@@ -67,12 +67,12 @@ class Pass(FieldType):
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
-        s = indent("Pass")
+        s = indent("pass")
         return s
 
     @override
     def _repr(self) -> str:
-        return "Pass"
+        return "pass"
 
     @override
     def to_bits(self) -> Bits:
