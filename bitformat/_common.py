@@ -28,9 +28,11 @@ else:
 class DtypeKind(Enum):
     """An enum of the different kinds of data types.
 
-    A data type is usually a combination of a kind, a length and possibly modifiers such
+    A concrete data type is usually a combination of a kind, a length and possibly modifiers such
     as an endianness. For example ``'f32'``, ``'f64'`` and ``'f64_le'`` are all different data types, but they
     share the same kind (``'FLOAT'``).
+
+    In most user code Dtypes will be created by parsing a string which will give their kind, length and modifiers.
     """
     UINT = 'u'  # doc: An unsigned integer.
     INT = 'i'  # doc: A two's complement signed int.
@@ -321,12 +323,16 @@ class Expression:
 
 NONE = Expression('{None}')
 
+@enum_tools.documentation.document_enum
+class Endianness(Enum):
+    """For whole-byte data types, the endianness can be specified as big-endian, little-endian or native.
 
-class Endianness(enum.Enum):
-    BIG = "be"
-    LITTLE = "le"
-    NATIVE = "ne"
-    UNSPECIFIED = ""
+    If the data type is not a whole number of bytes, the endianness should be set to ``UNSPECIFIED``.
+    """
+    BIG = "be"  # doc: Big-endian byte order.
+    LITTLE = "le"  # doc: Little-endian byte order.
+    NATIVE = "ne"  # doc: Native byte order.
+    UNSPECIFIED = ""  # doc: Unspecified byte order.
 
 def validate_name(name: str) -> str:
     """As names can be used as part of evaluated Expressions we restrict them for safety reasons."""

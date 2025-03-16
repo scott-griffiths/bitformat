@@ -541,7 +541,7 @@ class Bits:
         return x
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
-           groups: int | None = None, width: int = 80, show_offset: bool = True,stream: TextIO = sys.stdout) -> None:
+           groups: int | None = None, width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
         """Pretty print the Bits's value.
 
         :param dtype1: First data type to display.

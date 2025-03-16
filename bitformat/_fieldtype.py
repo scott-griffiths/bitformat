@@ -191,8 +191,8 @@ class FieldType(abc.ABC):
         """
         try:
             tree = field_parser.parse(s)
-        except UnexpectedInput:
-            raise ValueError
+        except UnexpectedInput as e:
+            raise ValueError(f"Unexpected input: {e}")
         try:
             return field_type_transformer.transform(tree)
         except lark.exceptions.VisitError as e:
