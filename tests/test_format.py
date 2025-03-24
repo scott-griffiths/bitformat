@@ -705,3 +705,11 @@ def test_bad_names():
 def test_const_tuple():
     f = Format("{const (bool, u5, u10) = (1, 31, 0)}")
     assert f.value == [(True, 31, 0)]
+
+def test_open_ended_array():
+    f = Format("{[u8;]}")
+    f.pack([[1, 2, 3]])
+    assert f.value == [(1, 2, 3)]
+    b = f.to_bits()
+    f.parse(b)
+    assert f.value == [(1, 2, 3)]

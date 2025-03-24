@@ -423,6 +423,8 @@ class DtypeArray(Dtype):
         if dtype_single_length is None:
             return None
         items = self._items.evaluate(vars_)
+        if items is None:
+            return None
         return dtype_single_length * items
 
     @property
