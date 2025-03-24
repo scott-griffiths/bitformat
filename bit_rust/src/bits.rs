@@ -436,7 +436,7 @@ impl BitRust {
                 '1' => b.push(true),
                 '_' => continue,
                 c if c.is_whitespace() => continue,
-                _ => return Err(PyValueError::new_err("Invalid character")),
+                _ => return Err(PyValueError::new_err(format!("Cannot convert from bin '{binary_string}: Invalid character '{c}'."))),
             }
         }
         b.set_uninitialized(false);
@@ -492,7 +492,7 @@ impl BitRust {
         }
         let data = match hex::decode(new_hex) {
             Ok(d) => d,
-            Err(_) => return Err(PyValueError::new_err("Invalid character")),
+            Err(e) => return Err(PyValueError::new_err(format!("Cannot convert from hex '{hex}': {}", e))),
         };
         let mut bv = (*BitRust::from_bytes(data).owned_data).clone();
         if is_odd_length {
@@ -536,7 +536,7 @@ impl BitRust {
                 '7' => bin_str.push_str("111"),
                 '_' => continue,
                 c if c.is_whitespace() => continue,
-                _ => return Err(PyValueError::new_err("Invalid character")),
+                _ => return Err(PyValueError::new_err(format!("Cannot convert from oct '{oct}': Invalid character '{ch}'."))),
             }
         }
         Ok(BitRust::from_bin(&bin_str))
