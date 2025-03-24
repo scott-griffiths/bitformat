@@ -701,3 +701,7 @@ def test_bad_names():
         f.name = '__with_double_underscore'
     with pytest.raises(AttributeError):
         f.name = 5
+
+def test_const_tuple():
+    f = Format("{const (bool, u5, u10) = (1, 31, 0)}")
+    assert f.value == [(True, 31, 0)]

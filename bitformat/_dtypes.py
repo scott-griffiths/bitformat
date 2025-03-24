@@ -66,8 +66,7 @@ class DtypeTransformer(Transformer):
         return str(items[0])
 
     def list_of_values(self, items):
-        # TODO
-        return str(items[0])
+        return items
 
 
 dtype_parser = lark.Lark(parser_str, start='dtype', parser='lalr', transformer=DtypeTransformer())

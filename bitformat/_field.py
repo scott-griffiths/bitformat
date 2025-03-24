@@ -53,13 +53,13 @@ class Field(FieldType):
         if isinstance(value, str):
             value_str = value
             # Need to convert non-string types into their correct return types.
-            if (ret_type := x._dtype._definition.return_type) in (int, float, bytes, bool):
+            if isinstance(x._dtype, DtypeSingle) and (ret_type := x._dtype._definition.return_type) in (int, float, bytes, bool):
                 try:
                     value = ret_type(literal_eval(value))
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a {ret_type}.")
-            elif x._dtype._definition.return_type == Bits:
+            elif isinstance(x._dtype, DtypeSingle) and x._dtype._definition.return_type == Bits:
                 value = Bits.from_string(value)
         if value is not None:
             x._set_value_no_const_check(value, {})
