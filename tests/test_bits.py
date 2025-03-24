@@ -768,3 +768,7 @@ def test_array_from_str():
     assert x.unpack('u8') == 1
     y = Bits('[bool; 4] = [True, False, True, False]')
     assert y.bin == '1010'
+
+def test_tuple_from_str():
+    x = Bits('(u8, u6) = (1, 2)')
+    assert x == 'u8 = 1, u6 = 2'

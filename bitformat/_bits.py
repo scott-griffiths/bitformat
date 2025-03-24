@@ -32,14 +32,14 @@ def token_to_bitstore(token: str) -> BitRust:
         except ValueError:
             raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-        if (isinstance(dtype, DtypeSingle) and dtype._definition.return_type in (bool, bytes)) or isinstance(dtype, DtypeArray):
-            try:
-                value = literal_eval(value_str)
-            except ValueError:
-                raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
-            return dtype.pack(value)._bitstore
-        else:
+        if (isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes)):
             return dtype.pack(value_str)._bitstore
+        try:
+            value = literal_eval(value_str)
+        except ValueError:
+            raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
+        return dtype.pack(value)._bitstore
+
     if token.startswith("0x"):
         return BitRust.from_hex_checked(token)
     if token.startswith("0b"):

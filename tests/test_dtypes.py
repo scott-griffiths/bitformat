@@ -320,3 +320,10 @@ def test_expression_dtype_single():
     assert isinstance(a, DtypeSingle)
     assert a.kind is DtypeKind.UINT
     assert str(a) == 'u{x}'
+
+def test_dtype_array_from_str():
+    a = Dtype('[u8; 2]')
+    assert isinstance(a, DtypeArray)
+    assert a.size == 8
+    assert a.items == 2
+    assert a.bit_length == 16
