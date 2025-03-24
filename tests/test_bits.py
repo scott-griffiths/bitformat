@@ -762,3 +762,9 @@ def test_creating_from_array_dtype_with_no_length():
 #     # These should work
 #     Bits('0b000011111').pp('bin', 'hex')
 #     Bits('0b000011111').pp('bin', 'u')
+
+def test_array_from_str():
+    x = Bits('[u8; 1]= [1]')
+    assert x.unpack('u8') == 1
+    y = Bits('[bool; 4] = [True, False, True, False]')
+    assert y.bin == '1010'

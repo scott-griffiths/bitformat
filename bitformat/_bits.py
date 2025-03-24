@@ -32,7 +32,7 @@ def token_to_bitstore(token: str) -> BitRust:
         except ValueError:
             raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-        if dtype._definition.return_type in (bool, bytes):  # TODO: Is this right? Needs more tests.
+        if (isinstance(dtype, DtypeSingle) and dtype._definition.return_type in (bool, bytes)) or isinstance(dtype, DtypeArray):
             try:
                 value = literal_eval(value_str)
             except ValueError:
@@ -52,7 +52,21 @@ def token_to_bitstore(token: str) -> BitRust:
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitRust:
     s = "".join(s.split())  # Remove whitespace
-    tokens = [token for token in s.split(",") if token]
+    # Find all the commas, ignoring those in other structures.
+    # This isn't a rigorous check - if brackets are mismatched it will be picked up later.
+    tokens = []
+    token_start = 0
+    bracket_depth = 0
+    for i, c in enumerate(s):
+        if c == "," and bracket_depth == 0:
+            tokens.append(s[token_start:i])
+            token_start = i + 1
+        elif c in "([{":
+            bracket_depth += 1
+        elif c in ")]}":
+            bracket_depth -= 1
+    tokens.append(s[token_start:])
+    tokens = [token for token in tokens if token]
     if len(tokens) == 1:
         return token_to_bitstore(tokens[0])
     if not tokens:
