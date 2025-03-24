@@ -9,7 +9,17 @@ import os
 from lark import Lark
 from enum import Enum
 import keyword
-import enum_tools.documentation
+try:
+    import enum_tools.documentation
+except ImportError:
+    # If enum_tools is not installed, we mock it instead.
+    # It's only used when generating the documentation and doesn't change any functionality.
+    class enum_tools:
+        class documentation:
+            @staticmethod
+            def document_enum(cls):
+                # Do nothing
+                return cls
 
 
 # Python 3.12 has these decorators built-in, but otherwise we mock them here.
