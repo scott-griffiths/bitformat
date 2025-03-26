@@ -161,10 +161,10 @@ def test_len():
     a = Dtype("(u8, f16, bool)")
     assert isinstance(a, DtypeTuple)
     assert a.bit_length == 25
-    assert len(a) == 3
+    assert a.items == 3
     a = DtypeTuple("([u8; 10], [bool; 0], i20)")
     assert a.bit_length == 100
-    assert len(a) == 3
+    assert a.items == 3
 
 
 def test_len_errors():

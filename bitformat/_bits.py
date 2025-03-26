@@ -1101,7 +1101,7 @@ class Bits:
         if not isinstance(dtype, DtypeTuple):
             return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
-        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (len(dtype) - 1)
+        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
         return chars
 
     def _pp(self, dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None, bits_per_group: int,

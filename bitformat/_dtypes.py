@@ -5,7 +5,6 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-from ._options import Options
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, Colour, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
@@ -169,6 +168,11 @@ class Dtype(abc.ABC):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}('{self.__str__()}')"
 
+    @abc.abstractmethod
+    def __hash__(self) -> int:
+        ...
+
+
 
 class DtypeSingle(Dtype):
 
@@ -288,11 +292,10 @@ class DtypeSingle(Dtype):
                     and self._endianness is other._endianness)
         return False
 
-    # TODO: move to base class as requirement?
+    @override
+    @final
     def __hash__(self) -> int:
-        return hash(
-            (self._definition.kind, self._size)
-        )
+        return hash((self._definition.kind, self._size))
 
     @override
     @final
@@ -407,8 +410,7 @@ class DtypeArray(Dtype):
     @final
     @property
     def bit_length(self) -> int | None:
-        # TODO: This should be done nicer!
-        if isinstance(self._dtype_single.bit_length, int) and self._items.has_const_value and self._items.const_value is not None:
+        if self._dtype_single.bit_length is not None and self._items.has_const_value and self._items.const_value is not None:
             return self._dtype_single.bit_length * self._items.const_value
         return None
 
@@ -483,8 +485,8 @@ class DtypeTuple(Dtype):
     @override
     @final
     def pack(self, values: Sequence[Any]) -> bitformat.Bits:
-        if len(values) != len(self):
-            raise ValueError(f"Expected {len(self)} values, but got {len(values)}.")
+        if len(values) != self.items:
+            raise ValueError(f"Expected {self.items} values, but got {len(values)}.")
         return bitformat.Bits.from_joined(dtype.pack(value) for dtype, value in zip(self._dtypes, values))
 
     @override
@@ -519,8 +521,10 @@ class DtypeTuple(Dtype):
             return x
         return sum(dtype.calculate_bit_length(vars_) for dtype in self._dtypes)
 
-    # TODO: This is defined as not allowed in the base class
-    def __len__(self) -> int:
+    @property
+    def items(self) -> int:
+        """The number of dtypes in the in the dtype tuple.
+        """
         return len(self._dtypes)
 
     @override
