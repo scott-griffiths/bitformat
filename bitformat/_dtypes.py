@@ -272,11 +272,10 @@ class DtypeSingle(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        colour = Colour(not Options().no_color)
         hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self._endianness is Endianness.UNSPECIFIED else "_" + self._endianness.value
-        return f"{colour.dtype}{self._definition.kind}{endianness}{size_str}{colour.off}"
+        return f"{self._definition.kind}{endianness}{size_str}"
 
     @override
     @final
@@ -387,8 +386,7 @@ class DtypeArray(Dtype):
     @override
     @final
     def __str__(self) -> str:
-        colour = Colour(not Options().no_color)
-        items_str = "" if self._items.is_none() else f" {colour.dtype}{self._items}{colour.off}"
+        items_str = "" if self._items.is_none() else f" {self._items}"
         return f"[{self._dtype_single};{items_str}]"
 
     @override
