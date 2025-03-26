@@ -3,8 +3,9 @@ import keyword
 import pytest
 from bitformat import Dtype, Bits, Field, DtypeSingle, Expression, DtypeArray, DtypeTuple
 from bitformat._common import DtypeKind
-from hypothesis import given, assume
+from hypothesis import given
 import hypothesis.strategies as st
+import string
 
 
 class TestCreation:
@@ -37,20 +38,19 @@ class TestCreation:
         b = f2.to_bits()
         assert b.to_bytes() == b"123"
 
-# TODO: Reinstate this test
-    # @given(name=st.text())
-    # def test_creation_with_names(self, name):
-    #     assume(name != "")
-    #     if name.isidentifier() and "__" not in name and not keyword.iskeyword(name):
-    #         f = Field.from_params("u8", name)
-    #         assert f.name == name
-    #         f2 = Field.from_string(f"{name}: u8")
-    #         assert f2.name == name
-    #         with pytest.raises(ValueError):
-    #             _ = Field.from_params(f"{name}: u8", name=name)
-    #     else:
-    #         with pytest.raises(ValueError):
-    #             _ = Field.from_params("u8", name)
+    @given(name=st.text(alphabet=string.ascii_letters + string.digits + '_', min_size=1)
+           .filter(lambda s: s.isidentifier() and not keyword.iskeyword(s) and "__" not in s))
+    def test_creation_with_names(self, name):
+        if name.isidentifier() and "__" not in name and not keyword.iskeyword(name):
+            f = Field.from_params("u8", name)
+            assert f.name == name
+            f2 = Field.from_string(f"{name}: u8")
+            assert f2.name == name
+            with pytest.raises(ValueError):
+                _ = Field.from_params(f"{name}: u8", name=name)
+        else:
+            with pytest.raises(ValueError):
+                _ = Field.from_params("u8", name)
 
     def test_creation_from_strings(self):
         f = Field.from_string(" flag_12 : bool")
