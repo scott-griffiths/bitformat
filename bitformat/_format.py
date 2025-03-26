@@ -71,8 +71,9 @@ class Format(FieldType):
             except ValueError:
                 pass
             x._fields.append(fieldtype)
-            if (field_name := fieldtype.get_name()) is not None:
-                x._field_names[field_name] = fieldtype
+            # Not all FieldTypes can have names (such as Pass).
+            if hasattr(fieldtype, 'name'):
+                x._field_names[fieldtype.name] = fieldtype
         return x
 
 

@@ -136,20 +136,6 @@ class FieldType(abc.ABC):
         """
         return self._repr()
 
-    def get_name(self) -> str | None:
-        """
-        Returns the name of the FieldType, if it has one.
-
-        ``Field``s and ``Format``s will always have a name (even if it is an empty string).
-        Other types, such as ``Pass`` and ``If``, will not, and this method will return None.
-
-        :return: The name of the FieldType, or None if it has no name.
-        :rtype: str or None
-        """
-        if hasattr(self, 'name'):
-            return self.name
-        return None
-
     def is_stretchy(self) -> bool:
         """
         Return True if the field is stretchy, False otherwise.

@@ -83,7 +83,8 @@ class Field(FieldType):
         return x
 
     @classmethod
-    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /, name: str = "") -> Self:
+    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /,
+                  name: str = "", const: bool = False) -> Self:
         """
         Create a Field instance from bits.
 
@@ -91,13 +92,15 @@ class Field(FieldType):
         :type b: Bits, str, Iterable, bytearray, bytes, or memoryview
         :param name: The name of the field, optional.
         :type name: str
+        :param const: Whether the field is constant, defaults to False.
+        :type const: bool
         :return: The Field instance.
         :rtype: Field
         """
         b = Bits._from_any(b)
         if len(b) == 0:
             raise ValueError("Can't create a Field from an empty Bits object.")
-        return cls.from_params(DtypeSingle.from_params(DtypeKind.BITS, len(b)), name, b, const=True)
+        return cls.from_params(DtypeSingle.from_params(DtypeKind.BITS, len(b)), name, b, const)
 
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = "", const: bool = False) -> Field:
@@ -108,7 +111,7 @@ class Field(FieldType):
         :type b: bytes or bytearray
         :param name: The name of the field, optional.
         :type name: str
-        :param const: Whether the field is constant, optional.
+        :param const: Whether the field is constant, defaults to False.
         :type const: bool
         :return: The Field instance.
         :rtype: Field

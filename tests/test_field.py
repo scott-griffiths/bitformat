@@ -32,7 +32,7 @@ class TestCreation:
         b = Bits("0xf, 0b1")
         f1 = Field.from_bits(b)
         assert f1.to_bits() == b
-        assert f1.const is True
+        assert f1.const is False
         f2 = Field.from_bits(b"123")
         assert f2.value == b"123"
         b = f2.to_bits()
