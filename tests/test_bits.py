@@ -772,3 +772,5 @@ def test_array_from_str():
 def test_tuple_from_str():
     x = Bits('(u8, u6) = (1, 2)')
     assert x == 'u8 = 1, u6 = 2'
+    y = Bits('(bool, bool) = [0, 0]')
+    assert y == 'bool = 0, bool = 0'

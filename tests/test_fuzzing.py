@@ -26,10 +26,9 @@ def compare_fields(f, f2):
 @given(
     dtype_kind=st.sampled_from(sorted(Register().kind_to_def.keys(), key=lambda x: x.value)),
     length=st.integers(1, 100),
-    const=st.booleans(),
     int_value=st.integers(0, 2**800 - 1),
 )
-def test_field_consistency(dtype_kind, length, const, int_value):
+def test_field_consistency(dtype_kind, length, int_value):
     length = get_allowed_length(dtype_kind, length)
     f = Field.from_params(DtypeSingle.from_params(dtype_kind, length))
     f2 = Field.from_string(str(f))
@@ -49,7 +48,6 @@ def test_field_consistency(dtype_kind, length, const, int_value):
         f2.clear()
     if dtype_kind is not DtypeKind.PAD and not (isinstance(v, float) and math.isnan(v)):
         assert f.to_bits() == f2.to_bits()
-        f.const = const
         f3 = eval(repr(f))
         compare_fields(f, f3)
 

@@ -12,7 +12,7 @@ __all__ = ["Field"]
 
 
 class Field(FieldType):
-    const: bool  # TODO: Needs to be a property. Can't in general set to True.
+    _const: bool
     _bits: Bits | None
     _dtype: Dtype
     _name: str
@@ -39,7 +39,7 @@ class Field(FieldType):
         """
         x = super().__new__(cls)
         x._bits = None
-        x.const = const
+        x._const = bool(const)
         if isinstance(dtype, str):
             try:
                 x._dtype = Dtype.from_string(dtype)
@@ -48,7 +48,7 @@ class Field(FieldType):
         else:
             x._dtype = dtype
         x.name = name
-        if const is True and value is None:
+        if x.const is True and value is None:
             raise ValueError("Fields with no value cannot be set to be const.")
         if isinstance(value, str):
             value_str = value
@@ -118,9 +118,7 @@ class Field(FieldType):
     @override
     def to_bits(self) -> Bits:
         if self._bits is None:
-            raise ValueError(
-                f"Field '{self}' has no value, so can't be converted to bits."
-            )
+            raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
         return self._bits
 
     @override
@@ -191,14 +189,17 @@ class Field(FieldType):
     @override
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:
         if self.const:
-            raise ValueError(f"Cannot set the value of a const Field '{self}'. "
-                             f"To change the value, first set the const property of the Field to False.")
+            raise ValueError(f"Cannot set the value of a const Field '{self}'.")
         self._set_value_no_const_check(value, kwargs)
 
     def _get_dtype(self) -> Dtype:
         return self._dtype
 
     dtype = property(_get_dtype)
+
+    @property
+    def const(self) -> bool:
+        return self._const
 
     @property
     def name(self) -> str:

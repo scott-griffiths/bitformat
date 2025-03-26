@@ -256,12 +256,6 @@ class TestMethods:
         f = Format.from_params(["const f16=7", "bool", "bytes5", "pop : u100 = 144"])
         with pytest.raises(ValueError):
             f[0].value = 2
-        f[0].const = False
-        with pytest.raises(ValueError):
-            f[0] = 2
-        f[0].value = 2
-        f[0].const = True
-        assert f[0].value == 2
         f["pop"].value = 999999
         assert f["pop"].value == 999999
 

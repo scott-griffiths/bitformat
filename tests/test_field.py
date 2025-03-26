@@ -133,10 +133,6 @@ class TestBuilding:
         f.clear()
         b = f.to_bits()
         assert b == "0x8"
-        f.const = False
-        assert f.value == 8
-        f.clear()
-        assert f.value is None
 
 
 def test_field_str():
@@ -292,3 +288,17 @@ def test_field_with_dtype_tuple():
     f.parse("0x0304")
     assert f.value == (3, 4)
     assert f.bit_length == 16
+
+def test_const_modification():
+    f = Field("const u8 = 12")
+    with pytest.raises(ValueError):
+        f.value = 13
+    with pytest.raises(ValueError):
+        f.pack(13)
+    f.clear()
+    assert f.value == 12
+    with pytest.raises(AttributeError):
+        f.const = False
+    f2 = Field("u8 = 12")
+    with pytest.raises(AttributeError):
+        f2.const = True
