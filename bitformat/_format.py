@@ -204,9 +204,8 @@ class Format(FieldType):
         elif isinstance(key, slice):
             del self._fields[key]
         elif isinstance(key, str):
-            for i in range(len(self._fields)):
-                # TODO: Can we use _field_names here?
-                if self._fields[i].name == key:
+            for i, field in enumerate(self._fields):
+                if field.name == key:
                     del self._fields[i]
                     return
             raise KeyError(f"Field with name '{key}' not found.")

@@ -664,6 +664,11 @@ def test_deleting_fields():
     del f[1]
     assert len(f) == 2
     assert f[1].name == "z"
+    del f['x']
+    assert len(f) == 1
+    with pytest.raises(KeyError):
+        del f['x']
+    assert len(f) == 1
 
 def test_setting_fields():
     f = Format.from_params(["x: u8", "y: u8", "z: u8", "q:i4"])
