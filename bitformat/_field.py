@@ -14,7 +14,10 @@ __all__ = ["Field"]
 class Field(FieldType):
     _const: bool
     _bits: Bits | None
+    # The dtype may include expressions that haven't yet been evaluated.
     _dtype: Dtype
+    # the concrete type is the real dtype after parsing.
+    _concrete_dtype: Dtype
     _name: str
 
     def __new__(cls, s: str) -> Field:
@@ -47,6 +50,7 @@ class Field(FieldType):
                 raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         else:
             x._dtype = dtype
+        x._concrete_dtype = x._dtype
         x.name = name
         if x.const is True and value is None:
             raise ValueError("Fields with no value cannot be set to be const.")
@@ -67,11 +71,12 @@ class Field(FieldType):
         if isinstance(x._dtype, DtypeSingle) and x._dtype.size.has_const_value and x._dtype.size.const_value is None:
             if x._dtype.kind in [DtypeKind.BITS, DtypeKind.BYTES] and x.value is not None:
                 x._dtype = Register().get_single_dtype(x._dtype.kind, len(x.value), x._dtype.endianness)
+                x._concrete_dtype = x._dtype
         return x
 
     @override
     def _get_bit_length(self) -> int:
-        return self._dtype.bit_length
+        return self._concrete_dtype.bit_length
 
     @classmethod
     @override
@@ -137,6 +142,7 @@ class Field(FieldType):
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if self.const:
+            assert self._bits is not None
             value = b[startbit : len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
@@ -144,23 +150,21 @@ class Field(FieldType):
         # TODO: Hacky, needs to be revised for other dtypes.
         if isinstance(self._dtype, DtypeSingle) and self._dtype.size is not None:
             size = self._dtype._size.evaluate(vars_)
-            dtype = DtypeSingle.from_params(self._dtype.kind, size, self._dtype.endianness)
+            self._concrete_dtype = DtypeSingle.from_params(self._dtype.kind, size, self._dtype.endianness)
         elif isinstance(self._dtype, DtypeArray):
             size = self._dtype._dtype_single._size.evaluate(vars_)
             items = self._dtype._items.evaluate(vars_)
-            dtype = DtypeArray.from_params(self._dtype._dtype_single.kind, size, items, self._dtype.endianness)
-        else:
-            dtype = self._dtype
-        if dtype.bit_length is not None and len(b) - startbit < dtype.bit_length:
-            raise ValueError(f"Field '{str(self)}' needs {dtype.bit_length} bits to parse, but {len(b) - startbit} were available.")
+            self._concrete_dtype = DtypeArray.from_params(self._dtype._dtype_single.kind, size, items, self._dtype.endianness)
+        if self._concrete_dtype.bit_length is not None and len(b) - startbit < self._concrete_dtype.bit_length:
+            raise ValueError(f"Field '{str(self)}' needs {self._concrete_dtype.bit_length} bits to parse, but {len(b) - startbit} were available.")
         # Deal with a stretchy dtype
-        dtype_length = dtype.calculate_bit_length(vars_)
+        dtype_length = self._concrete_dtype.calculate_bit_length(vars_)
         self._bits = b[startbit : startbit + dtype_length] if dtype_length is not None else b[startbit:]
         if self.name != "":
             if self._bits is None:
                 vars_[self.name] = None
             else:
-                vars_[self.name] = dtype.unpack(self._bits)
+                vars_[self.name] = self._concrete_dtype.unpack(self._bits)
         return len(self._bits)
 
     @override
@@ -176,14 +180,14 @@ class Field(FieldType):
     def _get_value(self) -> Any | None:
         if self._bits is None:
             return None
-        return self.dtype.unpack(self._bits)
+        return self._concrete_dtype.unpack(self._bits)
 
     def _set_value_no_const_check(self, value: Any, kwargs: dict[str, Any]) -> None:
         if value is None:
             raise ValueError("Cannot set the value of a Field to None. Perhaps you could use clear()?")
         try:
             if not kwargs:
-                self._bits = self.dtype.pack(value)
+                self._bits = self._concrete_dtype.pack(value)
             else:
                 pass # TODO
         except ValueError as e:

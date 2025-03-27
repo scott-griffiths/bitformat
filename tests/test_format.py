@@ -449,19 +449,19 @@ def test_passed_in_value():
     a = Field.from_string("u{x}")
     a.pack(5, x=10)
 
-# def test_expression_dtypes():
-#     a = Field.from_string('u{testing}')
-#     assert str(a) == 'u{testing}'
-#     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
-#     assert str(d) == 'my_name: [f{4*e}; {a + b}]'
-#     f = Format('{x: u8, [u{x}; {x + 1}]}')
-#     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
-#     f.parse(b)
-#     v = f.value
-#     print(f)
-#     assert f['x'].value == 3
-#     assert f[1].value == [1, 2, 3, 4]
-#     assert f.value == [3, [1, 2, 3, 4]]
+def test_expression_dtypes():
+    a = Field.from_string('u{testing}')
+    assert str(a) == 'u{testing}'
+    d = Field.from_string('my_name: [f{4*e}; {a + b}]')
+    assert str(d) == 'my_name: [f{4*e}; {a + b}]'
+    f = Format('{x: u8, [u{x}; {x + 1}]}')
+    b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
+    f.parse(b)
+    v = f.value
+    print(f)
+    assert f['x'].value == 3
+    assert f[1].value == (1, 2, 3, 4)
+    assert f.value == [3, (1, 2, 3, 4)]
 
 
 def test_unpack():
