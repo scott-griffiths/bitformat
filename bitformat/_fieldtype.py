@@ -136,19 +136,6 @@ class FieldType(abc.ABC):
         """
         return self._repr()
 
-    def is_stretchy(self) -> bool:
-        """
-        Return True if the field is stretchy, False otherwise.
-
-        :return: True if stretchy, False otherwise.
-        :rtype: bool
-        """
-        try:
-            return self.bit_length is None
-        # TODO: This logic doesn't work any more?!
-        except ValueError:  # It might be an Expression, and Expressions can't be stretchy.
-            return False
-
     def pp(self, stream: TextIO = sys.stdout,indent: int | None = None, depth: int | None = None) -> None:
         """
         Pretty-print the fieldtype to a stream (or stdout by default).

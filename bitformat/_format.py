@@ -65,11 +65,8 @@ class Format(FieldType):
             if fieldtype is Pass():
                 # Don't bother appending if it's the Pass singleton.
                 continue
-            try:
-                if fieldtype.is_stretchy():
-                    stretchy_field = str(fieldtype)
-            except ValueError:
-                pass
+            # TODO: Add back in a check for a stretchy field.
+
             x._fields.append(fieldtype)
             if fieldtype.name:
                 x._field_names[fieldtype.name] = fieldtype

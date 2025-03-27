@@ -534,9 +534,9 @@ def test_stretchy_field():
     f.unpack("0xff1")
     assert f.value == [255, 1]
 
+    bad = Format("{u, u8}")
     with pytest.raises(ValueError):
-        _ = Format("{u, u8}")
-
+        bad.parse("0xff1")
     g = Format("{u5, bytes}")
     g.parse(b"hello_world")
     assert g[0].value == 13
@@ -712,3 +712,6 @@ def test_open_ended_array():
     b = f.to_bits()
     f.parse(b)
     assert f.value == [(1, 2, 3)]
+
+def test_expressions_more():
+    f = Format("{a: u8, u{a}, u{a}}")
