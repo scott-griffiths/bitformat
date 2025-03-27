@@ -204,12 +204,12 @@ class Field(FieldType):
     def const(self) -> bool:
         return self._const
 
-    @property
-    def name(self) -> str:
+    @override
+    def _get_name(self) -> str:
         return self._name
 
-    @name.setter
-    def name(self, name: str) -> None:
+    @override
+    def _set_name(self, name: str) -> None:
         self._name = validate_name(name)
 
     @override

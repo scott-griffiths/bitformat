@@ -22,7 +22,7 @@ class Repeat(FieldType):
     def from_params(cls, count: int, field: FieldType | str, name: str = "") -> Repeat:
         x = super().__new__(cls)
         x.count = count
-        x.name = name
+        x._name = name
         if isinstance(field, str):
             field = FieldType.from_string(field)
         elif not isinstance(field, FieldType):
@@ -111,3 +111,12 @@ class Repeat(FieldType):
         if self.field != other.field:
             return False
         return True
+
+    @override
+    def _get_name(self) -> None:
+        return self._name
+
+    @override
+    def _set_name(self, name: str) -> None:
+        # TODO: import this function!
+        self._name = validate_name(name)

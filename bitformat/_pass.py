@@ -81,3 +81,11 @@ class Pass(FieldType):
     @override
     def __eq__(self, other) -> bool:
         return isinstance(other, Pass)
+
+    @override
+    def _get_name(self) -> None:
+        return None
+
+    @override
+    def _set_name(self, name: str) -> None:
+        raise AttributeError("The Pass field has no 'name' property.")

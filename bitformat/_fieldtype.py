@@ -283,4 +283,20 @@ class FieldType(abc.ABC):
     def value(self, val: Any) -> None:
         self._set_value_with_kwargs(val, {})
 
+    @abc.abstractmethod
+    def _get_name(self) -> str | None:
+        ...
+
+    @abc.abstractmethod
+    def _set_name(self, name: str) -> None:
+        ...
+
+    @property
+    def name(self) -> str | None:
+        return self._get_name()
+
+    @name.setter
+    def name(self, name: str) -> None:
+        self._set_name(name)
+
 

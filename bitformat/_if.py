@@ -161,3 +161,11 @@ class If(FieldType):
         if self.else_ != other.else_:
             return False
         return True
+
+    @override
+    def _get_name(self) -> None:
+        return None
+
+    @override
+    def _set_name(self, name: str) -> None:
+        raise AttributeError("The If field has no 'name' property.")

@@ -71,8 +71,7 @@ class Format(FieldType):
             except ValueError:
                 pass
             x._fields.append(fieldtype)
-            # Not all FieldTypes can have names (such as Pass).
-            if hasattr(fieldtype, 'name'):
+            if fieldtype.name:
                 x._field_names[fieldtype.name] = fieldtype
         return x
 
@@ -145,12 +144,13 @@ class Format(FieldType):
 
     @override
     def _get_value(self) -> list[Any]:
-        vals = []
-        for i, f in enumerate(self._fields):
-            if f.value is None:
-                raise ValueError(f"When getting Format value, cannot find value of this field:\n{f}")
-            vals.append(f.value)
-        return vals
+        values = []
+        for field in self._fields:
+            value = field._get_value()
+            if value is None:
+                raise ValueError(f"When getting Format value, cannot find value of this field:\n{field}")
+            values.append(value)
+        return values
 
     @override
     def _set_value_with_kwargs(self, val: Sequence[Any], kwargs: dict[str, Any]) -> None:
@@ -297,10 +297,10 @@ class Format(FieldType):
             return False
         return True
 
-    @property
-    def name(self) -> str:
+    @override
+    def _get_name(self) -> str:
         return self._name
 
-    @name.setter
-    def name(self, name: str) -> None:
+    @override
+    def _set_name(self, name: str) -> None:
         self._name = validate_name(name)
