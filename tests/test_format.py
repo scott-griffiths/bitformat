@@ -33,8 +33,8 @@ class TestCreation:
         assert f.name == "x"
 
     def test_create_from_dtype_string(self):
-        f1 = Format("{x: f16}")  # No comma
-        f2 = Format("{x: f16,}") # With comma
+        f1 = Format("format(x: f16)")  # No comma
+        f2 = Format("format(x: f16,)") # With comma
         assert f1 == f2
         assert f1[0].name == "x"
         assert f1[0].dtype == DtypeSingle.from_params(DtypeKind.FLOAT, 16)
@@ -80,7 +80,7 @@ class TestCreation:
             "header",
         )
         g = Format(
-            "header= {const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True}"
+            "header: format(const bits = 0x000001b3, u12, height: const u12 = 288, flag: const bool = True)"
         )
         assert f == g
         assert f.name == "header"
@@ -143,7 +143,7 @@ def test_building():
 
 
 def test_packing_bug():
-    f = Format("bug = {u8, {u8, u8}}")
+    f = Format("bug: format(u8, format(u8, u8))")
     f.pack([10, [20, 30]])
     assert f.value == [10, [20, 30]]
 
@@ -243,7 +243,7 @@ class TestMethods:
         f["height"].value = 288
         f.clear()
         g = Format.from_string(
-            "header = {const bits = 0x000001b3, u12, height:u12, flag:bool}"
+            "header: format(const bits = 0x000001b3, u12, height:u12, flag:bool)"
         )
         assert f == g
 
@@ -311,7 +311,7 @@ def test_format_repr_and_str():
 
 
 def test_format_get_and_set():
-    f = Format("{u8, u8, u8}")
+    f = Format("format(u8, u8, u8)")
     for field in f:
         field.value = 12
     assert f.value == [12, 12, 12]
@@ -376,7 +376,7 @@ def test_format_repr_string():
 
 def test_to_bits():
     f1 = Format.from_params(["u_le8", "u_be8", "u_ne8"])
-    f = Format("{u_le8, u_be8, u_ne8}")
+    f = Format("format(u_le8, u_be8, u_ne8)")
     assert f == f1
     f.pack([1, 2, 3])
     b = f.to_bits()
@@ -406,7 +406,7 @@ def test_partial_parse():
 
 
 def test_from_string():
-    s = "header = {u8,u4, bool}"
+    s = "header: format(u8,u4, bool)"
     f = Format.from_string(s)
     assert f.name == "header"
     assert f[0].dtype == Dtype.from_string("u8")
@@ -414,21 +414,21 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header = {u8, u4, bool,body={u8=23, [u4; 3], bool}}"
+    s = "header: format (u8, u4, bool,body:format(u8=23, [u4; 3], bool))"
     f = FieldType.from_string(s)
     assert f.name == "header"
     assert f[3][0].value == 23
     b = f["body"]
     assert b[0].value == 23
     assert str(f) == str(Format(str(s)))
-    assert str(b) == str(Format("body = {u8=23, [u4; 3], bool}"))
+    assert str(b) == str(Format("body: format(u8=23, [u4; 3], bool)"))
 
     fp = eval(repr(f))
     assert fp == f
 
 
 def test_interesting_types_from_string():
-    s = "  {const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',} "
+    s = "  format (const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',) "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f["_fred"].value == b"abc\x04"
@@ -442,7 +442,7 @@ def test_expression_literals():
     assert b.to_bits() == Bits('0b11110000')
     c = Field.from_string("[u{5 + 5}; {4 + 4}]")
     assert c.bit_length == 80
-    d = Format("{a: u{4 + 4}, b: [u{5 + 5}; {4 + 4}]}")
+    d = Format("format(a: u{4 + 4}, b: [u{5 + 5}; {4 + 4}])")
     d.pack([255, [1, 10, 55, 4, 3, 2, 1, 0]])
     assert d.to_bits() == Bits('0xff, u10=1, u10=10, u10=55, u10=4, u10=3, u10=2, u10=1, u10=0')
 
@@ -455,7 +455,7 @@ def test_expression_dtypes():
     assert str(a) == 'u{testing}'
     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
     assert str(d) == 'my_name: [f{4*e}; {a + b}]'
-    f = Format('{x: u8, [u{x}; {x + 1}]}')
+    f = Format('format(x: u8, [u{x}; {x + 1}])')
     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
     f.parse(b)
     v = f.value
@@ -466,7 +466,7 @@ def test_expression_dtypes():
 
 
 def test_unpack():
-    f = Format.from_string("header = {u8, u4, bool}")
+    f = Format.from_string("header: format (u8, u4, bool)")
     b = Bits.from_string("u8=1, u4=2, 0b1")
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
@@ -491,7 +491,7 @@ def test_construction_by_appending():
 
 
 f_str = """
-sequence_header = {
+sequence_header : format (
     sequence_header_code: const hex8 = 0x000001b3
     horizontal_size_value: u12
     vertical_size_value: u12 
@@ -502,7 +502,7 @@ sequence_header = {
     vbv_buffer_size_value: u10,
     constrained_parameters_flag: bool
     load_intra_quantiser_matrix: u1
-}
+)
 """
 
 
@@ -511,16 +511,17 @@ def test_example_format():
 
 
 def test_format_str_equivalences():
-    f1 = Format("  abc = { f16, u5, [bool; 4]}")
-    f2 = Format("abc={f16,u5,[  bool  ;4]  }  ")
+    f1 = Format("  abc : format ( f16, u5, [bool; 4]) ")
+    f2 = Format("abc:format(f16,u5,[  bool  ;4]  )  ")
     f3 = Format("""
     
-    abc = 
-    {
+    abc : 
+    format
+    (
     f16,
     u5
     
-    [bool;4],}
+    [bool;4],)
     """)
     assert f1 == f2 == f3
     print(f1, f2, f3)
@@ -531,14 +532,14 @@ def test_format_str_equivalences():
 
 
 def test_stretchy_field():
-    f = Format("{u8, u}")
+    f = Format("format(u8, u)")
     f.unpack("0xff1")
     assert f.value == [255, 1]
 
-    bad = Format("{u, u8}")
+    bad = Format("format(u, u8)")
     with pytest.raises(ValueError):
         bad.parse("0xff1")
-    g = Format("{u5, bytes}")
+    g = Format("format(u5, bytes)")
     g.parse(b"hello_world")
     assert g[0].value == 13
     with pytest.raises(ValueError):
@@ -556,7 +557,7 @@ def test_repeated_field_copy():
 
 
 def test_format_copy():
-    f = Format("{x: u8 = 10, y: u8 = 20}")
+    f = Format("format(x: u8 = 10, y: u8 = 20)")
     g = Format.from_params([f, f])
     assert g[0].value == [10, 20]
     f[0].value = 5
@@ -569,17 +570,17 @@ def test_format_copy():
 
 
 s = """
-header = {
+header : format(
     x: u8,
     y: u8,
     z: u8,
     data: [u8; 3],
-    repeat{2}: {
+    repeat{2}: format(
         a: u8,
         b: u8
-    }
+    )
     bool
-}
+)
 """
 
 
@@ -596,18 +597,18 @@ def test_format_with_repeat():
 
 
 s2 = """
-x = { i5,
+x: format(i5,
 q: u8,
-{u3, 
+format(u3, 
 u4
-},
+),
 u5
-}
+)
 """
 
 
 def test_format_inside_format_from_string():
-    test = Format("x = {{u8, u8},}")
+    test = Format("x: format(format(u8, u8),)")
     test.pack([[1, 2]])
     assert test.value == [[1, 2]]
     f = Format(s2)
@@ -624,16 +625,16 @@ def test_format_inside_format_from_string():
 
 
 def test_eq():
-    f = Format("{u8, u8}")
-    assert f == Format("{u8, u8}")
-    assert f != Format("{u8, u8, u8}")
-    assert f != Format("{u8, const u8 = 10}")
-    assert f != Format("{u8, x: u8}")
-    assert Format("{u8 = 3}") == Format("{u8 = 3,}")
-    assert Format("{u8 = 3}") != Format("{u8 = 4}")
+    f = Format("format(u8, u8)")
+    assert f == Format("format(u8, u8)")
+    assert f != Format("format(u8, u8, u8)")
+    assert f != Format("format(u8, const u8 = 10)")
+    assert f != Format("format(u8, x: u8)")
+    assert Format("format(u8 = 3)") == Format("format(u8 = 3,)")
+    assert Format("format(u8 = 3)") != Format("format(u8 = 4)")
 
 def test_wrong_arguments():
-    f = Format("{bool, bool, {i3, q: i3}, [f64; 1]}")
+    f = Format("format(bool, bool, format(i3, q: i3), [f64; 1])")
     f.pack([True, False, [2, -2], [4.5]])
     assert f.value == [True, False, [2, -2], (4.5,)]
     f.clear()
@@ -642,7 +643,7 @@ def test_wrong_arguments():
     f.pack([1])
 
 def test_slicing_fields():
-    f = Format.from_string("x = {u8, u7, u6, u5, u4, u3, u2, u1}")
+    f = Format.from_string("x: format(u8, u7, u6, u5, u4, u3, u2, u1)")
     f.pack([8, 7, 6, 5, 4, 3, 2, 1])
     assert f[0].value == 8
     assert f[-1].value == 1
@@ -681,7 +682,7 @@ def test_setting_fields():
     assert len(f) == 5
 
 def test_dtypetuple_in_format():
-    h = Format('{(u8, u6)}')
+    h = Format('format((u8, u6))')
     h.pack([[10, 5]])
     assert h[0].value == (10, 5)
 
@@ -693,7 +694,7 @@ def test_set_values():
     assert f.value == [5, 6, 7, -8]
 
 def test_bad_names():
-    f = Format('{}')
+    f = Format('format()')
     assert f.name == ''
     with pytest.raises(ValueError):
         f.name = 'if'
@@ -703,11 +704,11 @@ def test_bad_names():
         f.name = 5
 
 def test_const_tuple():
-    f = Format("{const (bool, u5, u10) = (1, 31, 0)}")
+    f = Format("format(const (bool, u5, u10) = (1, 31, 0))")
     assert f.value == [(True, 31, 0)]
 
 def test_open_ended_array():
-    f = Format("{[u8;]}")
+    f = Format("format([u8;])")
     f.pack([[1, 2, 3]])
     assert f.value == [(1, 2, 3)]
     b = f.to_bits()
@@ -715,4 +716,4 @@ def test_open_ended_array():
     assert f.value == [(1, 2, 3)]
 
 def test_expressions_more():
-    f = Format("{a: u8, u{a}, u{a}}")
+    f = Format("format(a: u8, u{a}, u{a})")

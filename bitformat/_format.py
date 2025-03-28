@@ -79,7 +79,7 @@ class Format(FieldType):
         """
         Create a :class:`Format` instance from a string.
 
-        The string should be of the form ``'{field1, field2, ...}'`` or ``'name = {field1, field2, ...}'``,
+        The string should be of the form ``'format(field1, field2, ...)'`` or ``'name: format(field1, field2, ...)'``,
         with commas separating strings that will be used to create other :class:`FieldType` instances.
 
         :param s: The string to parse.
@@ -89,9 +89,9 @@ class Format(FieldType):
 
         .. code-block:: python
 
-            f1 = Format.from_string('{u8, bool=True, val: i7}')
-            f2 = Format.from_string('my_format = {float16,}')
-            f3 = Format.from_string('{u16, another_format = {[u8; 64], [bool; 8]}}')
+            f1 = Format.from_string('format(u8, bool=True, val: i7)')
+            f2 = Format.from_string('my_format: format(float16,)')
+            f3 = Format.from_string('format(u16, another_format: format([u8; 64], [bool; 8]))')
 
         """
         x = super().from_string(s)
@@ -217,15 +217,13 @@ class Format(FieldType):
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         colour = Colour(use_colour)
-        name_str = (
-            "" if self.name == "" else f"{colour.name}{self.name}{colour.off} = "
-        )
+        name_str = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
         s = ""
-        s += indent(f"{name_str}{{\n")
+        s += indent(f"{name_str}format(\n")
         with indent:
             for i, fieldtype in enumerate(self._fields):
                 s += fieldtype._str(indent, use_colour)
-        s += indent("}")
+        s += indent(")")
         return s
 
     @override

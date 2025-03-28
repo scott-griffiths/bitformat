@@ -41,7 +41,7 @@ repeat: "repeat" expression ":" field_type
 // The Pass field is literally just "pass"
 pass_: ["pass"]
 
-format: [field_name "="] "{" [field_type (("," | WS | NEWLINE) field_type)*] [","] "}"
+format: [field_name ":"] "format" "(" [field_type (("," | WS | NEWLINE) field_type)*] [","] ")"
 
 ?field_type: field | format | if_ | repeat | pass_
 

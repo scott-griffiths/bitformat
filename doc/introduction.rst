@@ -14,33 +14,7 @@ These libraries all have their strengths and weaknesses, and I am personally wel
 The `bitformat` library has the lofty ambition to be as expressive as `bitstring`, as efficient as `bitarray`, and as powerful as `construct`.
 I don't yet know if it will succeed, but the early alpha versions are already quite usable, with most of the future work needed to build out the support for formats. I'm happy for feedback from any early adopters, but if you don't want to use a library still in alpha then any of the above libraries are good choices.
 
-.. note::
 
-    ``bitformat`` vs. ``bitstring``
-
-    bitformat is from the same author as the `bitstring <https://github.com/scott-griffiths/bitstring>`_ package, which is widely used and has been actively maintained since 2006.
-    It covers much of the same ground, but is designed to have a stronger emphasis on performance, a simpler API and a more expressive syntax for binary formats.
-
-    ``bitstring``
-
-    * Simple and flexible syntax for binary data manipulation.
-    * Reasonable performance, but difficult to improve further.
-    * Very mature and stable - maintained since 2006.
-    * Hundreds of dependant projects and millions of downloads per month.
-
-
-    ``bitformat``
-
-    * Expressive syntax for complex binary formats.
-    * Emphasis on performance.
-    * Several major features still to be added.
-    * In alpha stage - still quite unstable.
-
-    I am hoping that ``bitformat`` will become a worthy successor, but even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely - at the time of writing their respective download counts are 88 million for bitstring and 882 for bitformat!
-
-    There are many similarities between bitformat and bitstring, but there has been no attempt to make them compatible.
-    Much of the reason for making a new package was to revisit many of the design decisions that were made almost two
-    decades ago when George W. Bush was president, the Nintendo Wii was the latest must-have tech, and Python 2.4 was the latest version.
 
 
 This introduction will start with a brief tour of the main features of `bitformat`, followed by a more in depth look at the main classes.
@@ -211,14 +185,14 @@ For more complex needs the :class:`Format` class allows a rich specification lan
 
 Combining some of our earlier creations we could make this format::
 
-    >>> fmt = Format("header = {const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12}")
+    >>> fmt = Format("header: format(const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
     >>> print(fmt)
-    header = {
+    header: format(
         const hex4 = 0147
         flags: [bool; 4]
         w: u12
         h: u12
-    }
+    )
 
 Here we have introduced named fields and const fields. It's then easy to set and get the named fields::
 
@@ -226,12 +200,12 @@ Here we have introduced named fields and const fields. It's then easy to set and
     >>> fmt['w'].value = 160
     >>> fmt['h'].value = 120
     >>> print(fmt)
-    header = {
+    header: format(
         const hex4 = 0147
         flags: [bool; 4] = (True, True, False, True)
         w: u12 = 160
         h: u12 = 120
-    }
+    )
     >>> fmt.unpack()
     ['0147', (True, True, False, True), 160, 120]
     >>> fmt.to_bytes()
@@ -243,12 +217,12 @@ Another way to create using the format is via the :meth:`Format.pack` method::
     >>> fmt.clear()
     >>> fmt.pack([[0, 0, 0, 0], 999, 5])
     >>> print(fmt)
-    header = {
+    header: format(
         const hex4 = 0147
         flags: [bool; 4] = (False, False, False, False)
         w: u12 = 999
         h: u12 = 5
-    }
+    )
 
 
 Case 2: Manipulating binary data
