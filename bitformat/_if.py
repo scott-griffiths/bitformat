@@ -86,12 +86,12 @@ class If(FieldType):
             return then_len
 
     @override
-    def _pack(self, value: Any, vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
-        self.condition_value = self.condition.evaluate(vars_ | kwargs)
+    def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
+        self.condition_value = self.condition.evaluate(kwargs)
         if self.condition_value:
-            _ = self.then_._pack(value, vars_, kwargs)
+            _ = self.then_._pack(value, kwargs)
         else:
-            _ = self.else_._pack(value, vars_, kwargs)
+            _ = self.else_._pack(value, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
@@ -128,7 +128,7 @@ class If(FieldType):
         s = indent(f"if {{{self.condition.code_str}}}:\n")
         with indent:
             s += self.then_._str(indent, use_colour)
-        if self.else_.bit_length != 0:
+        if self.else_ is not Pass():
             s += indent("else:\n")
             with indent:
                 s += self.else_._str(indent, use_colour)

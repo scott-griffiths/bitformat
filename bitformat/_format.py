@@ -105,7 +105,7 @@ class Format(FieldType):
         return sum(f.bit_length for f in self._fields)
 
     @override
-    def _pack(self, values: Sequence[Any], _vars: dict[str, Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
         if not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
 
@@ -114,13 +114,16 @@ class Format(FieldType):
             next_field = next(fields)
             while hasattr(next_field, 'const') and next_field.const:
                 next_field = next(fields)
-            next_field._pack(value, _vars, kwargs)
+            next_field._pack(value, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+        self.vars = {}
         pos = startbit
         for fieldtype in self._fields:
             pos += fieldtype._parse(b, pos, vars_)
+            if fieldtype.name:
+                self.vars[fieldtype.name] = fieldtype._get_value()
         return pos - startbit
 
     @override
@@ -136,6 +139,7 @@ class Format(FieldType):
 
     @override
     def clear(self) -> None:
+        self.vars = {}
         for fieldtype in self._fields:
             fieldtype.clear()
 
@@ -158,7 +162,7 @@ class Format(FieldType):
 
     @override
     def to_bits(self) -> Bits:
-        return Bits().from_joined(fieldtype.to_bits() for fieldtype in self._fields)
+        return Bits.from_joined(fieldtype.to_bits() for fieldtype in self._fields)
 
     def __len__(self) -> int:
         return len(self._fields)
@@ -226,7 +230,7 @@ class Format(FieldType):
 
     @override
     def _repr(self) -> str:
-        name_str = "" if self.name == "" else f", {self.name!r}"
+        name_str = "" if self.name == "" else f", name={self.name!r}"
         s = f"{self.__class__.__name__}.from_params(["
         for i, fieldtype in enumerate(self._fields):
             s += fieldtype._repr()

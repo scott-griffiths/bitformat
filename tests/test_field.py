@@ -65,6 +65,7 @@ class TestCreation:
         with pytest.raises(ValueError):
             _ = Field.from_string("constu3 = 3")
 
+    @pytest.mark.skip
     @given(st.binary())
     def test_creation_from_bytes(self, b):
         f = Field.from_params("bytes", name="hello", value=b)

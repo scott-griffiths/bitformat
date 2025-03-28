@@ -162,6 +162,13 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def is_concrete(self) -> bool:
+        """Return whether the size of the dtype is fully known.
+
+        This will be True for dtypes without expressions."""
+        ...
+
+    @abc.abstractmethod
     def __str__(self) -> str:
         ...
 
@@ -272,6 +279,11 @@ class DtypeSingle(Dtype):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         else:
             return self._get_fn(b[: self._bit_length])
+
+    @override
+    @final
+    def is_concrete(self) -> bool:
+        return self._size.has_const_value and self._size.const_value is not None
 
     @override
     @final
@@ -406,13 +418,18 @@ class DtypeArray(Dtype):
     def __hash__(self) -> int:
         return hash((self._dtype_single, self._items))
 
+    @property
     @override
     @final
-    @property
     def bit_length(self) -> int | None:
         if self._dtype_single.bit_length is not None and self._items.has_const_value and self._items.const_value is not None:
             return self._dtype_single.bit_length * self._items.const_value
         return None
+
+    @override
+    @final
+    def is_concrete(self) -> bool:
+        return self._dtype_single.is_concrete() and self._items.has_const_value and self._items.const_value is not None
 
     @override
     @final
@@ -508,11 +525,16 @@ class DtypeTuple(Dtype):
             pos += dtype.bit_length
         return tuple(vals)
 
+    @property
     @override
     @final
-    @property
     def bit_length(self) -> int:
         return self._bit_length
+
+    @override
+    @final
+    def is_concrete(self) -> bool:
+        return all(dtype.is_concrete() for dtype in self._dtypes)
 
     @override
     @final

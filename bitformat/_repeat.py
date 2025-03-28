@@ -69,10 +69,10 @@ class Repeat(FieldType):
         return self.bit_length
 
     @override
-    def _pack(self, value: Sequence[Any], vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Sequence[Any], kwargs: dict[str, Any]) -> None:
         bits_list = []
         for i in range(self.count):
-            self.field._pack(value[i], vars_, kwargs)
+            self.field._pack(value[i], kwargs)
             bits_list.append(self.field.to_bits())
         self._bits = Bits.from_joined(bits_list)
 

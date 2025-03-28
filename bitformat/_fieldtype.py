@@ -98,7 +98,7 @@ class FieldType(abc.ABC):
         """
         if kwargs is None:
             kwargs = {}
-        self._pack(values, {}, kwargs)
+        self._pack(values, kwargs)
 
     @final
     def unpack(self, b: BitsType | None = None) -> Any | list[Any]:
@@ -182,7 +182,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _pack(self, value: Any | Sequence[Any], vars_: dict[str, Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Any | Sequence[Any], kwargs: dict[str, Any]) -> None:
         """
         Build the field from the values list, starting at index.
 

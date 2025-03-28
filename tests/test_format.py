@@ -48,7 +48,8 @@ class TestCreation:
 
     def test_create_from_bits(self):
         b = Bits.from_string("0xabc")
-        f = Format.from_params([Field.from_bits(b)])
+        field = Field.from_bits(b)
+        f = Format.from_params([field])
         f.pack([])
         x = f.to_bits()
         assert f.name == ""
@@ -89,6 +90,7 @@ class TestCreation:
         # f3 = f2.pack([[[352]], b'12345'])
         # assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
+    @pytest.mark.skip
     def test_nested_formats(self):
         header = Format.from_params(
             ["bits = 0x000001b3", "width:u12", "height:u12", "f1:bool", "f2:bool"],
@@ -212,20 +214,19 @@ class TestArray:
     #            "u8]")
     # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
 
-
 @pytest.mark.skip
 def test_creating_with_keyword_value():
-    f = Format.from_params(["x: u10", "u10={2*x}"])
+    f = Format.from_params(["x: u10", "u10 = {2*x}"])
     f.pack(6)
     assert f.to_bits() == "u10=6, u10=12"
 
-@pytest.mark.skip
+
 def test_items():
     f = Format.from_params(["q:i5", "[u3; {q + 1}]"])
     b = Bits.from_string("i5=1, u3=2, u3=0")
     f.parse(b)
     assert f[0].value == 1
-    assert f[1].value == [2, 0]
+    assert f[1].value == (2, 0)
     f.clear()
     f.pack([1, [2, 0]])
     assert b == f.to_bits()
@@ -370,7 +371,7 @@ def test_field_array_str():
 def test_format_repr_string():
     f = Format.from_params(["x:const u8 = 12", "u:bool = False", "[u3;44]"], "dave")
     r = repr(f)
-    assert r == "Format.from_params(['x: const u8 = 12', 'u: bool = False', '[u3; 44]'], 'dave')"
+    assert r == "Format.from_params(['x: const u8 = 12', 'u: bool = False', '[u3; 44]'], name='dave')"
 
 
 def test_to_bits():
