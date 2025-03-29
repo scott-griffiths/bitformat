@@ -9,22 +9,28 @@ dtype_modifier: /le|be|ne/
 // Expression strings start with a { and end with a }
 expression: "{" /[^\}]+/ "}"
 
+// Data type sizes and items can be either integers or expressions.
 dtype_size: INT | expression
 dtype_items: INT | expression
 
-dtype_single: dtype_kind ["_" dtype_modifier] [dtype_size]
-dtype_array: "[" dtype_single ";" [dtype_items] "]"
-dtype_tuple: "(" dtype ("," dtype)* [","] ")"
-
-// dtype is the abstract base class for the other dtypes above.
+// dtype is the abstract base class for the dtypes below.
 ?dtype: dtype_tuple | dtype_single | dtype_array
+
+// A dtype with a single type and optional size, for example "u8".
+dtype_single: dtype_kind ["_" dtype_modifier] [dtype_size]
+// An array with items of a single dtype, for example "[u8; 4]".
+dtype_array: "[" dtype_single ";" [dtype_items] "]"
+// A tuple of dtypes, for example "(u8, u16, [u32; 10])".
+dtype_tuple: "(" dtype ("," dtype)* [","] ")"
 
 ?field_name: NAME -> field_name
 
+// A single value is a an item that could be used to initialise a field.
 ?inline_string: /[a-zA-Z0-9\.\+\-]+/
-simple_value: python_string | inline_string -> simple_value
-list_of_values: ("[" simple_value ("," simple_value)* [","] "]") | ("(" simple_value ("," simple_value)* [","] ")")
-?value: simple_value | list_of_values
+single_value: python_string | inline_string -> single_value
+// A list could be in the form of a list or tuple of single_values.
+list_of_values: ("[" single_value ("," single_value)* [","] "]") | ("(" single_value ("," single_value)* [","] ")")
+?value: single_value | list_of_values
 
 // Match const_field with higher priority than mutable_field
 // const fields have the 'const' keyword and always have a value
