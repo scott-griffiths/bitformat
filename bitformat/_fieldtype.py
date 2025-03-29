@@ -36,9 +36,7 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['Field'].from_params(dtype, name, value)
 
     def repeat(self, items) -> Repeat:
-        expr = items[0]
-        count = expr.evaluate()
-        return fieldtype_classes['Repeat'].from_params(count, items[1])
+        return fieldtype_classes['Repeat'].from_params(items[0], items[1])
 
     def pass_(self, items) -> Pass:
         assert len(items) == 0

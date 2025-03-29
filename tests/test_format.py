@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind
+from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind, Expression
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -181,9 +181,9 @@ class TestArray:
     @pytest.mark.skip
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
-        f = Format(
+        f = Format.from_params(
             [
-                Field("bytes", "signature", b"BMP", const=True),
+                "signature: const bytes = b'BMP'",
                 "width: i8",
                 "height: i8",
                 "pixels: [u8 ; {width * height}]",
@@ -199,26 +199,19 @@ class TestArray:
         assert f["pixels"].value == p
 
 
-# TODO: Failing for now, but this is the one to fix for expressions first.
-# def test_example_from_docs():
-#     f = Format("[x: u8, y: u{x}, bool]")
-#     b = Bits.from_string("u8=10, u10=987, bool=1")
-#     assert f.parse(b) == 19  # Number of parsed bits
-#     assert f["y"].value == 987
+def test_example_from_docs():
+    f = Format("format(x: u8, y: u{x}, bool)")
+    b = Bits.from_string("u8=10, u10=987, bool=1")
+    assert f.parse(b) == 19  # Number of parsed bits
+    assert f["y"].value == 987
 
-    # f = Format("[sync_byte: const hex8 = 0xff,"
-    #            "items: u16,"
-    #            "flags: [bool ; {items + 1} ],"
-    #            "Repeat({items + 1},"
-    #            "    [byte_cluster_size: u4, bytes{byte_cluster_size}]),"
-    #            "u8]")
+    f = Format("format(sync_byte: const hex2 = 0xff,"
+               "items: u16,"
+               "flags: [bool ; {items + 1} ],"
+               "repeat {items + 1}: "
+               "    format(byte_cluster_size: u4, bytes{byte_cluster_size}),"
+               "u8)")
     # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
-
-@pytest.mark.skip
-def test_creating_with_keyword_value():
-    f = Format.from_params(["x: u10", "u10 = {2*x}"])
-    f.pack(6)
-    assert f.to_bits() == "u10=6, u10=12"
 
 
 def test_items():
@@ -261,10 +254,9 @@ class TestMethods:
         assert f["pop"].value == 999999
 
 
-@pytest.mark.skip
 def test_repeating_field():
-    f = Repeat(5, "u8")
-    d = Array("u8", [1, 5, 9, 7, 6]).data
+    f = Repeat.from_params(5, "u8")
+    d = Array("u8", [1, 5, 9, 7, 6]).to_bits()
     f.unpack(d)
     assert f.value == [1, 5, 9, 7, 6]
 
@@ -282,34 +274,6 @@ def test_find_field():
     f.pack([352, 288])
     assert f.to_bits() == "0x000001b3160120"
 
-
-@pytest.mark.skip
-def test_format_repr_and_str():
-    f = Format(
-        [
-            "u8 <s>",
-            Repeat(
-                "s + 1",
-                Format.from_params(
-                    [
-                        "u12 <width>",
-                        "u12 <height>",
-                        Repeat("width * height", "u8", "data"),
-                    ]
-                ),
-            ),
-            "hex <eof> = 123",
-        ],
-        "my_format",
-    )
-    s = str(f)
-    r = repr(f)
-    assert "my_format" in s
-    print(s)
-    print(r)
-    assert "my_format" in r
-
-
 def test_format_get_and_set():
     f = Format("format(u8, u8, u8)")
     for field in f:
@@ -323,12 +287,10 @@ def test_format_get_and_set():
     assert g[-1].value == 12
 
 
-@pytest.mark.skip
 def test_repeating_from_expression():
-    f = Format(["x: u8", Repeat("{2*x}", "hex4")], "my_little_format")
-    b = f.pack([2, ["a", "b", "c", "d"]])
-    assert b.parse("hex") == "02abcd"
-
+    f = Format.from_params(["x: u8", Repeat.from_params(Expression("{2*x}"), "hex1")], "my_little_format")
+    f.pack([2, ["a", "b", "c", "d"]])
+    assert f.to_bits() == "u8=2, hex1=a, hex1=b, hex1=c, hex1=d"
 
 @pytest.mark.skip
 def test_repeat_with_const_expression():
