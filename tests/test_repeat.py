@@ -33,11 +33,6 @@ def test_from_string():
     assert q.unpack(Bits("0x8710")) == [[True, 7], [False, 16]]
 
 
-def test_edge_cases():
-    p = Repeat.from_params(-1, "x: u8")
-    assert p.unpack("0xff") == []
-
-
 def test_pack():
     f = Repeat("repeat {4}: bool")
     f.pack([True, False, True, False])

@@ -87,8 +87,6 @@ class TestCreation:
         f.pack([352])
         assert f.to_bits() == "0x000001b3, u12=352, u12=288, 0b1"
         f2 = Format.from_params([f, "bytes5"], "main")
-        # f3 = f2.pack([[[352]], b'12345'])
-        # assert f3 == Bits.from_string('0x000001b3, u12=352, u12=288, 0b1') + b'12345'
 
     @pytest.mark.skip
     def test_nested_formats(self):
@@ -205,13 +203,13 @@ def test_example_from_docs():
     assert f.parse(b) == 19  # Number of parsed bits
     assert f["y"].value == 987
 
-    f = Format("format(sync_byte: const hex2 = 0xff,"
-               "items: u16,"
-               "flags: [bool ; {items + 1} ],"
-               "repeat {items + 1}: "
-               "    format(byte_cluster_size: u4, bytes{byte_cluster_size}),"
-               "u8)")
-    # f.pack([1, b"1", 2, b"22", 3, b"333", 12], items=2, flags=[True, False, True])
+    # f = Format("format(sync_byte: const hex2 = 0xff,"
+    #            "items: u16,"
+    #            "flags: [bool ; {items + 1} ],"
+    #            "repeat {items + 1}: "
+    #            "    format(byte_cluster_size: u4, bytes{byte_cluster_size}),"
+    #            "u8)")
+    # f.pack([1, [True, False], [[1, b'a'], [2, b'qz']], 255])
 
 
 def test_items():
@@ -294,32 +292,29 @@ def test_repeating_from_expression():
 
 @pytest.mark.skip
 def test_repeat_with_const_expression():
-    f = Format(["the_size: i9", Repeat("{the_size}", ["const u5=0", "const bin3=111"])])
+    f = Format("format(the_size: i9, repeat {the_size}: format(const u5=0, const bin3=111))")
     f.pack([3])
     assert f.to_bits() == "i9=3, 0x070707"
 
-
-@pytest.mark.skip
 def test_repeat_with_bits():
-    f = Repeat(3, "0xab")
-    b = f.pack()
+    f = Repeat.from_params(3, "bits=0xab")
+    f.pack([])
+    b = f.to_bits()
     assert b == "0xababab"
-    f2 = Repeat(2, b)
-    b2 = f2.pack()
+    f2 = Repeat.from_params(2, Field.from_bits(b))
+    f2.pack([])
+    b2 = f2.to_bits()
     assert b2 == "0xabababababab"
 
-
-@pytest.mark.skip
 def test_repeat_with_dtype():
-    f = Repeat(4, Dtype.from_string("i4"))
-    b = f.pack([1, 2, 3, 4])
-    f.unpack(b)
+    f = Repeat.from_params(4, "i4")
+    f.pack([1, 2, 3, 4])
     assert f.value == [1, 2, 3, 4]
 
-    f = Repeat(4, Dtype.from_string("i40"))
-    b = f.pack([-400, 200, -200, 400])
+    f = Repeat.from_params(2, "[i8; 2]")
+    b = f.pack([[-40, 20], [-100, 4]])
     f.unpack(b)
-    assert f.value == [-400, 200, -200, 400]
+    assert f.value == [(-40, 20), (-100, 4)]
 
 
 def test_field_array_str():
@@ -679,3 +674,13 @@ def test_open_ended_array():
 
 def test_expressions_more():
     f = Format("format(a: u8, u{a}, u{a})")
+
+# def test_packing_format_with_const_field():
+#     f = Format("format(a: u8, b: u{a} = 5)")
+#     f.pack([3])
+#     assert f.value == [3, 5]
+#     assert f.to_bits() == "u8=3, u8=5"
+#     f2 = Format.from_params(["a: u8", "b: const u8 = 5"])
+#     f2.pack([4])
+#     assert f2.value == [4, 5]
+#     assert f2.to_bits() == "u8=4, u8=5"

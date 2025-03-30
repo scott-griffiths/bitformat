@@ -8,7 +8,6 @@ from ._fieldtype import FieldType
 from ._pass import Pass
 
 
-
 __all__ = ["Format"]
 
 

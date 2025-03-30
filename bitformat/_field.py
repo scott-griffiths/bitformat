@@ -67,6 +67,8 @@ class Field(FieldType):
             elif isinstance(x._dtype, DtypeSingle) and x._dtype._definition.return_type == Bits:
                 value = Bits.from_string(value)
         if value is not None:
+            # if x._concrete_dtype is None:
+            #     raise ValueError(f"Field '{x}' has no concrete dtype, so can't set the value to {value}.")
             x._set_value_no_const_check(value, {})
         return x
 

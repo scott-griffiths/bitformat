@@ -15,6 +15,7 @@ class Repeat(FieldType):
     field: FieldType
     count: Expression
     _concrete_count: int | None
+    _bits_list: list[Bits]
 
     def __new__(cls, s: str) -> Repeat:
         return cls.from_string(s)
@@ -34,6 +35,7 @@ class Repeat(FieldType):
             else:
                 raise ValueError(f"Repeat count must be an integer, not {type(x.count.const_value)}.")
         x._name = name
+        x._bits_list = []
         if isinstance(field, str):
             field = FieldType.from_string(field)
         elif not isinstance(field, FieldType):
@@ -45,7 +47,11 @@ class Repeat(FieldType):
     def _get_bit_length(self) -> int:
         if self._concrete_count is None:
             raise ValueError("Repeat count is not concrete, cannot calculate bit length.")
-        return self.field.bit_length * self._concrete_count
+        try:
+            field_const_length = self.field.bit_length
+        except ValueError:
+            raise ValueError("Field being repeated does not have a concrete bit length.")
+        return field_const_length * self._concrete_count
 
     @classmethod
     @override
@@ -72,24 +78,33 @@ class Repeat(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, kwargs: dict[str, Any]) -> int:
-        if len(b) - startbit < self.bit_length:
-            raise ValueError(f"Repeat field '{str(self)}' needs {self.bit_length} bits to parse, but {len(b) - startbit} were available.")
-        self._bits = b[startbit : startbit + self.bit_length]
+        self._bits_list = []
+        pos = startbit
         if self._concrete_count is None:
             self._concrete_count = self.count.evaluate(kwargs)
         for i in range(self._concrete_count):
-            startbit += self.field._parse(b, startbit, kwargs)
-        return self.bit_length
+            pos += self.field._parse(b, pos, kwargs)
+            self._bits_list.append(self.field.to_bits())
+        return pos - startbit
 
     @override
-    def _pack(self, value: Sequence[Any], kwargs: dict[str, Any]) -> None:
-        bits_list = []
+    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
+        self._bits_list = []
         if self._concrete_count is None:
             self._concrete_count = self.count.evaluate(kwargs)
+
+        if self.field.value is not None:
+            if len(values) > 0:
+                raise ValueError("Values passed to Repeat will be unused as the field is constant.")
+            # It's just a const value repeated.
+            self._bits_list = [self.field.to_bits()] * self._concrete_count
+            return
+
+        value_iter = iter(values)
         for i in range(self._concrete_count):
-            self.field._pack(value[i], kwargs)
-            bits_list.append(self.field.to_bits())
-        self._bits = Bits.from_joined(bits_list)
+
+            self.field._pack(values[i], kwargs)
+            self._bits_list.append(self.field.to_bits())
 
     @override
     def _copy(self) -> Repeat:
@@ -98,20 +113,17 @@ class Repeat(FieldType):
 
     @override
     def to_bits(self) -> Bits:
-        return self._bits if self._bits is not None else Bits()
+        return Bits.from_joined(self._bits_list)
 
     def clear(self) -> None:
-        self._bits = None
+        self._concrete_count = None
+        self._bits_list = []
 
     @override
     def _get_value(self) -> list[Any] | None:
-        if self._bits is None:
+        if not self._bits_list:
             return None
-        values = []
-        for i in range(self._concrete_count):
-            value = self.field.unpack(self._bits[i * self.field.bit_length : (i + 1) * self.field.bit_length])
-            values.append(value)
-        return values
+        return [self.field.unpack(bits) for bits in self._bits_list]
 
     @override
     def _set_value_with_kwargs(self, val: list[Any], kwargs: dict[str, Any]) -> None:
