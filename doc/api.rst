@@ -163,6 +163,7 @@ Miscellaneous
     :maxdepth: 1
     :hidden:
 
+    parser_ref.rst
     bits.rst
     dtype.rst
     array.rst
