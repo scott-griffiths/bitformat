@@ -220,8 +220,9 @@ class Format(FieldType):
         s = ""
         s += indent(f"{name_str}format(\n")
         with indent:
-            for i, fieldtype in enumerate(self._fields):
-                s += fieldtype._str(indent, use_colour)
+            for fieldtype in self._fields[:-1]:
+                s += fieldtype._str(indent, use_colour) + ",\n"
+            s += self._fields[-1]._str(indent, use_colour) + '\n'
         s += indent(")")
         return s
 

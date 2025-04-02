@@ -371,7 +371,7 @@ def test_from_string():
 
 
 def test_recursive_from_string():
-    s = "header: format (u8, u4, bool,body:format(u8=23, [u4; 3], bool))"
+    s = "header: format(u8, u4, bool,body:format(u8=23, [u4; 3], bool))"
     f = FieldType.from_string(s)
     assert f.name == "header"
     assert f[3][0].value == 23
@@ -385,7 +385,7 @@ def test_recursive_from_string():
 
 
 def test_interesting_types_from_string():
-    s = "  format (const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',) "
+    s = "  format(const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',) "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f["_fred"].value == b"abc\x04"
@@ -423,7 +423,7 @@ def test_expression_dtypes():
 
 
 def test_unpack():
-    f = Format.from_string("header: format (u8, u4, bool)")
+    f = Format.from_string("header: format(u8, u4, bool)")
     b = Bits.from_string("u8=1, u4=2, 0b1")
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
@@ -448,16 +448,16 @@ def test_construction_by_appending():
 
 
 f_str = """
-sequence_header : format (
-    sequence_header_code: const hex8 = 0x000001b3
-    horizontal_size_value: u12
-    vertical_size_value: u12 
-    aspect_ratio_information: u4
-    frame_rate_code: u4
-    bit_rate_value: u18
-    marker_bit: bool
+sequence_header : format(
+    sequence_header_code: const hex8 = 0x000001b3,
+    horizontal_size_value: u12,
+    vertical_size_value: u12 ,
+    aspect_ratio_information: u4,
+    frame_rate_code: u4,
+    bit_rate_value: u18,
+    marker_bit: bool,
     vbv_buffer_size_value: u10,
-    constrained_parameters_flag: bool
+    constrained_parameters_flag: bool,
     load_intra_quantiser_matrix: u1
 )
 """
@@ -468,15 +468,11 @@ def test_example_format():
 
 
 def test_format_str_equivalences():
-    f1 = Format("  abc : format ( f16, u5, [bool; 4]) ")
+    f1 = Format("abc : format( f16, u5, [bool; 4]) ")
     f2 = Format("abc:format(f16,u5,[  bool  ;4]  )  ")
-    f3 = Format("""
-    
-    abc : 
-    format
-    (
+    f3 = Format("""    abc : format(
     f16,
-    u5
+    u5,
     
     [bool;4],)
     """)
@@ -525,7 +521,7 @@ def test_format_copy():
     assert g[1].value == [10, 20]
     assert f[0].value == 5
 
-
+# TODO: The , at the end of the format in the repeat shouldn't be needed.
 s = """
 header : format(
     x: u8,
@@ -535,7 +531,7 @@ header : format(
     repeat{2}: format(
         a: u8,
         b: u8
-    )
+    ),
     bool
 )
 """

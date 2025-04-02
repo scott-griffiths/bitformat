@@ -52,7 +52,7 @@ class FieldTypeTransformer(DtypeTransformer):
     def format(self, items) -> Format:
         assert len(items) >= 1
         name = items[0] if items[0] is not None else ''
-        fields = items[1:]
+        fields = [i for i in items[1:] if i is not None]
         return fieldtype_classes['Format'].from_params(fields, name)
 
 field_type_transformer = FieldTypeTransformer()

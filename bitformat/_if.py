@@ -129,9 +129,11 @@ class If(FieldType):
         with indent:
             s += self.then_._str(indent, use_colour)
         if self.else_ is not Pass():
+            s += "\n"
             s += indent("else:\n")
             with indent:
                 s += self.else_._str(indent, use_colour)
+        s += "\n"
         return s
 
     @override

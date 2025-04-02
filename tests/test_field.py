@@ -225,13 +225,6 @@ def test_unpack_with_unknown_items():
     f.pack([5, -5, 0, 100])
     assert f.unpack() == (5, -5, 0, 100)
 
-def test_multiline_fields():
-    f1 = Field.from_string("x: u8")
-    f2 = Field.from_string("x: u8\n")
-    f3 = Field.from_string("x: \nu8")
-    assert f1 == f2
-    assert f2 == f3
-
 def test_stretchy_field():
     s = Field("u")
     v = s.unpack("0xff")

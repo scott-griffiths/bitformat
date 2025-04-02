@@ -39,21 +39,22 @@ const_field.1: [field_name ":"] "const " dtype "=" value -> const_field
 mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
-if_: "if" expression ":" field_type ["else" ":" field_type]
+if_: "if" expression ":" [_NEWLINE]* field_type [_NEWLINE]* ["else" ":" [_NEWLINE]* field_type]
 
 // Note this doesn't yet have a name?
-repeat: "repeat" expression ":" field_type
+repeat: "repeat" expression ":" [_NEWLINE]* field_type
 
 // The Pass field is literally just "pass"
 pass_: ["pass"]
 
-format: [field_name ":"] "format" "(" [field_type (("," | WS | NEWLINE) field_type)*] [","] ")"
+format: [_NEWLINE]* [field_name ":"] "format(" [_NEWLINE]* [field_type]  ("," [_NEWLINE]* field_type [_NEWLINE]*)* ")" [_NEWLINE]*
 
 ?field_type: field | format | if_ | repeat | pass_
 
 %import common.INT -> INT
 %import python.NAME -> NAME
 %import python.string -> python_string  // Parses Python strings, including things like b'abc' and f"abc'd'"
-%import common.WS
-%import common.NEWLINE
-%ignore WS
+%import common.WS_INLINE
+_NEWLINE: "\n"
+%import common.WS -> WS
+%ignore WS_INLINE
