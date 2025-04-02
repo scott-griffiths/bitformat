@@ -10,7 +10,7 @@ The :class:`Dtype` and :class:`FieldType` base classes also return the correct t
 
 All of these types can be created more explicitly using their ``from_params`` methods, but this quickly becomes unwieldly, especially for things like formats. They are still very useful if you need to create data types and fields programmatically though.
 
-The source of truth for the string parsing is contained in the Lark format definition file. A less exact, but easier to read summary is given in the table below. Optional elements are indicated with angle brackets ``<like_this>``.
+The source of truth for the string parsing is contained in the `Lark grammar file <https://github.com/scott-griffiths/bitformat/blob/main/bitformat/bitformat_grammar.lark>`_. A less exact, but easier to read summary is given in the table below. Optional elements are indicated with angle brackets ``<like_this>``.
 
 .. list-table::
     :widths: 25 75
@@ -53,5 +53,8 @@ The source of truth for the string parsing is contained in the Lark format defin
     * - :class:`Repeat` (FieldType)
       - ``<name_str:>`` ``repeat`` ``Expression`` ``:`` ``FieldType``
     * -
-      - e.g. ``'repeat {x + 1}: u8'``
+      - e.g. ``'repeat {x + 1}: u8'``, ``i: repeat 10: u{4 + 4*(i % 2)}``
+    * - :class:`Pass` (FieldType)
+      - ``pass``
+
 
