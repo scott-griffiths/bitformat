@@ -51,9 +51,9 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
     * -
       - e.g. ``'if {x > 0}: [u8; 4]'``
     * - :class:`Repeat` (FieldType)
-      - ``<name_str:>`` ``repeat`` ``Expression`` ``:`` ``FieldType``
+      - ``repeat`` ``Expression`` ``:`` ``FieldType``
     * -
-      - e.g. ``'repeat {x + 1}: u8'``, ``i: repeat 10: u{4 + 4*(i % 2)}``
+      - e.g. ``'repeat {x + 1}: u8'``, ``repeat 10: format(bool, f16)``
     * - :class:`Pass` (FieldType)
       - ``pass``
 

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 from ._field import FieldType
 from ._common import override, Indenter, Expression
 from typing import Sequence, Any
@@ -21,7 +19,7 @@ class Repeat(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, count: int | str | Expression, field: FieldType | str, name: str = "") -> Repeat:
+    def from_params(cls, count: int | str | Expression, field: FieldType | str) -> Repeat:
         x = super().__new__(cls)
         if isinstance(count, str):
             count = Expression(count)
@@ -34,7 +32,6 @@ class Repeat(FieldType):
                 x._concrete_count = x.count.const_value
             else:
                 raise ValueError(f"Repeat count must be an integer, not {type(x.count.const_value)}.")
-        x._name = name
         x._bits_list = []
         if isinstance(field, str):
             field = FieldType.from_string(field)
@@ -63,7 +60,6 @@ class Repeat(FieldType):
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
-        # TODO: name is not handled yet.
         count_str = str(self.count)
         s = indent(f"repeat{{{count_str}}}: {self.field._str(indent, use_colour)}")
         return s
@@ -108,7 +104,7 @@ class Repeat(FieldType):
 
     @override
     def _copy(self) -> Repeat:
-        x = self.__class__.from_params(self.count, self.field._copy(), self.name)
+        x = self.__class__.from_params(self.count, self.field._copy())
         return x
 
     @override
@@ -141,9 +137,8 @@ class Repeat(FieldType):
 
     @override
     def _get_name(self) -> None:
-        return self._name
+        return None
 
     @override
     def _set_name(self, name: str) -> None:
-        # TODO: import this function!
-        self._name = validate_name(name)
+        raise AttributeError("The Repeat field has no 'name' property.")
