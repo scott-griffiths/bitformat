@@ -521,17 +521,16 @@ def test_format_copy():
     assert g[1].value == [10, 20]
     assert f[0].value == 5
 
-# TODO: The , at the end of the format in the repeat shouldn't be needed.
 s = """
 header : format(
     x: u8,
-    y: u8,
+    y: u8
     z: u8,
     data: [u8; 3],
     repeat{2}: format(
-        a: u8,
+        a: u8
         b: u8
-    ),
+    )
     bool
 )
 """

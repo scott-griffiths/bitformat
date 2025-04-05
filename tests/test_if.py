@@ -43,7 +43,6 @@ def test_explicit_pass():
     f.parse(x=4)
     assert f.bit_length == 0
 
-# TODO: The , after the else clause shoudn't be needed.
 def test_slightly_more_complex_things():
     f = Format("""my_format: format(
         header: hex2 = 0x47,
@@ -51,7 +50,7 @@ def test_slightly_more_complex_things():
         if {flag}:
             data: [u8; 6]
         else:
-            data: bool,
+            data: bool
         f32
     )""")
     g = Format.from_string(str(f))

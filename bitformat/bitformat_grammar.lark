@@ -41,13 +41,12 @@ mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
 
 if_: "if" expression ":" [_WS] field_type [_WS "else" ":" _WS field_type] [_WS]
 
-// Note this doesn't yet have a name?
-repeat: "repeat" expression ":" _NEWLINE* field_type
+repeat: "repeat" expression ":" [_WS] field_type [_WS]
 
 // The Pass field is literally just "pass"
 pass_: ["pass"]
 
-format: _NEWLINE* [field_name ":"] "format(" _NEWLINE* [field_type]  ("," _NEWLINE* field_type _NEWLINE*)* ")" _NEWLINE*
+format: [_WS] [field_name ":"] "format(" [_WS] [field_type]  ((("," | _NEWLINE) [_WS] field_type [_WS]) | [_WS])* ")" [_WS]
 
 ?field_type: field | format | if_ | repeat | pass_
 
