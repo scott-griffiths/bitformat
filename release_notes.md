@@ -1,5 +1,17 @@
 # Release Notes
 
+### April 2025: version 0.3.
+
+* Big reworking for Dtypes. `Dtype` is now an abstract base class that can create `DtypeSingle`, `DtypeArray` and `DtypeTuple` instances.
+This gives extra flexibility throughout the library.
+
+* Moved fully over to using a Lark grammar for parsing. This makes changes and experimentation much easier.
+
+* More complete expressions, as well as the repeat and if/else field types.
+
+* Numerous changes to the string representation of objects inside formats. Hopefully this is settling down now.
+
+
 ### January 2025: version 0.2.
 
 This release replaces the core bit manipulation code with a version written in Rust. This should allow some great optimisations in the future, but this version is more a proof of concept to get the interface and the build systems working.

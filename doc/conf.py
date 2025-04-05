@@ -14,7 +14,7 @@ year = datetime.datetime.utcfromtimestamp(
 project = "bitformat"
 copyright = f"2024 - {year}, Scott Griffiths"
 author = "Scott Griffiths"
-release = "0.2.0"
+release = "0.3.0"
 
 extensions = ["sphinx.ext.autodoc", "sphinxcontrib.mermaid", 'enum_tools.autoenum']
 autoapi_dirs = ["../bitformat/"]
