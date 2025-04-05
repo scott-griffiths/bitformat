@@ -5,7 +5,7 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, Colour, ExpressionError
+from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str
 from lark import Transformer, UnexpectedInput
 import lark
 
