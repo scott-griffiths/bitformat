@@ -3,7 +3,7 @@ from __future__ import annotations
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeKind, validate_name
+from ._common import override, Indenter, Colour, DtypeKind, validate_name, Expression
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
@@ -60,15 +60,11 @@ class Field(FieldType):
             # Need to convert non-string types into their correct return types.
             if isinstance(x._dtype, DtypeSingle) and (ret_type := x._dtype._definition.return_type) in (int, float, bytes, bool):
                 try:
-                    value = ret_type(literal_eval(value))
+                    value = ret_type(literal_eval(value_str))
                 except ValueError:
                     raise ValueError(f"Can't initialise dtype '{dtype}' with the value string '{value_str}' "
                                      f"as it can't be converted to a {ret_type}.")
-            elif isinstance(x._dtype, DtypeSingle) and x._dtype._definition.return_type == Bits:
-                value = Bits.from_string(value)
         if value is not None:
-            # if x._concrete_dtype is None:
-            #     raise ValueError(f"Field '{x}' has no concrete dtype, so can't set the value to {value}.")
             x._set_value_no_const_check(value, {})
         return x
 
@@ -76,6 +72,12 @@ class Field(FieldType):
     def _get_bit_length(self) -> int:
         if self._concrete_dtype is None:
             raise ValueError(f"Field '{self}' has no concrete dtype, so can't determine the bit length.")
+        if self._concrete_dtype.bit_length is None:
+            # For dtypes like just 'bytes' or 'hex' they might not have a dtype length, but still contain bits.
+            if self._bits is not None:
+                return len(self._bits)
+            else:
+                raise ValueError(f"Field '{self}' has no concrete dtype and no bits, so can't determine the bit length.")
         return self._concrete_dtype.bit_length
 
     @classmethod
@@ -134,6 +136,14 @@ class Field(FieldType):
         if not self.const:
             self._concrete_dtype = None
             self._bits = None
+
+    @override
+    def is_stretchy(self) -> bool:
+        if isinstance(self._dtype, DtypeSingle):
+            if not self.const and self._dtype.size == Expression('{None}'):
+                return True
+        return False
+
 
     @override
     def _copy(self) -> Field:

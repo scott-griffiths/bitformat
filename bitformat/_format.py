@@ -3,9 +3,11 @@ from __future__ import annotations
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, validate_name
+from ._common import override, Indenter, Colour, validate_name, Expression
 from ._fieldtype import FieldType
+from ._field import Field
 from ._pass import Pass
+
 
 
 __all__ = ["Format"]
@@ -64,8 +66,8 @@ class Format(FieldType):
             if fieldtype is Pass():
                 # Don't bother appending if it's the Pass singleton.
                 continue
-            # TODO: Add back in a check for a stretchy field.
-
+            if fieldtype.is_stretchy():
+                stretchy_field = fieldtype
             x._fields.append(fieldtype)
             if fieldtype.name:
                 x._field_names[fieldtype.name] = fieldtype
@@ -107,13 +109,16 @@ class Format(FieldType):
     def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
         if not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
-
-        fields = iter(self._fields)
-        for value in values:
-            next_field = next(fields)
-            while hasattr(next_field, 'const') and next_field.const:
-                next_field = next(fields)
-            next_field._pack(value, kwargs)
+        value_iter = iter(values)
+        for fieldtype in self._fields:
+            # Skip const fields
+            if hasattr(fieldtype, 'const') and fieldtype.const:
+                continue
+            try:
+                next_value = next(value_iter)
+            except StopIteration:
+                return  # No more values left to pack
+            fieldtype._pack(next_value, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
@@ -141,6 +146,10 @@ class Format(FieldType):
         self.vars = {}
         for fieldtype in self._fields:
             fieldtype.clear()
+
+    @override
+    def is_stretchy(self) -> bool:
+        return False
 
     @override
     def _get_value(self) -> list[Any]:

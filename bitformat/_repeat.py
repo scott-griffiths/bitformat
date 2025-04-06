@@ -116,6 +116,10 @@ class Repeat(FieldType):
         self._bits_list = []
 
     @override
+    def is_stretchy(self) -> bool:
+        return False
+
+    @override
     def _get_value(self) -> list[Any] | None:
         if not self._bits_list:
             return None

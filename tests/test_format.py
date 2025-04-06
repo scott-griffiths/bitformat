@@ -70,6 +70,8 @@ class TestCreation:
         assert isinstance(f, Format)
 
     def testComplicatedCreation(self):
+        a = Field('const bits = 0x1')
+        assert a.bit_length == 4
         f = Format.from_params(
             (
                 "const bits = 0x000001b3",
@@ -88,17 +90,19 @@ class TestCreation:
         assert f.to_bits() == "0x000001b3, u12=352, u12=288, 0b1"
         f2 = Format.from_params([f, "bytes5"], "main")
 
-    @pytest.mark.skip
+    def test_stretchy_token_at_start(self):
+        with pytest.raises(ValueError):
+            f = Format('format(hex, u8)')
+
+
     def test_nested_formats(self):
         header = Format.from_params(
-            ["bits = 0x000001b3", "width:u12", "height:u12", "f1:bool", "f2:bool"],
+            ["const bits = 0x000001b3", "width:u12", "height:u12", "f1:bool", "f2:bool"],
             "header",
         )
-        main = Format.from_params(["bits = 0b1", "v1:i7", "v2:i9"], "main")
-        f = Format.from_params([header, main, "bits = 0x47"], "all")
-        b = Bits.from_string(
-            "bits = 0x000001b3, u12=100, u12=200, bits = 0b1, bits = 0b0, bits = 0b1, i7=5, i9=-99, bits = 0x47"
-        )
+        main = Format.from_params(["const bits = 0b1", "v1:i7", "v2:i9"], "main")
+        f = Format.from_params([header, main, "const hex = 0x47"], "all")
+        b = Bits("0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47")
         f.parse(b)
         t = f["header"]
         assert t["width"].value == 100
@@ -176,7 +180,6 @@ class TestArray:
         f2["new_array"].value = f.to_bits()
         assert f.to_bits() == f2.to_bits()
 
-    @pytest.mark.skip
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
         f = Format.from_params(
@@ -188,8 +191,9 @@ class TestArray:
             ],
             "construct_example",
         )
-        p = [random.randint(0, 255) for _ in range(w * h)]
-        b = f.pack([w, h, p])
+        p = tuple(random.randint(0, 255) for _ in range(w * h))
+        f.pack([w, h, p])
+        b = f.to_bits()
         f.clear()
         f.parse(b)
         assert f["width"].value == w
@@ -258,19 +262,6 @@ def test_repeating_field():
     f.unpack(d)
     assert f.value == [1, 5, 9, 7, 6]
 
-
-@pytest.mark.skip
-def test_find_field():
-    b = Bits("0x1234000001b3160120")
-    f = Format(
-        [Find("0x000001"), "start_code: hex32 = 000001b3", "width: u12", "height: u12"]
-    )
-    f.parse(b)
-    assert f["width"].value == 352
-    f.clear()
-    assert f["width"].value is None
-    f.pack([352, 288])
-    assert f.to_bits() == "0x000001b3160120"
 
 def test_format_get_and_set():
     f = Format("format(u8, u8, u8)")
@@ -489,9 +480,8 @@ def test_stretchy_field():
     f.unpack("0xff1")
     assert f.value == [255, 1]
 
-    bad = Format("format(u, u8)")
     with pytest.raises(ValueError):
-        bad.parse("0xff1")
+        bad = Format("format(u, u8)")
     g = Format("format(u5, bytes)")
     g.parse(b"hello_world")
     assert g[0].value == 13

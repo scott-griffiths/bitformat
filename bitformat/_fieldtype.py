@@ -255,6 +255,11 @@ class FieldType(abc.ABC):
         return self._get_bit_length()
 
     @abc.abstractmethod
+    def is_stretchy(self) -> bool:
+        """Returns whether this FieldType can stretch to fit the available data."""
+        ...
+
+    @abc.abstractmethod
     def __eq__(self, other) -> bool: ...
 
     def __copy__(self) -> FieldType:

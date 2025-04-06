@@ -138,7 +138,7 @@ class Dtype(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def bit_length(self) -> int:
+    def bit_length(self) -> int | None:
         """The total length of the data type in bits.
 
         Returns ``None`` if the data type doesn't have a fixed or known length.

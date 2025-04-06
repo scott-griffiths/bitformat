@@ -79,6 +79,10 @@ class Pass(FieldType):
         return Bits()
 
     @override
+    def is_stretchy(self) -> bool:
+        return False
+
+    @override
     def __eq__(self, other) -> bool:
         return isinstance(other, Pass)
 

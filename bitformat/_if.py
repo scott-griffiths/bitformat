@@ -111,6 +111,11 @@ class If(FieldType):
         self.condition_value = None
 
     @override
+    def is_stretchy(self) -> bool:
+        return False
+
+
+    @override
     def _get_value(self) -> Any:
         if self.condition_value is None:
             raise ValueError("Cannot get value of If field before parsing or unpacking it.")

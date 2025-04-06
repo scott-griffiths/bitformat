@@ -65,20 +65,6 @@ class TestCreation:
         with pytest.raises(ValueError):
             _ = Field.from_string("constu3 = 3")
 
-    @pytest.mark.skip
-    @given(st.binary())
-    def test_creation_from_bytes(self, b):
-        f = Field.from_params("bytes", name="hello", value=b)
-        assert f.value == b
-        assert f.name == "hello"
-        assert f.dtype == DtypeSingle.from_params(DtypeKind.BYTES, size=len(b))
-        assert f.dtype.bit_length == len(b) * 8
-
-        f = Field.from_bytes(b, name="hello")
-        assert f.value == b
-        assert f.name == "hello"
-        assert f.dtype == DtypeSingle.from_params(DtypeKind.BYTES, size=len(b))
-        assert f.dtype.bit_length == len(b) * 8
 
     @given(st.binary())
     def test_creation_from_bits(self, b):

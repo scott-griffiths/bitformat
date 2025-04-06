@@ -362,17 +362,6 @@ class TestPrettyPrinting:
 """
         assert remove_unprintable(s.getvalue()) == expected_output
 
-        a = Bits.from_zeros(400)
-        s = io.StringIO()
-        a.pp(stream=s, dtype1="hex", show_offset=False)
-        expected_output = """<Bits, dtype1='hex', length=400 bits> [
-00000000000000000000000000000000000000000000000000000000000000000000000000000000
-00000000000000000000                                                            
-]
-"""
-        # TODO Reallow not dividing into sections. Previously this was done using a length of 0.
-        # assert remove_unprintable(s.getvalue()) == expected_output
-
         s = io.StringIO()
         a = Bits.from_string("u48 = 10")
         a.pp(stream=s, width=20, dtype1="hex6", dtype2="oct8", show_offset=False)
@@ -439,15 +428,6 @@ hell owor ld!! hell owor ld!!
 ]
 """
         assert remove_unprintable(s.getvalue()) == expected_output
-        s = io.StringIO()
-        a.pp(stream=s, dtype1="bytes0", show_offset=False, width=40)
-        expected_output = """<Bits, dtype1='bytes', length=480 bits> [
-helloworld!!helloworld!!helloworld!!hell
-oworld!!helloworld!!                    
-]
-"""
-        # TODO: Reallow not dividing into sections. Previously this was done using a length of 0.
-        # assert remove_unprintable(s.getvalue()) == expected_output
 
     def test_bool(self):
         a = Bits.from_string("0b1100")
