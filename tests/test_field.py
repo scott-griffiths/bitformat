@@ -172,12 +172,12 @@ def test_creation_with_bytes_string():
 
 def test_creation_with_bool_string():
     f = Field.from_string("bool=True")
-    assert f.value == True
+    assert f.value is True
     f = Field("const bool=False")
     assert f.const is True
-    assert f.value == False
+    assert f.value is False
     g = Field("x: bool=1")
-    assert g.value == True
+    assert g.value is True
     with pytest.raises(ValueError):
         _ = Field("x: bool=false")
 
@@ -226,18 +226,18 @@ def test_stretchy_field():
 
 def test_disallowed_names():
     with pytest.raises(ValueError):
-        f = Field("if: u8")
+        _ = Field("if: u8")
     with pytest.raises(ValueError):
-        f = Field("else: u8")
+        _ = Field("else: u8")
     with pytest.raises(ValueError):
-        f = Field("__starting_with_underscores: u8")
+        _ = Field("__starting_with_underscores: u8")
     with pytest.raises(ValueError):
-        f = Field("containing__double_underscores: u8")
+        _ = Field("containing__double_underscores: u8")
 
 
 def test_create_from_dtype_list():
     with pytest.raises(ValueError):
-        f = Field("u8, u8")
+        _ = Field("u8, u8")
 
 
 def test_eq():

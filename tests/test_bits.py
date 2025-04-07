@@ -188,10 +188,10 @@ class TestContainsBug:
     def test_contains(self):
         a = Bits.from_string("0b1, 0x0001dead0001")
         assert "0xdead" in a
-        assert not "0xfeed" in a
+        assert "0xfeed" not in a
 
         assert "0b1" in Bits.from_string("0xf")
-        assert not "0b0" in Bits.from_string("0xf")
+        assert "0b0" not in Bits.from_string("0xf")
 
 
 class TestUnderscoresInLiterals:
@@ -647,7 +647,6 @@ def test_little_endian_errors():
 
 
 def test_big_endian_errors():
-    a = Bits("u_be16 = 10")
     with pytest.raises(ValueError):
         _ = Bits("u_be15 = 10")
     b = Bits("0xabc")

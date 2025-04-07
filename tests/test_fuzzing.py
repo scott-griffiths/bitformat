@@ -2,7 +2,7 @@
 
 from bitformat import Format, DtypeSingle, DtypeArray, Bits, Field, Register
 from bitformat._common import DtypeKind
-from hypothesis import given, settings
+from hypothesis import given
 import hypothesis.strategies as st
 import math
 

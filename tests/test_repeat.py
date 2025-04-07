@@ -1,5 +1,4 @@
-import pytest
-from bitformat import Repeat, Format, Bits, Field
+from bitformat import Repeat, Bits, Field
 
 
 def test_creation():

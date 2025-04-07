@@ -728,8 +728,8 @@ class Register:
 
             fget_ne = fget_le if byteorder == "little" else fget_be
 
-            for modifier, fget, desc in [("_le", fget_le, f"little-endian"),
-                                         ("_be", fget_be, f"big-endian"),
+            for modifier, fget, desc in [("_le", fget_le, "little-endian"),
+                                         ("_be", fget_be, "big-endian"),
                                          ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
                 doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
                 setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))

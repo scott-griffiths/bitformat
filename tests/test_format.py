@@ -88,11 +88,11 @@ class TestCreation:
         assert f.name == "header"
         f.pack([352])
         assert f.to_bits() == "0x000001b3, u12=352, u12=288, 0b1"
-        f2 = Format.from_params([f, "bytes5"], "main")
+        _ = Format.from_params([f, "bytes5"], "main")
 
     def test_stretchy_token_at_start(self):
         with pytest.raises(ValueError):
-            f = Format('format(hex, u8)')
+            _ = Format('format(hex, u8)')
 
     def test_nested_formats1(self):
         f1 = Format('format(u8)')
@@ -360,7 +360,7 @@ def test_partial_parse():
     f = Format.from_params(["bool", "[f16;3]"])
     b = Bits.from_string("0b1, f16=1.0, f16=2.0, f16=3.0")
     f.parse(b)
-    assert f[0].value == True
+    assert f[0].value is True
     assert f[1].value == (1.0, 2.0, 3.0)
     f.clear()
     with pytest.raises(ValueError):
@@ -420,8 +420,6 @@ def test_expression_dtypes():
     f = Format('format(x: u8, [u{x}; {x + 1}])')
     b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
     f.parse(b)
-    v = f.value
-    print(f)
     assert f['x'].value == 3
     assert f[1].value == (1, 2, 3, 4)
     assert f.value == [3, (1, 2, 3, 4)]
@@ -468,7 +466,7 @@ sequence_header : format(
 
 
 def test_example_format():
-    f = Format(f_str)
+    _ = Format(f_str)
 
 
 def test_format_str_equivalences():
@@ -494,7 +492,7 @@ def test_stretchy_field():
     assert f.value == [255, 1]
 
     with pytest.raises(ValueError):
-        bad = Format("format(u, u8)")
+        _ = Format("format(u, u8)")
     g = Format("format(u5, bytes)")
     g.parse(b"hello_world")
     assert g[0].value == 13
@@ -672,6 +670,8 @@ def test_open_ended_array():
 
 def test_expressions_more():
     f = Format("format(a: u8, u{a}, u{a})")
+    f.pack([3])
+    assert f.value[0] == 3
 
 # def test_packing_format_with_const_field():
 #     f = Format("format(a: u8, b: u{a} = 5)")

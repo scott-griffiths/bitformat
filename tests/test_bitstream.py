@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import pytest
-import bitformat
 import copy
 from bitformat import Bits
 
@@ -402,19 +401,19 @@ class TestAdding:
 
     def test_get_item_with_positive_position(self):
         s = Bits("0b1011")
-        assert s[0] == True
-        assert s[1] == False
-        assert s[2] == True
-        assert s[3] == True
+        assert s[0] is True
+        assert s[1] is False
+        assert s[2] is True
+        assert s[3] is True
         with pytest.raises(IndexError):
             _ = s[4]
 
     def test_get_item_with_negative_position(self):
         s = Bits("0b1011")
-        assert s[-1] == True
-        assert s[-2] == True
-        assert s[-3] == False
-        assert s[-4] == True
+        assert s[-1] is True
+        assert s[-2] is True
+        assert s[-3] is False
+        assert s[-4] is True
         with pytest.raises(IndexError):
             _ = s[-5]
 
@@ -774,7 +773,7 @@ class TestManyDifferentThings:
     def test_contains(self):
         a = Bits("0b1") + "0x0001dead0001"
         assert "0xdead" in a
-        assert not "0xfeed" in a
+        assert "0xfeed" not in a
 
     def test_repr(self):
         bls = ["", "0b1", "0o5", "0x43412424f41", "0b00101001010101"]

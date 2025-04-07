@@ -77,7 +77,7 @@ class TestChangingTheRegister:
         u2 = r.kind_to_def[DtypeKind("u")]
         assert u == u2
         with pytest.raises(KeyError):
-            i = r.kind_to_def["bool"]
+            _ = r.kind_to_def["bool"]
 
     # def test_removing_type(self):
     #     del Register()['bool']
