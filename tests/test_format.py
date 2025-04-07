@@ -94,16 +94,32 @@ class TestCreation:
         with pytest.raises(ValueError):
             f = Format('format(hex, u8)')
 
+    def test_nested_formats1(self):
+        f1 = Format('format(u8)')
+        f2 = Format('format(u16)')
+        f3 = Format.from_params(['u4', f1, f2, 'u32'])
+        assert f3.value == [None, [None], [None], None]
+        f3.pack([1, [2], [3], 4])
+        assert f3.value == [1, [2], [3], 4]
+        assert f3.to_bits() == 'u4=1, u8=2, u16=3, u32=4'
+        b = f3.to_bits()
+        f3.clear()
+        assert f3.value == [None, [None], [None], None]
+        f3.parse(b)
+        assert f3.value == [1, [2], [3], 4]
 
-    def test_nested_formats(self):
+    def test_nested_formats2(self):
         header = Format.from_params(
             ["const bits = 0x000001b3", "width:u12", "height:u12", "f1:bool", "f2:bool"],
             "header",
         )
         main = Format.from_params(["const bits = 0b1", "v1:i7", "v2:i9"], "main")
+        m = Bits("0b1, i7=5, i9=-99, 0x47")
+        main.parse(m)
         f = Format.from_params([header, main, "const hex = 0x47"], "all")
-        b = Bits("0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47")
+        b = Bits("0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47, 0x00000000000000")
         f.parse(b)
+        print(f)
         t = f["header"]
         assert t["width"].value == 100
         assert f["header"]["width"].value == 100
@@ -333,8 +349,6 @@ def test_to_bits():
     assert f[0].value == 1
     assert f[1].value is None
     assert f[2].value == 3
-    with pytest.raises(ValueError):
-        _ = f.value
     assert f[0].to_bits() == "u8=1"
     with pytest.raises(ValueError):
         _ = f[1].to_bits()
@@ -418,8 +432,7 @@ def test_unpack():
     b = Bits.from_string("u8=1, u4=2, 0b1")
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
-    with pytest.raises(ValueError):
-        _ = f.unpack()
+    assert f.unpack() == [1, None, True]
 
 
 def test_construction_by_appending():

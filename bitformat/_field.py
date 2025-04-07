@@ -174,7 +174,7 @@ class Field(FieldType):
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
         if self.const:
             assert self._bits is not None
-            value = b[startbit : len(self._bits)]
+            value = b[startbit : startbit + len(self._bits)]
             if value != self._bits:
                 raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
             return len(self._bits)

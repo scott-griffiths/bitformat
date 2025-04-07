@@ -3,9 +3,8 @@ from __future__ import annotations
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
-from ._common import override, Indenter, Colour, validate_name, Expression
+from ._common import override, Indenter, Colour, validate_name
 from ._fieldtype import FieldType
-from ._field import Field
 from ._pass import Pass
 
 
@@ -156,8 +155,6 @@ class Format(FieldType):
         values = []
         for field in self._fields:
             value = field._get_value()
-            if value is None:
-                raise ValueError(f"When getting Format value, cannot find value of this field:\n{field}")
             values.append(value)
         return values
 
