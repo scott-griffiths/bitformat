@@ -1,4 +1,4 @@
-> :warning: **This project is still in alpha and there are no guarantees of API stability. The documentation is sometimes more aspirational than accurate.**
+> :warning: **This project is still in alpha and there are no guarantees of API stability.**
 
 [![bitformat](https://raw.githubusercontent.com/scott-griffiths/bitformat/main/doc/bitformat_logo_small.png)](https://github.com/scott-griffiths/bitformat)
 
@@ -171,15 +171,16 @@ The `parse` method is able to lazily parse the input bytes, and simply returns t
 ## More to come
 
 The `bitformat` library is still in alpha and is being actively developed.
-The first release was in September 2024, with more features being added steadily.
+The first release was in September 2024, with the second arriving in January 2025 and the third in April. More features are being added steadily.
 
 There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
 
 The (unordered) :todo: list includes:
 
-* **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`. This is available in `bitstring`, but I want to find a better way of doing it before adding it to `bitformat`.
-* **Field expressions.** Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
-* **New field types.** Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
+
+* **~~Streaming methods~~.** [:sparkles: Done in v0.2 - see the `Reader` class :sparkles:].
+* **~~Field expressions~~.** [:sparkles: Done in v0.3 :sparkles:] Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
+* **New field types.** ** [:sparkles: `Repeat` and `If` done in v0.3 :sparkles:] Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
 * **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
 * **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
