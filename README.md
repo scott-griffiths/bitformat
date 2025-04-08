@@ -178,9 +178,9 @@ There are a number of important features planned, some of which are from the `bi
 The (unordered) :todo: list includes:
 
 
-* **~~Streaming methods~~.** [:sparkles: Done in v0.2 - see the `Reader` class :sparkles:].
-* **~~Field expressions~~.** [:sparkles: Done in v0.3 :sparkles:] Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
-* **New field types.** ** [:sparkles: `Repeat` and `If` done in v0.3 :sparkles:] Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
+* **~~Streaming methods~~.**  :sparkles: Done in v0.2 - see the `Reader` class :sparkles: .
+* **~~Field expressions~~.**  :sparkles: Done in v0.3 :sparkles:  Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
+* **New field types.** :sparkles: `Repeat` and `If` done in v0.3 :sparkles:  Fields like `Repeat`, `Find` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
 * **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
 * **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
