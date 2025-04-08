@@ -299,7 +299,7 @@ class Bits:
         """
         Create a new Bits with all bits pseudo-randomly set.
 
-        :param n: The number of bits.
+        :param n: The number of bits. Must be positive.
         :type n: int
         :param seed: An optional seed.
         :type seed: int | None
@@ -316,8 +316,6 @@ class Bits:
         """
         if n == 0:
             return Bits()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
@@ -1440,20 +1438,16 @@ class Bits:
         # Only requirement is that equal Bits should return the same hash.
         # For equal Bits the bytes at the start/end will be the same and they will have the same length
         # (need to check the length as there could be zero padding when getting the bytes).
-        if len(self) <= 2000:
+        length = len(self)
+        if length <= 2000:
             # Use the whole Bits.
-            return hash((self.to_bytes(), len(self)))
+            return hash((self.to_bytes(), length))
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            return hash(
-                (
-                    (
-                        self._slice(0, 800) + self._slice(len(self) - 800, len(self))
-                    ).to_bytes(),
-                    len(self),
-                )
-            )
+            start = self._slice(0, 800)
+            end = self._slice(length - 800, length)
+            return hash(((start + end).to_bytes(), length))
 
     def __iter__(self) -> Iterable[bool]:
         """Iterate over the bits."""

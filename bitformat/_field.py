@@ -220,8 +220,7 @@ class Field(FieldType):
             if self._concrete_dtype is not None:
                 self._bits = self._concrete_dtype.pack(value)
             else:
-                # TODO
-                assert False
+                raise ValueError(f"Field '{self}' cannot compute a concrete dtype with kwargs {kwargs}, so can't set the value.")
 
     @override
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:
@@ -279,12 +278,12 @@ class Field(FieldType):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Field):
             return False
-        if self.dtype != other.dtype:
-            return False
-        if self.dtype.kind is not DtypeKind.PAD and self._bits != other._bits:
-            return False
         if self.const != other.const:
             return False
         if self.name != other.name:
+            return False
+        if self.dtype != other.dtype:
+            return False
+        if isinstance(self.dtype, DtypeSingle) and self.dtype.kind is not DtypeKind.PAD and self._bits != other._bits:
             return False
         return True

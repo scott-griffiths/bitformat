@@ -187,6 +187,17 @@ def test_const_equality():
     b = Field("i5=1")
     assert a != b
 
+def test_equality():
+    a = Field("x: u8")
+    assert a != "cheese"
+    assert "cheese" != a
+    b = Field("x: (u8, u8)")
+    assert a != b
+    assert b != a
+    c = Field("y: (u8, u8)")
+    assert b != c
+    assert c != b
+
 
 def test_size_expression():
     f = Field.from_params(DtypeSingle.from_params(DtypeKind.UINT, size=Expression('{5}')))
