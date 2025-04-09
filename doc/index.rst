@@ -19,17 +19,16 @@ Features
 
   * The simplest is just a `Field` which contains a single data type, and either a single value or an array of values. These can usually be constructed from just a string.
   * A `Format` contains a list of other fields. These can be nested to any depth.
-  * [Coming soon] Field types like `Repeat`, `Find` and `If` can be used to add more logical structure.
-* [Coming soon] The values of other fields can be used in later calculations via an f-string-like expression syntax.
-* Data is always stored efficiently as a contiguous array of bits.
+  * Field types like `Repeat` and `If` can be used to add more logical structure.
+* The values of other fields can be used in later calculations via an f-string-like expression syntax.
+* Data is always stored efficiently as a contiguous array of bits, with the core of the library written in Rust.
 
 ----
 
 Installation and download
 -------------------------
 
-The first product release was made in September 2024, with a 0.2 release in January 2025 that moved the core of the library to be compiled in Rust.
-Further releases are planned for 2025.
+The first product release was made in September 2024, with a 0.2 release in January 2025 that moved the core of the library to be compiled in Rust. More features were added in the 0.3 release in April, and further releases are planned for 2025.
 
 To install the module, use pip:
 

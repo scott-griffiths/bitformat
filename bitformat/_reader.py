@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from bitformat._bits import Bits
-from bitformat._fieldtype import FieldType
-from bitformat._dtypes import Dtype, DtypeSingle
-from bitformat._common import DtypeKind
+from ._bits import Bits
+from ._fieldtype import FieldType
+from ._dtypes import Dtype, DtypeSingle
+from ._common import DtypeKind
 
 
 class Reader:

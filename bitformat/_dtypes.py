@@ -324,8 +324,8 @@ class DtypeSingle(Dtype):
         return bit_length
 
     @property
-    def size(self) -> int | Expression | None:
-        """The size of the data type.
+    def size(self) -> Expression:
+        """The size of the data type as an Expression.
 
         This is the number used immediately after the data type kind in a dtype string.
         For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even

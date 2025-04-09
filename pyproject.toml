@@ -34,3 +34,7 @@ dependencies = [
 python-source = "."
 module-name = "bitformat.bit_rust"
 features = ["pyo3/extension-module"]
+
+[project.urls]
+homepage = "https://github.com/scott-griffiths/bitformat"
+documentation = "https://bitformat.readthedocs.io/"

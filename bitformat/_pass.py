@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ._field import FieldType
+from ._fieldtype import FieldType
 from ._common import override, Indenter
 from typing import Any
 from ._bits import Bits
