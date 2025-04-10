@@ -12,7 +12,7 @@ There are a few third-party packages that can help with this, for example `bitst
 These libraries all have their strengths and weaknesses, and I am personally well aware of the good and bad points of `bitstring` in particular as I have been writing and maintaining it since 2006.
 
 The `bitformat` library has the lofty ambition to be as expressive as `bitstring`, as efficient as `bitarray`, and as powerful as `construct`.
-I don't yet know if it will succeed, but the early alpha versions are already quite usable, with most of the future work needed to build out the support for formats. I'm happy for feedback from any early adopters, but if you don't want to use a library still in alpha then any of the above libraries are good choices.
+I don't yet know if it will succeed, but the beta versions are already very usable. I'm happy for feedback from any early adopters, but if you don't want to use a library still in alpha then any of the above libraries are good choices.
 
 
 

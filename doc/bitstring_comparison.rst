@@ -23,7 +23,7 @@ It covers much of the same ground, but is designed to have a stronger emphasis o
 * Expressive syntax for complex binary formats.
 * Emphasis on performance.
 * Several major features still to be added.
-* In alpha stage - still quite unstable.
+* In beta stage - mostly complete, but still in development.
 
 I am hoping that ``bitformat`` will become a worthy successor, but even if ``bitformat`` is successful I plan to support ``bitstring`` indefinitely - at the time of writing their respective download counts are 88 million for bitstring and 882 for bitformat!
 
