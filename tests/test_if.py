@@ -44,7 +44,7 @@ def test_explicit_pass():
     assert f.bit_length == 0
 
 def test_slightly_more_complex_things():
-    f = Format("""my_format: format(
+    f = Format("""my_format: (
         header: hex2 = 0x47,
         flag: bool,
         if {flag}:

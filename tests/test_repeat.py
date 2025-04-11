@@ -20,7 +20,7 @@ def test_from_string():
     # )
     # """
     s = """repeat {2}:
-        fred: format(
+        fred: (
             bool,
             john: i7
         )

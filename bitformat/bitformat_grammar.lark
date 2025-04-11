@@ -16,12 +16,18 @@ dtype_items: INT | expression
 // dtype is the abstract base class for the dtypes below.
 ?dtype: dtype_tuple | dtype_single | dtype_array
 
+// When in a Field, the tuple dtype needs start with 'tuple('.
+// This is so that it isn't confused with a Format.
+?field_dtype: field_dtype_tuple | dtype_single | dtype_array
+
 // A dtype with a single type and optional size, for example "u8".
 dtype_single: dtype_kind ["_" dtype_modifier] [dtype_size]
 // An array with items of a single dtype, for example "[u8; 4]".
 dtype_array: "[" dtype_single ";" [dtype_items] "]"
 // A tuple of dtypes, for example "(u8, u16, [u32; 10])".
 dtype_tuple: "(" dtype ("," dtype)* [","] ")"
+// When a tuple dtype is part of a Field, it needs the tuple keyword.
+field_dtype_tuple: "tuple(" dtype ("," dtype)* [","] ")"
 
 ?field_name: NAME -> field_name
 
@@ -34,9 +40,9 @@ list_of_values: ("[" single_value ("," single_value)* [","] "]") | ("(" single_v
 
 // Match const_field with higher priority than mutable_field
 // const fields have the 'const' keyword and always have a value
-const_field.1: [field_name ":"] "const " dtype "=" value -> const_field
+const_field.1: [field_name ":"] "const " field_dtype "=" value -> const_field
 // non-const fields don't always have a value
-mutable_field.0: [field_name ":"] dtype ["=" value] -> mutable_field
+mutable_field.0: [field_name ":"] field_dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
 if_: "if" expression ":" [_WS] field_type [_WS "else" ":" _WS field_type] [_WS]
@@ -46,7 +52,7 @@ repeat: "repeat" expression ":" [_WS] field_type [_WS]
 // The Pass field is literally just "pass"
 pass_: ["pass"]
 
-format: [_WS] [field_name ":"] "format(" [_WS] [field_type]  ((("," | _NEWLINE) [_WS] field_type [_WS]) | [_WS])* ")" [_WS]
+format: [_WS] [field_name ":"] "(" [_WS] [field_type]  ((("," | _NEWLINE) [_WS] field_type [_WS]) | [_WS])* ")" [_WS]
 
 ?field_type: field | format | if_ | repeat | pass_
 

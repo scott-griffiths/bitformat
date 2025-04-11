@@ -12,10 +12,7 @@ There are a few third-party packages that can help with this, for example `bitst
 These libraries all have their strengths and weaknesses, and I am personally well aware of the good and bad points of `bitstring` in particular as I have been writing and maintaining it since 2006.
 
 The `bitformat` library has the lofty ambition to be as expressive as `bitstring`, as efficient as `bitarray`, and as powerful as `construct`.
-I don't yet know if it will succeed, but the beta versions are already very usable. I'm happy for feedback from any early adopters, but if you don't want to use a library still in alpha then any of the above libraries are good choices.
-
-
-
+I don't know if it will succeed, but the beta versions are already very usable. I'm happy for feedback from any early adopters, but if you prefer to use a more mature library then any of the above are good choices.
 
 This introduction will start with a brief tour of the main features of `bitformat`, followed by a more in depth look at the main classes.
 For more exhaustive documentation see the :ref:`API reference<api>`.
@@ -185,9 +182,9 @@ For more complex needs the :class:`Format` class allows a rich specification lan
 
 Combining some of our earlier creations we could make this format::
 
-    >>> fmt = Format("header: format(const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
+    >>> fmt = Format("header: (const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
     >>> print(fmt)
-    header: format(
+    header: (
         const hex4 = 0147
         flags: [bool; 4]
         w: u12
@@ -200,7 +197,7 @@ Here we have introduced named fields and const fields. It's then easy to set and
     >>> fmt['w'].value = 160
     >>> fmt['h'].value = 120
     >>> print(fmt)
-    header: format(
+    header: (
         const hex4 = 0147
         flags: [bool; 4] = (True, True, False, True)
         w: u12 = 160
@@ -217,7 +214,7 @@ Another way to create using the format is via the :meth:`Format.pack` method::
     >>> fmt.clear()
     >>> fmt.pack([[0, 0, 0, 0], 999, 5])
     >>> print(fmt)
-    header: format(
+    header: (
         const hex4 = 0147
         flags: [bool; 4] = (False, False, False, False)
         w: u12 = 999

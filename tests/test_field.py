@@ -191,10 +191,10 @@ def test_equality():
     a = Field("x: u8")
     assert a != "cheese"
     assert "cheese" != a
-    b = Field("x: (u8, u8)")
+    b = Field("x: tuple(u8, u8)")
     assert a != b
     assert b != a
-    c = Field("y: (u8, u8)")
+    c = Field("y: tuple(u8, u8)")
     assert b != c
     assert c != b
 
@@ -266,7 +266,7 @@ def test_eq():
 
 
 def test_field_with_dtype_tuple():
-    f = Field("(u8, u8)")
+    f = Field("tuple(u8, u8)")
     assert f.dtype == DtypeTuple("(u8, u8)")
     assert f.value is None
     f.pack([1, 2])

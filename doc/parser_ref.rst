@@ -43,9 +43,9 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
     * -
       - e.g. ``'flag: bool'``, ``'u16'``
     * - :class:`Format` (FieldType)
-      - ``<name_str:>`` ``format(`` ``FieldType1`` ``,`` ``...`` ``)``
+      - ``<name_str:>`` ``(`` ``FieldType1`` ``,`` ``...`` ``)``
     * -
-      - e.g. ``'format(u8, bytes)'``, ``'h: format(x: u8, y: [bytes; {x}])'``
+      - e.g. ``'(u8, bytes)'``, ``'h: (x: u8, y: [bytes; {x}])'``
     * - :class:`If` / Else (FieldType)
       - ``if`` ``Expression`` ``:`` ``FieldType1`` ``<else: FieldType2>``
     * -
@@ -53,7 +53,7 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
     * - :class:`Repeat` (FieldType)
       - ``repeat`` ``Expression`` ``:`` ``FieldType``
     * -
-      - e.g. ``'repeat {x + 1}: u8'``, ``repeat 10: format(bool, f16)``
+      - e.g. ``'repeat {x + 1}: u8'``, ``repeat 10: (bool, f16)``
     * - :class:`Pass` (FieldType)
       - ``pass``
 

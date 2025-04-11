@@ -60,6 +60,9 @@ class DtypeTransformer(Transformer):
     def dtype_tuple(self, items) -> DtypeTuple:
         return DtypeTuple.from_params(items)
 
+    def field_dtype_tuple(self, items) -> DtypeTuple:
+        return DtypeTuple.from_params(items)
+
     def single_value(self, items) -> str:
         assert len(items) == 1
         return str(items[0])
