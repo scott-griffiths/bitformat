@@ -18,38 +18,45 @@ fieldtype_classes: dict[str, FieldType] = {}
 
 class FieldTypeTransformer(DtypeTransformer):
 
-    def field_name(self, items) -> str:
+    @staticmethod
+    def field_name(items) -> str:
         return items[0]
 
-    def const_field(self, items) -> Field:
+    @staticmethod
+    def const_field(items) -> Field:
         assert len(items) == 3
         name = items[0] if items[0] is not None else ''
         dtype = items[1]
         value = items[2]
         return fieldtype_classes['Field'].from_params(dtype, name, value, const=True)
 
-    def mutable_field(self, items) -> Field:
+    @staticmethod
+    def mutable_field(items) -> Field:
         assert len(items) == 3
         name = items[0] if items[0] is not None else ''
         dtype = items[1]
         value = items[2]
         return fieldtype_classes['Field'].from_params(dtype, name, value)
 
-    def repeat(self, items) -> Repeat:
+    @staticmethod
+    def repeat(items) -> Repeat:
         return fieldtype_classes['Repeat'].from_params(items[0], items[1])
 
-    def pass_(self, items) -> Pass:
+    @staticmethod
+    def pass_(items) -> Pass:
         assert len(items) == 0
         return fieldtype_classes['Pass'].from_params()
 
-    def if_(self, items) -> If:
+    @staticmethod
+    def if_(items) -> If:
         assert len(items) == 3
         expr = items[0]
         then_ = items[1]
         else_ = items[2]
         return fieldtype_classes['If'].from_params(expr, then_, else_)
 
-    def format(self, items) -> Format:
+    @staticmethod
+    def format(items) -> Format:
         assert len(items) >= 1
         name = items[0] if items[0] is not None else ''
         fields = [i for i in items[1:] if i is not None]

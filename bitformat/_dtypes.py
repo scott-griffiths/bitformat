@@ -13,54 +13,66 @@ import lark
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
 
-__all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register"]
+__all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register", "DtypeTransformer"]
 
 
 class DtypeTransformer(Transformer):
 
-    def NAME(self, item) -> str:
+    @staticmethod
+    def NAME(item) -> str:
         return str(item)
 
-    def INT(self, item) -> int:
+    @staticmethod
+    def INT(item) -> int:
         return int(item)
 
-    def python_string(self, items) -> str:
+    @staticmethod
+    def python_string(items) -> str:
         return str(items[0])
 
-    def expression(self, items) -> Expression:
+    @staticmethod
+    def expression(items) -> Expression:
         assert len(items) == 1
         x = Expression('{' + items[0] + '}')
         return x
 
-    def dtype_kind(self, items) -> DtypeKind:
+    @staticmethod
+    def dtype_kind(items) -> DtypeKind:
         return DtypeKind(items[0])
 
-    def dtype_modifier(self, items) -> Endianness:
+    @staticmethod
+    def dtype_modifier(items) -> Endianness:
         return Endianness(items[0])
 
-    def dtype_size(self, items) -> int | Expression:
+    @staticmethod
+    def dtype_size(items) -> int | Expression:
         return items[0]
 
-    def dtype_single(self, items) -> DtypeSingle:
+    @staticmethod
+    def dtype_single(items) -> DtypeSingle:
         assert len(items) == 3
         kind = items[0]
         endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
         size = items[2]
         return DtypeSingle.from_params(kind, size, endianness)
 
-    def dtype_items(self, items) -> int:
+    @staticmethod
+    def dtype_items(items) -> int:
         return items[0]
 
-    def dtype_array(self, items) -> DtypeArray:
+    @staticmethod
+    def dtype_array(items) -> DtypeArray:
         assert len(items) == 2
         dtype = items[0]
         items_count = items[1]
         return DtypeArray.from_params(dtype.kind, dtype.size, items_count, dtype.endianness)
 
-    def dtype_tuple(self, items) -> DtypeTuple:
+    @staticmethod
+    def dtype_tuple(items) -> DtypeTuple:
         return DtypeTuple.from_params(items)
 
-    def field_dtype_tuple(self, items) -> DtypeTuple:
+    @staticmethod
+    def field_dtype_tuple(items) -> DtypeTuple:
         return DtypeTuple.from_params(items)
 
     def single_value(self, items) -> str:
