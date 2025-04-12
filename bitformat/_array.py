@@ -123,7 +123,8 @@ class Array:
     * ``Array.from_bytes(dtype, b)`` - Create with data from a ``bytes`` object.
     * ``Array.from_zeros(dtype, n)`` - Initialise with enough zero bits for ``n`` elements.
 
-    Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``.
+    Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``,
+    but this does not accept either ``Bits`` or ``bytes`` objects as the iterable to avoid confusion.
 
     **Other methods:**
 
@@ -158,6 +159,12 @@ class Array:
     _proxy: BitsProxy
 
     def __new__(cls, dtype: str | Dtype, iterable: Iterable | None = None) -> Array:
+        if isinstance(iterable, Bits):
+            raise TypeError("The iterable argument in the Array init method should not be a Bits object. "
+                            "Choose either from_bits() or from_iterable() instead.")
+        if isinstance(iterable, bytes):
+            raise TypeError("The iterable argument in the Array init method should not be a bytes object. "
+                            "Choose either from_bytes() or from_iterable() instead.")
         x = cls.from_iterable(dtype, [] if iterable is None else iterable)
         return x
 

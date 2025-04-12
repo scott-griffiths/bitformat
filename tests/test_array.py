@@ -1018,5 +1018,9 @@ def test_more_unpacking_to_dtypes():
 
 def test_array_from_bits():
     b = Bits('0xff')
-    a = Array("u8", b)  # TODO: This should really fail I think?!
+    with pytest.raises(TypeError):
+        _ = Array("u8", b)
+    with pytest.raises(TypeError):
+        _ = Array('u8', b'123')
+    a = Array.from_iterable('u8', b)
     assert a.unpack() == [1, 1, 1, 1, 1, 1, 1, 1]
