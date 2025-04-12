@@ -6,7 +6,7 @@ from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
 from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple, DtypeSingle, DtypeArray, DtypeKind
-
+from typing import Iterable, Sequence
 
 def test_build():
     a = Bits.from_dtype("u12", 104)
@@ -753,3 +753,8 @@ def test_tuple_from_str():
     assert x == 'u8 = 1, u6 = 2'
     y = Bits('(bool, bool) = [0, 0]')
     assert y == 'bool = 0, bool = 0'
+
+def test_is_things():
+    a = Bits('0b1010101010101010')
+    assert isinstance(a, Iterable)
+    assert isinstance(a, Sequence)

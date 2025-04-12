@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Sized
+from collections.abc import Sized, Sequence
 from typing import Union, Iterable, Any, overload, TextIO
 
 from bitformat._bits import Bits, BitsType
@@ -989,3 +989,6 @@ class Array:
 
     def __abs__(self):
         return self._apply_op_to_all_elements(operator.abs, None)
+
+
+Sequence.register(Array)

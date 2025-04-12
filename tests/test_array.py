@@ -11,6 +11,7 @@ from bitformat._dtypes import Dtype, DtypeTuple, DtypeSingle
 from bitformat._common import DtypeKind
 import re
 import collections
+from typing import Iterable, Sequence
 
 sys.path.insert(0, "..")
 
@@ -115,7 +116,7 @@ class TestCreation:
         assert c.unpack() == [0.0]
 
     def test_creation_from_bytes(self):
-        a = Array("u8", b"ABC")
+        a = Array.from_bytes("u8", b"ABC")
         assert len(a) == 3
         assert a[0] == 65
         assert not a.trailing_bits
@@ -216,7 +217,7 @@ class TestArrayMethods:
         assert a.equals(c)
 
     def test_setting(self):
-        a = Array("bool", b"\x00")
+        a = Array.from_bytes("bool", b"\x00")
         a[0] = 1
         assert a[0] is True
 
@@ -483,7 +484,7 @@ class TestArrayMethods:
         )
 
     def test_pp_bits(self):
-        a = Array("bits2", b"89")
+        a = Array.from_bytes("bits2", b"89")
         s = io.StringIO()
         a.pp(stream=s, width=0, show_offset=True)
         assert (
@@ -1024,3 +1025,8 @@ def test_array_from_bits():
         _ = Array('u8', b'123')
     a = Array.from_iterable('u8', b)
     assert a.unpack() == [1, 1, 1, 1, 1, 1, 1, 1]
+
+def test_is_things():
+    a = Array('f32', [1, 2, 0.3])
+    assert isinstance(a, Iterable)
+    assert isinstance(a, Sequence)

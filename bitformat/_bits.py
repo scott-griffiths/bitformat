@@ -13,6 +13,8 @@ from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArr
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
 from bitformat.bit_rust import BitRust
+from collections.abc import Sequence
+
 
 __all__ = ["Bits", "BitsType"]
 
@@ -811,9 +813,7 @@ class Bits:
         """
         return self._bitstore.to_bytes()
 
-    def unpack(
-        self, fmt: Dtype | str | list[Dtype | str], /
-    ) -> Any | list[Any]:
+    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
 
@@ -1456,3 +1456,6 @@ class Bits:
     def __len__(self) -> int:
         """Return the length of the Bits in bits."""
         return len(self._bitstore)
+
+
+Sequence.register(Bits)
