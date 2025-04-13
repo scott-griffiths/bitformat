@@ -73,7 +73,7 @@ class Pass(FieldType):
 
     @override
     def _repr(self) -> str:
-        return "pass"
+        return "Pass()"
 
     @override
     def to_bits(self) -> Bits:

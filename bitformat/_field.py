@@ -249,7 +249,12 @@ class Field(FieldType):
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         colour = Colour(use_colour)
         const_str = f"{colour.const_value}const{colour.off} " if self._const else ""
-        dtype_str = str(self._dtype)
+        if isinstance(self._dtype, DtypeTuple):
+            # When a tuple dtype is used inside a field we need to add the tuple keyword.
+            # This avoids a clash with the Format string representation.
+            dtype_str = f"tuple{self._dtype}"
+        else:
+            dtype_str = str(self._dtype)
         d = f"{const_str}{dtype_str}"
         n = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
         if self.value is None:

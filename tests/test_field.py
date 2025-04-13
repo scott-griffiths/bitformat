@@ -269,13 +269,13 @@ def test_field_with_dtype_tuple():
     f = Field("tuple(u8, u8)")
     assert f.dtype == DtypeTuple("(u8, u8)")
     assert f.value is None
+    assert repr(f) == "Field('tuple(u8, u8)')"
+    assert str(f) == "tuple(u8, u8)"
     f.pack([1, 2])
     assert f.value == (1, 2)
     assert f.to_bits() == "0x0102"
     f.clear()
     assert f.value is None
-    assert str(f) == "(u8, u8)"
-    assert repr(f) == "Field('(u8, u8)')"
     f.parse("0x0304")
     assert f.value == (3, 4)
     assert f.bit_length == 16
