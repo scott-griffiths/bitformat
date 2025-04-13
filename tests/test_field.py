@@ -32,7 +32,7 @@ class TestCreation:
         b = Bits("0xf, 0b1")
         f1 = Field.from_bits(b)
         assert f1.to_bits() == b
-        assert f1.const is False
+        assert f1.is_const() is False
         f2 = Field.from_bits(b"123")
         assert f2.value == b"123"
         b = f2.to_bits()
@@ -80,8 +80,8 @@ class TestCreation:
         f1 = Field.from_string("f1: u1 = 1")
         f2 = Field.from_string("f2: const u1 = 1")
         assert f1 != f2
-        assert f2.const
-        assert not f1.const
+        assert f2.is_const()
+        assert not f1.is_const()
         f1.clear()
         f2.clear()
         f1.pack(0)
@@ -157,16 +157,16 @@ def test_simple_array_parse():
 def test_creation():
     f = Field("u8 = 12")
     assert f.value == 12
-    assert f.const is False
+    assert f.is_const() is False
     f2 = Field("const u8 = 12")
-    assert f2.const is True
+    assert f2.is_const() is True
 
 
 def test_creation_with_bytes_string():
     f = Field.from_string('bytes3 = b"abc"')
     assert f.value == b"abc"
     f = Field('const bytes3 = b"abc"')
-    assert f.const is True
+    assert f.is_const() is True
     assert f.value == b"abc"
 
 
@@ -174,7 +174,7 @@ def test_creation_with_bool_string():
     f = Field.from_string("bool=True")
     assert f.value is True
     f = Field("const bool=False")
-    assert f.const is True
+    assert f.is_const() is True
     assert f.value is False
     g = Field("x: bool=1")
     assert g.value is True
@@ -288,8 +288,3 @@ def test_const_modification():
         f.pack(13)
     f.clear()
     assert f.value == 12
-    with pytest.raises(AttributeError):
-        f.const = False
-    f2 = Field("u8 = 12")
-    with pytest.raises(AttributeError):
-        f2.const = True

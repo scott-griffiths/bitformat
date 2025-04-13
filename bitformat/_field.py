@@ -53,7 +53,7 @@ class Field(FieldType):
         x._concrete_dtype = x._dtype if x._dtype.is_concrete() else None
 
         x.name = name
-        if x.const is True and value is None:
+        if x._const is True and value is None:
             raise ValueError("Fields with no value cannot be set to be const.")
         if isinstance(value, str):
             value_str = value
@@ -133,24 +133,24 @@ class Field(FieldType):
 
     @override
     def clear(self) -> None:
-        if not self.const:
+        if not self._const:
             self._concrete_dtype = None
             self._bits = None
 
     @override
     def is_stretchy(self) -> bool:
         if isinstance(self._dtype, DtypeSingle):
-            if not self.const and self._dtype.size == Expression('{None}'):
+            if not self._const and self._dtype.size == Expression('{None}'):
                 return True
         return False
 
     @override
     def is_const(self) -> bool:
-        return self.const
+        return self._const
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(self.dtype, self.name, self.value, self.const)
+        x = self.__class__.from_params(self.dtype, self.name, self.value, self._const)
         return x
 
     @staticmethod
@@ -175,7 +175,7 @@ class Field(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        if self.const:
+        if self._const:
             assert self._bits is not None
             value = b[startbit : startbit + len(self._bits)]
             if value != self._bits:
@@ -227,7 +227,7 @@ class Field(FieldType):
 
     @override
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:
-        if self.const and value is not None:
+        if self._const and value is not None:
             raise ValueError(f"Cannot set the value of a const Field '{self}'.")
         if value is not None:
             self._set_value_no_const_check(value, kwargs)
@@ -236,10 +236,6 @@ class Field(FieldType):
         return self._dtype
 
     dtype = property(_get_dtype)
-
-    @property
-    def const(self) -> bool:
-        return self._const
 
     @override
     def _get_name(self) -> str:
@@ -252,14 +248,14 @@ class Field(FieldType):
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         colour = Colour(use_colour)
-        const_str = f"{colour.const_value}const{colour.off} " if self.const else ""
+        const_str = f"{colour.const_value}const{colour.off} " if self._const else ""
         dtype_str = str(self._dtype)
         d = f"{const_str}{dtype_str}"
         n = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
         if self.value is None:
             v = ""
         else:
-            if self.const:
+            if self._const:
                 v = f" = {colour.const_value}{self.value}{colour.off}"
             else:
                 v = f" = {colour.value}{self.value}{colour.off}"
@@ -274,7 +270,7 @@ class Field(FieldType):
     # This repr is used when the field is the top level object
     def __repr__(self) -> str:
         if isinstance(self.dtype, DtypeSingle) and self.dtype.kind is DtypeKind.BYTES:
-            const_str = ", const=True" if self.const else ""
+            const_str = ", const=True" if self._const else ""
             return f"{self.__class__.__name__}.from_bytes({self.value}{const_str})"
         return f"{self.__class__.__name__}({self._repr()})"
 
@@ -282,7 +278,7 @@ class Field(FieldType):
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Field):
             return False
-        if self.const != other.const:
+        if self._const != other._const:
             return False
         if self.name != other.name:
             return False

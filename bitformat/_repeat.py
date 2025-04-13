@@ -93,8 +93,7 @@ class Repeat(FieldType):
 
     @override
     def _repr(self) -> str:
-        count = self.count if self.count is not None else self.count_expression
-        s = f"Repeat.from_params({count!r}, "
+        s = f"Repeat.from_params({self.count!r}, "
         s += self.field._repr()
         s += ")"
         return s
