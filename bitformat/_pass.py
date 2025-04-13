@@ -54,6 +54,11 @@ class Pass(FieldType):
         return self
 
     @override
+    def info(self) -> str:
+        return f"Pass fieldtype (always empty)."
+
+
+    @override
     def clear(self) -> None:
         """Clearing a Pass field has no effect."""
         pass

@@ -147,6 +147,10 @@ class Format(FieldType):
         return x
 
     @override
+    def info(self) -> str:
+        return f"Format with {len(self._fields)} fields"
+
+    @override
     def clear(self) -> None:
         self.vars = {}
         for fieldtype in self._fields:

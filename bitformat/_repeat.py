@@ -138,9 +138,14 @@ class Repeat(FieldType):
     def to_bits(self) -> Bits:
         return Bits.from_joined(self._bits_list)
 
+    @override
     def clear(self) -> None:
         self._concrete_count = None
         self._bits_list = []
+
+    @override
+    def info(self) -> str:
+        return f"Repeat with count of {self.count}."
 
     @override
     def is_stretchy(self) -> bool:

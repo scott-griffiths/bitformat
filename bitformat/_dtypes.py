@@ -184,6 +184,17 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def info(self) -> str:
+        """
+        Return a descriptive string with information about the Dtype.
+
+        Note that the output is designed to be helpful to users and is not considered part of the API.
+        You should not use the output programmatically as it may change even between point versions.
+        """
+        ...
+
+
+    @abc.abstractmethod
     def __str__(self) -> str:
         ...
 
@@ -203,6 +214,10 @@ class DtypeSingle(Dtype):
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
+
+    @override
+    def info(self) -> str:
+        return f"{self._definition.description} ({self._definition.kind})"
 
     @property
     def kind(self) -> DtypeKind:
@@ -357,6 +372,10 @@ class DtypeArray(Dtype):
     _dtype_single: DtypeSingle
     _items: Expression
 
+    @override
+    def info(self) -> str:
+        return f"{self._dtype_single.info()} array of {self.items} items"
+
     @property
     def kind(self) -> DtypeKind:
         return self._dtype_single.kind
@@ -498,6 +517,10 @@ class DtypeTuple(Dtype):
 
     _dtypes: list[Dtype]
     _bit_length: int
+
+    @override
+    def info(self) -> str:
+        return f"DtypeTuple with {len(self._dtypes)} elements: {', '.join(dtype.info() for dtype in self._dtypes)}"
 
     def __new__(cls, s: str) -> Self:
         return cls.from_string(s)

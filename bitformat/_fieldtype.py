@@ -222,6 +222,16 @@ class FieldType(abc.ABC):
         """
         ...
 
+    @abc.abstractmethod
+    def info(self) -> str:
+        """
+        Return a descriptive string with information about the FieldType.
+
+        Note that the output is designed to be helpful to users and is not considered part of the API.
+        You should not use the output programmatically as it may change even between point versions.
+        """
+        ...
+
     @classmethod
     @abc.abstractmethod
     def from_params(cls, *args, **kwargs) -> FieldType:
