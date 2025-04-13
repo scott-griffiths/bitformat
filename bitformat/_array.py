@@ -162,8 +162,8 @@ class Array:
         if isinstance(iterable, Bits):
             raise TypeError("The iterable argument in the Array init method should not be a Bits object. "
                             "Choose either from_bits() or from_iterable() instead.")
-        if isinstance(iterable, bytes):
-            raise TypeError("The iterable argument in the Array init method should not be a bytes object. "
+        if isinstance(iterable, (bytes, bytearray)):
+            raise TypeError("The iterable argument in the Array init method should not be a bytes or bytearray object. "
                             "Choose either from_bytes() or from_iterable() instead.")
         x = cls.from_iterable(dtype, [] if iterable is None else iterable)
         return x

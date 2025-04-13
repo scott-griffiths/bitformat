@@ -122,7 +122,7 @@ class TestCreation:
         assert not a.trailing_bits
 
     def test_creation_from_bytearray(self):
-        a = Array("u7", bytearray(range(70)))
+        a = Array.from_bytes("u7", bytearray(range(70)))
         assert len(a) == 80
         assert not a.trailing_bits
 
@@ -514,7 +514,7 @@ class TestArrayMethods:
     # ]\n"""
 
     def test_pp_two_formats_no_length(self):
-        a = Array("f16", bytearray(range(50, 56)))
+        a = Array.from_bytes("f16", bytearray(range(50, 56)))
         s = io.StringIO()
         a.pp(stream=s, dtype1="u", dtype2="bin")
         assert (
@@ -955,7 +955,7 @@ def test_array_of_array():
 
 
 def test_rgb_array():
-    a = Array("[u10; 3]", bytearray(30))
+    a = Array.from_bytes("[u10; 3]", bytearray(30))
     assert len(a) == 8
     assert a[0] == (0, 0, 0)
     assert a[1] == (0, 0, 0)

@@ -116,8 +116,10 @@ class Format(FieldType):
             try:
                 next_value = next(value_iter)
             except StopIteration:
-                return  # No more values left to pack
-            fieldtype._pack(next_value, kwargs)
+                # No more values left to pack, but there may still be some constant fields
+                continue
+            else:
+                fieldtype._pack(next_value, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
