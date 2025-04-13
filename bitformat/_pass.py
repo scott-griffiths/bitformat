@@ -55,6 +55,7 @@ class Pass(FieldType):
 
     @override
     def clear(self) -> None:
+        """Clearing a Pass field has no effect."""
         pass
 
     @override
@@ -76,6 +77,7 @@ class Pass(FieldType):
 
     @override
     def to_bits(self) -> Bits:
+        """Returns an empty :class:`Bits`."""
         return Bits()
 
     @override

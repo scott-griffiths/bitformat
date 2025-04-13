@@ -1,18 +1,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap');
 
 :root {
-  --mainNavColor: #808080;
+  --mainNavColor: rgba(128, 128, 128, 20%);
   --sidebarColor: #f8f8ff;
   --inlineCodeBackgroundColor: rgb(0 0 0 / 0%);
 }
 
+:root[data-mode="light"] {
+    --mainNavColor: rgb(200, 200, 200);
+}
+
+:root[data-mode="dark"] {
+    --mainNavColor: rgb(50, 50, 50);
+}
+
+:root[data-mode="darkest"] {
+    --mainNavColor: rgb(20, 20, 20);
+}
+
 div#top_nav nav {
-    background-image: linear-gradient(#a0a0a0, #808080);
+    /*background-image: linear-gradient(rgb(128, 128, 128), rgb(80, 80, 80));*/
     padding: 0.2rem 1rem;
 }
 
 div#top_nav nav h1 img{
-    height: 3rem;
+    height: 2rem;
 }
 
 .highlight {
@@ -21,6 +33,7 @@ div#top_nav nav h1 img{
 
 div.document {
     margin-bottom: 1rem;
+    padding-top: 1rem;
 }
 
 div.document div.documentwrapper {

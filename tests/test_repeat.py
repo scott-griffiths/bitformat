@@ -8,24 +8,15 @@ def test_creation():
 
 
 def test_from_string():
-    # p = Repeat.from_string('repeat{3}: u8')
-    # assert p.count == 3
-    # assert p.field == Field('u8')
-    # s = """
-    # Repeat(2,
-    #     fred = (
-    #         bool,
-    #         john: i7
-    #     )
-    # )
-    # """
+    p = Repeat.from_string('repeat{3}: u8')
+    assert p.count == 3
+    assert p.field == Field('u8')
     s = """repeat {2}:
         fred: (
             bool,
             john: i7
         )
     """
-
     q = Repeat(s)
     assert q.count == 2
     assert q.unpack(Bits("0x8710")) == [[True, 7], [False, 16]]

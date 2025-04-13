@@ -19,7 +19,17 @@ class Repeat(FieldType):
         return cls.from_string(s)
 
     @classmethod
-    def from_params(cls, count: int | str | Expression, field: FieldType | str) -> Repeat:
+    def from_params(cls, count: int | str | Expression, fieldtype: FieldType | str) -> Repeat:
+        """
+        Create a Repeat instance.
+
+        :param count: An Expression or int giving the number of repetitions to do.
+        :type count: int or str or Expression
+        :param fieldtype: The FieldType to repeat.
+        :type fieldtype: FieldType or str
+        :return: The Repeat instance.
+        :rtype: Repeat
+        """
         x = super().__new__(cls)
         if isinstance(count, str):
             count = Expression(count)
@@ -33,11 +43,11 @@ class Repeat(FieldType):
             else:
                 raise ValueError(f"Repeat count must be an integer, not {type(x.count.const_value)}.")
         x._bits_list = []
-        if isinstance(field, str):
-            field = FieldType.from_string(field)
-        elif not isinstance(field, FieldType):
-            raise ValueError(f"Invalid field of type {type(field)}.")
-        x.field = field
+        if isinstance(fieldtype, str):
+            fieldtype = FieldType.from_string(fieldtype)
+        elif not isinstance(fieldtype, FieldType):
+            raise ValueError(f"Invalid field of type {type(fieldtype)}.")
+        x.field = fieldtype
         return x
 
     @override
@@ -53,6 +63,23 @@ class Repeat(FieldType):
     @classmethod
     @override
     def from_string(cls, s: str) -> Repeat:
+        """
+        Create a :class:`Repeat` instance from a string.
+
+        The string should be of the form ``'repeat {expression}: fieldtype'``.
+        The fieldtype can be a :class:`Format` to group multiple fields together.
+
+        :param s: The string to parse.
+        :type s: str
+        :return: The Repeat instance.
+        :rtype: Repeat
+
+        .. code-block:: python
+
+            r1 = Repeat.from_string('repeat {5}: u8')
+            r2 = Repeat.from_string('repeat {x + 1}: (bool, f64)')
+
+        """
         x = super().from_string(s)
         if not isinstance(x, Repeat):
             raise ValueError(f"Can't parse Repeat field from '{s}'. Instead got '{x}'.")
