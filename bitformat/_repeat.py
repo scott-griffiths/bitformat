@@ -147,6 +147,10 @@ class Repeat(FieldType):
         return False
 
     @override
+    def is_const(self) -> bool:
+        return self.count.has_const_value and self.field.is_const()
+
+    @override
     def _get_value(self) -> list[Any] | None:
         if not self._bits_list:
             return None

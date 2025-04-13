@@ -111,7 +111,8 @@ class Format(FieldType):
         value_iter = iter(values)
         for fieldtype in self._fields:
             # Skip const fields
-            if hasattr(fieldtype, 'const') and fieldtype.const:
+            if fieldtype.is_const():
+                fieldtype._pack(None, kwargs)
                 continue
             try:
                 next_value = next(value_iter)
@@ -151,6 +152,10 @@ class Format(FieldType):
     @override
     def is_stretchy(self) -> bool:
         return False
+
+    @override
+    def is_const(self) -> bool:
+        return all(fieldtype.is_const() for fieldtype in self._fields)
 
     @override
     def _get_value(self) -> list[Any]:

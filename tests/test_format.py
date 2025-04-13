@@ -297,7 +297,11 @@ def test_repeating_from_expression():
     f.pack([2, ["a", "b", "c", "d"]])
     assert f.to_bits() == "u8=2, hex1=a, hex1=b, hex1=c, hex1=d"
 
-@pytest.mark.skip
+def test_if_with_const_value():
+    f = Format('(if {False}: const u8=255 else: const u8=0)')
+    f.pack([])
+    assert f.to_bits() == "u8=0"
+
 def test_repeat_with_const_expression():
     f = Format("(the_size: i9, repeat {the_size}: (const u5=0, const bin3=111))")
     f.pack([3])

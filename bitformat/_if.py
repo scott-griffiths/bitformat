@@ -114,6 +114,9 @@ class If(FieldType):
     def is_stretchy(self) -> bool:
         return False
 
+    @override
+    def is_const(self) -> bool:
+        return self.then_.is_const() and self.else_.is_const()
 
     @override
     def _get_value(self) -> Any:

@@ -85,6 +85,10 @@ class Pass(FieldType):
         return False
 
     @override
+    def is_const(self) -> bool:
+        return True
+
+    @override
     def __eq__(self, other) -> bool:
         return isinstance(other, Pass)
 

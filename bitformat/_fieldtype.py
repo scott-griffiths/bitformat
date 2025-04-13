@@ -267,6 +267,11 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def is_const(self) -> bool:
+        """Returns whether this FieldType is a constant, so doesn't need any values to be packed."""
+        ...
+
+    @abc.abstractmethod
     def __eq__(self, other) -> bool: ...
 
     def __copy__(self) -> FieldType:

@@ -144,6 +144,9 @@ class Field(FieldType):
                 return True
         return False
 
+    @override
+    def is_const(self) -> bool:
+        return self.const
 
     @override
     def _copy(self) -> Field:
@@ -224,9 +227,10 @@ class Field(FieldType):
 
     @override
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:
-        if self.const:
+        if self.const and value is not None:
             raise ValueError(f"Cannot set the value of a const Field '{self}'.")
-        self._set_value_no_const_check(value, kwargs)
+        if value is not None:
+            self._set_value_no_const_check(value, kwargs)
 
     def _get_dtype(self) -> Dtype:
         return self._dtype
