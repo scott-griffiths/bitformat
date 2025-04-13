@@ -15,6 +15,11 @@ class TestCreation:
         assert len(b) == 0
         assert f.name == ""
         assert len(f) == 0
+        g = Format('()')
+        assert f == g
+        assert len(g) == 0
+        assert str(f) == "(\n)"
+        assert str(g) == "(\n)"
 
     def test_create_from_dtype(self):
         d = Dtype.from_string("u12")

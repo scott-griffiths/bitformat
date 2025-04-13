@@ -268,7 +268,7 @@ class Expression:
     """A whitelist of allowed AST nodes for the expression."""
     node_whitelist = {"BinOp", "Name", "Add", "Expr", "Mult", "FloorDiv", "Sub", "Load", "Module", "Constant", "UnaryOp",
                       "USub", "Mod", "Pow", "BitAnd", "BitXor", "BitOr", "And", "Or", "BoolOp", "LShift", "RShift",
-                      "Eq", "NotEq", "Compare", "LtE", "GtE", "Subscript", "Gt", "Lt"}
+                      "Eq", "NotEq", "Compare", "LtE", "GtE", "Subscript", "Gt", "Lt", "Is", "IsNot"}
 
     def _compile_safe_eval(self) -> CodeType:
         """Compile the expression, but only allow a whitelist of operations."""

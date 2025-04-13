@@ -235,10 +235,11 @@ class Format(FieldType):
         name_str = "" if self.name == "" else f"{colour.name}{self.name}{colour.off}: "
         s = ""
         s += indent(f"{name_str}(\n")
-        with indent:
-            for fieldtype in self._fields[:-1]:
-                s += fieldtype._str(indent, use_colour) + ",\n"
-            s += self._fields[-1]._str(indent, use_colour) + '\n'
+        if self._fields:
+            with indent:
+                for fieldtype in self._fields[:-1]:
+                    s += fieldtype._str(indent, use_colour) + ",\n"
+                s += self._fields[-1]._str(indent, use_colour) + '\n'
         s += indent(")")
         return s
 
