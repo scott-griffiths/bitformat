@@ -123,6 +123,7 @@ class Repeat(FieldType):
             self._bits_list = [self.field.to_bits()] * self._concrete_count
             return
 
+        # TODO: value_iter is unused, and this whole method looks a bit suspect.
         value_iter = iter(values)
         for i in range(self._concrete_count):
 

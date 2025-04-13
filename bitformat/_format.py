@@ -6,7 +6,7 @@ import copy
 from ._common import override, Indenter, Colour, validate_name
 from ._fieldtype import FieldType
 from ._pass import Pass
-
+from ._repeat import Repeat
 
 
 __all__ = ["Format"]
@@ -110,9 +110,12 @@ class Format(FieldType):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
         value_iter = iter(values)
         for fieldtype in self._fields:
-            # Skip const fields
+            # For const fields (and Repeat with const fields), we don't need to use up a value
             if fieldtype.is_const():
                 fieldtype._pack(None, kwargs)
+                continue
+            if isinstance(fieldtype, Repeat) and fieldtype.field.is_const():
+                fieldtype._pack([], kwargs)
                 continue
             try:
                 next_value = next(value_iter)
