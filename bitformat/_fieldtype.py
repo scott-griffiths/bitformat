@@ -222,7 +222,6 @@ class FieldType(abc.ABC):
         """
         ...
 
-    @abc.abstractmethod
     def info(self) -> str:
         """
         Return a descriptive string with information about the FieldType.
@@ -230,6 +229,10 @@ class FieldType(abc.ABC):
         Note that the output is designed to be helpful to users and is not considered part of the API.
         You should not use the output programmatically as it may change even between point versions.
         """
+        return self._info(Indenter(Options().indent_size), not Options().no_color)
+
+    @abc.abstractmethod
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
         ...
 
     @classmethod

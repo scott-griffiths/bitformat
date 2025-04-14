@@ -144,8 +144,8 @@ class Repeat(FieldType):
         self._bits_list = []
 
     @override
-    def info(self) -> str:
-        return f"Repeat with count of {self.count}."
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        return indent(f"Repeat with count of {self.count}.")
 
     @override
     def is_stretchy(self) -> bool:

@@ -132,12 +132,6 @@ class Field(FieldType):
         return self._bits
 
     @override
-    def info(self) -> str:
-        name_str = "Unnamed Field" if self.name == "" else f"Field with name '{self.name}'"
-        dtype_str = self._dtype.info()
-        return f"{name_str} of type {dtype_str}"
-
-    @override
     def clear(self) -> None:
         if not self._const:
             self._concrete_dtype = None
@@ -271,6 +265,12 @@ class Field(FieldType):
             else:
                 v = f" = {colour.value}{self.value}{colour.off}"
         return indent(f"{n}{d}{v}")
+
+    @override
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        name_str = "" if self.name == "" else f" named '{self.name}'"
+        dtype_str = self._dtype.info()
+        return indent(f"Field with {dtype_str}{name_str}")
 
     # This simple repr used when field is part of a larger object
     @override

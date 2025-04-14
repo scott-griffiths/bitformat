@@ -105,9 +105,8 @@ class If(FieldType):
         return If.from_params(self.condition, self.then_._copy(), self.else_._copy())
 
     @override
-    def info(self) -> str:
-        return "If fieldtype."
-
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        return indent("If fieldtype.")
 
     @override
     def clear(self) -> None:

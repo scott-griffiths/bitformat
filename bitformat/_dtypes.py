@@ -217,7 +217,11 @@ class DtypeSingle(Dtype):
 
     @override
     def info(self) -> str:
-        return f"{self._definition.description} ({self._definition.kind})"
+        if self.bit_length is not None:
+            len_str = f"{self.bit_length} bit"
+        else:
+            len_str = "Unknown length"
+        return f"{len_str} {self._definition.short_description}"
 
     @property
     def kind(self) -> DtypeKind:
@@ -374,7 +378,7 @@ class DtypeArray(Dtype):
 
     @override
     def info(self) -> str:
-        return f"{self._dtype_single.info()} array of {self.items} items"
+        return f"{self._dtype_single.info()} array with {self.items} items"
 
     @property
     def kind(self) -> DtypeKind:
@@ -489,7 +493,7 @@ class DtypeArray(Dtype):
         See also :attr:`bit_length`.
 
         """
-        return self._dtype_single.size
+        return self._dtype_single.size  #TODO: This is returning an expression, not an int.
 
     @property
     def items(self) -> int | None:
@@ -645,12 +649,13 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(self, kind: DtypeKind, description: str, set_fn: Callable, get_fn: Callable,
+    def __init__(self, kind: DtypeKind, description: str, short_description: str, set_fn: Callable, get_fn: Callable,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
                  endianness_variants: bool = False):
         self.kind = kind
         self.description = description
+        self.short_description = short_description
         self.return_type = return_type
         self.is_signed = is_signed
         self.allowed_sizes = AllowedSizes(allowed_sizes)
@@ -718,6 +723,7 @@ class DtypeDefinition:
     def __repr__(self) -> str:
         s = [f"{self.__class__.__name__}(kind='{self.kind}'",
              f"description='{self.description}'",
+             f"short_description='{self.short_description}'",
              f"return_type={self.return_type.__name__}",
              f"is_signed={self.is_signed}",
              f"allowed_lengths={self.allowed_sizes!s}",

@@ -147,10 +147,6 @@ class Format(FieldType):
         return x
 
     @override
-    def info(self) -> str:
-        return f"Format with {len(self._fields)} fields"
-
-    @override
     def clear(self) -> None:
         self.vars = {}
         for fieldtype in self._fields:
@@ -232,6 +228,19 @@ class Format(FieldType):
             raise KeyError(f"Field with name '{key}' not found.")
         else:
             raise TypeError(f"Invalid key type {type(key)}.")
+
+    @override
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        field_count = len(self._fields)
+        name_str = "" if self.name == "" else f" named '{self.name}'"
+        if field_count == 0:
+            return indent(f"An empty Format{name_str}.")
+        s = indent(f"Format{name_str} with {len(self._fields)} field{'' if field_count == 1 else 's'}:\n")
+        with indent:
+            for fieldtype in self._fields:
+                s += f"{fieldtype._info(indent, use_colour)}\n"
+        return s
+
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
