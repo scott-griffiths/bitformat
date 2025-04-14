@@ -691,3 +691,8 @@ def test_expressions_more():
 #     f2.pack([4])
 #     assert f2.value == [4, 5]
 #     assert f2.to_bits() == "u8=4, u8=5"
+
+def test_const_variable():
+    f = FieldType.from_string('(x: const u8 = 5, [u4; {x}])')
+    f.parse('u8=5, u4=1, u4=2, u4=3, u4=4, u4=5')
+    assert f.value == [5, (1, 2, 3, 4, 5)]

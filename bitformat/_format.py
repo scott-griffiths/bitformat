@@ -127,12 +127,15 @@ class Format(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        self.vars = {}
+        self.vars = copy.deepcopy(vars_)
         pos = startbit
         for fieldtype in self._fields:
-            pos += fieldtype._parse(b, pos, vars_)
+            pos += fieldtype._parse(b, pos, self.vars)
             if fieldtype.name:
-                self.vars[fieldtype.name] = fieldtype._get_value()
+                # We only be store values that can be reused. So not things like other Formats or Bits.
+                x = fieldtype._get_value()
+                if isinstance(x, (int, float, str)):
+                    self.vars[fieldtype.name] = x
         return pos - startbit
 
     @override
@@ -278,7 +281,7 @@ class Format(FieldType):
     def __copy__(self) -> Format:
         x = Format()
         x.name = self.name
-        x.vars = self.vars
+        x.vars = copy.deepcopy(self.vars)
         x._fields = [copy.copy(f) for f in self._fields]
         return x
 
