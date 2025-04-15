@@ -45,16 +45,17 @@ const_field.1: [field_name ":"] "const " field_dtype "=" value -> const_field
 mutable_field.0: [field_name ":"] field_dtype ["=" value] -> mutable_field
 ?field: const_field | mutable_field
 
-if_: "if" expression ":" [_WS] field_type [_WS "else" ":" _WS field_type] [_WS]
+if_: "if" expression ":" field_type ["else" ":" field_type]
 
-repeat: "repeat" expression ":" [_WS] field_type [_WS]
+repeat: "repeat" expression ":" field_type
 
-// The Pass field is literally just "pass"
+// The Pass field is literally just "pass".
+// Making it optional means that empty fieldtypes are interpreted as pass fields.
 pass_: ["pass"]
 
-format: [_WS] [field_name ":"] "(" [_WS] [field_type]  ((("," | _NEWLINE) [_WS] field_type [_WS]) | [_WS])* ")" [_WS]
+format: [field_name ":"] "(" [field_type]  (("," | _NEWLINE) field_type)* ")"
 
-?field_type: field | format | if_ | repeat | pass_
+?field_type: [_WS] (field | format | if_ | repeat | pass_) [_WS]
 
 %import common.INT -> INT
 %import python.NAME -> NAME
