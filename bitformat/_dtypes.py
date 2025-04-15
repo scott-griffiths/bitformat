@@ -220,7 +220,7 @@ class DtypeSingle(Dtype):
         if self.bit_length is not None:
             len_str = f"{self.bit_length} bit"
         else:
-            len_str = "Unknown length"
+            len_str = "unknown length"
         return f"{len_str} {self._definition.short_description}"
 
     @property
@@ -524,7 +524,7 @@ class DtypeTuple(Dtype):
 
     @override
     def info(self) -> str:
-        return f"DtypeTuple with {len(self._dtypes)} elements: {', '.join(dtype.info() for dtype in self._dtypes)}"
+        return f"tuple of {', '.join(dtype.info() for dtype in self._dtypes)}"
 
     def __new__(cls, s: str) -> Self:
         return cls.from_string(s)

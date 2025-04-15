@@ -86,9 +86,18 @@ class Repeat(FieldType):
         return x
 
     @override
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        s = indent(f"repeat with count of {self.count}:\n")
+        with indent:
+            s += self.field._info(indent, use_colour)
+        return s
+
+    @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         count_str = str(self.count)
-        s = indent(f"repeat{{{count_str}}}: {self.field._str(indent, use_colour)}")
+        s = indent(f"repeat{{{count_str}}}:\n")
+        with indent:
+            s += self.field._str(indent, use_colour)
         return s
 
     @override
@@ -142,10 +151,6 @@ class Repeat(FieldType):
     def clear(self) -> None:
         self._concrete_count = None
         self._bits_list = []
-
-    @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
-        return indent(f"Repeat with count of {self.count}.")
 
     @override
     def is_stretchy(self) -> bool:

@@ -79,3 +79,8 @@ def test_eq():
     assert i == If.from_params("{1 > 0}", "u2", "i2")
     assert i != If.from_params("{1 > 0}", "u2", "i3")
     assert i != If.from_params("{2 > 0}", "u2", "i2")
+
+# def test_expressions():
+#     f = Format('(x:bool, if {x is True}: pass else: f32)')
+#     f.pack([True])
+#     assert f.to_bits() == '0b1'

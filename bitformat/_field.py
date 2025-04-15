@@ -270,7 +270,7 @@ class Field(FieldType):
     def _info(self, indent: Indenter, use_colour: bool) -> str:
         name_str = "" if self.name == "" else f" named '{self.name}'"
         dtype_str = self._dtype.info()
-        return indent(f"Field with {dtype_str}{name_str}")
+        return indent(f"{dtype_str}{name_str}")
 
     # This simple repr used when field is part of a larger object
     @override

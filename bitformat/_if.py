@@ -105,10 +105,6 @@ class If(FieldType):
         return If.from_params(self.condition, self.then_._copy(), self.else_._copy())
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
-        return indent("If fieldtype.")
-
-    @override
     def clear(self) -> None:
         self.then_.clear()
         self.else_.clear()
@@ -134,6 +130,18 @@ class If(FieldType):
     @override
     def _set_value_with_kwargs(self, val: Any, kwargs: dict[str, Any]) -> None:
         raise NotImplementedError
+
+    @override
+    def _info(self, indent: Indenter, use_colour: bool) -> str:
+        s = indent(f"if {{{self.condition.code_str}}}:\n")
+        with indent:
+            s += self.then_._info(indent, use_colour)
+        if self.else_ is not Pass():
+            s += "\n"
+            s += indent("else:\n")
+            with indent:
+                s += self.else_._info(indent, use_colour)
+        return s
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:

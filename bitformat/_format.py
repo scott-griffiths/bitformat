@@ -235,10 +235,10 @@ class Format(FieldType):
     @override
     def _info(self, indent: Indenter, use_colour: bool) -> str:
         field_count = len(self._fields)
-        name_str = "" if self.name == "" else f" named '{self.name}'"
+        name_str = "" if self.name == "" else f" '{self.name}'"
         if field_count == 0:
-            return indent(f"An empty Format{name_str}.")
-        s = indent(f"Format{name_str} with {len(self._fields)} field{'' if field_count == 1 else 's'}:\n")
+            return indent(f"an empty Format{name_str}.")
+        s = indent(f"format{name_str} with {len(self._fields)} field{'' if field_count == 1 else 's'}:\n")
         with indent:
             for fieldtype in self._fields:
                 s += f"{fieldtype._info(indent, use_colour)}\n"

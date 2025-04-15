@@ -488,7 +488,6 @@ def test_format_str_equivalences():
     [bool;4],)
     """)
     assert f1 == f2 == f3
-    print(f1, f2, f3)
     assert str(f1) == str(f2) == str(f3)
     assert repr(f1) == repr(f2) == repr(f3)
     f4 = eval(repr(f1))
