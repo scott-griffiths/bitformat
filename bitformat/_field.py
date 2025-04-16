@@ -179,7 +179,9 @@ class Field(FieldType):
             assert self._bits is not None
             value = b[startbit : startbit + len(self._bits)]
             if value != self._bits:
-                raise ValueError(f"Read value '{value}' when const value '{self._bits}' was expected.")
+                expected_value = self._dtype.unpack(self._bits)
+                actual_value = self._dtype.unpack(value)
+                raise ValueError(f"Read value '{actual_value}' when const value '{expected_value}' was expected.")
             return len(self._bits)
         self._concrete_dtype = Field._make_concrete_dtype(self._dtype, vars_)
         if self._concrete_dtype is None:
