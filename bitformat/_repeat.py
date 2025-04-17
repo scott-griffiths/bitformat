@@ -95,9 +95,23 @@ class Repeat(FieldType):
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         count_str = str(self.count)
-        s = indent(f"repeat{{{count_str}}}:\n")
+        s = indent(f"repeat{{{count_str}}}:")
         with indent:
-            s += self.field._str(indent, use_colour)
+            value_iter = iter(self.value) if self.value else iter([])
+            if self._concrete_count is not None:
+                for i in range(self._concrete_count):
+                    try:
+                        value = next(value_iter)
+                    except StopIteration:
+                        value = None
+                    if value is not None:
+                        f = self.field._copy()
+                        f.value = value
+                        s += "\n" + f._str(indent, use_colour)
+                    else:
+                        s += "\n" + self.field._str(indent, use_colour)
+            else:
+                s += '\n' + self.field._str(indent, use_colour)
         return s
 
     @override

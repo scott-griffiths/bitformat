@@ -1,4 +1,4 @@
-from bitformat import Repeat, Bits, Field
+from bitformat import Repeat, Bits, Field, Format
 
 
 def test_creation():
@@ -33,3 +33,10 @@ def test_simple_parse_and_unpack():
     p.parse("0x010203")
     assert p.value == [1, 2, 3]
     assert p.unpack("0x030201") == [3, 2, 1]
+
+def test_parsing_repeat():
+    f = Format('(repeat {4}: u8)')
+    assert str(f[0]) == 'repeat{4}:\n    u8\n    u8\n    u8\n    u8'
+    f.parse("0x01020304")
+    assert f.value[0] == [1, 2, 3, 4]
+    assert str(f[0]) == 'repeat{4}:\n    u8 = 1\n    u8 = 2\n    u8 = 3\n    u8 = 4'
