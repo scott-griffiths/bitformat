@@ -1,5 +1,5 @@
 from bitformat import Repeat, Bits, Field, Format
-
+import pytest
 
 def test_creation():
     p = Repeat.from_params(3, "u8")
@@ -36,7 +36,15 @@ def test_simple_parse_and_unpack():
 
 def test_parsing_repeat():
     f = Format('(repeat {4}: u8)')
+    g = f[:]
+    assert f.bit_length == 32
     assert str(f[0]) == 'repeat{4}:\n    u8\n    u8\n    u8\n    u8'
     f.parse("0x01020304")
+    assert f != g
     assert f.value[0] == [1, 2, 3, 4]
     assert str(f[0]) == 'repeat{4}:\n    u8 = 1\n    u8 = 2\n    u8 = 3\n    u8 = 4'
+
+def test_pack_errors():
+    r = Repeat("repeat {x}: u8")
+    with pytest.raises(ValueError):
+        r.pack([1, 2, 3])

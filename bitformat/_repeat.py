@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from ._fieldtype import FieldType
-from ._common import override, Indenter, Expression
+from ._common import override, Indenter, Expression, ExpressionError
 from typing import Sequence, Any
 from ._bits import Bits
 
@@ -136,7 +136,10 @@ class Repeat(FieldType):
     def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
         self._bits_list = []
         if self._concrete_count is None:
-            self._concrete_count = self.count.evaluate(kwargs)
+            try:
+                self._concrete_count = self.count.evaluate(kwargs)
+            except ExpressionError as e:
+                raise ValueError(f"Cannot evaluate count for Repeat field: {e}")
 
         if self.field.value is not None:
             if len(values) > 0:
@@ -145,10 +148,7 @@ class Repeat(FieldType):
             self._bits_list = [self.field.to_bits()] * self._concrete_count
             return
 
-        # TODO: value_iter is unused, and this whole method looks a bit suspect.
-        value_iter = iter(values)
         for i in range(self._concrete_count):
-
             self.field._pack(values[i], kwargs)
             self._bits_list.append(self.field.to_bits())
 

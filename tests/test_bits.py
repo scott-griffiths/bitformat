@@ -737,6 +737,16 @@ def test_creating_from_array_dtype_with_no_length():
     a += '0b1'
     assert a.unpack('[u8;]') == (1, 2, 3, 4, 255)
 
+def test_pp_dtype_array():
+    a = Bits.from_dtype('[u8; 10]', range(10))
+    s = io.StringIO()
+    a.pp('[u8; 10]', stream=s)
+    assert (
+        remove_unprintable(s.getvalue())
+        == """<Bits, dtype1='[u8; 10]', length=80 bits> [
+ 0: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9)
+]\n""")
+
 # def test_pp_hex_issue():
 #     # These should work
 #     Bits('0b000011111').pp('bin', 'hex')

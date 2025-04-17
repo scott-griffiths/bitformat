@@ -8,7 +8,7 @@ import io
 import functools
 from ast import literal_eval
 from collections import abc
-from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type, Sequence
+from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
@@ -34,7 +34,7 @@ def token_to_bitstore(token: str) -> BitRust:
         except ValueError:
             raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
                              "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-        if (isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes)):
+        if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
             return dtype.pack(value_str)._bitstore
         try:
             value = literal_eval(value_str)
@@ -108,14 +108,14 @@ class Bits:
     # ----- Class Methods -----
 
     @classmethod
-    def _from_any(cls: Type[Bits], any: BitsType, /) -> Bits:
+    def _from_any(cls: Type[Bits], any_: BitsType, /) -> Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
         The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
 
-        :param any: The object to convert to a :class:`Bits`.
-        :type any: BitsType
+        :param any_: The object to convert to a :class:`Bits`.
+        :type any_: BitsType
 
         :raises TypeError: If no builder can be found.
 
@@ -125,15 +125,13 @@ class Bits:
             a = Bits() + '0x3f' + b'hello'
 
         """
-        if isinstance(any, cls):
-            return any
-        if isinstance(any, str):
-            return cls.from_string(any)
-        elif isinstance(any, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any)
-        raise TypeError(
-            f"Cannot convert '{any}' of type {type(any)} to a Bits object."
-        )
+        if isinstance(any_, cls):
+            return any_
+        if isinstance(any_, str):
+            return cls.from_string(any_)
+        elif isinstance(any_, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(any_)
+        raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a Bits object.")
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -1053,7 +1051,7 @@ class Bits:
         return s
 
     @staticmethod
-    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype | DtypeTuple, colour_start: str,
+    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_start: str,
                      colour_end: str,  width: int | None = None) -> tuple[str, int]:
         get_fn = dtype.unpack
         chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
@@ -1094,15 +1092,16 @@ class Bits:
             return x, chars_used
 
     @staticmethod
-    def _chars_per_dtype(dtype: Dtype | DtypeTuple, bits_per_group: int):
+    def _chars_per_dtype(dtype: Dtype, bits_per_group: int):
         """How many characters are needed to represent a number of bits with a given Dtype."""
-        if not isinstance(dtype, DtypeTuple):
+        if isinstance(dtype, (DtypeSingle, DtypeArray)):
+            # TODO: Not sure this is right for DtypeArray. Maybe needs a refactor?
             return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
         chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
         return chars
 
-    def _pp(self, dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None, bits_per_group: int,
+    def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int,
             width: int, sep: str, format_sep: str, show_offset: bool, stream: TextIO, offset_factor: int,
             groups: int | None) -> None:
         """Internal pretty print method."""
@@ -1159,7 +1158,7 @@ class Bits:
         return
 
     @staticmethod
-    def _process_pp_tokens(dtype1: Dtype | DtypeTuple, dtype2: Dtype | DtypeTuple | None) -> tuple[int, bool]:
+    def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
         has_length_in_fmt = True
         bits_per_group = 0 if dtype1.bit_length is None else dtype1.bit_length
 
