@@ -329,6 +329,11 @@ def test_dtype_array_from_str():
     assert a.size == 8
     assert a.items == 2
     assert a.bit_length == 16
+    b = Dtype('[f{x}; {y}]')
+    assert isinstance(b, DtypeArray)
+    assert b.size == Expression('{x}')
+    assert b.items == Expression('{y}')
+    assert b.bit_length is None
 
 def test_dtype_str():
     try:

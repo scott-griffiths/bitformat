@@ -328,7 +328,9 @@ class Expression:
     def __hash__(self) -> int:
         return hash(self.code_str)
 
+
 NONE = Expression('{None}')
+
 
 @enum_tools.documentation.document_enum
 class Endianness(Enum):

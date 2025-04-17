@@ -361,9 +361,8 @@ class DtypeSingle(Dtype):
     def size(self) -> Expression:
         """The size of the data type as an Expression.
 
-        This is the number used immediately after the data type kind in a dtype string.
-        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
-        though they have bitlengths of 10, 40 and 30 respectively.
+        This is the number used immediately after the data type kind in the dtype string.
+        For example ``'u10'``has a size of 10.
 
         See also :attr:`bit_length`.
 
@@ -483,30 +482,35 @@ class DtypeArray(Dtype):
         return dtype_single_length * items
 
     @property
-    def size(self) -> int:
-        """The size of the data type.
+    def size(self) -> Expression:
+        """The size of the data type as an Expression.
 
-        This is the number used immediately after the data type kind in a dtype string.
-        For example, each of ``'u10'``, ``'hex10'`` and ``'[i10; 3]'`` have a size of 10 even
-        though they have bitlengths of 10, 40 and 30 respectively.
+        This is the number used immediately after the data type kind in the dtype string.
+        For example ``'[u10; 5]'``has a size of 10.
 
         See also :attr:`bit_length`.
 
         """
-        return self._dtype_single.size  #TODO: This is returning an expression, not an int.
+
+        return self._dtype_single.size
 
     @property
-    def items(self) -> int | None:
-        """The number of items in the data type.
+    def items(self) -> Expression | None | Any:
+        """The number of items in the data type as an Expression.
 
-        An items equal to 0 means it's an array data type but with items currently unset.
+        For example ``'[u10; 5]'``has 5 items.
+
+        An items equal to 0 means it's an array data type but with items currently unset, while
+        if items is None it is open ended and will consume as many items as possible.
+
+        If the number of items is an `Expression` rather than a constant value then the Expression will be returned.
 
         """
         if self._items.is_none():
             return None
         if self._items.has_const_value:
             return self._items.const_value
-        return None
+        return self._items
 
 
 class DtypeTuple(Dtype):
