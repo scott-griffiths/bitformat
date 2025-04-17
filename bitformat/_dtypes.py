@@ -151,9 +151,8 @@ class Dtype(abc.ABC):
         """
         ...
 
-    @property
     @abc.abstractmethod
-    def bit_length(self) -> int | None:
+    def _get_bit_length(self) -> int | None:
         """The total length of the data type in bits.
 
         Returns ``None`` if the data type doesn't have a fixed or known length.
@@ -171,6 +170,11 @@ class Dtype(abc.ABC):
 
         """
     ...
+
+    @property
+    def bit_length(self) -> int | None:
+        return self._get_bit_length()
+
 
     @abc.abstractmethod
     def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
@@ -345,8 +349,7 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    @property
-    def bit_length(self) -> int | None:
+    def _get_bit_length(self) -> int | None:
         return self._bit_length
 
     @override
@@ -455,10 +458,9 @@ class DtypeArray(Dtype):
     def __hash__(self) -> int:
         return hash((self._dtype_single, self._items))
 
-    @property
     @override
     @final
-    def bit_length(self) -> int | None:
+    def _get_bit_length(self) -> int | None:
         if self._dtype_single.bit_length is not None and self._items.has_const_value and self._items.const_value is not None:
             return self._dtype_single.bit_length * self._items.const_value
         return None
@@ -571,10 +573,9 @@ class DtypeTuple(Dtype):
             pos += dtype.bit_length
         return tuple(vals)
 
-    @property
     @override
     @final
-    def bit_length(self) -> int:
+    def _get_bit_length(self) -> int:
         return self._bit_length
 
     @override
