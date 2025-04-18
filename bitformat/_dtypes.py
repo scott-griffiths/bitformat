@@ -392,7 +392,7 @@ class DtypeSingle(Dtype):
         """The size of the data type as an Expression.
 
         This is the number used immediately after the data type kind in the dtype string.
-        For example ``'u10'``has a size of 10.
+        For example ``'u10'`` has a size of 10.
 
         See also :attr:`bit_length`.
 
@@ -511,7 +511,7 @@ class DtypeArray(Dtype):
         """The size of the data type as an Expression.
 
         This is the number used immediately after the data type kind in the dtype string.
-        For example ``'[u10; 5]'``has a size of 10.
+        For example ``'[u10; 5]'`` has a size of 10.
 
         See also :attr:`bit_length`.
 
@@ -522,7 +522,7 @@ class DtypeArray(Dtype):
     def items(self) -> Expression | None | Any:
         """The number of items in the data type as an Expression.
 
-        For example ``'[u10; 5]'``has 5 items.
+        For example ``'[u10; 5]'`` has 5 items.
 
         An items equal to 0 means it's an array data type but with items currently unset, while
         if items is None it is open ended and will consume as many items as possible.
