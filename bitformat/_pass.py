@@ -54,8 +54,8 @@ class Pass(FieldType):
         return self
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
-        return indent(f"pass fieldtype (always empty).")
+    def _info(self, use_colour: bool) -> str:
+        return f"pass fieldtype (always empty)."
 
     @override
     def clear(self) -> None:

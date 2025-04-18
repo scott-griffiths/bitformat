@@ -198,7 +198,7 @@ class Format(FieldType):
     def __setitem__(self, key: slice | str | int, value: str | FieldType) -> None:
         if isinstance(value, str):
             try:
-                field = FieldType.from_string(value)
+                _ = FieldType.from_string(value)
             except ValueError as e:
                 raise ValueError(f"Can't set field from string: {e}") from None
         elif isinstance(value, FieldType):
@@ -233,17 +233,13 @@ class Format(FieldType):
             raise TypeError(f"Invalid key type {type(key)}.")
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
+    def _info(self, use_colour: bool) -> str:
         field_count = len(self._fields)
         name_str = "" if self.name == "" else f" '{self.name}'"
         if field_count == 0:
-            return indent(f"an empty Format{name_str}.")
-        s = indent(f"format{name_str} with {len(self._fields)} field{'' if field_count == 1 else 's'}:\n")
-        with indent:
-            for fieldtype in self._fields:
-                s += f"{fieldtype._info(indent, use_colour)}\n"
+            return f"an empty Format{name_str}."
+        s = f"format{name_str} with {len(self._fields)} field{'' if field_count == 1 else 's'}."
         return s
-
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:

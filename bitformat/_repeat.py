@@ -86,10 +86,8 @@ class Repeat(FieldType):
         return x
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
-        s = indent(f"repeat with count of {self.count}:\n")
-        with indent:
-            s += self.field._info(indent, use_colour)
+    def _info(self, use_colour: bool) -> str:
+        s = f"repeat field with count of {self.count}."
         return s
 
     @override

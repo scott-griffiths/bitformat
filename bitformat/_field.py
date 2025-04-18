@@ -251,10 +251,10 @@ class Field(FieldType):
         return indent(f"{n}{d}{v}")
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
+    def _info(self, use_colour: bool) -> str:
         name_str = "" if self.name == "" else f" named '{self.name}'"
         dtype_str = self._dtype.info()
-        return indent(f"{dtype_str}{name_str}")
+        return f"{dtype_str}{name_str}"
 
     # This simple repr used when field is part of a larger object
     @override

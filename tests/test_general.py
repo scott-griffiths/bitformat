@@ -45,5 +45,6 @@ def test_info_strings():
     for thing in things_with_info:
         info = thing.info()
         assert isinstance(info, str)
+        assert '\n' not in info
         assert len(info) > 0
         # print(f"{thing!r} : {info}")

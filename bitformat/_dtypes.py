@@ -249,9 +249,15 @@ class DtypeSingle(Dtype):
     @override
     def info(self) -> str:
         if self.bit_length is not None:
-            len_str = f"{self.bit_length} bit"
+            bpc = self._definition.bits_per_character
+            if bpc is not None and bpc != 1:
+                len_str = f"{self.bit_length} bit ({self.size} characters)"
+            else:
+                len_str = f"{self.bit_length} bit"
+        elif self._size.is_none():
+            len_str = "variable length"
         else:
-            len_str = "unknown length"
+            len_str = f"{self._size} sized"
         return f"{len_str} {self._definition.short_description}"
 
     @property
@@ -407,7 +413,11 @@ class DtypeArray(Dtype):
 
     @override
     def info(self) -> str:
-        return f"{self._dtype_single.info()} array with {self.items} items"
+        if self._items.is_none():
+            item_str = "variable number of items"
+        else:
+            item_str = f"{self._items} items"
+        return f"array of {self._dtype_single.info()} with {item_str}"
 
     @property
     def kind(self) -> DtypeKind:

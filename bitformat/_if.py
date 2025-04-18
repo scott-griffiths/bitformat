@@ -132,15 +132,9 @@ class If(FieldType):
         raise NotImplementedError
 
     @override
-    def _info(self, indent: Indenter, use_colour: bool) -> str:
-        s = indent(f"if {{{self.condition.code_str}}}:\n")
-        with indent:
-            s += self.then_._info(indent, use_colour)
-        if self.else_ is not Pass():
-            s += "\n"
-            s += indent("else:\n")
-            with indent:
-                s += self.else_._info(indent, use_colour)
+    def _info(self, use_colour: bool) -> str:
+        else_str = "with no else clause" if self.else_ is Pass() else "with else clause"
+        s = f"if field with {{{self.condition.code_str}}} condition and {else_str}."
         return s
 
     @override
