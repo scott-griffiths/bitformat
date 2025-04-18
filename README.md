@@ -1,5 +1,6 @@
 
 [![bitformat](https://raw.githubusercontent.com/scott-griffiths/bitformat/main/doc/bitformat_logo.png)](https://github.com/scott-griffiths/bitformat)
+A Python library for creating and parsing binary formats.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/bitformat?label=PyPI&logo=pypi&logoColor=white)](https://pypi.org/project/bitformat/)
 [![CI badge](https://github.com/scott-griffiths/bitformat/actions/workflows/.github/workflows/ci.yml/badge.svg)](https://github.com/scott-griffiths/bitformat/actions/workflows/ci.yml)
