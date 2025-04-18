@@ -346,3 +346,11 @@ def test_dtype_str():
         assert str(c) == '(bool, u8)'
     finally:
         bitformat.Options().no_color = True
+
+def test_evaluate():
+    concrete = Dtype('u32')
+    e1 = Dtype('u{my_size}')
+    e2 = Dtype('[u8; {my_items}]')
+
+    assert e1.evaluate(my_size=32) == concrete
+    assert e2.evaluate(my_items=10).bit_length == 80

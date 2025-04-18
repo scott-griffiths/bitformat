@@ -182,7 +182,7 @@ class Dtype(abc.ABC):
         return self._get_bit_length()
 
     @abc.abstractmethod
-    def evaluate(self, vars_: dict[str, Any]) -> Self:
+    def evaluate(self, **kwargs) -> Self:
         """Create a concrete Dtype using the values provided.
 
         If a Dtype has been defined in terms of expressions for its size or number of items
@@ -196,7 +196,7 @@ class Dtype(abc.ABC):
             e2 = Dtype('[u8; {my_items}]')
 
             assert e1.evaluate(my_size=32) == concrete
-            assert e1.evaluate(my_items=10).bit_length == 80
+            assert e2.evaluate(my_items=10).bit_length == 80
 
         """
         ...
@@ -381,10 +381,10 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def evaluate(self, vars_: dict[str, Any]) -> Self:
+    def evaluate(self, **kwargs) -> Self:
         if self._size.has_const_value:
             return self
-        size = self._size.evaluate(vars_)
+        size = self._size.evaluate(kwargs)
         return DtypeSingle.from_params(self.kind, size, self.endianness)
 
     @property
@@ -499,11 +499,11 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def evaluate(self, vars_: dict[str, Any]) -> Self:
+    def evaluate(self, **kwargs) -> Self:
         if self._dtype_single._size.has_const_value and self._items.has_const_value:
             return self
-        size = self._dtype_single.evaluate(vars_).size
-        items = self._items.evaluate(vars_)
+        size = self._dtype_single.evaluate(**kwargs).size
+        items = self._items.evaluate(kwargs)
         return DtypeArray.from_params(self._dtype_single.kind, size, items, self._dtype_single.endianness)
 
     @property
@@ -605,10 +605,10 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def evaluate(self, vars_: dict[str, Any]) -> Self:
+    def evaluate(self, **kwargs) -> Self:
         if all(dtype.is_concrete() for dtype in self._dtypes):
             return self
-        dtypes = [dtype.evaluate(vars_) for dtype in self._dtypes]
+        dtypes = [dtype.evaluate(**kwargs) for dtype in self._dtypes]
         return DtypeTuple.from_params(dtypes)
 
     @property
