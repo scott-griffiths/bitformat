@@ -96,9 +96,11 @@ class Dtype(abc.ABC):
 
     Dtype instances are immutable. They are often created implicitly via a token string.
 
-    >>> a_12bit_int = Dtype('i12')  # Creates a DtypeSingle
-    >>> five_16_bit_floats = Dtype('[f16; 5]')  # Creates a DtypeArray
-    >>> a_tuple = Dtype('(bool, u7)')  # Creates a DtypeTuple
+    .. code-block:: pycon
+
+        >>> a_12bit_int = Dtype('i12')  # Creates a DtypeSingle
+        >>> five_16_bit_floats = Dtype('[f16; 5]')  # Creates a DtypeArray
+        >>> a_tuple = Dtype('(bool, u7)')  # Creates a DtypeTuple
 
     """
 
@@ -116,6 +118,10 @@ class Dtype(abc.ABC):
     @classmethod
     def from_string(cls, s: str, /) -> Self:
         """Create a new Dtype sub-class from a token string.
+
+        :param s: The formatted string to convert to a Dtype.
+        :type s: str
+        :rtype: DtypeSingle | DtypeArray | DtypeTuple
 
         Some token string examples:
 
@@ -153,6 +159,10 @@ class Dtype(abc.ABC):
 
     @abc.abstractmethod
     def _get_bit_length(self) -> int | None:
+        ...
+
+    @property
+    def bit_length(self) -> int | None:
         """The total length of the data type in bits.
 
         Returns ``None`` if the data type doesn't have a fixed or known length.
@@ -169,15 +179,26 @@ class Dtype(abc.ABC):
             None
 
         """
-    ...
-
-    @property
-    def bit_length(self) -> int | None:
         return self._get_bit_length()
 
-
     @abc.abstractmethod
-    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
+    def evaluate(self, vars_: dict[str, Any]) -> Self:
+        """Create a concrete Dtype using the values provided.
+
+        If a Dtype has been defined in terms of expressions for its size or number of items
+        then this method can return a concrete Dtype instance. If the Dtype does not contain
+        any expressions then this method will just return it unchanged.
+
+        .. code-block:: python
+
+            concrete = Dtype('u32')
+            e1 = Dtype('u{my_size}')
+            e2 = Dtype('[u8; {my_items}]')
+
+            assert e1.evaluate(my_size=32) == concrete
+            assert e1.evaluate(my_items=10).bit_length == 80
+
+        """
         ...
 
     @abc.abstractmethod
@@ -212,6 +233,12 @@ class Dtype(abc.ABC):
 
 
 class DtypeSingle(Dtype):
+    """A data type of a single kind representing a single value.
+
+    This is used to represent the simplest data types, such as an integer, float or a hex string.
+
+
+    """
 
     _kind: DtypeKind
     _size: Expression
@@ -354,11 +381,11 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
-        if (x := self.bit_length) is not None:
-            return x
-        bit_length = self._size.evaluate(vars_)
-        return bit_length
+    def evaluate(self, vars_: dict[str, Any]) -> Self:
+        if self._size.has_const_value:
+            return self
+        size = self._size.evaluate(vars_)
+        return DtypeSingle.from_params(self.kind, size, self.endianness)
 
     @property
     def size(self) -> Expression:
@@ -472,16 +499,12 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def calculate_bit_length(self, vars_: dict[str, Any]) -> int | None:
-        if (x := self.bit_length) is not None:
-            return x
-        dtype_single_length = self._dtype_single.calculate_bit_length(vars_)
-        if dtype_single_length is None:
-            return None
+    def evaluate(self, vars_: dict[str, Any]) -> Self:
+        if self._dtype_single._size.has_const_value and self._items.has_const_value:
+            return self
+        size = self._dtype_single.evaluate(vars_).size
         items = self._items.evaluate(vars_)
-        if items is None:
-            return None
-        return dtype_single_length * items
+        return DtypeArray.from_params(self._dtype_single.kind, size, items, self._dtype_single.endianness)
 
     @property
     def size(self) -> Expression:
@@ -493,7 +516,6 @@ class DtypeArray(Dtype):
         See also :attr:`bit_length`.
 
         """
-
         return self._dtype_single.size
 
     @property
@@ -526,7 +548,6 @@ class DtypeTuple(Dtype):
     """
 
     _dtypes: list[Dtype]
-    _bit_length: int
 
     @override
     def info(self) -> str:
@@ -541,10 +562,7 @@ class DtypeTuple(Dtype):
         x._dtypes = []
         for d in dtypes:
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
-            if dtype.bit_length is None:
-                raise ValueError(f"Can't create a DtypeTuple from dtype '{d}' as it has an unknown length.")
             x._dtypes.append(dtype)
-        x._bit_length = sum(dtype.bit_length for dtype in x._dtypes)
         return x
 
     @override
@@ -575,8 +593,10 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def _get_bit_length(self) -> int:
-        return self._bit_length
+    def _get_bit_length(self) -> int | None:
+        if all(dtype.bit_length is not None for dtype in self._dtypes):
+            return sum(dtype.bit_length for dtype in self._dtypes)
+        return None
 
     @override
     @final
@@ -585,10 +605,11 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def calculate_bit_length(self, vars_:  dict[str, Any]) -> int | None:
-        if (x := self.bit_length) is not None:
-            return x
-        return sum(dtype.calculate_bit_length(vars_) for dtype in self._dtypes)
+    def evaluate(self, vars_: dict[str, Any]) -> Self:
+        if all(dtype.is_concrete() for dtype in self._dtypes):
+            return self
+        dtypes = [dtype.evaluate(vars_) for dtype in self._dtypes]
+        return DtypeTuple.from_params(dtypes)
 
     @property
     def items(self) -> int:

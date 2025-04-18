@@ -280,6 +280,13 @@ def test_field_with_dtype_tuple():
     assert f.value == (3, 4)
     assert f.bit_length == 16
 
+def test_field_with_dtype_tuple_with_expressions():
+    f = Field("tuple(u{x}, u{y})")
+    assert f.dtype == DtypeTuple("(u{x}, u{y})")
+    f.pack([1, 2], x=8, y=16)
+    assert f.value == (1, 2)
+    assert f.to_bits() == "0x010002"
+
 def test_const_modification():
     f = Field("const u8 = 12")
     with pytest.raises(ValueError):

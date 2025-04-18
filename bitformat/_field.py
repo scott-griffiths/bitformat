@@ -3,7 +3,7 @@ from __future__ import annotations
 from bitformat import Bits
 from ._dtypes import Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeKind, validate_name, Expression
+from ._common import override, Indenter, Colour, DtypeKind, validate_name, Expression, ExpressionError
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
@@ -150,28 +150,8 @@ class Field(FieldType):
 
     @override
     def _copy(self) -> Field:
-        x = self.__class__.from_params(self.dtype, self.name, self.value, self._const)
+        x = self.__class__.from_params(self.dtype, self._name, self.value, self._const)
         return x
-
-    @staticmethod
-    def _make_concrete_dtype(dtype: Dtype, vars_: dict[str, Any]) -> Dtype | None:
-        if isinstance(dtype, DtypeSingle) and dtype.size is not None:
-            size = dtype._size.evaluate(vars_)
-            return DtypeSingle.from_params(dtype.kind, size, dtype.endianness)
-        elif isinstance(dtype, DtypeArray):
-            size = dtype._dtype_single._size.evaluate(vars_)
-            items = dtype._items.evaluate(vars_)
-            return DtypeArray.from_params(dtype._dtype_single.kind, size, items, dtype.endianness)
-        elif isinstance(dtype, DtypeTuple):
-            # Create concrete dtypes for each of the dtypes in the tuple
-            concrete_dtypes = []
-            for d in dtype._dtypes:
-                concrete_dtype = Field._make_concrete_dtype(d, vars_)
-                if concrete_dtype is None:
-                    return None
-                concrete_dtypes.append(concrete_dtype)
-            return DtypeTuple.from_params(concrete_dtypes)
-        assert False
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
@@ -183,13 +163,14 @@ class Field(FieldType):
                 actual_value = self._dtype.unpack(value)
                 raise ValueError(f"Read value '{actual_value}' when const value '{expected_value}' was expected.")
             return len(self._bits)
-        self._concrete_dtype = Field._make_concrete_dtype(self._dtype, vars_)
-        if self._concrete_dtype is None:
-            raise ValueError(f"Can't parse field '{self}' as the concrete dtype couldn't be determined.")
+        try:
+            self._concrete_dtype = self._dtype.evaluate(vars_)
+        except ExpressionError:
+            raise ValueError(f"Can't parse Field '{self}' as the dtype cannot be evaluated with kwargs {vars_}")
         if self._concrete_dtype.bit_length is not None and len(b) - startbit < self._concrete_dtype.bit_length:
             raise ValueError(f"Field '{str(self)}' needs {self._concrete_dtype.bit_length} bits to parse, but {len(b) - startbit} were available.")
         # Deal with a stretchy dtype
-        dtype_length = self._concrete_dtype.calculate_bit_length(vars_)
+        dtype_length = self._dtype.evaluate(vars_).bit_length
         self._bits = b[startbit : startbit + dtype_length] if dtype_length is not None else b[startbit:]
         if self.name != "":
             if self._bits is None:
@@ -221,11 +202,12 @@ class Field(FieldType):
         if self._concrete_dtype is not None:
             self._bits = self._concrete_dtype.pack(value)
         else:
-            self._concrete_dtype = Field._make_concrete_dtype(self._dtype, kwargs)
-            if self._concrete_dtype is not None:
-                self._bits = self._concrete_dtype.pack(value)
-            else:
+            try:
+                self._concrete_dtype = self._dtype.evaluate(kwargs)
+            except ExpressionError:
                 raise ValueError(f"Field '{self}' cannot compute a concrete dtype with kwargs {kwargs}, so can't set the value.")
+            else:
+                self._bits = self._concrete_dtype.pack(value)
 
     @override
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None:

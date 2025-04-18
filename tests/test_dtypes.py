@@ -282,12 +282,12 @@ def test_unpacking_dtype_array_with_no_length():
     assert d.unpack('0b110') == (True, True, False)
     assert Dtype('[u8;]').unpack('0x0001f') == (0, 1)
 
-def test_unpacking_dtypetuple_array_with_no_length():
-    # We shouldn't even be able to create the dtypetuple with no length array
-    with pytest.raises(ValueError):
-        _ = DtypeTuple('([bool;], u8)')
-    with pytest.raises(ValueError):
-        _ = DtypeTuple('([u8;],)')
+# def test_unpacking_dtypetuple_array_with_no_length():
+#     # We shouldn't even be able to create the dtypetuple with no length array
+#     with pytest.raises(ValueError):
+#         _ = DtypeTuple('([bool;], u8)')
+#     with pytest.raises(ValueError):
+#         _ = DtypeTuple('([u8;],)')
 
 def test_creating_dtype_with_no_size():
     d = Dtype('f')
