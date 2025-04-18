@@ -384,7 +384,7 @@ class DtypeSingle(Dtype):
     def evaluate(self, **kwargs) -> Self:
         if self._size.has_const_value:
             return self
-        size = self._size.evaluate(kwargs)
+        size = self._size.evaluate(**kwargs)
         return DtypeSingle.from_params(self.kind, size, self.endianness)
 
     @property
@@ -503,7 +503,7 @@ class DtypeArray(Dtype):
         if self._dtype_single._size.has_const_value and self._items.has_const_value:
             return self
         size = self._dtype_single.evaluate(**kwargs).size
-        items = self._items.evaluate(kwargs)
+        items = self._items.evaluate(**kwargs)
         return DtypeArray.from_params(self._dtype_single.kind, size, items, self._dtype_single.endianness)
 
     @property

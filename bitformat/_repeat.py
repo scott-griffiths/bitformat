@@ -126,7 +126,7 @@ class Repeat(FieldType):
         self._bits_list = []
         pos = startbit
         if self._concrete_count is None:
-            self._concrete_count = self.count.evaluate(kwargs)
+            self._concrete_count = self.count.evaluate(**kwargs)
         for i in range(self._concrete_count):
             pos += self.field._parse(b, pos, kwargs)
             self._bits_list.append(self.field.to_bits())
@@ -137,7 +137,7 @@ class Repeat(FieldType):
         self._bits_list = []
         if self._concrete_count is None:
             try:
-                self._concrete_count = self.count.evaluate(kwargs)
+                self._concrete_count = self.count.evaluate(**kwargs)
             except ExpressionError as e:
                 raise ValueError(f"Cannot evaluate count for Repeat field: {e}")
 

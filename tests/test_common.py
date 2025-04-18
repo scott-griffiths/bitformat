@@ -9,10 +9,10 @@ def test_expression_creation():
     d = Expression("{x * (3 + b // 4)}")
 
     assert a.evaluate() == 3
-    assert a.evaluate({"penguin": 54.3}) == 3
-    assert b.evaluate({"a": 4}) == 7
-    assert c.evaluate({"a": 4, "b": 5}) == 12
-    assert d.evaluate({"x": 4, "a": 4, "b": 5}) == 16
+    assert a.evaluate(penguin= 54.3) == 3
+    assert b.evaluate(a=4) == 7
+    assert c.evaluate(a=4, b=5) == 12
+    assert d.evaluate(x=4, a=4, b=5) == 16
 
 
 def test_disallowed_expressions():

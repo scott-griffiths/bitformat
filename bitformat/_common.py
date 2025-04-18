@@ -295,7 +295,7 @@ class Expression:
             raise ExpressionError(f"Failed to compile Expression '{self}': {e}")
         return code
 
-    def evaluate(self, kwargs: dict[str, Any] | None = None) -> Any:
+    def evaluate(self, **kwargs) -> Any:
         """Evaluate the expression, disallowing all builtins."""
         if self.has_const_value:
             return self.const_value

@@ -87,7 +87,7 @@ class If(FieldType):
 
     @override
     def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
-        self.condition_value = self.condition.evaluate(kwargs)
+        self.condition_value = self.condition.evaluate(**kwargs)
         if self.condition_value:
             _ = self.then_._pack(value, kwargs)
         else:
@@ -95,7 +95,7 @@ class If(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        self.condition_value = self.condition.evaluate(vars_)
+        self.condition_value = self.condition.evaluate(**vars_)
         if self.condition_value:
             return self.then_._parse(b, startbit, vars_)
         return self.else_._parse(b, startbit, vars_)
