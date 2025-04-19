@@ -65,7 +65,7 @@ class Format(FieldType):
             if fieldtype is Pass():
                 # Don't bother appending if it's the Pass singleton.
                 continue
-            if fieldtype.is_stretchy():
+            if fieldtype.has_dynamic_size():
                 stretchy_field = fieldtype
             x._fields.append(fieldtype)
             if fieldtype.name:
@@ -156,7 +156,7 @@ class Format(FieldType):
             fieldtype.clear()
 
     @override
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         return False
 
     @override

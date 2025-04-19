@@ -138,7 +138,7 @@ class Field(FieldType):
             self._bits = None
 
     @override
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         if isinstance(self._dtype, DtypeSingle):
             if not self._const and self._dtype.size.is_none():
                 return True

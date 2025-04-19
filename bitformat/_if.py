@@ -111,7 +111,7 @@ class If(FieldType):
         self.condition_value = None
 
     @override
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         return False
 
     @override
