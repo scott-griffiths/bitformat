@@ -839,14 +839,12 @@ class Bits:
         """
         # First do the cases where there's only one data type.
         # For dtypes like hex, bin etc. there's no need to specify a length.
+        if isinstance(fmt, list):
+            d = DtypeTuple.from_params(fmt)
+            return list(d.unpack(self))
         if isinstance(fmt, str):
             fmt = Dtype.from_string(fmt)
-        elif isinstance(fmt, list):
-            fmt = DtypeTuple.from_params(fmt)
-        if isinstance(fmt, DtypeTuple):
-            return list(fmt.unpack(self))
-        else:
-            return fmt.unpack(self)
+        return fmt.unpack(self)
 
     # ----- Private Methods -----
 

@@ -685,8 +685,8 @@ def test_unpack_dtype_tuple():
     f = "(u8, u8, u8, bool)"
     d = DtypeTuple(f)
     b = d.pack([55, 33, 11, 0])
-    assert b.unpack(d) == [55, 33, 11, False]
-    assert b.unpack(f) == [55, 33, 11, False]
+    assert b.unpack(d) == (55, 33, 11, False)
+    assert b.unpack(f) == (55, 33, 11, False)
 
 def test_from_ones():
     a = Bits.from_ones(0)

@@ -363,3 +363,13 @@ def test_unpack_dtype_tuple():
     x = s.unpack('u')
     y = s.unpack('(u)')
     assert y[0] == x
+
+def test_unpack_dtype_tuple_with_single_dynamic_type():
+    d = Dtype('(u8, [u8;], u8)')
+    s = Bits.from_string('0x010203040506')
+    x = d.unpack(s)
+    assert x == (1, (2, 3, 4, 5), 6)
+    x = s.unpack(d)
+    assert x == (1, (2, 3, 4, 5), 6)
+    x = s.unpack('(u8, u, u8)')
+    assert x == (1, 0x02030405, 6)
