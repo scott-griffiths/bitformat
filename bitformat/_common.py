@@ -215,9 +215,9 @@ class Expression:
     .. code-block:: python
 
         e = Expression('{x + 1}')
-        assert e.evaluate({'x': 5}) == 6
+        assert e.evaluate(x=5) == 6
 
-        f = Format('{x: u8, data: [u8; {x}]}')  # The number of items in data is an Expression.
+        f = Format('(x: u8, data: [u8; {x}])')  # The number of items in data is an Expression.
 
     Only certain operations are permitted in an Expression - see the ``node_whitelist``. For security
     reasons, all builtins and double underscores are disallowed in the expression string.
@@ -230,6 +230,10 @@ class Expression:
     code: CodeType
 
     def __new__(cls, code_str: str) -> Expression:
+        return cls.from_string(code_str)
+
+    @classmethod
+    def from_string(cls, code_str: str) -> Expression:
         """Create an expression object from a string that starts and ends with braces."""
         x = super().__new__(cls)
         code_str = code_str.strip()
@@ -277,9 +281,7 @@ class Expression:
                 f"Invalid Expression '{self}'. Double underscores are not permitted."
             )
         try:
-            nodes_used = set(
-                [x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))]
-            )
+            nodes_used = set([x.__class__.__name__ for x in ast.walk(ast.parse(self.code_str))])
         except SyntaxError as e:
             raise ExpressionError(f"Failed to parse Expression '{self}': {e}")
         bad_nodes = nodes_used - Expression.node_whitelist

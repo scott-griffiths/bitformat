@@ -200,7 +200,7 @@ def test_equality():
 
 
 def test_size_expression():
-    f = Field.from_params(DtypeSingle.from_params(DtypeKind.UINT, size=Expression('{5}')))
+    f = Field.from_params(DtypeSingle.from_params(DtypeKind.UINT, size=Expression.from_int(5)))
     s = Dtype("u{5}")
     assert f.dtype == s
     assert str(f) == "u5"

@@ -29,9 +29,10 @@ def test_pack():
 
 
 def test_simple_parse_and_unpack():
-    p = Repeat.from_params(3, "u8")
-    p.parse("0x010203")
+    p = Repeat.from_params("{x}", "u8")
+    p.parse("0x010203", x=3)
     assert p.value == [1, 2, 3]
+    p.count = p.count.evaluate(x=3)
     assert p.unpack("0x030201") == [3, 2, 1]
 
 def test_parsing_repeat():

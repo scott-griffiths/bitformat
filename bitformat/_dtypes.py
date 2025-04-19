@@ -206,12 +206,37 @@ class Dtype(abc.ABC):
         """Return whether the size of the dtype is fully known.
 
         This will be True if the dtype has a known length that doesn't
-        depend on any parameters or available data, otherwise it will be False."""
+        depend on any parameters or available data, otherwise it will be False.
+
+        .. code-block:: pycon
+
+            >>> Dtype('u32').has_fixed_size()
+            True
+            >>> Dtype('[f16; 4]').has_fixed_size()
+            True
+            >>> Dtype('[u32;]').has_fixed_size()
+            False
+            >>> Dtype('u{x}').has_fixed_size()
+            False
+
+        """
         ...
 
     @abc.abstractmethod
     def has_dynamic_size(self) -> bool:
-        """Return whether the dtype can stretch to fit the available data."""
+        """Return whether the dtype can stretch to fit the available data.
+
+        .. code-block:: pycon
+
+            >>> d = Dtype('u')
+            >>> d.has_dynamic_size()
+            True
+            >>> d.unpack('0b1')
+            1
+            >>> d.unpack('0x00001')
+            1
+
+        """
         ...
 
     @abc.abstractmethod

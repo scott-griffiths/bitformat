@@ -32,7 +32,7 @@ class Repeat(FieldType):
         """
         x = super().__new__(cls)
         if isinstance(count, str):
-            count = Expression(count)
+            count = Expression.from_string(count)
         if isinstance(count, int):
             count = Expression.from_int(count)
         x.count = count
