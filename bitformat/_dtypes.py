@@ -210,7 +210,7 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         """Return whether the dtype can stretch to fit the available data."""
         ...
 
@@ -366,7 +366,7 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         return self._size.is_none()
 
     @override
@@ -522,7 +522,7 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         return self._dtype_single._size.is_none() or self._items.is_none()
 
     @override
@@ -594,7 +594,7 @@ class DtypeTuple(Dtype):
         x._dtypes = []
         for i, d in enumerate(dtypes):
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
-            if dtype.is_stretchy():
+            if dtype.has_dynamic_size():
                 if x._stretchy_index is not None:
                     raise ValueError(f"Cannot have more than one stretchy dtype in a tuple. Found '{dtype}' at index {i} and '{x._dtypes[x._stretchy_index]}' at index {x._stretchy_index}.")
                 x._stretchy_index = i
@@ -654,7 +654,7 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def is_stretchy(self) -> bool:
+    def has_dynamic_size(self) -> bool:
         return self._stretchy_index is not None
 
     @override
