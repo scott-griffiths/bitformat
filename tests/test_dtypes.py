@@ -4,7 +4,7 @@ import sys
 import bitformat
 from bitformat import Dtype, Bits, Endianness, DtypeTuple, DtypeSingle, DtypeArray
 from bitformat._dtypes import DtypeDefinition, Register
-from bitformat._common import DtypeKind, Expression
+from bitformat._common import DtypeKind, Expression, ExpressionError
 
 sys.path.insert(0, "..")
 
@@ -145,6 +145,7 @@ def test_len():
     assert a.bit_length == 32
     a = DtypeSingle("f")
     assert a.size == Expression('{None}')
+    assert a.size.is_none()
     assert a.bit_length is None
     a = DtypeArray("[u8; 3]")
     assert a.size == 8
@@ -354,3 +355,11 @@ def test_evaluate():
 
     assert e1.evaluate(my_size=32) == concrete
     assert e2.evaluate(my_items=10).bit_length == 80
+
+def test_unpack_dtype_tuple():
+    s = Bits('0x100')
+    with pytest.raises(ExpressionError):
+        _ = s.unpack('u{x}')
+    x = s.unpack('u')
+    y = s.unpack('(u)')
+    assert y[0] == x

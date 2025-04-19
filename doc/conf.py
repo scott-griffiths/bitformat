@@ -44,4 +44,5 @@ html_theme_options = {
     "source_url": "https://github.com/scott-griffiths/bitformat/",
 }
 
-html_logo = "./logo.png"
+html_logo = "./bitformat_logo_small.png"
+html_favicon = "./logo.png"

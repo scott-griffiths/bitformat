@@ -140,7 +140,7 @@ class Field(FieldType):
     @override
     def is_stretchy(self) -> bool:
         if isinstance(self._dtype, DtypeSingle):
-            if not self._const and self._dtype.size == Expression('{None}'):
+            if not self._const and self._dtype.size.is_none():
                 return True
         return False
 

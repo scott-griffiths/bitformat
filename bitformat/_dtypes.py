@@ -5,7 +5,7 @@ import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
 import inspect
 import bitformat
-from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str
+from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
 
@@ -205,7 +205,13 @@ class Dtype(abc.ABC):
     def is_concrete(self) -> bool:
         """Return whether the size of the dtype is fully known.
 
-        This will be True for dtypes without expressions."""
+        This will be True if the dtype has a known length that doesn't
+        depend on any parameters of available data, otherwise it will be False."""
+        ...
+
+    @abc.abstractmethod
+    def is_stretchy(self) -> bool:
+        """Return whether the dtype can stretch to fit the available data."""
         ...
 
     @abc.abstractmethod
@@ -343,10 +349,12 @@ class DtypeSingle(Dtype):
     @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
         b = bitformat.Bits._from_any(b)
-        if self._bit_length is None:
+        if self._size.is_none():
             # Try to unpack everything
             return self._get_fn(b)
-        elif self._bit_length > len(b):
+        if not self._size.has_const_value:
+            raise ExpressionError(f"Cannot unpack a dtype with an unknown size. Got '{self}'")
+        if self._bit_length > len(b):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         else:
             return self._get_fn(b[: self._bit_length])
@@ -355,6 +363,11 @@ class DtypeSingle(Dtype):
     @final
     def is_concrete(self) -> bool:
         return self._size.has_const_value and self._size.const_value is not None
+
+    @override
+    @final
+    def is_stretchy(self) -> bool:
+        return self._size.is_none()
 
     @override
     @final
@@ -509,6 +522,11 @@ class DtypeArray(Dtype):
 
     @override
     @final
+    def is_stretchy(self) -> bool:
+        return self._dtype_single._size.is_none() or self._items.is_none()
+
+    @override
+    @final
     def evaluate(self, **kwargs) -> Self:
         if self._dtype_single._size.has_const_value and self._items.has_const_value:
             return self
@@ -558,6 +576,8 @@ class DtypeTuple(Dtype):
     """
 
     _dtypes: list[Dtype]
+    _bit_length: int  # The total length in bits possible excluding any stretchy dtype
+    _stretchy_index: int | None  # The index of a stretchy dtype in the tuple, or None
 
     @override
     def info(self) -> str:
@@ -569,10 +589,19 @@ class DtypeTuple(Dtype):
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)
+        x._stretchy_index = None
+        bit_length = 0
         x._dtypes = []
-        for d in dtypes:
+        for i, d in enumerate(dtypes):
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
+            if dtype.is_stretchy():
+                if x._stretchy_index is not None:
+                    raise ValueError(f"Cannot have more than one stretchy dtype in a tuple. Found '{dtype}' at index {i} and '{x._dtypes[x._stretchy_index]}' at index {x._stretchy_index}.")
+                x._stretchy_index = i
+            else:
+                bit_length += dtype.bit_length  # TODO - for expressions bit_length can still be None here.
             x._dtypes.append(dtype)
+        x._bit_length = bit_length
         return x
 
     @override
@@ -591,27 +620,42 @@ class DtypeTuple(Dtype):
 
         """
         b = bitformat.Bits._from_any(b)
-        if self.bit_length > len(b):
-            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
+
+        if self._bit_length > len(b):
+            if self._stretchy_index is not None:
+                raise ValueError(f"{self!r} is at least {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
+            else:
+                raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
+        if self._stretchy_index is not None:
+            stretchy_length = len(b) - self._bit_length
         vals = []
         pos = 0
-        for dtype in self:
-            if dtype.kind != DtypeKind.PAD:
-                vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
-            pos += dtype.bit_length
+        for i, dtype in enumerate(self._dtypes):
+            if i == self._stretchy_index:
+                vals.append(dtype.unpack(b[pos : pos + stretchy_length]))
+                pos += stretchy_length
+            else:
+                if dtype.kind != DtypeKind.PAD:
+                    vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
+                pos += dtype.bit_length
         return tuple(vals)
 
     @override
     @final
     def _get_bit_length(self) -> int | None:
-        if all(dtype.bit_length is not None for dtype in self._dtypes):
-            return sum(dtype.bit_length for dtype in self._dtypes)
+        if self._stretchy_index is None:
+            return self._bit_length
         return None
 
     @override
     @final
     def is_concrete(self) -> bool:
         return all(dtype.is_concrete() for dtype in self._dtypes)
+
+    @override
+    @final
+    def is_stretchy(self) -> bool:
+        return self._stretchy_index is not None
 
     @override
     @final
