@@ -206,7 +206,7 @@ class Dtype(abc.ABC):
         """Return whether the size of the dtype is fully known.
 
         This will be True if the dtype has a known length that doesn't
-        depend on any parameters of available data, otherwise it will be False."""
+        depend on any parameters or available data, otherwise it will be False."""
         ...
 
     @abc.abstractmethod
@@ -223,7 +223,6 @@ class Dtype(abc.ABC):
         You should not use the output programmatically as it may change even between point versions.
         """
         ...
-
 
     @abc.abstractmethod
     def __str__(self) -> str:
@@ -576,8 +575,8 @@ class DtypeTuple(Dtype):
     """
 
     _dtypes: list[Dtype]
-    _bit_length: int  # The total length in bits possible excluding any stretchy dtype
-    _stretchy_index: int | None  # The index of a stretchy dtype in the tuple, or None
+    _bit_length: int  # The total length in bits possible excluding any dynamic size dtype
+    _dynamic_index: int | None  # The index of a dynamic size dtype in the tuple, or None
 
     @override
     def info(self) -> str:
@@ -589,15 +588,15 @@ class DtypeTuple(Dtype):
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)
-        x._stretchy_index = None
+        x._dynamic_index = None
         bit_length = 0
         x._dtypes = []
         for i, d in enumerate(dtypes):
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
             if dtype.has_dynamic_size():
-                if x._stretchy_index is not None:
-                    raise ValueError(f"Cannot have more than one stretchy dtype in a tuple. Found '{dtype}' at index {i} and '{x._dtypes[x._stretchy_index]}' at index {x._stretchy_index}.")
-                x._stretchy_index = i
+                if x._dynamic_index is not None:
+                    raise ValueError(f"Cannot have more than one dtype with a dynamic size in a tuple. Found '{dtype}' at index {i} and '{x._dtypes[x._dynamic_index]}' at index {x._dynamic_index}.")
+                x._dynamic_index = i
             else:
                 bit_length += dtype.bit_length  # TODO - for expressions bit_length can still be None here.
             x._dtypes.append(dtype)
@@ -622,18 +621,18 @@ class DtypeTuple(Dtype):
         b = bitformat.Bits._from_any(b)
 
         if self._bit_length > len(b):
-            if self._stretchy_index is not None:
+            if self._dynamic_index is not None:
                 raise ValueError(f"{self!r} is at least {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
             else:
                 raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
-        if self._stretchy_index is not None:
-            stretchy_length = len(b) - self._bit_length
+        if self._dynamic_index is not None:
+            dynamic_length = len(b) - self._bit_length
         vals = []
         pos = 0
         for i, dtype in enumerate(self._dtypes):
-            if i == self._stretchy_index:
-                vals.append(dtype.unpack(b[pos : pos + stretchy_length]))
-                pos += stretchy_length
+            if i == self._dynamic_index:
+                vals.append(dtype.unpack(b[pos : pos + dynamic_length]))
+                pos += dynamic_length
             else:
                 if dtype.kind != DtypeKind.PAD:
                     vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
@@ -643,7 +642,7 @@ class DtypeTuple(Dtype):
     @override
     @final
     def _get_bit_length(self) -> int | None:
-        if self._stretchy_index is None:
+        if self._dynamic_index is None:
             return self._bit_length
         return None
 
@@ -655,7 +654,7 @@ class DtypeTuple(Dtype):
     @override
     @final
     def has_dynamic_size(self) -> bool:
-        return self._stretchy_index is not None
+        return self._dynamic_index is not None
 
     @override
     @final
