@@ -11,7 +11,7 @@ __all__ = ["Repeat"]
 class Repeat(FieldType):
 
     field: FieldType
-    count: Expression
+    _count: Expression
     _concrete_count: int | None
     _bits_list: list[Bits]
 
@@ -35,13 +35,13 @@ class Repeat(FieldType):
             count = Expression.from_string(count)
         if isinstance(count, int):
             count = Expression.from_int(count)
-        x.count = count
+        x._count = count
         x._concrete_count = None
-        if x.count.has_const_value:
-            if isinstance(x.count.const_value, int):
-                x._concrete_count = x.count.const_value
+        if x._count.has_const_value:
+            if isinstance(x._count.const_value, int):
+                x._concrete_count = x._count.const_value
             else:
-                raise ValueError(f"Repeat count must be an integer, not {type(x.count.const_value)}.")
+                raise ValueError(f"Repeat count must be an integer, not {type(x._count.const_value)}.")
         x._bits_list = []
         if isinstance(fieldtype, str):
             fieldtype = FieldType.from_string(fieldtype)
@@ -92,7 +92,7 @@ class Repeat(FieldType):
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
-        count_str = str(self.count)
+        count_str = str(self._count)
         s = indent(f"repeat{{{count_str}}}:")
         with indent:
             value_iter = iter(self.value) if self.value else iter([])
@@ -114,7 +114,7 @@ class Repeat(FieldType):
 
     @override
     def _repr(self) -> str:
-        s = f"Repeat.from_params({self.count!r}, "
+        s = f"Repeat.from_params({self._count!r}, "
         s += self.field._repr()
         s += ")"
         return s
@@ -124,7 +124,7 @@ class Repeat(FieldType):
         self._bits_list = []
         pos = startbit
         if self._concrete_count is None:
-            self._concrete_count = self.count.evaluate(**kwargs)
+            self._concrete_count = self._count.evaluate(**kwargs)
         for i in range(self._concrete_count):
             pos += self.field._parse(b, pos, kwargs)
             self._bits_list.append(self.field.to_bits())
@@ -135,7 +135,7 @@ class Repeat(FieldType):
         self._bits_list = []
         if self._concrete_count is None:
             try:
-                self._concrete_count = self.count.evaluate(**kwargs)
+                self._concrete_count = self._count.evaluate(**kwargs)
             except ExpressionError as e:
                 raise ValueError(f"Cannot evaluate count for Repeat field: {e}")
 
@@ -152,7 +152,7 @@ class Repeat(FieldType):
 
     @override
     def _copy(self) -> Repeat:
-        x = self.__class__.from_params(self.count, self.field._copy())
+        x = self.__class__.from_params(self._count, self.field._copy())
         return x
 
     @override
@@ -170,7 +170,7 @@ class Repeat(FieldType):
 
     @override
     def is_const(self) -> bool:
-        return self.count.has_const_value and self.field.is_const()
+        return self._count.has_const_value and self.field.is_const()
 
     @override
     def _get_value(self) -> list[Any] | None:
@@ -186,7 +186,7 @@ class Repeat(FieldType):
     def __eq__(self, other) -> bool:
         if not isinstance(other, Repeat):
             return False
-        if self.count != other.count:
+        if self._count != other._count:
             return False
         if self.field != other.field:
             return False
@@ -199,3 +199,28 @@ class Repeat(FieldType):
     @override
     def _set_name(self, name: str) -> None:
         raise AttributeError("The Repeat field has no 'name' property.")
+
+    @property
+    def count(self) -> Expression:
+        """
+        The count of the Repeat field.
+
+        :return: The count of the Repeat field.
+        :rtype: Expression
+        """
+        return self._count
+
+    @count.setter
+    def count(self, value: int | str| Expression) -> None:
+        """
+        Set the count of the Repeat field.
+
+        :param value: The new count value.
+        :type value: Expression | int | str
+        """
+        if isinstance(value, str):
+            value = Expression.from_string(value)
+        elif isinstance(value, int):
+            value = Expression.from_int(value)
+        self._count = value
+        self.clear()
