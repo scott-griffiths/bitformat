@@ -202,7 +202,7 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def is_concrete(self) -> bool:
+    def has_fixed_size(self) -> bool:
         """Return whether the size of the dtype is fully known.
 
         This will be True if the dtype has a known length that doesn't
@@ -361,7 +361,7 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def is_concrete(self) -> bool:
+    def has_fixed_size(self) -> bool:
         return self._size.has_const_value and self._size.const_value is not None
 
     @override
@@ -517,8 +517,8 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def is_concrete(self) -> bool:
-        return self._dtype_single.is_concrete() and self._items.has_const_value and self._items.const_value is not None
+    def has_fixed_size(self) -> bool:
+        return self._dtype_single.has_fixed_size() and self._items.has_const_value and self._items.const_value is not None
 
     @override
     @final
@@ -649,8 +649,8 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def is_concrete(self) -> bool:
-        return all(dtype.is_concrete() for dtype in self._dtypes)
+    def has_fixed_size(self) -> bool:
+        return all(dtype.has_fixed_size() for dtype in self._dtypes)
 
     @override
     @final
@@ -660,7 +660,7 @@ class DtypeTuple(Dtype):
     @override
     @final
     def evaluate(self, **kwargs) -> Self:
-        if all(dtype.is_concrete() for dtype in self._dtypes):
+        if all(dtype.has_fixed_size() for dtype in self._dtypes):
             return self
         dtypes = [dtype.evaluate(**kwargs) for dtype in self._dtypes]
         return DtypeTuple.from_params(dtypes)
