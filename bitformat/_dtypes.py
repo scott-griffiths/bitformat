@@ -600,7 +600,7 @@ class DtypeTuple(Dtype):
     """
 
     _dtypes: list[Dtype]
-    _bit_length: int  # The total length in bits possible excluding any dynamic size dtype
+    _bit_length: int | None # The total length in bits possible excluding any dynamic size dtype, if known
     _dynamic_index: int | None  # The index of a dynamic size dtype in the tuple, or None
 
     @override
@@ -614,7 +614,7 @@ class DtypeTuple(Dtype):
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)
         x._dynamic_index = None
-        bit_length = 0
+        bit_length: int | None = 0
         x._dtypes = []
         for i, d in enumerate(dtypes):
             dtype = d if isinstance(d, Dtype) else Dtype.from_string(d)
@@ -623,7 +623,11 @@ class DtypeTuple(Dtype):
                     raise ValueError(f"Cannot have more than one dtype with a dynamic size in a tuple. Found '{dtype}' at index {i} and '{x._dtypes[x._dynamic_index]}' at index {x._dynamic_index}.")
                 x._dynamic_index = i
             else:
-                bit_length += dtype.bit_length  # TODO - for expressions bit_length can still be None here.
+                if bit_length is not None:
+                    if dtype.bit_length is None:
+                        bit_length = None
+                    else:
+                        bit_length += dtype.bit_length
             x._dtypes.append(dtype)
         x._bit_length = bit_length
         return x
@@ -643,6 +647,8 @@ class DtypeTuple(Dtype):
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
 
         """
+        if self._bit_length is None:
+            raise ValueError(f"{self!r} doesn't have a well defined size, so cannot be unpacked. Perhaps try parse() instead?")
         b = bitformat.Bits._from_any(b)
 
         if self._bit_length > len(b):
