@@ -43,10 +43,6 @@ To download the library, as well as for defect reports, enhancement requests and
 Documentation
 -------------
 
-A tour of the features of bitformat is given in notebook form:
-
-* `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_
-
 The main documentation is available here:
 
 .. toctree::
@@ -58,7 +54,14 @@ The main documentation is available here:
     :maxdepth: 2
 
     introduction
+    use_cases
     api
+
+
+There is also a notebook with a tour of the features of bitformat:
+
+* `A Tour of bitformat <https://nbviewer.org/github/scott-griffiths/bitformat/blob/main/doc/bitformat_tour.ipynb>`_
+
 
 ----
 
