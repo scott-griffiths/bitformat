@@ -241,7 +241,7 @@ class Expression:
             raise ExpressionError(f"Invalid Expression string: '{code_str}'. It should start with '{{' and end with '}}'.")
         x.code_str = code_str[1:-1].strip()
         # If the expression can be evaluated with no parameters then it's const and can be stored as such
-        # Note that the const_value can be True, False, None, an int etc, so it's only valid if has_const_value is True.
+        # Note that the const_value itself can be True, False, None, an int etc, so it's only valid if has_const_value is True.
         x.has_const_value = False
         x.const_value = None
         x.code = x._compile_safe_eval()

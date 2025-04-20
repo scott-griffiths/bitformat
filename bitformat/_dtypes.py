@@ -89,12 +89,11 @@ CACHE_SIZE = 256
 
 
 class Dtype(abc.ABC):
-    """An abstract data type class.
+    """An abstract base class for the :class:`DtypeSingle`, :class:`DtypeArray` and :class:`DtypeTuple` classes.
 
-    Although this base class is abstract, the __init__ method can be used to construct its
-    sub-classes via a formatted string.
+    The ``__init__`` method can be used to construct its sub-classes via a formatted string.
 
-    Dtype instances are immutable. They are often created implicitly via a token string.
+    Dtype sub-class instances are immutable. They are often created implicitly via a token string.
 
     .. code-block:: pycon
 
@@ -275,6 +274,8 @@ class DtypeSingle(Dtype):
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
+    _create_fn: Callable[[Any], bitformat.Bits]
+    _get_fn: Callable[[bitformat.Bits], Any]
 
     @override
     def info(self) -> str:
@@ -376,7 +377,7 @@ class DtypeSingle(Dtype):
         if self._size.is_none():
             # Try to unpack everything
             return self._get_fn(b)
-        if not self._size.has_const_value:
+        if self._bit_length is None:
             raise ExpressionError(f"Cannot unpack a dtype with an unknown size. Got '{self}'")
         if self._bit_length > len(b):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
@@ -506,6 +507,8 @@ class DtypeArray(Dtype):
         items = self._items.evaluate()
         if self._items.is_none():
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
+            if self._dtype_single.bit_length is None:
+                raise ValueError(f"Cannot unpack when DtypeArray items is unspecified and the DtypeSingle has an unknown size. Got '{self}'")
             items = len(b) // self._dtype_single.bit_length
         return tuple(
             self._dtype_single._get_fn(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])
@@ -590,7 +593,7 @@ class DtypeArray(Dtype):
 
 
 class DtypeTuple(Dtype):
-    """A data type class, representing a tuple of concrete interpretations of binary data.
+    """A data type class, representing a tuple of others.
 
     DtypeTuple instances are immutable. They are often created implicitly elsewhere via a token string.
 
@@ -697,7 +700,7 @@ class DtypeTuple(Dtype):
 
     @property
     def items(self) -> int:
-        """The number of dtypes in the in the dtype tuple.
+        """The number of dtypes in the dtype tuple.
         """
         return len(self._dtypes)
 

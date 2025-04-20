@@ -49,7 +49,7 @@ class TestBasicFunctionality:
             d.kind = "uint8"
 
     def test_building_bits(self):
-        d = Dtype("bits3")
+        d = Dtype.from_string("bits3")
         a = d.pack("0b101")
         assert a == "0b101"
         with pytest.raises(ValueError):
@@ -114,7 +114,7 @@ class TestChangingTheRegister:
         with pytest.raises(TypeError):
             _ = Dtype()
         with pytest.raises(ValueError):
-            _ = Dtype("float17")
+            _ = Dtype.from_string("float17")
         with pytest.raises(ValueError):
             _ = Dtype("[u8]")
         with pytest.raises(ValueError):
@@ -245,7 +245,7 @@ def test_dtype_tuple_slicing():
 def test_dtype_str_with_le():
     d = Dtype("u_le16")
     assert str(d) == "u_le16"
-    d = Dtype("f_be16")
+    d = Dtype.from_string("f_be16")
     assert str(d) == "f_be16"
     d = Dtype("i_ne16")
     assert str(d) == "i_ne16"
@@ -373,3 +373,9 @@ def test_unpack_dtype_tuple_with_single_dynamic_type():
     assert x == (1, (2, 3, 4, 5), 6)
     x = s.unpack('(u8, u, u8)')
     assert x == (1, 0x02030405, 6)
+
+def test_unpack_dtype_array_with_no_length():
+    d = Dtype('[u{x};]')
+    b = Bits('0x1234')
+    with pytest.raises(ValueError):
+        _ = d.unpack(b)
