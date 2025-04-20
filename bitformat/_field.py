@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from bitformat import Bits
-from ._dtypes import Dtype, DtypeSingle, DtypeArray, DtypeTuple
+from ._dtypes import Dtype, DtypeSingle, DtypeTuple
 from ast import literal_eval
-from ._common import override, Indenter, Colour, DtypeKind, validate_name, Expression, ExpressionError
+from ._common import override, Indenter, Colour, DtypeKind, validate_name, ExpressionError
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options

@@ -468,7 +468,7 @@ class DtypeArray(Dtype):
 
     @classmethod
     def _create(cls, definition: DtypeDefinition, size: Expression, items: Expression,
-                endianness: Endianness = Endianness.UNSPECIFIED,) -> Self:
+                endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = super().__new__(cls)
         x._dtype_single = DtypeSingle._create(definition, size, endianness)
         x._items = items
@@ -505,13 +505,15 @@ class DtypeArray(Dtype):
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self._items.evaluate()
+        if self._dtype_single.bit_length is None:
+            raise ValueError(f"Cannot unpack when the DtypeSingle has an unknown size. Got '{self}'")
         if self._items.is_none():
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
             if self._dtype_single.bit_length is None:
                 raise ValueError(f"Cannot unpack when DtypeArray items is unspecified and the DtypeSingle has an unknown size. Got '{self}'")
             items = len(b) // self._dtype_single.bit_length
         return tuple(
-            self._dtype_single._get_fn(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])
+            self._dtype_single.unpack(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])
             for i in range(items)
         )
 
@@ -659,17 +661,17 @@ class DtypeTuple(Dtype):
                 raise ValueError(f"{self!r} is at least {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
             else:
                 raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
-        if self._dynamic_index is not None:
-            dynamic_length = len(b) - self._bit_length
         vals = []
         pos = 0
         for i, dtype in enumerate(self._dtypes):
             if i == self._dynamic_index:
+                dynamic_length = len(b) - self._bit_length
                 vals.append(dtype.unpack(b[pos : pos + dynamic_length]))
                 pos += dynamic_length
             else:
-                if dtype.kind != DtypeKind.PAD:
-                    vals.append(dtype.unpack(b[pos : pos + dtype.bit_length]))
+                x = dtype.unpack(b[pos : pos + dtype.bit_length])
+                if x is not None:  # Padding could unpack as None
+                    vals.append(x)
                 pos += dtype.bit_length
         return tuple(vals)
 
