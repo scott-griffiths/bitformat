@@ -1030,3 +1030,15 @@ def test_is_things():
     a = Array('f32', [1, 2, 0.3])
     assert isinstance(a, Iterable)
     assert isinstance(a, Sequence)
+
+def test_info():
+    a = Array('u8', [1, 2, 3])
+    b = Array('bool', [])
+    c = Array('(u8, bool)', [(1, True)])
+    d = Array.from_zeros('[f32; 3]', 10000)
+    for x in [a, b, c, d]:
+        i = x.info()
+        assert isinstance(i, str)
+        assert len(i) > 0
+        assert '\n' not in i
+        # print(i)

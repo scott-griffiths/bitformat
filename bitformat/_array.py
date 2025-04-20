@@ -215,6 +215,14 @@ class Array:
         x.extend(iterable)
         return x
 
+    def info(self) -> str:
+        """Return a descriptive string with information about the Array.
+
+        Note that the output is designed to be helpful to users and is not considered part of the API.
+        You should not use the output programmatically as it may change even between point versions.
+        """
+        return f"Array of {self._dtype.info()} with {len(self)} items and {len(self._bitstore)} bits of data."
+
     @property
     def data(self) -> BitsProxy:
         """Property that provides access to the ``Array`` data through a ``BitsProxy``."""

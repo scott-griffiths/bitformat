@@ -518,9 +518,9 @@ class Bits:
                 return f"{len_str}hex = {with_underscores(self.unpack('hex'))}"
             else:
                 if length % 4 == 0:
-                    return f"{len_str}hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}... "
+                    return f"{len_str}hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}..."
                 else:
-                    return f"{len_str}binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}... "
+                    return f"{len_str}binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}..."
 
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
