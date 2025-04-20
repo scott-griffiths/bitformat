@@ -61,15 +61,6 @@ class Options:
         self._byte_aligned = bool(value)
 
     @property
-    def verbose_bits_repr(self) -> bool:
-        """If True then Bits objects will be given a more verbose output when printed in interactive mode."""
-        return self._verbose_bits_repr
-
-    @verbose_bits_repr.setter
-    def verbose_bits_repr(self, value: bool) -> None:
-        self._verbose_bits_repr = bool(value)
-
-    @property
     def no_color(self) -> bool:
         """If True then no ANSI color codes will be used in output."""
         return self._no_color

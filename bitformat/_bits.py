@@ -497,9 +497,9 @@ class Bits:
 
         length = len(self)
         if length == 0:
-            return "0 bits (empty)"
+            return "0 bits: empty"
         max_interpretation_length = 64
-        len_str = f"{length} bit{'' if length == 1 else 's'}"
+        len_str = f"{length} bit{'' if length == 1 else 's'}: "
         if length <= max_interpretation_length:
             hex_str = f_str = ""
             t = self.unpack("bin")
@@ -512,15 +512,15 @@ class Bits:
             i_str = f"signed int = {i}"
             if length in Register().kind_to_def[DtypeKind.FLOAT].allowed_sizes:
                 f_str = f'float = {self.unpack("f")}'
-            return ", ".join(x for x in [len_str, bin_str, hex_str, f_str, u_str, i_str] if x)
+            return len_str + ", ".join(x for x in [bin_str, hex_str, f_str, u_str, i_str] if x)
         else:
             if length <= 4 * max_interpretation_length and length % 4 == 0:
-                return f"{len_str}, hex = {with_underscores(self.unpack('hex'))}"
+                return f"{len_str}hex = {with_underscores(self.unpack('hex'))}"
             else:
                 if length % 4 == 0:
-                    return f"{len_str}, hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}... "
+                    return f"{len_str}hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}... "
                 else:
-                    return f"{len_str}, binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}... "
+                    return f"{len_str}binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}... "
 
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
@@ -894,28 +894,6 @@ class Bits:
             c += 1
             yield i
         return
-
-    def _str_interpretations(self) -> list[str]:
-        max_interpretation_length = 64
-        length = len(self)
-        if length == 0:
-            return []
-        hex_str = bin_str = f_str = u_str = i_str = ""
-        if length <= max_interpretation_length and length % 4 == 0:
-            t = self.unpack("bin")
-            with_underscores = "_".join(t[x : x + 4] for x in range(0, len(t), 4))
-            bin_str = f"bin == {with_underscores}"
-        if length <= max_interpretation_length:
-            u = self.unpack("u")
-            i = self.unpack("i")
-            if u == i:
-                u_str = f"u{length} == i{length} == {u:_}"
-            else:
-                u_str = f"u{length} == {u:_}"
-                i_str = f"i{length} == {i:_}"
-        if length in Register().kind_to_def[DtypeKind.FLOAT].allowed_sizes:
-            f_str = f'f{length} == {self.unpack("f")}'
-        return [hex_str, bin_str, u_str, i_str, f_str]
 
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
         bs = Bits._from_any(bs)
@@ -1303,10 +1281,7 @@ class Bits:
     def __repr__(self) -> str:
         """Return representation that could be used to recreate the Bits.."""
         repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
-        interpretations = ""
-        if Options().verbose_bits_repr:
-            interpretations = "\n".join("# " + x for x in self._str_interpretations() if x != "")
-        return f"{repr_}\n{interpretations}" if interpretations else repr_
+        return repr_
 
     # ----- Comparisons
 
