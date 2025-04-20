@@ -484,6 +484,44 @@ class Bits:
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._find_all(bs, count, ba)
 
+    def info(self) -> str:
+        """Return a descriptive string with information about the Bits.
+
+        Note that the output is designed to be helpful to users and is not considered part of the API.
+        You should not use the output programmatically as it may change even between point versions.
+        """
+
+        def with_underscores(s: str) -> str:
+            """Insert underscores every 4 characters."""
+            return "_".join(s[x : x + 4] for x in range(0, len(s), 4))
+
+        length = len(self)
+        if length == 0:
+            return "0 bits (empty)"
+        max_interpretation_length = 64
+        len_str = f"{length} bit{'' if length == 1 else 's'}"
+        if length <= max_interpretation_length:
+            hex_str = f_str = ""
+            t = self.unpack("bin")
+            bin_str = f"binary = {with_underscores(t)}"
+            if length % 4 == 0:
+                hex_str = f"hex = {with_underscores(self.unpack('hex'))}"
+            u = self.unpack("u")
+            i = self.unpack("i")
+            u_str = f"unsigned int = {u}"
+            i_str = f"signed int = {i}"
+            if length in Register().kind_to_def[DtypeKind.FLOAT].allowed_sizes:
+                f_str = f'float = {self.unpack("f")}'
+            return ", ".join(x for x in [len_str, bin_str, hex_str, f_str, u_str, i_str] if x)
+        else:
+            if length <= 4 * max_interpretation_length and length % 4 == 0:
+                return f"{len_str}, hex = {with_underscores(self.unpack('hex'))}"
+            else:
+                if length % 4 == 0:
+                    return f"{len_str}, hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}... "
+                else:
+                    return f"{len_str}, binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}... "
+
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
 

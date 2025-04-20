@@ -768,3 +768,16 @@ def test_is_things():
     a = Bits('0b1010101010101010')
     assert isinstance(a, Iterable)
     assert isinstance(a, Sequence)
+
+def test_info():
+    for s in ['', '0b1', '0b01', '0b001', '0b0001', '0x1234', '0x01234567', '0xffffffffffffffffffffffff', '0xffffffffffffffffffffffff, 0b1']:
+        a = Bits(s)
+        i = a.info()
+        assert isinstance(i, str)
+        assert len(i) > 0
+        assert '\n' not in i
+        # print(i)
+    r = Bits.from_random(1000000)
+    assert len(i) > 0
+    assert "\n" not in i
+    # print(r.info())
