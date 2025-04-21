@@ -7,7 +7,7 @@
 }
 
 :root[data-mode="light"] {
-    --mainNavColor: rgb(200, 200, 200);
+    --mainNavColor: rgb(220, 220, 220);
 }
 
 :root[data-mode="dark"] {
