@@ -47,12 +47,16 @@ jobs:
       - name: Build wheels (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
-        env:
-          CIBW_BUILD: 'cp311-* cp312-* cp313-*'
-          CIBW_ARCHS_WINDOWS: 'AMD64'
-          CIBW_ENVIRONMENT: 'PATH=\"$env:USERPROFILE\.cargo\bin;$env:PATH\"'
-          CIBW_TEST_SKIP: '*-win32'
         run: |
+          # Set environment variables directly in PowerShell
+          $env:CIBW_BUILD = 'cp311-* cp312-* cp313-*'
+          $env:CIBW_ARCHS_WINDOWS = 'AMD64'
+          $env:CIBW_TEST_SKIP = '*-win32'
+          
+          # Ensure Cargo is in the PATH
+          $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
+          
+          # Run cibuildwheel
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
 
