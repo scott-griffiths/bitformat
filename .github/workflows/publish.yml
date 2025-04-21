@@ -27,7 +27,7 @@ jobs:
             echo "is_tag=true" >> $GITHUB_OUTPUT
             echo "tag_name=$TAG" >> $GITHUB_OUTPUT
             
-            if [[ $TAG == *-alpha* || $TAG == *-beta* || $TAG == *-rc* ]]; then
+            if [[ $TAG == *-alpha* || $TAG == *-beta* ]]; then
               echo "is_prerelease=true" >> $GITHUB_OUTPUT
             else
               echo "is_prerelease=false" >> $GITHUB_OUTPUT

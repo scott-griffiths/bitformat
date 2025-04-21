@@ -1,5 +1,17 @@
 # Release Notes
 
+### April 2025: version 0.4.
+
+* Changing status from alpha to beta as the API is now much more stable.
+
+* New `info()` methods on many types to give human readable descriptions of dtypes, fields, etc.
+
+* Better coverage of platforms for wheels on PyPI.
+
+* Numerous smaller fixes and improvements.
+
+* A new logo!
+
 ### April 2025: version 0.3.
 
 * Big reworking for Dtypes. `Dtype` is now an abstract base class that can create `DtypeSingle`, `DtypeArray` and `DtypeTuple` instances.
