@@ -24,27 +24,34 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu' || 'x86_64-pc-windows-msvc,i686-pc-windows-msvc' }}
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
         env:
-          # Build for Python 3.11, 3.12, 3.13
           CIBW_BUILD: "cp311-* cp312-* cp313-*"
 
-          # Different architectures
+          # Architecture configuration
           CIBW_ARCHS_LINUX: "x86_64 aarch64"
           CIBW_ARCHS_MACOS: "x86_64 arm64"
           CIBW_ARCHS_WINDOWS: "AMD64 x86"
 
-          # Rust setup
-          CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+          # Rust environment setup
           CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
 
-          # Skip testing for cross-compiled wheels
+          # Skip testing cross-compiled wheels
           CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x} *-*macos_arm64 *-*win32"
 
-          # Use manylinux2014 for broader compatibility
+          # Use manylinux2014 for compatibility
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
           CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+
+          # For macOS, ensure proper target specification
+          CIBW_BEFORE_BUILD_MACOS: >
+            rustup target add x86_64-apple-darwin aarch64-apple-darwin
 
       - name: Build sdist
         if: matrix.os == 'ubuntu-latest'
@@ -56,5 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: packages-${{ matrix.os }}
-          path: ./wheelhouse/*
+          path: |
+            ./wheelhouse/*.whl
+            ./dist/*.tar.gz
           if-no-files-found: error
