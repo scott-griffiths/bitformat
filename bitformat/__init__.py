@@ -26,11 +26,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 """
 
-__version__ = "0.2.2"
 
 __author__ = "Scott Griffiths"
 
 
+from ._version import VERSION as __version__
 from ._bits import Bits
 from ._array import Array, BitsProxy
 from ._dtypes import DtypeDefinition, Register, Dtype, DtypeSingle, DtypeArray, DtypeTuple

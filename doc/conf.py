@@ -7,6 +7,8 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
+from bitformat._version import VERSION
+
 year = datetime.datetime.utcfromtimestamp(
     int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
 ).year
@@ -14,7 +16,7 @@ year = datetime.datetime.utcfromtimestamp(
 project = "bitformat"
 copyright = f"2024 - {year}, Scott Griffiths"
 author = "Scott Griffiths"
-release = "0.4.0"
+release = VERSION
 
 extensions = ["sphinx.ext.autodoc", "sphinxcontrib.mermaid", 'enum_tools.autoenum']
 autoapi_dirs = ["../bitformat/"]
