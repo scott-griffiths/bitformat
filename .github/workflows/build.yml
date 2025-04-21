@@ -87,7 +87,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: packages-${{ matrix.os }}-${{ matrix.python-version }}
+          name: packages-${{ matrix.os }}
           path: |
             ./wheelhouse/*.whl
             ./dist/*.tar.gz
