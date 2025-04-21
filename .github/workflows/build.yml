@@ -48,10 +48,10 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: pwsh
         env:
-          CIBW_BUILD: "cp311-* cp312-* cp313-*"
-          CIBW_ARCHS_WINDOWS: "AMD64"
-          CIBW_ENVIRONMENT: "PATH=\"$env:USERPROFILE\.cargo\bin;$env:PATH\""
-          CIBW_TEST_SKIP: "*-win32"
+          CIBW_BUILD: 'cp311-* cp312-* cp313-*'
+          CIBW_ARCHS_WINDOWS: 'AMD64'
+          CIBW_ENVIRONMENT: 'PATH=\"$env:USERPROFILE\.cargo\bin;$env:PATH\"'
+          CIBW_TEST_SKIP: '*-win32'
         run: |
           python -m pip install cibuildwheel
           python -m cibuildwheel --output-dir wheelhouse
@@ -61,13 +61,13 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: pypa/cibuildwheel@v2.16.2
         env:
-          CIBW_BUILD: "cp311-* cp312-* cp313-*"
-          CIBW_ARCHS_LINUX: "x86_64"
-          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_BUILD: 'cp311-* cp312-* cp313-*'
+          CIBW_ARCHS_LINUX: 'x86_64'
+          CIBW_ARCHS_MACOS: 'x86_64 arm64'
           CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x} *-*macos_arm64"
-          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
-          CIBW_BEFORE_BUILD_MACOS: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+          CIBW_TEST_SKIP: '*-*linux_{aarch64,ppc64le,s390x} *-*macos_arm64'
+          CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
+          CIBW_BEFORE_BUILD_MACOS: 'rustup target add x86_64-apple-darwin aarch64-apple-darwin'
 
       - name: Build sdist
         if: matrix.os == 'ubuntu-latest'
