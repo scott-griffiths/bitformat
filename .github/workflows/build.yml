@@ -7,81 +7,54 @@ on:
   pull_request:
     branches: ['**']
 
-defaults:
-  run:
-    shell: bash
-
 jobs:
   build:
-    name: Build ${{ matrix.os.name }} ${{ matrix.python.name }}
-    runs-on: ${{ matrix.os.runs-on }}
+    name: Build wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - name: 🐧
-            runs-on: ubuntu-latest
-          - name: 🍎
-            runs-on: macos-latest
-          - name: 🪟
-            runs-on: windows-latest
-        python:
-          - name: CPython 3.11
-            major_dot_minor: '3.11'
-            action: '3.11'
-          - name: CPython 3.12
-            major_dot_minor: '3.12'
-            action: '3.12'
-          - name: CPython 3.13
-            major_dot_minor: '3.13'
-            action: '3.13'
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
     steps:
       - uses: actions/checkout@v3
 
-      # Setup steps
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python.action }}
-          architecture: x64
+          python-version: '3.11'
 
-      # Install required packages
-      - name: Setup environment
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.16.2
+        env:
+          # Build for Python 3.11, 3.12, 3.13
+          CIBW_BUILD: "cp311-* cp312-* cp313-*"
+
+          # Different architectures
+          CIBW_ARCHS_LINUX: "x86_64 aarch64"
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_WINDOWS: "AMD64 x86"
+
+          # Rust setup
+          CIBW_BEFORE_ALL_LINUX: "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+          CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
+
+          # Skip testing for cross-compiled wheels
+          CIBW_TEST_SKIP: "*-*linux_{aarch64,ppc64le,s390x} *-*macos_arm64 *-*win32"
+
+          # Use manylinux2014 for broader compatibility
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
+          CIBW_MANYLINUX_AARCH64_IMAGE: manylinux2014
+
+      - name: Build sdist
+        if: matrix.os == 'ubuntu-latest'
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install build
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v3
-        with:
-          version: "0.5.1"
-
-      - name: Set up environment
-        run: |
-          uv venv
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            source .venv\\Scripts\\activate
-          else
-            source .venv/bin/activate
-          fi
-
-      # Build steps
-      - name: Build sdist and wheel
-        run: |
-          # Only build sdist on one combination
-          if [[ "${{ matrix.os.runs-on }}" == "ubuntu-latest" && "${{ matrix.python.action }}" == "3.11" ]]; then
-            python -m build --sdist
-          fi
-
-          # Build Rust wheels
-          uv pip install -r pyproject.toml -r dev-requirements.txt
-          uvx maturin build --release
-
-          mkdir -p dist
-          cp target/wheels/* dist/
+          pip install build
+          python -m build --sdist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: packages-${{ matrix.os.runs-on }}-${{ matrix.python.action }}
-          path: dist/*
+          name: packages-${{ matrix.os }}
+          path: ./wheelhouse/*
           if-no-files-found: error
