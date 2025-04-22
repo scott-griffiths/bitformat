@@ -80,12 +80,13 @@ jobs:
           CIBW_TEST_SKIP: '*-*linux_{aarch64,ppc64le,s390x} *-*macos_arm64'
           CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
           CIBW_MUSLLINUX_X86_64_IMAGE: 'musllinux_1_1'
-          CIBW_BEFORE_BUILD_MACOS: 'rustup target add x86_64-apple-darwin aarch64-apple-darwin'
-          # Install Rust inside the Linux build container
+          CIBW_BEFORE_BUILD_MACOS: >
+            rustup target add x86_64-apple-darwin aarch64-apple-darwin
           CIBW_BEFORE_ALL_LINUX: >
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             source $HOME/.cargo/env &&
             rustup target add x86_64-unknown-linux-gnu
+          MACOSX_DEPLOYMENT_TARGET: 10.12
 
       - name: Build sdist
         if: matrix.os == 'ubuntu-latest'
