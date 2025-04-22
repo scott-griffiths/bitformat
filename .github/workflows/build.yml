@@ -64,13 +64,13 @@ jobs:
           $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
           
           # Run cibuildwheel
-          python -m pip install cibuildwheel
+          python -m pip install cibuildwheel==2.23.2
           python -m cibuildwheel --output-dir wheelhouse
 
       # Linux and macOS: use the action
       - name: Build wheels (Linux/macOS)
         if: matrix.os != 'windows-latest'
-        uses: pypa/cibuildwheel@v2.16.2
+        uses: pypa/cibuildwheel@v2.23.2
         env:
           CIBW_BUILD: 'cp311-* cp312-* cp313-*'
           CIBW_BUILD_VERBOSITY: 3
