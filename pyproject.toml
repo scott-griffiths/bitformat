@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "bitformat"
-version = "0.4.0-rc.2"
+dynamic = ["version"]
 description = "A Python library for creating and parsing binary formats."
 readme = "README.md"
 authors = [
@@ -34,6 +34,7 @@ dependencies = [
 python-source = "."
 module-name = "bitformat.bit_rust"
 features = ["pyo3/extension-module"]
+version-from-file = "_version.py"
 
 [project.urls]
 homepage = "https://github.com/scott-griffiths/bitformat"
