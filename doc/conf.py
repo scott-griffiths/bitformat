@@ -42,7 +42,7 @@ html_theme_options = {
     # "banner_text": "bitformat is currently in beta. This documentation may be inaccurate.",
     "banner_hiding": "permanent",
     "show_theme_credit": False,
-    "globaltoc_maxdepth": 3,
+    "globaltoc_collapse": False,
     "source_url": "https://github.com/scott-griffiths/bitformat/",
 }
 
