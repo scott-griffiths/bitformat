@@ -972,7 +972,7 @@ def test_dtype_array_byte_swap():
     assert a[1] == (4, 5, 6)
     a.byte_swap()
     a.dtype = "[u_be16; 3]"
-    assert a[1] == (4, 5, 6)
+    assert a[1] == (6, 5, 4)
 
 
 def test_with_dtypetuple():
