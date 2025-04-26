@@ -6,8 +6,7 @@
 
 A Python library for creating and parsing binary formats.
 
-bitformat
----------
+----
 
 * Efficiently store and manipulate binary data in idiomatic Python using the :ref:`bits` and :ref:`array` classes.
 * Powerful binary packing and unpacking functions.
@@ -24,37 +23,31 @@ bitformat
 
 It is from the author of the `bitstring <https://github.com/scott-griffiths/bitstring>`_ library.
 
-
-----
-
-Installation and download
--------------------------
-
-To install the module, use pip::
-
-    pip install bitformat
-
-There are pre-built wheels for Windows, Linux and MacOS, and more will be added later. It is compatible with Python 3.11 and later.
-
-To download the library, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
-
 ----
 
 Documentation
 -------------
 
-The main documentation is available here:
-
-.. toctree::
-   :hidden:
-
-   self
+The introduction covers installation and a few brief examples, but doesn't go into any depth.
 
 .. toctree::
     :maxdepth: 2
 
     introduction
+
+This section explores many of the features of the library via some common use cases.
+It's not exhaustive, but should give a good overview of the main features and how to use them.
+
+.. toctree::
+    :maxdepth: 2
+
     use_cases
+
+The API reference is mostly generated from the docstrings in the library, but some introductory notes are also included in each section.
+
+.. toctree::
+    :maxdepth: 2
+
     api
 
 

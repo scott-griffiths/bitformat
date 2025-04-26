@@ -35,6 +35,7 @@ class Pass(FieldType):
     @classmethod
     @override
     def from_params(cls, *args, **kwargs) -> FieldType:
+        """Returns the singleton Pass instance. The `args` and `kwargs` are ignored."""
         return cls()
 
     @override
@@ -86,10 +87,12 @@ class Pass(FieldType):
 
     @override
     def has_dynamic_size(self) -> bool:
+        """Returns False for a Pass field."""
         return False
 
     @override
     def is_const(self) -> bool:
+        """Returns True for a Pass field."""
         return True
 
     @override

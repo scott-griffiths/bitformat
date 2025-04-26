@@ -163,20 +163,11 @@ Miscellaneous
     :maxdepth: 1
     :hidden:
 
-    parser_ref.rst
-    bits.rst
-    dtype.rst
-    array.rst
-    reader.rst
-    fieldtype.rst
-    field.rst
-    format.rst
-    if.rst
-    repeat.rst
-    pass.rst
-    expression.rst
-    options.rst
-    bitsproxy.rst
-    register.rst
-    misc.rst
+    parser_ref
+    dtypes
+    bits
+    array
+    reader
+    fieldtypes
+    misc
 

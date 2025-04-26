@@ -1,8 +1,8 @@
 .. currentmodule:: bitformat
-.. _dtype:
+.. _dtypes:
 
-Dtype
-=====
+Dtypes
+======
 
 Data type classes are used to represents ways to interpret binary data.
 The :class:`Dtype` class is an abstract base class, but its constructor can be used to conveniently create the correct sub-class.
@@ -43,18 +43,18 @@ Some examples of equivalent types, going from most verbose to least::
 
 ----
 
+.. _dtype:
+
 .. autoclass:: bitformat.Dtype
    :members:
    :undoc-members:
    :member-order: groupwise
    :show-inheritance:
 
-.. _dtypesingle:
-
-DtypeSingle
-===========
 
 ----
+
+.. _dtypesingle:
 
 .. autoclass:: bitformat.DtypeSingle
    :members:
@@ -62,12 +62,9 @@ DtypeSingle
    :member-order: groupwise
    :show-inheritance:
 
-.. _dtypearray:
-
-DtypeArray
-==========
-
 ----
+
+.. _dtypearray:
 
 .. autoclass:: bitformat.DtypeArray
    :members:
@@ -76,15 +73,9 @@ DtypeArray
    :show-inheritance:
 
 
-.. _dtypetuple:
-
-DtypeTuple
-==========
-
 ----
 
-The ``DtypeTuple`` class represents a sequence of :class:`Dtype` objects.
-
+.. _dtypetuple:
 
 .. autoclass:: bitformat.DtypeTuple
    :members:

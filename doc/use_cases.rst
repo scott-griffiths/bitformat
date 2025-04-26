@@ -4,8 +4,8 @@
 Common Use Cases
 ================
 
-Case 1: Constructing binary data from data types with values
-------------------------------------------------------------
+Constructing binary data
+------------------------
 
 You have some values of a particular type, say an integer or a floating point format, and you want to store them as binary data.
 
@@ -39,7 +39,7 @@ You can also construct from literal binary, octal or hexadecimal values::
     >>> p = Bits.from_dtype('bin', '001')
     >>> q = Bits.from_dtype('hex', 'beef')
 
-There are several class constructor methods available to create ``Bits`` objects. As well as :meth:`Bits.from_dtype` there are :meth:`Bits.from_bytes`, :meth:`Bits.from_bools`, :meth:`Bits.from_joined`, :meth:`Bits.from_zeros`, :meth:`Bits.from_ones` and :meth:`Bits.from_string`.
+There are several class constructor methods available to create ``Bits`` objects. As well as :meth:`Bits.from_dtype` new instances can be constructed from the :meth:`~Bits.from_bytes`, :meth:`~Bits.from_bools`, :meth:`~Bits.from_joined`, :meth:`~Bits.from_zeros`, :meth:`~Bits.from_ones` and :meth:`~Bits.from_string` class methods .
 
 Creating from a formatted string is often very convenient::
 
@@ -47,7 +47,7 @@ Creating from a formatted string is often very convenient::
     >>> p = Bits.from_string('bin = 001')
     >>> q = Bits.from_string('hex = beef')
 
-It's so frequently used that the default constructor for ``Bits`` is just an alias for the :meth:`Bits.from_string` method. Add to that the short-cut of using a ``'0b'`` prefix for binary and ``'0x'`` for hexadecimal, you can instead write ::
+It's so frequently used that the default constructor for ``Bits`` is just an alias for the :meth:`~Bits.from_string` method. Add to that the short-cut of using a ``'0b'`` prefix for binary and ``'0x'`` for hexadecimal, you can instead write ::
 
     >>> b = Bits('u12 = 160')
     >>> p = Bits('0b001')
@@ -144,10 +144,14 @@ Another way to create using the format is via the :meth:`Format.pack` method::
     )
 
 
-Case 2: Manipulating binary data
---------------------------------
+Manipulating binary data
+------------------------
 
 The :class:`Bits` class represents an immutable container of bits. In much the same way as a standard Python ``bytes`` contains immutable bytes and ``str`` contains immutable characters.
 
-Case 3: Querying values contained in a binary format
-----------------------------------------------------
+TODO
+
+Binary formats
+--------------
+
+TODO

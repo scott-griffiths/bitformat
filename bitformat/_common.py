@@ -39,7 +39,7 @@ class DtypeKind(Enum):
 
     A concrete data type is usually a combination of a kind, a length and possibly modifiers such
     as an endianness. For example ``'f32'``, ``'f64'`` and ``'f64_le'`` are all different data types, but they
-    share the same kind (``'FLOAT'``).
+    share the same kind (``DtypeKind.FLOAT``).
 
     In most user code Dtypes will be created by parsing a string which will give their kind, length and modifiers.
     """

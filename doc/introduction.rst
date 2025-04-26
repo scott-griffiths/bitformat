@@ -1,8 +1,8 @@
 .. currentmodule:: bitformat
 .. _introduction:
 
-Introduction
-============
+Getting Started
+===============
 
 Working with binary data in Python can be straight-forward. The built-in `bytes <https://docs.python.org/3/library/stdtypes.html#bytes>`_ and `bytearray <https://docs.python.org/3/library/stdtypes.html#bytearray>`_ types can be used to store binary data, and the `struct <https://docs.python.org/3/library/struct.html#module-struct>`_ module can be used to pack and unpack binary data into Python objects.
 If all you need to do is simple manipulation of whole byte binary data then these tools are usually sufficient.
@@ -16,6 +16,19 @@ I don't know if it will succeed, but the beta versions are already very usable. 
 
 This introduction will start with a brief tour of the main features of `bitformat`, followed by a more in depth look at the main classes.
 For more exhaustive documentation see the :ref:`API reference<api>`.
+
+Installation and download
+-------------------------
+
+To install the module, use pip::
+
+    pip install bitformat
+
+There are pre-built wheels for Windows, Linux and MacOS, and more will be added later. It is compatible with Python 3.11 and later.
+
+To download the library, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
+
+
 
 TLDR;
 -----
