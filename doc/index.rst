@@ -12,11 +12,11 @@ A Python library for creating and parsing binary formats.
 * Powerful binary packing and unpacking functions.
 * Bit-level slicing, joining, searching, replacing and more.
 * A wide array of data types is supported.  Want to use a 13-bit integer or a 16-bit float? Fine - there are no special hoops to jump through.
-* Several field types are available to build up a :ref:`format`, which can then be used to :meth:`~Format.pack`, :meth:`~Format.unpack` or :meth:`~Format.parse` data:
+* Several field types are available to build up a :class:`Format`, which can then be used to :meth:`~Format.pack`, :meth:`~Format.unpack` or :meth:`~Format.parse` data:
 
-  * The simplest is just a :ref:`field` which contains an optionally named value with a data type.
-  * A :ref:`format` contains a list of other fields. These can be nested to any depth.
-  * Field types like :ref:`repeat` and :ref:`if` can be used to add more logical structure.
+  * The simplest is just a :class:`Field` which contains an optionally named value with a data type.
+  * A :class:`Format` contains a list of other fields. These can be nested to any depth.
+  * Field types like :class:`Repeat` and :class:`If` can be used to add more logical structure.
 * The values of fields can be used in later calculations via an f-string-like expression syntax.
 * Data is always stored efficiently as a contiguous array of bits, with the core of the library written in Rust.
 
