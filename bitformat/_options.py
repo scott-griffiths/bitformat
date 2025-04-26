@@ -22,6 +22,9 @@ class Options:
     """
 
     _instance = None
+    _byte_aligned: bool
+    _no_color: bool
+    _indent_size: int
 
     def __new__(cls):
         if cls._instance is None:
