@@ -6,8 +6,8 @@ import datetime
 import sys
 
 sys.path.insert(0, os.path.abspath(".."))
-
-from bitformat._version import VERSION
+sys.path.insert(0, os.path.abspath("../bitformat"))
+from _version import VERSION
 
 year = datetime.datetime.utcfromtimestamp(
     int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
