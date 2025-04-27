@@ -26,7 +26,7 @@ fi
 
 # Install dependencies including dev dependencies
 log "Installing dependencies"
-uv pip install -r dev-requirements.txt
+uv pip install ".[dev]"
 
 # Build and install the entire package
 log "Building and installing package"
