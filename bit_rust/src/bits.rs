@@ -286,24 +286,35 @@ impl BitRust {
     where
         F: Fn(bool, bool) -> bool,
     {
-        // Check lengths match
         if self.length != other.length {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
 
-        // Create new BitVec with exact capacity needed
-        let mut bv = helpers::BV::with_capacity(self.length);
+        // Reuse the same Arc if possible
+        if Arc::ptr_eq(&self.owned_data, &other.owned_data) {
+            let mut bv = self.get_bv_clone();
+            for i in 0..self.length {
+                let self_bit = self.owned_data[self.offset + i];
+                let other_bit = other.owned_data[other.offset + i];
+                bv.set(self.offset + i, op(self_bit, other_bit));
+            }
+            return Ok(BitRust {
+                owned_data: Arc::new(bv),
+                offset: self.offset,
+                length: self.length,
+            });
+        }
 
-        // Apply operation bit by bit, using offsets to access correct bits
+        // Otherwise, allocate a new BitVec
+        let mut result = helpers::BV::with_capacity(self.length);
         for i in 0..self.length {
             let self_bit = self.owned_data[self.offset + i];
             let other_bit = other.owned_data[other.offset + i];
-            bv.push(op(self_bit, other_bit));
+            result.push(op(self_bit, other_bit));
         }
 
-        // Return new BitRust with no offset
         Ok(BitRust {
-            owned_data: Arc::new(bv),
+            owned_data: Arc::new(result),
             offset: 0,
             length: self.length,
         })
@@ -880,6 +891,33 @@ impl BitRust {
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
     pub fn invert(&self, pos: Option<usize>) -> Self {
+        let mut new_data = self.owned_data.clone();
+        let bv = Arc::make_mut(&mut new_data);
+
+        match pos {
+            None => {
+                // Invert all bits
+                for i in self.offset..self.offset + self.length {
+                    let old_val = bv[i];
+                    bv.set(i, !old_val);
+                }
+            }
+            Some(pos) => {
+                // Invert a single bit
+                let index = self.offset + pos;
+                let old_val = bv[index];
+                bv.set(index, !old_val);
+            }
+        }
+
+        BitRust {
+            owned_data: Arc::new(bv.clone()),
+            offset: self.offset,
+            length: self.length,
+        }
+    }
+
+    pub fn invert_old(&self, pos: Option<usize>) -> Self {
         let mut bv = self.get_bv_clone();
         match pos {
             None => {
@@ -947,37 +985,42 @@ impl BitRust {
         self.set_from_sequence(value, vec![index])
     }
 
-    // Return new BitRust with bits at indices set to value.
     pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
-        // Create new BitVec with content from current view
-        let mut bv = helpers::BV::with_capacity(self.length);
-        bv.extend(&self.owned_data[self.offset..self.offset + self.length]);
+        // Instead of cloning outright, create a mutable reference.
+        // This only copies if the Arc is shared by more than one owner.
+        let mut new_data = self.owned_data.clone();
+        let bv = Arc::make_mut(&mut new_data);
 
-        // Update the specified indices
+        if bv.len() < self.offset + self.length {
+            return Err(PyIndexError::new_err("Index out of range"));
+        }
+
+        // Update specified indices
         for idx in indices {
             let pos = if idx < 0 {
-                // Handle negative indices
-                if -idx as usize > self.length {
+                let neg_idx = (idx + self.length() as i64) as usize;
+                if neg_idx >= self.length() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
-                self.length - (-idx as usize)
+                self.offset + neg_idx
             } else {
-                // Handle positive indices
-                if idx as usize >= self.length {
+                let pos = idx as usize;
+                if pos >= self.length() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
-                idx as usize
+                self.offset + pos
             };
             bv.set(pos, value);
         }
 
-        // Return new BitRust with modified data
+        // Return new BitRust that points to the updated data
         Ok(BitRust {
-            owned_data: Arc::new(bv),
-            offset: 0,
+            owned_data: Arc::new(bv.clone()),
+            offset: self.offset,
             length: self.length,
         })
     }
+
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
         let mut bv: helpers::BV = self.get_bv_clone();
