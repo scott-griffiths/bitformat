@@ -809,7 +809,7 @@ class Bits:
 
         """
         v = True if value else False
-        if not isinstance(pos, abc.Sequence):
+        if not isinstance(pos, Sequence):
             s = Bits()
             if pos < 0:
                 pos += len(self)
@@ -1076,7 +1076,7 @@ class Bits:
             elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
                 get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
             align = ">"
-            if n is DtypeKind.BIN or n is DtypeKind.OCT or n is DtypeKind.HEX or n is DtypeKind.BITS or n is DtypeKind.BYTES:
+            if any(x is n for x in [DtypeKind.BIN, DtypeKind.OCT, DtypeKind.HEX, DtypeKind.BITS, DtypeKind.BYTES]):
                 align = "<"
             if dtype.kind is DtypeKind.BITS:
                 x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
@@ -1090,6 +1090,7 @@ class Bits:
             x += " " * padding_spaces
             return x, chars_used
         else:  # DtypeTuple
+            assert isinstance(dtype, DtypeTuple)
             align = ">"
             s = []
             for b in bits.chunks(bits_per_group):
@@ -1111,6 +1112,7 @@ class Bits:
         if isinstance(dtype, (DtypeSingle, DtypeArray)):
             # TODO: Not sure this is right for DtypeArray. Maybe needs a refactor?
             return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
+        assert isinstance(dtype, DtypeTuple)
         # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
         chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
         return chars
@@ -1174,7 +1176,7 @@ class Bits:
     @staticmethod
     def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
         has_length_in_fmt = True
-        bits_per_group = 0 if dtype1.bit_length is None else dtype1.bit_length
+        bits_per_group: int = 0 if dtype1.bit_length is None else dtype1.bit_length
 
         if dtype2 is not None:
             if None not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:

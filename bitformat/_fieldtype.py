@@ -23,7 +23,7 @@ class FieldTypeTransformer(DtypeTransformer):
         return items[0]
 
     @staticmethod
-    def const_field(items) -> Field:
+    def const_field(items) -> 'Field':
         assert len(items) == 3
         name = items[0] if items[0] is not None else ''
         dtype = items[1]
@@ -31,7 +31,7 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['Field'].from_params(dtype, name, value, const=True)
 
     @staticmethod
-    def mutable_field(items) -> Field:
+    def mutable_field(items) -> 'Field':
         assert len(items) == 3
         name = items[0] if items[0] is not None else ''
         dtype = items[1]
@@ -39,16 +39,16 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['Field'].from_params(dtype, name, value)
 
     @staticmethod
-    def repeat(items) -> Repeat:
+    def repeat(items) -> 'Repeat':
         return fieldtype_classes['Repeat'].from_params(items[0], items[1])
 
     @staticmethod
-    def pass_(items) -> Pass:
+    def pass_(items) -> 'Pass':
         assert len(items) == 0
         return fieldtype_classes['Pass'].from_params()
 
     @staticmethod
-    def if_(items) -> If:
+    def if_(items) -> 'If':
         assert len(items) == 3
         expr = items[0]
         then_ = items[1]
@@ -56,7 +56,7 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['If'].from_params(expr, then_, else_)
 
     @staticmethod
-    def format(items) -> Format:
+    def format(items) -> 'Format':
         assert len(items) >= 1
         name = items[0] if items[0] is not None else ''
         fields = [i for i in items[1:] if i is not None]
@@ -152,7 +152,7 @@ class FieldType(abc.ABC):
         :param depth: The maximum depth to print, or None for no limit.
         :type depth: int or None
         """
-        stream.write(self._str(Indenter(indent_size=indent, max_depth=depth)))
+        stream.write(self._str(Indenter(indent_size=indent, max_depth=depth), not Options().no_color))
         stream.write("\n")
 
     @classmethod
