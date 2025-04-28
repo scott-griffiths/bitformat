@@ -1045,12 +1045,16 @@ impl BitRust {
 
         if step > 0 {
             while index < positive_stop {
-                bv.set(self.offset + index as usize, value);
+                unsafe {
+                    bv.set_unchecked(self.offset + index as usize, value);
+                }
                 index += step;
             }
         } else {
             while index > positive_stop {
-                bv.set(self.offset + index as usize, value);
+                unsafe {
+                    bv.set_unchecked(self.offset + index as usize, value);
+                }
                 index += step;
             }
         }
