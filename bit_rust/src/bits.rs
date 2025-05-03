@@ -773,21 +773,9 @@ impl BitRust {
 
     /// Returns a new BitRust with all bits reversed.
     pub fn reverse(&self) -> BitRust {
-        if self.length <= 1 {
-            return BitRust {
-                owned_data: Arc::clone(&self.owned_data),
-                offset: self.offset,
-                length: self.length,
-            };
-        }
-
-        // Create new BitVec with exact capacity needed
-        let mut bv = helpers::BV::with_capacity(self.length);
-
-        // Copy bits in reverse order
-        for i in (0..self.length).rev() {
-            bv.push(self.owned_data[self.offset + i]);
-        }
+        let mut bv = helpers::BV::new();
+        bv.extend_from_bitslice(&self.owned_data[self.offset..self.offset + self.length]);
+        bv.reverse();
 
         BitRust {
             owned_data: Arc::new(bv),
