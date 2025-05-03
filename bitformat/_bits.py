@@ -76,7 +76,7 @@ def str_to_bitstore(s: str) -> BitRust:
     return BitRust.join([token_to_bitstore(token) for token in tokens])
 
 
-class Bits:
+class _BaseBits:
     """
     An immutable container of binary data.
 
@@ -342,36 +342,6 @@ class Bits:
         """
         return self._bitstore.any_set()
 
-    def byte_swap(self, bytelength: int | None = None, /) -> Bits:
-        """Change the byte endianness. Return new Bits.
-
-        The whole of the Bits will be byte-swapped. It must be a multiple
-        of bytelength long.
-
-        :param bytelength: An int giving the number of bytes to swap.
-        :type bytelength: int or None
-        :return: A new Bits object with byte-swapped data.
-        :rtype: Bits
-        """
-        if len(self) % 8 != 0:
-            raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
-                             "This error can be caused by using an endianness modifier on non-whole byte data.")
-        if bytelength is None:
-            bytelength = len(self) // 8
-        if bytelength == 0:
-            return Bits()
-        if bytelength < 0:
-            raise ValueError(f"Negative bytelength given: {bytelength}.")
-        if len(self) % (bytelength * 8) != 0:
-            raise ValueError(
-                f"The Bits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
-            )
-        chunks = []
-        for startbit in range(0, len(self), bytelength * 8):
-            x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
-            chunks.append(Bits.from_bytes(x[::-1]))
-        return Bits.from_joined(chunks)
-
     def count(self, value: Any, /) -> int:
         """
         Return count of total number of either zero or one bits.
@@ -429,7 +399,7 @@ class Bits:
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
-        suffix = self._from_any(suffix)
+        suffix = _BaseBits._from_any(suffix)
         if len(suffix) <= len(self):
             return self._slice(len(self) - len(suffix), len(self)) == suffix
         return False
@@ -480,7 +450,7 @@ class Bits:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._find_all(bs, count, ba)
 
@@ -521,74 +491,6 @@ class Bits:
                     return f"{len_str}hex ≈ {with_underscores(self[:4 * max_interpretation_length].unpack('hex'))}..."
                 else:
                     return f"{len_str}binary ≈ {with_underscores(self[:max_interpretation_length].unpack('bin'))}..."
-
-    def insert(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs inserted at bit position pos.
-
-        :param pos: The bit position to insert at.
-        :type pos: int
-        :param bs: The Bits to insert.
-        :type bs: BitsType
-        :return: A new Bits object with the inserted bits.
-        :rtype: Bits
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        """
-        bs = self._from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos, None)])
-        return x
-
-    def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
-        """Return new Bits with one or many bits inverted between 0 and 1.
-
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Iterable[int] or None
-        :return: A new Bits object with the inverted bits.
-        :rtype: Bits
-
-        Raises IndexError if pos < -len(self) or pos >= len(self).
-
-        """
-        x = self.__class__()
-        if pos is None:
-            x._bitstore = self._bitstore.invert_all()
-        elif not isinstance(pos, abc.Iterable):
-            x._bitstore = self._bitstore.invert_single_bit(pos)
-        else:
-            x._bitstore = self._bitstore.invert_bit_list(list(pos))
-        return x
-
-    def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs overwritten at bit position pos.
-
-        :param pos: The bit position to start overwriting at.
-        :type pos: int
-        :param bs: The Bits to overwrite.
-        :type bs: BitsType
-        :return: A new Bits object with the overwritten bits.
-        :rtype: Bits
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        """
-        bs = self._from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos + len(bs), None)])
-        return x
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
            groups: int | None = None, width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -647,75 +549,6 @@ class Bits:
         stream.write(output_stream.getvalue())
         return
 
-    def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
-                count: int | None = None, byte_aligned: bool | None = None) -> Bits:
-        """Return new Bits with all occurrences of old replaced with new.
-
-        :param old: The Bits to replace.
-        :type old: BitsType
-        :param new: The replacement Bits.
-        :type new: BitsType
-        :param start: Any occurrences that start before this will not be replaced.
-        :type start: int, optional
-        :param end: Any occurrences that finish after this will not be replaced.
-        :type end: int, optional
-        :param count: The maximum number of replacements to make. Defaults to all.
-        :type count: int, optional
-        :param byte_aligned: If True, replacements will only be made on byte boundaries.
-        :type byte_aligned: bool, optional
-        :return: A new Bits object with the replaced bits.
-        :rtype: Bits
-
-        Raises ValueError if old is empty or if start or end are out of range.
-
-        """
-        if count == 0:
-            return self
-        old = self._from_any(old)
-        new = self._from_any(new)
-        if len(old) == 0:
-            raise ValueError("Empty Bits cannot be replaced.")
-        start, end = self._validate_slice(start, end)
-        if byte_aligned is None:
-            byte_aligned = Options().byte_aligned
-        # First find all the places where we want to do the replacements
-        starting_points: list[int] = []
-        if byte_aligned:
-            start += (8 - start % 8) % 8
-        for x in self[start:end].find_all(old, byte_aligned=byte_aligned):
-            x += start
-            if not starting_points:
-                starting_points.append(x)
-            elif x >= starting_points[-1] + len(old):
-                # Can only replace here if it hasn't already been replaced!
-                starting_points.append(x)
-            if count != 0 and len(starting_points) == count:
-                break
-        if not starting_points:
-            return self
-        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
-        for i in range(len(starting_points) - 1):
-            replacement_list.append(new._bitstore)
-            replacement_list.append(self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
-        # Final replacement
-        replacement_list.append(new._bitstore)
-        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
-        x = self.__class__()
-        x._bitstore = BitRust.join(replacement_list)
-        return x
-
-    def reverse(self) -> Bits:
-        """Reverse bits.
-
-        :return: A new Bits object with the reversed bits.
-        :rtype: Bits
-
-        """
-        x = self.__class__()
-        bs = self._bitstore.reverse()
-        x._bitstore = bs
-        return x
-
     def rfind(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.
 
@@ -732,97 +565,12 @@ class Bits:
         if end < start.
 
         """
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         p = self._bitstore.rfind(bs._bitstore, 0, ba)
         return None if p == -1 else p
-
-    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the left.
-
-        :param n: The number of bits to rotate by.
-        :type n: int
-        :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
-        :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
-        :return: A new Bits object with the rotated bits.
-        :rtype: Bits
-
-        Raises ValueError if bits < 0.
-
-        """
-        if not len(self):
-            raise ValueError("Cannot rotate an empty Bits.")
-        if n < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
-        n %= end - start
-        return Bits.from_joined([self._slice(0, start),
-                                 self._slice(start + n, end),
-                                 self._slice(start, start + n),
-                                 self._slice(end, len(self))])
-
-    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the right.
-
-        :param n: The number of bits to rotate by.
-        :type n: int
-        :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
-        :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
-        :return: A new Bits object with the rotated bits.
-        :rtype: Bits
-
-        Raises ValueError if bits < 0.
-
-        """
-        if len(self) == 0:
-            raise ValueError("Cannot rotate an empty Bits.")
-        if n < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
-        n %= end - start
-        return Bits.from_joined(
-            [
-                self._slice(0, start),
-                self._slice(end - n, end),
-                self._slice(start, end - n),
-                self._slice(end, len(self)),
-            ]
-        )
-
-    def set(self, value: Any, pos: int | Sequence[int]) -> Bits:
-        """Return new Bits with one or many bits set to 1 or 0.
-
-        :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
-        :type value: Any
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Sequence[int]
-        :return: A new Bits object with the set bits.
-        :rtype: Bits
-
-        Raises IndexError if pos < -len(self) or pos >= len(self).
-
-        """
-        v = True if value else False
-        if not isinstance(pos, Sequence):
-            s = Bits()
-            if pos < 0:
-                pos += len(self)
-            if pos < 0 or pos >= len(self):
-                raise IndexError
-            s._bitstore = self._bitstore.set_index(v, pos)
-        elif isinstance(pos, range):
-            s = Bits()
-            s._bitstore = self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
-        else:
-            s = Bits()
-            s._bitstore = self._bitstore.set_from_sequence(v, pos)
-        return s
 
     def starts_with(self, prefix: BitsType) -> bool:
         """Return whether the current Bits starts with prefix.
@@ -833,7 +581,7 @@ class Bits:
         :rtype: bool
 
         """
-        prefix = self._from_any(prefix)
+        prefix = _BaseBits._from_any(prefix)
         if len(prefix) <= len(self):
             return self._slice(0, len(prefix)) == prefix
         return False
@@ -896,7 +644,7 @@ class Bits:
         return
 
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         self._bitstore = bs._bitstore
 
     def _set_bytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
@@ -1034,12 +782,6 @@ class Bits:
         if len(self) % 4 != 0:
             raise ValueError(f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits.")
         return self._bitstore.to_hex()
-
-    def _slice(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a  slice, without error checking. No copy of data is made - it's just a view."""
-        bs = self.__class__()
-        bs._bitstore = self._bitstore.getslice(start, end)
-        return bs
 
     def _get_bits(self: Bits):
         return self
@@ -1211,7 +953,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
         return s
@@ -1224,7 +966,7 @@ class Bits:
         """
         if bs is self:
             return self
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore
         return s
@@ -1235,7 +977,7 @@ class Bits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = Bits._from_any(bs)
+        bs = _BaseBits._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
@@ -1295,7 +1037,7 @@ class Bits:
 
         """
         try:
-            return self._bitstore == Bits._from_any(bs)._bitstore
+            return self._bitstore == _BaseBits._from_any(bs)._bitstore
         except TypeError:
             return False
 
@@ -1328,7 +1070,7 @@ class Bits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        return Bits.from_joined([self, Bits._from_any(bs)])
+        return self.__class__.from_joined([self, Bits._from_any(bs)])
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
@@ -1371,7 +1113,7 @@ class Bits:
         if len(self) == 0:
             raise ValueError("Cannot shift an empty Bits.")
         n = min(n, len(self))
-        return Bits.from_joined([self._slice(n, len(self)), Bits.from_zeros(n)])
+        return self.__class__.from_joined([self._slice(n, len(self)), Bits.from_zeros(n)])
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -1424,7 +1166,7 @@ class Bits:
         if n == 0:
             return self
         n = min(n, len(self))
-        return Bits.from_joined([Bits.from_zeros(n), self._slice(0, len(self) - n)])
+        return self.__class__.from_joined([Bits.from_zeros(n), self._slice(0, len(self) - n)])
 
     # ----- Other
 
@@ -1434,16 +1176,19 @@ class Bits:
         bs -- The Bits to search for.
 
         """
-        found = Bits.find(self, bs, byte_aligned=False)
+        found = _BaseBits.find(self, bs, byte_aligned=False)
         return False if found is None else True
 
-    def __copy__(self: Bits) -> Bits:
-        """Return a new copy of the Bits for the copy module.
+    def __iter__(self) -> Iterable[bool]:
+        """Iterate over the bits."""
+        return iter(self._bitstore)
 
-        This can just return self as it's immutable.
+    def __len__(self) -> int:
+        """Return the length of the Bits in bits."""
+        return len(self._bitstore)
 
-        """
-        return self
+
+class Bits(_BaseBits):
 
     def __hash__(self) -> int:
         """Return an integer hash of the object."""
@@ -1461,13 +1206,283 @@ class Bits:
             end = self._slice(length - 800, length)
             return hash(((start + end).to_bytes(), length))
 
-    def __iter__(self) -> Iterable[bool]:
-        """Iterate over the bits."""
-        return iter(self._bitstore)
+    def __copy__(self: Bits) -> Bits:
+        """Return a new copy of the Bits for the copy module.
 
-    def __len__(self) -> int:
-        """Return the length of the Bits in bits."""
-        return len(self._bitstore)
+        This can just return self as it's immutable.
+
+        """
+        return self
+
+    def _slice(self: Bits, start: int, end: int) -> Bits:
+        """Used internally to get a  slice, without error checking. No copy of data is made - it's just a view."""
+        bs = self.__class__()
+        bs._bitstore = self._bitstore.getslice(start, end)
+        return bs
+
+    def byte_swap(self, bytelength: int | None = None, /) -> Bits:
+        """Change the byte endianness. Return new Bits.
+
+        The whole of the Bits will be byte-swapped. It must be a multiple
+        of bytelength long.
+
+        :param bytelength: An int giving the number of bytes to swap.
+        :type bytelength: int or None
+        :return: A new Bits object with byte-swapped data.
+        :rtype: Bits
+        """
+        if len(self) % 8 != 0:
+            raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
+                             "This error can be caused by using an endianness modifier on non-whole byte data.")
+        if bytelength is None:
+            bytelength = len(self) // 8
+        if bytelength == 0:
+            return Bits()
+        if bytelength < 0:
+            raise ValueError(f"Negative bytelength given: {bytelength}.")
+        if len(self) % (bytelength * 8) != 0:
+            raise ValueError(
+                f"The Bits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
+            )
+        chunks = []
+        for startbit in range(0, len(self), bytelength * 8):
+            x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
+            chunks.append(Bits.from_bytes(x[::-1]))
+        return Bits.from_joined(chunks)
+
+    def insert(self, pos: int, bs: BitsType, /) -> Bits:
+        """Return new Bits with bs inserted at bit position pos.
+
+        :param pos: The bit position to insert at.
+        :type pos: int
+        :param bs: The Bits to insert.
+        :type bs: BitsType
+        :return: A new Bits object with the inserted bits.
+        :rtype: Bits
+
+        Raises ValueError if pos < 0 or pos > len(self).
+
+        """
+        bs = self._from_any(bs)
+        if pos < 0:
+            pos += len(self)
+        if pos < 0 or pos > len(self):
+            raise ValueError("Overwrite starts outside boundary of Bits.")
+        x = self.__class__()
+        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+                                    bs._bitstore,
+                                    self._bitstore.getslice(pos, None)])
+        return x
+
+    def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
+        """Return new Bits with one or many bits inverted between 0 and 1.
+
+        :param pos: Either a single bit position or an iterable of bit positions.
+        :type pos: int or Iterable[int] or None
+        :return: A new Bits object with the inverted bits.
+        :rtype: Bits
+
+        Raises IndexError if pos < -len(self) or pos >= len(self).
+
+        """
+        x = self.__class__()
+        if pos is None:
+            x._bitstore = self._bitstore.invert_all()
+        elif not isinstance(pos, abc.Iterable):
+            x._bitstore = self._bitstore.invert_single_bit(pos)
+        else:
+            x._bitstore = self._bitstore.invert_bit_list(list(pos))
+        return x
+
+    def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
+        """Return new Bits with bs overwritten at bit position pos.
+
+        :param pos: The bit position to start overwriting at.
+        :type pos: int
+        :param bs: The Bits to overwrite.
+        :type bs: BitsType
+        :return: A new Bits object with the overwritten bits.
+        :rtype: Bits
+
+        Raises ValueError if pos < 0 or pos > len(self).
+
+        """
+        bs = self._from_any(bs)
+        if pos < 0:
+            pos += len(self)
+        if pos < 0 or pos > len(self):
+            raise ValueError("Overwrite starts outside boundary of Bits.")
+        x = self.__class__()
+        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+                                    bs._bitstore,
+                                    self._bitstore.getslice(pos + len(bs), None)])
+        return x
+
+    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
+        """Return new Bits with bit pattern rotated to the left.
+
+        :param n: The number of bits to rotate by.
+        :type n: int
+        :param start: Start of slice to rotate. Defaults to 0.
+        :type start: int, optional
+        :param end: End of slice to rotate. Defaults to len(self).
+        :type end: int, optional
+        :return: A new Bits object with the rotated bits.
+        :rtype: Bits
+
+        Raises ValueError if bits < 0.
+
+        """
+        if not len(self):
+            raise ValueError("Cannot rotate an empty Bits.")
+        if n < 0:
+            raise ValueError("Cannot rotate by negative amount.")
+        start, end = self._validate_slice(start, end)
+        n %= end - start
+        return Bits.from_joined([self._slice(0, start),
+                                 self._slice(start + n, end),
+                                 self._slice(start, start + n),
+                                 self._slice(end, len(self))])
+
+    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
+        """Return new Bits with bit pattern rotated to the right.
+
+        :param n: The number of bits to rotate by.
+        :type n: int
+        :param start: Start of slice to rotate. Defaults to 0.
+        :type start: int, optional
+        :param end: End of slice to rotate. Defaults to len(self).
+        :type end: int, optional
+        :return: A new Bits object with the rotated bits.
+        :rtype: Bits
+
+        Raises ValueError if bits < 0.
+
+        """
+        if len(self) == 0:
+            raise ValueError("Cannot rotate an empty Bits.")
+        if n < 0:
+            raise ValueError("Cannot rotate by negative amount.")
+        start, end = self._validate_slice(start, end)
+        n %= end - start
+        return Bits.from_joined(
+            [
+                self._slice(0, start),
+                self._slice(end - n, end),
+                self._slice(start, end - n),
+                self._slice(end, len(self)),
+            ]
+        )
+
+    def set(self, value: Any, pos: int | Sequence[int]) -> Bits:
+        """Return new Bits with one or many bits set to 1 or 0.
+
+        :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
+        :type value: Any
+        :param pos: Either a single bit position or an iterable of bit positions.
+        :type pos: int or Sequence[int]
+        :return: A new Bits object with the set bits.
+        :rtype: Bits
+
+        Raises IndexError if pos < -len(self) or pos >= len(self).
+
+        """
+        v = True if value else False
+        if not isinstance(pos, Sequence):
+            s = Bits()
+            if pos < 0:
+                pos += len(self)
+            if pos < 0 or pos >= len(self):
+                raise IndexError
+            s._bitstore = self._bitstore.set_index(v, pos)
+        elif isinstance(pos, range):
+            s = Bits()
+            s._bitstore = self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
+        else:
+            s = Bits()
+            s._bitstore = self._bitstore.set_from_sequence(v, pos)
+        return s
+
+    def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
+                count: int | None = None, byte_aligned: bool | None = None) -> Bits:
+        """Return new Bits with all occurrences of old replaced with new.
+
+        :param old: The Bits to replace.
+        :type old: BitsType
+        :param new: The replacement Bits.
+        :type new: BitsType
+        :param start: Any occurrences that start before this will not be replaced.
+        :type start: int, optional
+        :param end: Any occurrences that finish after this will not be replaced.
+        :type end: int, optional
+        :param count: The maximum number of replacements to make. Defaults to all.
+        :type count: int, optional
+        :param byte_aligned: If True, replacements will only be made on byte boundaries.
+        :type byte_aligned: bool, optional
+        :return: A new Bits object with the replaced bits.
+        :rtype: Bits
+
+        Raises ValueError if old is empty or if start or end are out of range.
+
+        """
+        if count == 0:
+            return self
+        old = self._from_any(old)
+        new = self._from_any(new)
+        if len(old) == 0:
+            raise ValueError("Empty Bits cannot be replaced.")
+        start, end = self._validate_slice(start, end)
+        if byte_aligned is None:
+            byte_aligned = Options().byte_aligned
+        # First find all the places where we want to do the replacements
+        starting_points: list[int] = []
+        if byte_aligned:
+            start += (8 - start % 8) % 8
+        for x in self[start:end].find_all(old, byte_aligned=byte_aligned):
+            x += start
+            if not starting_points:
+                starting_points.append(x)
+            elif x >= starting_points[-1] + len(old):
+                # Can only replace here if it hasn't already been replaced!
+                starting_points.append(x)
+            if count != 0 and len(starting_points) == count:
+                break
+        if not starting_points:
+            return self
+        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
+        for i in range(len(starting_points) - 1):
+            replacement_list.append(new._bitstore)
+            replacement_list.append(self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
+        # Final replacement
+        replacement_list.append(new._bitstore)
+        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
+        x = self.__class__()
+        x._bitstore = BitRust.join(replacement_list)
+        return x
+
+    def reverse(self) -> Bits:
+        """Reverse bits.
+
+        :return: A new Bits object with the reversed bits.
+        :rtype: Bits
+
+        """
+        x = self.__class__()
+        bs = self._bitstore.reverse()
+        x._bitstore = bs
+        return x
+
+class MutBits(_BaseBits):
+
+    __hash__ = None
+    """The hash method is disabled for a ``MutBits`` object as it is mutable."""
+
+    def __copy__(self: MutBits) -> MutBits:
+        """Return a new copy of the MutBits for the copy module.
+        """
+        # TODO: make a copy!
+        return self
+
 
 
 Sequence.register(Bits)
