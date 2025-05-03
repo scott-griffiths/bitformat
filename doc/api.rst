@@ -147,17 +147,17 @@ These classes build upon those above to provide richer and more complex data str
         Field --* "0..1" Bits : contains
 
 
-Other Classes
+Miscellaneous
 -------------
+Other classes and enums are :ref:`listed here. <misc>` Some of the more important ones are:
+
 * :ref:`Expression <expression>` -- Use Field values elsewhere for conditionals and other logic.
 * :ref:`Options <options>` -- Getting and setting module-wide options.
 * :ref:`BitsProxy <bitsproxy>` -- Used by :class:`Array` to allow the data to behave more like :class:`Bits`.
-* :ref:`Register <register>` -- The register of allowed :class:`Dtype` types.
 
-Miscellaneous
+
 -------------
 
-* :ref:`Everything else <misc>`
 
 .. toctree::
     :maxdepth: 1
