@@ -1383,3 +1383,33 @@ def test_byte_swap():
     b = Bits.from_bytes(b"\x01\x02\x03\x04")
     b = b.byte_swap()
     assert b == "0x04030201"
+
+
+def test_overlapping_bits():
+    a = Bits('0x00fff0')
+    zeros = a[0:8]
+    x = a[4:16]
+    y = x[1:9]
+    assert a == "0x00fff0"
+    assert zeros == "0x00"
+    assert x == "0x0ff"
+    assert y == Bits("0b00011111")
+    _ = ~y
+    _ = y.set(0, [0, 1, 2, 3, 4, 5, 6, 7])
+    _ = y.byte_swap()
+    _ = y.ror(1)
+    _ = y.rol(1)
+    assert a == "0x00fff0"
+    assert zeros == "0x00"
+    assert x == "0x0ff"
+    assert y == Bits("0b00011111")
+    y = ~y
+    assert y == Bits("0b11100000")
+    y = y.set(0, [2, 3])
+    y = y.byte_swap()
+    y = y.ror(2)
+    y = y.rol(1)
+    assert a == "0x00fff0"
+    assert zeros == "0x00"
+    assert x == "0x0ff"
+    assert y == Bits("0b01100000")
