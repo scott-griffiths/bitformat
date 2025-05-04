@@ -15,6 +15,7 @@ The Basics
 The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to use and understand.
 
 * :ref:`Bits <bits>` -- An immutable container for storing binary data.
+* :ref:`MutableBits <mutable_bits>` -- A mutable verions of :class:`Bits`.
 * :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
 * :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
 * :ref:`DtypeArray <dtypearray>` -- A sequence of :class:`Dtype` objects of the same type.
@@ -166,6 +167,7 @@ Other classes and enums are :ref:`listed here. <misc>` Some of the more importan
     parser_ref
     dtypes
     bits
+    mutable_bits
     array
     reader
     fieldtypes
