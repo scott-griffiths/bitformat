@@ -37,7 +37,7 @@ def test_token_parsing(benchmark):
         for i in range(10000):
             s += "u12=244, f32=0.4"
             s += "0x3e44f, 0b11011, 0o75523"
-            s += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]
+            s += Bits.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"])
             s += Bits.from_zeros(104)
 
     benchmark(token_parsing)

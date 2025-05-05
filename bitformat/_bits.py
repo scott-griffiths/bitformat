@@ -269,7 +269,14 @@ class _BaseBits:
             x = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        return x
+        # dtype.pack always returns a Bits, so may have to convert to MutableBits here
+        # TODO: This could be factored out a bit better than this.
+        if not isinstance(x, cls):
+            xp = object.__new__(cls)
+            xp._bitstore = x._bitstore
+            return xp
+        else:
+            return x
 
     @classmethod
     def from_zeros(cls, n: int, /) -> Bits:

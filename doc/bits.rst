@@ -12,3 +12,4 @@ The ``Bits`` class represents an immutable sequence of bits, similar to how the 
    :members:
    :member-order: groupwise
    :undoc-members:
+   :inherited-members:

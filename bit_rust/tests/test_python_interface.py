@@ -4,7 +4,7 @@ import pytest
 
 def test_creation():
     b = BitRust.from_zeros(10)
-    assert b.length() == 10
+    assert len(b) == 10
     assert b.to_bin() == '0000000000'
 
     b2 = BitRust.from_ones(8)
