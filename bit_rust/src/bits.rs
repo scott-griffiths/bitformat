@@ -723,30 +723,23 @@ impl BitRust {
 
     /// Returns a new BitRust with all bits reversed.
     pub fn reverse(&self) -> BitRust {
-        let mut bv = helpers::BV::new();
-        bv.extend_from_bitslice(&self.data[0..self.len()]);
-        bv.reverse();
-
-        BitRust { data: bv }
+        let mut data = self.data.clone();
+        data.reverse();
+        BitRust { data }
     }
 
     /// Returns the bool value at a given bit index.
     pub fn getindex(&self, mut bit_index: i64) -> PyResult<bool> {
-        let length = self.len();
-        if bit_index >= length as i64 || bit_index < -(length as i64) {
+        let length = self.len() as i64;
+        if bit_index >= length || bit_index < -length {
             return Err(PyIndexError::new_err("Out of range."));
         }
         if bit_index < 0 {
-            bit_index += length as i64;
+            bit_index += length;
         }
         debug_assert!(bit_index >= 0);
         let p = bit_index as usize;
         Ok(self.bits()[p])
-    }
-
-    /// Returns the length of the Bits object in bits.
-    pub fn length(&self) -> usize {
-        self.len()
     }
 
     /// Return a slice of the current BitRust. Uses a view on the current byte data.
@@ -761,7 +754,6 @@ impl BitRust {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
         Ok(self.slice(start_bit, end_bit))
-        // Ok(BitRust::new(self.bits()[start_bit..end_bit].to_owned()))
     }
 
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
@@ -790,7 +782,7 @@ impl BitRust {
                     .iter()
                     .step_by(step as usize)
                     .collect(),
-            )) // TODO: Do I need .to_owned() here?
+            ))
         } else {
             if start_bit <= end_bit || start_bit == -1 {
                 return Ok(BitRust::from_zeros(0));
@@ -873,25 +865,18 @@ impl BitRust {
     }
 
     pub fn invert_all(&self) -> Self {
-        let mut new_data = self.data.clone();
-        let bv = &mut new_data;
-
-        for i in 0..self.len() {
-            let old_value = bv[i];
-            bv.set(i, !old_value);
-        }
-
-        BitRust { data: new_data }
+        let data = !self.data.clone();
+        BitRust { data }
     }
 
     /// Returns true if all of the bits are set to 1.
     pub fn all_set(&self) -> bool {
-        self.count() == self.len()
+        self.data.all()
     }
 
     /// Returns true if any of the bits are set to 1.
     pub fn any_set(&self) -> bool {
-        self.count() != 0
+        self.data.any()
     }
 
     // Return new BitRust with bit at index set to value.
@@ -900,14 +885,7 @@ impl BitRust {
     }
 
     pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
-        // Instead of cloning outright, create a mutable reference.
-        // This only copies if the Arc is shared by more than one owner.
-        let mut new_data = self.data.clone();
-        let bv = &mut new_data;
-
-        if bv.len() < self.len() {
-            return Err(PyIndexError::new_err("Index out of range"));
-        }
+        let mut data = self.data.clone();
 
         // Update specified indices
         for idx in indices {
@@ -924,11 +902,11 @@ impl BitRust {
                 }
                 pos
             };
-            bv.set(pos, value);
+            data.set(pos, value);
         }
 
         // Return new BitRust that points to the updated data
-        Ok(BitRust { data: bv.clone() })
+        Ok(BitRust { data })
     }
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
@@ -946,27 +924,26 @@ impl BitRust {
             return Err(PyValueError::new_err("Step cannot be zero."));
         }
 
-        let mut new_data = self.data.clone();
-        let bv = &mut new_data;
+        let mut data = self.data.clone();
         let mut index = positive_start;
 
         if step > 0 {
             while index < positive_stop {
                 unsafe {
-                    bv.set_unchecked(index as usize, value);
+                    data.set_unchecked(index as usize, value);
                 }
                 index += step;
             }
         } else {
             while index > positive_stop {
                 unsafe {
-                    bv.set_unchecked(index as usize, value);
+                    data.set_unchecked(index as usize, value);
                 }
                 index += step;
             }
         }
 
-        Ok(BitRust { data: new_data })
+        Ok(BitRust { data })
     }
 
     /// Return a copy with a real copy of the data.
