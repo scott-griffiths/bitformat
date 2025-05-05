@@ -46,12 +46,12 @@ mod helpers {
             return None;
         }
 
-        let lps = compute_lps(&needle.owned_data[needle.offset..needle.offset + needle.length]);
+        let lps = compute_lps(&needle.owned_data[0..needle.length]);
         let mut i = start; // index for haystack
         let mut j = 0; // index for needle
 
         while i < haystack.length {
-            if needle.owned_data[needle.offset + j] == haystack.owned_data[haystack.offset + i] {
+            if needle.owned_data[j] == haystack.owned_data[i] {
                 i += 1;
                 j += 1;
             }
@@ -59,9 +59,7 @@ mod helpers {
                 let match_position = i - j;
                 return Some(match_position);
             }
-            if i < haystack.length
-                && needle.owned_data[needle.offset + j] != haystack.owned_data[haystack.offset + i]
-            {
+            if i < haystack.length && needle.owned_data[j] != haystack.owned_data[i] {
                 if j != 0 {
                     j = lps[j - 1];
                 } else {
@@ -86,12 +84,12 @@ mod helpers {
             return None;
         }
 
-        let lps = compute_lps(&needle.owned_data[needle.offset..needle.offset + needle.length]);
+        let lps = compute_lps(&needle.owned_data[0..needle.length]);
         let mut i = start; // index for haystack
         let mut j = 0; // index for needle
 
         while i < haystack.length {
-            if needle.owned_data[needle.offset + j] == haystack.owned_data[haystack.offset + i] {
+            if needle.owned_data[j] == haystack.owned_data[i] {
                 i += 1;
                 j += 1;
             }
@@ -103,9 +101,7 @@ mod helpers {
                     j = lps[j - 1];
                 }
             }
-            if i < haystack.length
-                && needle.owned_data[needle.offset + j] != haystack.owned_data[haystack.offset + i]
-            {
+            if i < haystack.length && needle.owned_data[j] != haystack.owned_data[i] {
                 if j != 0 {
                     j = lps[j - 1];
                 } else {
@@ -118,10 +114,8 @@ mod helpers {
 
     pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
         // If we're byte-aligned and have a whole number of bytes, we can copy directly
-        if bits.offset % 8 == 0 && bits.length % 8 == 0 {
-            return bits.owned_data.as_raw_slice()
-                [bits.offset / 8..(bits.offset + bits.length) / 8]
-                .to_vec();
+        if bits.length % 8 == 0 {
+            return bits.owned_data.as_raw_slice()[0..bits.length / 8].to_vec();
         }
 
         // Otherwise, we need to create a new byte array with the correct bits
@@ -133,7 +127,7 @@ mod helpers {
         let mut bits_in_byte: usize = 0;
 
         for i in 0..bits.length {
-            current_byte = (current_byte << 1) | (bits.owned_data[bits.offset + i] as u8);
+            current_byte = (current_byte << 1) | (bits.owned_data[i] as u8);
             bits_in_byte += 1;
 
             if bits_in_byte == 8 {
@@ -158,7 +152,6 @@ mod helpers {
 #[pyclass]
 pub struct BitRust {
     owned_data: BitVec<u8, Msb0>,
-    offset: usize,
     length: usize,
 }
 
@@ -195,7 +188,7 @@ impl PartialEq for BitRust {
         // Otherwise compare bit by bit
         // TODO: Must be a faster way!
         for i in 0..self.length {
-            if self.owned_data[self.offset + i] != other.owned_data[other.offset + i] {
+            if self.owned_data[i] != other.owned_data[i] {
                 return false;
             }
         }
@@ -209,13 +202,12 @@ impl BitRust {
         let length = bv.len();
         BitRust {
             owned_data: bv,
-            offset: 0,
             length,
         }
     }
 
     fn bits(&self) -> Cow<helpers::BS> {
-        Cow::Borrowed(&self.owned_data[self.offset..self.offset + self.length])
+        Cow::Borrowed(&self.owned_data[0..self.length])
     }
 
     fn len(&self) -> usize {
@@ -230,7 +222,6 @@ impl BitRust {
                 let bits = bits_vec[0];
                 BitRust {
                     owned_data: bits.owned_data.clone(),
-                    offset: bits.offset,
                     length: bits.length,
                 }
             }
@@ -243,13 +234,12 @@ impl BitRust {
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend(&bits.owned_data[bits.offset..bits.offset + bits.length]);
+                    bv.extend(&bits.owned_data[0..bits.length]);
                 }
 
                 // Create new BitRust with the combined data
                 BitRust {
                     owned_data: bv,
-                    offset: 0,
                     length: total_len,
                 }
             }
@@ -260,9 +250,12 @@ impl BitRust {
     fn slice(&self, start_bit: usize, end_bit: usize) -> Self {
         debug_assert!(start_bit <= end_bit);
         debug_assert!(end_bit <= self.length);
+
+        let mut new_data = BitVec::new();
+        new_data.extend_from_bitslice(&self.owned_data[start_bit..end_bit]);
+
         BitRust {
-            owned_data: self.owned_data.clone(),
-            offset: self.offset + start_bit,
+            owned_data: new_data,
             length: end_bit - start_bit,
         }
     }
@@ -278,14 +271,13 @@ impl BitRust {
         // Otherwise, allocate a new BitVec
         let mut result = helpers::BV::with_capacity(self.length);
         for i in 0..self.length {
-            let self_bit = self.owned_data[self.offset + i];
-            let other_bit = other.owned_data[other.offset + i];
+            let self_bit = self.owned_data[i];
+            let other_bit = other.owned_data[i];
             result.push(op(self_bit, other_bit));
         }
 
         Ok(BitRust {
             owned_data: result,
-            offset: 0,
             length: self.length,
         })
     }
@@ -592,7 +584,7 @@ impl BitRust {
         let mut result = Vec::with_capacity(total_bytes);
 
         // Handle sign extension for signed numbers
-        let pad_with_ones = signed && self.owned_data[self.offset];
+        let pad_with_ones = signed && self.owned_data[0];
 
         // Process a byte at a time
         let mut current_byte: u8 = 0;
@@ -611,7 +603,7 @@ impl BitRust {
                 current_byte = 0;
                 bits_in_byte = 0;
             }
-            current_byte = (current_byte << 1) | (self.owned_data[self.offset + i] as u8);
+            current_byte = (current_byte << 1) | (self.owned_data[i] as u8);
             bits_in_byte += 1;
         }
 
@@ -708,7 +700,7 @@ impl BitRust {
             return 0;
         }
 
-        let start_bit = self.offset;
+        let start_bit = 0;
         let end_bit = start_bit + self.length;
 
         // Find complete bytes we can process
@@ -748,12 +740,11 @@ impl BitRust {
     /// Returns a new BitRust with all bits reversed.
     pub fn reverse(&self) -> BitRust {
         let mut bv = helpers::BV::new();
-        bv.extend_from_bitslice(&self.owned_data[self.offset..self.offset + self.length]);
+        bv.extend_from_bitslice(&self.owned_data[0..self.length]);
         bv.reverse();
 
         BitRust {
             owned_data: bv,
-            offset: 0,
             length: self.length,
         }
     }
@@ -776,13 +767,6 @@ impl BitRust {
     pub fn length(&self) -> usize {
         self.len()
     }
-
-    /// Returns a reference to the raw data in the Bits object.
-    /// Note that the offset and length values govern which part of this raw buffer is the actual
-    /// binary data.
-    // pub fn data(&self) -> &Vec<u8> {
-    //     &self.bv.clone().into_vec()
-    // }
 
     /// Return a slice of the current BitRust. Uses a view on the current byte data.
     #[pyo3(signature = (start_bit, end_bit=None))]
@@ -856,14 +840,14 @@ impl BitRust {
             None => {
                 // Invert all bits
                 // TODO: Should be using the not() method on bitvec.
-                for i in self.offset..self.offset + self.length {
+                for i in 0..self.length {
                     let old_val = bv[i];
                     bv.set(i, !old_val);
                 }
             }
             Some(pos) => {
                 // Invert a single bit
-                let index = self.offset + pos;
+                let index = pos;
                 let old_val = bv[index];
                 bv.set(index, !old_val);
             }
@@ -871,7 +855,6 @@ impl BitRust {
 
         BitRust {
             owned_data: new_data,
-            offset: self.offset,
             length: self.length,
         }
     }
@@ -894,7 +877,6 @@ impl BitRust {
         }
         Ok(BitRust {
             owned_data: new_data,
-            offset: self.offset,
             length: self.length,
         })
     }
@@ -914,7 +896,6 @@ impl BitRust {
         bv.set(pos, !value);
         Ok(BitRust {
             owned_data: new_data,
-            offset: self.offset,
             length: self.length,
         })
     }
@@ -923,14 +904,13 @@ impl BitRust {
         let mut new_data = self.owned_data.clone();
         let bv = &mut new_data;
 
-        for i in self.offset..self.offset + self.length {
+        for i in 0..self.length {
             let old_value = bv[i];
             bv.set(i, !old_value);
         }
 
         BitRust {
             owned_data: new_data,
-            offset: self.offset,
             length: self.length,
         }
     }
@@ -956,7 +936,7 @@ impl BitRust {
         let mut new_data = self.owned_data.clone();
         let bv = &mut new_data;
 
-        if bv.len() < self.offset + self.length {
+        if bv.len() < self.length {
             return Err(PyIndexError::new_err("Index out of range"));
         }
 
@@ -967,13 +947,13 @@ impl BitRust {
                 if neg_idx >= self.length() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
-                self.offset + neg_idx
+                neg_idx
             } else {
                 let pos = idx as usize;
                 if pos >= self.length() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
-                self.offset + pos
+                pos
             };
             bv.set(pos, value);
         }
@@ -981,7 +961,6 @@ impl BitRust {
         // Return new BitRust that points to the updated data
         Ok(BitRust {
             owned_data: bv.clone(),
-            offset: self.offset,
             length: self.length,
         })
     }
@@ -1008,14 +987,14 @@ impl BitRust {
         if step > 0 {
             while index < positive_stop {
                 unsafe {
-                    bv.set_unchecked(self.offset + index as usize, value);
+                    bv.set_unchecked(index as usize, value);
                 }
                 index += step;
             }
         } else {
             while index > positive_stop {
                 unsafe {
-                    bv.set_unchecked(self.offset + index as usize, value);
+                    bv.set_unchecked(index as usize, value);
                 }
                 index += step;
             }
@@ -1023,7 +1002,6 @@ impl BitRust {
 
         Ok(BitRust {
             owned_data: new_data,
-            offset: self.offset,
             length: self.length,
         })
     }
@@ -1032,7 +1010,6 @@ impl BitRust {
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
             owned_data: self.owned_data.clone(),
-            offset: self.offset,
             length: self.length,
         }
     }
