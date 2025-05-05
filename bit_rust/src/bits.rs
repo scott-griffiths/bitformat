@@ -39,27 +39,27 @@ mod helpers {
 
     pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
         // Early return if needle is empty or longer than haystack
-        if needle.length == 0 {
+        if needle.len() == 0 {
             return Some(start);
         }
-        if needle.length > haystack.length - start {
+        if needle.len() > haystack.len() - start {
             return None;
         }
 
-        let lps = compute_lps(&needle.owned_data[0..needle.length]);
+        let lps = compute_lps(&needle.owned_data[0..needle.len()]);
         let mut i = start; // index for haystack
         let mut j = 0; // index for needle
 
-        while i < haystack.length {
+        while i < haystack.len() {
             if needle.owned_data[j] == haystack.owned_data[i] {
                 i += 1;
                 j += 1;
             }
-            if j == needle.length {
+            if j == needle.len() {
                 let match_position = i - j;
                 return Some(match_position);
             }
-            if i < haystack.length && needle.owned_data[j] != haystack.owned_data[i] {
+            if i < haystack.len() && needle.owned_data[j] != haystack.owned_data[i] {
                 if j != 0 {
                     j = lps[j - 1];
                 } else {
@@ -77,23 +77,23 @@ mod helpers {
         start: usize,
     ) -> Option<usize> {
         // Early return if needle is empty or longer than haystack
-        if needle.length == 0 {
+        if needle.len() == 0 {
             return Some(start);
         }
-        if needle.length > haystack.length - start {
+        if needle.len() > haystack.len() - start {
             return None;
         }
 
-        let lps = compute_lps(&needle.owned_data[0..needle.length]);
+        let lps = compute_lps(&needle.owned_data[0..needle.len()]);
         let mut i = start; // index for haystack
         let mut j = 0; // index for needle
 
-        while i < haystack.length {
+        while i < haystack.len() {
             if needle.owned_data[j] == haystack.owned_data[i] {
                 i += 1;
                 j += 1;
             }
-            if j == needle.length {
+            if j == needle.len() {
                 let match_position = i - j;
                 if match_position % 8 == 0 {
                     return Some(match_position);
@@ -101,7 +101,7 @@ mod helpers {
                     j = lps[j - 1];
                 }
             }
-            if i < haystack.length && needle.owned_data[j] != haystack.owned_data[i] {
+            if i < haystack.len() && needle.owned_data[j] != haystack.owned_data[i] {
                 if j != 0 {
                     j = lps[j - 1];
                 } else {
@@ -114,19 +114,19 @@ mod helpers {
 
     pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
         // If we're byte-aligned and have a whole number of bytes, we can copy directly
-        if bits.length % 8 == 0 {
-            return bits.owned_data.as_raw_slice()[0..bits.length / 8].to_vec();
+        if bits.len() % 8 == 0 {
+            return bits.owned_data.as_raw_slice()[0..bits.len() / 8].to_vec();
         }
 
         // Otherwise, we need to create a new byte array with the correct bits
-        let num_bytes = (bits.length + 7) / 8; // Round up to nearest byte
+        let num_bytes = (bits.len() + 7) / 8; // Round up to nearest byte
         let mut result = Vec::with_capacity(num_bytes);
 
         // Process 8 bits at a time
         let mut current_byte: u8 = 0;
         let mut bits_in_byte: usize = 0;
 
-        for i in 0..bits.length {
+        for i in 0..bits.len() {
             current_byte = (current_byte << 1) | (bits.owned_data[i] as u8);
             bits_in_byte += 1;
 
@@ -152,7 +152,6 @@ mod helpers {
 #[pyclass]
 pub struct BitRust {
     owned_data: BitVec<u8, Msb0>,
-    length: usize,
 }
 
 impl fmt::Debug for BitRust {
@@ -181,13 +180,13 @@ impl fmt::Debug for BitRust {
 impl PartialEq for BitRust {
     fn eq(&self, other: &Self) -> bool {
         // First check if they have the same length
-        if self.length != other.length {
+        if self.len() != other.len() {
             return false;
         }
 
         // Otherwise compare bit by bit
         // TODO: Must be a faster way!
-        for i in 0..self.length {
+        for i in 0..self.len() {
             if self.owned_data[i] != other.owned_data[i] {
                 return false;
             }
@@ -199,19 +198,15 @@ impl PartialEq for BitRust {
 /// Private helper methods. Not part of the Python interface.
 impl BitRust {
     fn new(bv: helpers::BV) -> Self {
-        let length = bv.len();
-        BitRust {
-            owned_data: bv,
-            length,
-        }
+        BitRust { owned_data: bv }
     }
 
     fn bits(&self) -> Cow<helpers::BS> {
-        Cow::Borrowed(&self.owned_data[0..self.length])
+        Cow::Borrowed(&self.owned_data[0..self.len()])
     }
 
     fn len(&self) -> usize {
-        self.length
+        self.owned_data.len()
     }
 
     fn join_internal(bits_vec: &[&BitRust]) -> Self {
@@ -222,26 +217,22 @@ impl BitRust {
                 let bits = bits_vec[0];
                 BitRust {
                     owned_data: bits.owned_data.clone(),
-                    length: bits.length,
                 }
             }
             _ => {
                 // Calculate total length first
-                let total_len: usize = bits_vec.iter().map(|b| b.length).sum();
+                let total_len: usize = bits_vec.iter().map(|b| b.len()).sum();
 
                 // Create new BitVec with exact capacity needed
                 let mut bv = helpers::BV::with_capacity(total_len);
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend(&bits.owned_data[0..bits.length]);
+                    bv.extend(&bits.owned_data[0..bits.len()]);
                 }
 
                 // Create new BitRust with the combined data
-                BitRust {
-                    owned_data: bv,
-                    length: total_len,
-                }
+                BitRust { owned_data: bv }
             }
         }
     }
@@ -249,14 +240,13 @@ impl BitRust {
     /// Slice used internally without bounds checking.
     fn slice(&self, start_bit: usize, end_bit: usize) -> Self {
         debug_assert!(start_bit <= end_bit);
-        debug_assert!(end_bit <= self.length);
+        debug_assert!(end_bit <= self.len());
 
         let mut new_data = BitVec::new();
         new_data.extend_from_bitslice(&self.owned_data[start_bit..end_bit]);
 
         BitRust {
             owned_data: new_data,
-            length: end_bit - start_bit,
         }
     }
 
@@ -264,22 +254,19 @@ impl BitRust {
     where
         F: Fn(bool, bool) -> bool,
     {
-        if self.length != other.length {
+        if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
 
         // Otherwise, allocate a new BitVec
-        let mut result = helpers::BV::with_capacity(self.length);
-        for i in 0..self.length {
+        let mut result = helpers::BV::with_capacity(self.len());
+        for i in 0..self.len() {
             let self_bit = self.owned_data[i];
             let other_bit = other.owned_data[i];
             result.push(op(self_bit, other_bit));
         }
 
-        Ok(BitRust {
-            owned_data: result,
-            length: self.length,
-        })
+        Ok(BitRust { owned_data: result })
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
@@ -572,13 +559,13 @@ impl BitRust {
     // Return bytes that can easily be converted to an int in Python
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
         // If empty, return empty vector
-        if self.length == 0 {
+        if self.len() == 0 {
             return Vec::new();
         }
 
         // Calculate padding needed to make the length a multiple of 8
-        let padding_bits = (8 - self.length % 8) % 8;
-        let total_bytes = (self.length + padding_bits) / 8;
+        let padding_bits = (8 - self.len() % 8) % 8;
+        let total_bytes = (self.len() + padding_bits) / 8;
 
         // Create result vector with exact capacity needed
         let mut result = Vec::with_capacity(total_bytes);
@@ -597,7 +584,7 @@ impl BitRust {
         }
 
         // Process actual bits from the view
-        for i in 0..self.length {
+        for i in 0..self.len() {
             if bits_in_byte == 8 {
                 result.push(current_byte);
                 current_byte = 0;
@@ -613,7 +600,7 @@ impl BitRust {
         }
 
         debug_assert_eq!(result.len(), total_bytes);
-        debug_assert_eq!(result.len(), (self.length + 7) / 8);
+        debug_assert_eq!(result.len(), (self.len() + 7) / 8);
 
         result
     }
@@ -696,12 +683,12 @@ impl BitRust {
     }
 
     pub fn count(&self) -> usize {
-        if self.length == 0 {
+        if self.len() == 0 {
             return 0;
         }
 
         let start_bit = 0;
-        let end_bit = start_bit + self.length;
+        let end_bit = start_bit + self.len();
 
         // Find complete bytes we can process
         let first_complete_byte = (start_bit + 7) / 8;
@@ -740,13 +727,10 @@ impl BitRust {
     /// Returns a new BitRust with all bits reversed.
     pub fn reverse(&self) -> BitRust {
         let mut bv = helpers::BV::new();
-        bv.extend_from_bitslice(&self.owned_data[0..self.length]);
+        bv.extend_from_bitslice(&self.owned_data[0..self.len()]);
         bv.reverse();
 
-        BitRust {
-            owned_data: bv,
-            length: self.length,
-        }
+        BitRust { owned_data: bv }
     }
 
     /// Returns the bool value at a given bit index.
@@ -840,7 +824,7 @@ impl BitRust {
             None => {
                 // Invert all bits
                 // TODO: Should be using the not() method on bitvec.
-                for i in 0..self.length {
+                for i in 0..self.len() {
                     let old_val = bv[i];
                     bv.set(i, !old_val);
                 }
@@ -855,7 +839,6 @@ impl BitRust {
 
         BitRust {
             owned_data: new_data,
-            length: self.length,
         }
     }
 
@@ -877,7 +860,6 @@ impl BitRust {
         }
         Ok(BitRust {
             owned_data: new_data,
-            length: self.length,
         })
     }
 
@@ -896,7 +878,6 @@ impl BitRust {
         bv.set(pos, !value);
         Ok(BitRust {
             owned_data: new_data,
-            length: self.length,
         })
     }
 
@@ -904,14 +885,13 @@ impl BitRust {
         let mut new_data = self.owned_data.clone();
         let bv = &mut new_data;
 
-        for i in 0..self.length {
+        for i in 0..self.len() {
             let old_value = bv[i];
             bv.set(i, !old_value);
         }
 
         BitRust {
             owned_data: new_data,
-            length: self.length,
         }
     }
 
@@ -936,21 +916,21 @@ impl BitRust {
         let mut new_data = self.owned_data.clone();
         let bv = &mut new_data;
 
-        if bv.len() < self.length {
+        if bv.len() < self.len() {
             return Err(PyIndexError::new_err("Index out of range"));
         }
 
         // Update specified indices
         for idx in indices {
             let pos = if idx < 0 {
-                let neg_idx = (idx + self.length() as i64) as usize;
-                if neg_idx >= self.length() {
+                let neg_idx = (idx + self.len() as i64) as usize;
+                if neg_idx >= self.len() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
                 neg_idx
             } else {
                 let pos = idx as usize;
-                if pos >= self.length() {
+                if pos >= self.len() {
                     return Err(PyIndexError::new_err("Index out of range"));
                 }
                 pos
@@ -961,7 +941,6 @@ impl BitRust {
         // Return new BitRust that points to the updated data
         Ok(BitRust {
             owned_data: bv.clone(),
-            length: self.length,
         })
     }
 
@@ -1002,7 +981,6 @@ impl BitRust {
 
         Ok(BitRust {
             owned_data: new_data,
-            length: self.length,
         })
     }
 
@@ -1010,7 +988,6 @@ impl BitRust {
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
             owned_data: self.owned_data.clone(),
-            length: self.length,
         }
     }
 
@@ -1036,64 +1013,64 @@ mod tests {
         let data: Vec<u8> = vec![10, 20, 30];
         let bits = BitRust::from_bytes(data);
         assert_eq!(*bits.data(), vec![10, 20, 30]);
-        assert_eq!(bits.length(), 24);
+        assert_eq!(bits.len(), 24);
     }
 
     #[test]
     fn from_hex() {
         let bits = BitRust::from_hex_checked("0x0a_14  _1e").unwrap();
         assert_eq!(*bits.data(), vec![10, 20, 30]);
-        assert_eq!(bits.length(), 24);
+        assert_eq!(bits.len(), 24);
         let bits = BitRust::from_hex("");
-        assert_eq!(bits.length(), 0);
+        assert_eq!(bits.len(), 0);
         let bits = BitRust::from_hex_checked("hello");
         assert!(bits.is_err());
         let bits = BitRust::from_hex("1");
         assert_eq!(*bits.data(), vec![16]);
-        assert_eq!(bits.length(), 4);
+        assert_eq!(bits.len(), 4);
     }
 
     #[test]
     fn from_bin() {
         let bits = BitRust::from_bin("00001010");
         assert_eq!(*bits.data(), vec![10]);
-        assert_eq!(bits.length(), 8);
+        assert_eq!(bits.len(), 8);
         let bits = BitRust::from_bin_checked("").unwrap();
-        assert_eq!(bits.length(), 0);
+        assert_eq!(bits.len(), 0);
         let bits = BitRust::from_bin_checked("hello");
         assert!(bits.is_err());
         let bits = BitRust::from_bin_checked("1").unwrap();
         assert_eq!(*bits.data(), vec![128]);
-        assert_eq!(bits.length(), 1);
+        assert_eq!(bits.len(), 1);
     }
 
     #[test]
     fn from_zeros() {
         let bits = BitRust::from_zeros(8);
         assert_eq!(*bits.data(), vec![0]);
-        assert_eq!(bits.length(), 8);
+        assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex().unwrap(), "00");
         let bits = BitRust::from_zeros(9);
         assert_eq!(*bits.data(), vec![0, 0]);
-        assert_eq!(bits.length(), 9);
+        assert_eq!(bits.len(), 9);
         let bits = BitRust::from_zeros(0);
-        assert_eq!(bits.length(), 0);
+        assert_eq!(bits.len(), 0);
     }
 
     #[test]
     fn from_ones() {
         let bits = BitRust::from_ones(8);
         assert_eq!(*bits.data(), vec![255]);
-        assert_eq!(bits.length(), 8);
+        assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex().unwrap(), "ff");
         let bits = BitRust::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
         assert!(bits.to_hex().is_err());
         assert_eq!((*bits.data())[0], 0xff);
         assert_eq!((*bits.data())[1] & 0x80, 0x80);
-        assert_eq!(bits.length(), 9);
+        assert_eq!(bits.len(), 9);
         let bits = BitRust::from_ones(0);
-        assert_eq!(bits.length(), 0);
+        assert_eq!(bits.len(), 0);
     }
 
     #[test]
@@ -1112,9 +1089,9 @@ mod tests {
     #[test]
     fn hex_edge_cases() {
         let b1 = BitRust::from_hex("0123456789abcdef");
-        let b2 = b1.getslice(12, Some(b1.length())).unwrap();
+        let b2 = b1.getslice(12, Some(b1.len())).unwrap();
         assert_eq!(b2.to_hex().unwrap(), "3456789abcdef");
-        assert_eq!(b2.length(), 52);
+        assert_eq!(b2.len(), 52);
         let t = BitRust::from_hex("123");
         assert_eq!(t.to_hex().unwrap(), "123");
     }
@@ -1155,7 +1132,7 @@ mod tests {
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
         let long = BitRust::from_hex(hex_str);
         let temp = long.invert(None);
-        assert_eq!(long.length(), temp.length());
+        assert_eq!(long.len(), temp.len());
         assert_eq!(temp.invert(None), long);
     }
 
