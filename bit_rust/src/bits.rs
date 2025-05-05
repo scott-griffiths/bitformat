@@ -1,7 +1,5 @@
 use std::borrow::Cow;
 use std::fmt;
-use std::ops::Not;
-use std::sync::Arc;
 
 use bitvec::prelude::*;
 use pyo3::exceptions::{PyIndexError, PyValueError};
@@ -159,7 +157,7 @@ mod helpers {
 /// Currently it's just wrapping a BitVec from the bitvec crate.
 #[pyclass]
 pub struct BitRust {
-    owned_data: Arc<helpers::BV>,
+    owned_data: BitVec<u8, Msb0>,
     offset: usize,
     length: usize,
 }
@@ -194,14 +192,6 @@ impl PartialEq for BitRust {
             return false;
         }
 
-        // If they're views into the same data and have the same offset and length, they're equal
-        if Arc::ptr_eq(&self.owned_data, &other.owned_data)
-            && self.offset == other.offset
-            && self.length == other.length
-        {
-            return true;
-        }
-
         // Otherwise compare bit by bit
         // TODO: Must be a faster way!
         for i in 0..self.length {
@@ -218,7 +208,7 @@ impl BitRust {
     fn new(bv: helpers::BV) -> Self {
         let length = bv.len();
         BitRust {
-            owned_data: Arc::new(bv),
+            owned_data: bv,
             offset: 0,
             length,
         }
@@ -239,7 +229,7 @@ impl BitRust {
                 // For a single BitRust, create a view into it
                 let bits = bits_vec[0];
                 BitRust {
-                    owned_data: Arc::clone(&bits.owned_data),
+                    owned_data: bits.owned_data.clone(),
                     offset: bits.offset,
                     length: bits.length,
                 }
@@ -258,7 +248,7 @@ impl BitRust {
 
                 // Create new BitRust with the combined data
                 BitRust {
-                    owned_data: Arc::new(bv),
+                    owned_data: bv,
                     offset: 0,
                     length: total_len,
                 }
@@ -271,7 +261,7 @@ impl BitRust {
         debug_assert!(start_bit <= end_bit);
         debug_assert!(end_bit <= self.length);
         BitRust {
-            owned_data: Arc::clone(&self.owned_data),
+            owned_data: self.owned_data.clone(),
             offset: self.offset + start_bit,
             length: end_bit - start_bit,
         }
@@ -285,22 +275,6 @@ impl BitRust {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
 
-        // Reuse the same Arc if possible
-        if Arc::ptr_eq(&self.owned_data, &other.owned_data) {
-            let mut new_data = self.owned_data.clone();
-            let bv = Arc::make_mut(&mut new_data);
-            for i in 0..self.length {
-                let self_bit = self.owned_data[self.offset + i];
-                let other_bit = other.owned_data[other.offset + i];
-                bv.set(self.offset + i, op(self_bit, other_bit));
-            }
-            return Ok(BitRust {
-                owned_data: new_data,
-                offset: self.offset,
-                length: self.length,
-            });
-        }
-
         // Otherwise, allocate a new BitVec
         let mut result = helpers::BV::with_capacity(self.length);
         for i in 0..self.length {
@@ -310,7 +284,7 @@ impl BitRust {
         }
 
         Ok(BitRust {
-            owned_data: Arc::new(result),
+            owned_data: result,
             offset: 0,
             length: self.length,
         })
@@ -439,7 +413,7 @@ impl BitRust {
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         assert!(offset < 8);
-        let mut bv = (*BitRust::from_bytes(data).owned_data).clone();
+        let mut bv = BitRust::from_bytes(data).owned_data;
         bv.drain(..offset);
         BitRust::new(bv)
     }
@@ -526,7 +500,7 @@ impl BitRust {
                 )))
             }
         };
-        let mut bv = (*BitRust::from_bytes(data).owned_data).clone();
+        let mut bv = BitRust::from_bytes(data).owned_data;
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
@@ -545,7 +519,7 @@ impl BitRust {
             Ok(d) => d,
             Err(_) => panic!("Invalid character"),
         };
-        let mut bv = (*BitRust::from_bytes(data).owned_data).clone();
+        let mut bv = BitRust::from_bytes(data).owned_data;
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
@@ -778,7 +752,7 @@ impl BitRust {
         bv.reverse();
 
         BitRust {
-            owned_data: Arc::new(bv),
+            owned_data: bv,
             offset: 0,
             length: self.length,
         }
@@ -876,7 +850,7 @@ impl BitRust {
     #[pyo3(signature = (pos=None))]
     pub fn invert(&self, pos: Option<usize>) -> Self {
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
 
         match pos {
             None => {
@@ -904,7 +878,7 @@ impl BitRust {
 
     pub fn invert_bit_list(&self, pos_list: Vec<i64>) -> PyResult<Self> {
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
 
         for pos in pos_list {
             if pos < -(self.len() as i64) || pos >= self.len() as i64 {
@@ -935,7 +909,7 @@ impl BitRust {
             pos as usize
         };
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
         let value = bv[pos];
         bv.set(pos, !value);
         Ok(BitRust {
@@ -947,7 +921,7 @@ impl BitRust {
 
     pub fn invert_all(&self) -> Self {
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
 
         for i in self.offset..self.offset + self.length {
             let old_value = bv[i];
@@ -980,7 +954,7 @@ impl BitRust {
         // Instead of cloning outright, create a mutable reference.
         // This only copies if the Arc is shared by more than one owner.
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
 
         if bv.len() < self.offset + self.length {
             return Err(PyIndexError::new_err("Index out of range"));
@@ -1006,7 +980,7 @@ impl BitRust {
 
         // Return new BitRust that points to the updated data
         Ok(BitRust {
-            owned_data: Arc::new(bv.clone()),
+            owned_data: bv.clone(),
             offset: self.offset,
             length: self.length,
         })
@@ -1028,7 +1002,7 @@ impl BitRust {
         }
 
         let mut new_data = self.owned_data.clone();
-        let bv = Arc::make_mut(&mut new_data);
+        let bv = &mut new_data;
         let mut index = positive_start;
 
         if step > 0 {
@@ -1057,7 +1031,7 @@ impl BitRust {
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> Self {
         BitRust {
-            owned_data: Arc::new((*self.owned_data).clone()),
+            owned_data: self.owned_data.clone(),
             offset: self.offset,
             length: self.length,
         }
