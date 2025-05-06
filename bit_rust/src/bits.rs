@@ -150,7 +150,15 @@ mod helpers {
 /// Currently it's just wrapping a BitVec from the bitvec crate.
 #[pyclass]
 pub struct BitRust {
-    data: BitVec<u8, Msb0>,
+    data: helpers::BV,
+}
+
+impl Clone for BitRust {
+    fn clone(&self) -> Self {
+        BitRust {
+            data: self.data.clone(),
+        }
+    }
 }
 
 impl fmt::Debug for BitRust {
@@ -739,27 +747,26 @@ impl BitRust {
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
     pub fn invert(&self, pos: Option<usize>) -> Self {
-        let mut new_data = self.data.clone();
-        let bv = &mut new_data;
+        let mut data = self.data.clone();
 
         match pos {
             None => {
                 // Invert all bits
                 // TODO: Should be using the not() method on bitvec.
                 for i in 0..self.len() {
-                    let old_val = bv[i];
-                    bv.set(i, !old_val);
+                    let old_val = data[i];
+                    data.set(i, !old_val);
                 }
             }
             Some(pos) => {
                 // Invert a single bit
                 let index = pos;
-                let old_val = bv[index];
-                bv.set(index, !old_val);
+                let old_val = data[index];
+                data.set(index, !old_val);
             }
         }
 
-        BitRust { data: new_data }
+        BitRust { data }
     }
 
     pub fn invert_bit_list(&self, pos_list: Vec<i64>) -> PyResult<Self> {
@@ -812,15 +819,7 @@ impl BitRust {
         self.data.any()
     }
 
-    // Return new BitRust with bit at index set to value.
-    pub fn set_index(&self, value: bool, index: i64) -> PyResult<Self> {
-        self.set_from_sequence(value, vec![index])
-    }
-
-    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
-        let mut data = self.data.clone();
-
-        // Update specified indices
+    pub fn set_from_sequence_mut(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
             let pos = if idx < 0 {
                 let neg_idx = (idx + self.len() as i64) as usize;
@@ -835,14 +834,33 @@ impl BitRust {
                 }
                 pos
             };
-            data.set(pos, value);
+            self.data.set(pos, value);
         }
-
-        // Return new BitRust that points to the updated data
-        Ok(BitRust { data })
+        Ok(())
     }
 
-    pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
+    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
+        let mut new_bitrust = self.clone();
+        new_bitrust.set_from_sequence_mut(value, indices)?;
+        Ok(new_bitrust)
+    }
+
+    pub fn set_index_mut(&mut self, value: bool, index: i64) -> PyResult<()> {
+        self.set_from_sequence_mut(value, vec![index])
+    }
+
+    // Return new BitRust with bit at index set to value.
+    pub fn set_index(&self, value: bool, index: i64) -> PyResult<Self> {
+        self.set_from_sequence(value, vec![index])
+    }
+
+    pub fn set_from_slice_mut(
+        &mut self,
+        value: bool,
+        start: i64,
+        stop: i64,
+        step: i64,
+    ) -> PyResult<()> {
         let len = self.len() as i64;
         let mut positive_start = if start < 0 { start + len } else { start };
         let mut positive_stop = if stop < 0 { stop + len } else { stop };
@@ -860,19 +878,29 @@ impl BitRust {
             positive_stop = positive_start - 1;
             positive_start = positive_stop - (positive_stop - positive_start) / step;
         }
-        let positive_step = if step > 0 { step } else { -step };
+        let positive_step = if step > 0 {
+            step as usize
+        } else {
+            -step as usize
+        };
 
-        let mut data = self.data.clone();
-        let mut index = positive_start;
+        let mut index = positive_start as usize;
+        let stop = positive_stop as usize;
 
-        while index < positive_stop {
+        while index < stop {
             unsafe {
-                data.set_unchecked(index as usize, value);
+                self.data.set_unchecked(index, value);
             }
             index += positive_step;
         }
 
-        Ok(BitRust { data })
+        Ok(())
+    }
+
+    pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
+        let mut new_bitrust = self.clone();
+        new_bitrust.set_from_slice_mut(value, start, stop, step)?;
+        Ok(new_bitrust)
     }
 
     /// Return a copy with a real copy of the data.
