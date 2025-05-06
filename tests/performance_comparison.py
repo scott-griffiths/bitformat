@@ -1,12 +1,19 @@
 # Comparison of performace between bitformat and bitstring.
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import bitstring
 import bitformat
 import timeit
 import random
 import math
+from math import isqrt
+
+
+from bitarray import bitarray
+from bitarray.util import ones
+
 
 def test_cutting_bitstring():
     s = bitstring.Bits('0xef1356a6200b3, 0b0')
@@ -27,7 +34,7 @@ def test_cutting_bitformat():
     return c
 
 def test_primes_bitstring():
-    limit = 10000000
+    limit = 100_000_000
     is_prime = bitstring.BitArray(limit)
     is_prime.set(True)
     # Manually set 0 and 1 to be not prime.
@@ -39,16 +46,29 @@ def test_primes_bitstring():
     twin_primes = len(list(is_prime.findall('0b101')))
     return twin_primes
 
+def test_primes_bitarray():
+    limit = 100_000_000
+    is_prime = ones(limit)
+    is_prime[:2] = False
+
+    # Perform sieve
+    for i in range(2, isqrt(limit) + 1):
+        if is_prime[i]:  # i is prime, so all multiples are not
+            is_prime[i * i :: i] = False
+    x = is_prime.count(bitarray("101")) + 1
+    assert x == 440_312
+
 def test_primes_bitformat():
-    limit = 10000000
-    is_prime = bitformat.Bits.from_ones(limit)
+    limit = 100_000_000
+    is_prime = bitformat.MutableBits.from_ones(limit)
     # Manually set 0 and 1 to be not prime.
-    is_prime = is_prime.set(False, [0, 1])
+    is_prime.set_mut(False, [0, 1])
     # For every other integer, if it's set as prime then unset all of its multiples
     for i in range(2, math.ceil(math.sqrt(limit))):
         if is_prime[i]:
-            is_prime = is_prime.set(False, range(i * i, limit, i))
+            is_prime.set_mut(False, range(i * i, limit, i))
     twin_primes = len(list(is_prime.find_all('0b101')))
+    assert twin_primes == 440_312
     return twin_primes
 
 def test_token_parsing_bitstring():
@@ -74,8 +94,8 @@ def test_count_bitstring():
     return s.count(1)
 
 def test_count_bitformat():
-    s = bitformat.Bits.from_zeros(100000000)
-    s = s.set(1, [10, 100, 1000, 10000000])
+    s = bitformat.MutableBits.from_zeros(100000000)
+    s.set_mut(1, [10, 100, 1000, 10000000])
     return s.count(1)
 
 def test_finding_bitstring():
@@ -99,12 +119,14 @@ class FunctionPairs:
         self.name = name
         self.bitstring_func = bitstring_func
         self.bitformat_func = bitformat_func
+        self.bf_time = None
+        self.bs_time = None
         self.ratio = 1.0
 
     def run(self):
-        bs_time = timeit.timeit(self.bitstring_func, number=5)
-        bf_time = timeit.timeit(self.bitformat_func, number=5)
-        self.ratio = bs_time / bf_time
+        self.bs_time = timeit.timeit(self.bitstring_func, number=5)
+        self.bf_time = timeit.timeit(self.bitformat_func, number=5)
+        self.ratio = self.bs_time / self.bf_time
 
 class TestSuite:
     def __init__(self, pairs):
@@ -120,7 +142,7 @@ class TestSuite:
                 extra = ""
             else:
                 extra = f"({1/pair.ratio:.2f}⨉ slower)"
-            print(f'{pair.name}: {pair.ratio:.2f}⨉ faster {extra}')
+            print(f'{pair.name}: {pair.ratio:.2f}⨉ faster {extra} bs: {pair.bs_time:.2f}s vs bf: {pair.bf_time:.2f}s')
         # For ratios we use a geometric mean
         average = math.prod(r.ratio for r in self.pairs) ** (1 / len(self.pairs))
         print(f"AVERAGE: {average:.2f}⨉ faster")
