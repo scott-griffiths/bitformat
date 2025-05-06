@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt;
 
 use bitvec::prelude::*;
@@ -201,10 +200,6 @@ impl BitRust {
         BitRust { data: bv }
     }
 
-    fn bits(&self) -> Cow<helpers::BS> {
-        Cow::Borrowed(&self.data[0..self.len()])
-    }
-
     fn len(&self) -> usize {
         self.data.len()
     }
@@ -246,25 +241,6 @@ impl BitRust {
         new_data.extend_from_bitslice(&self.data[start_bit..end_bit]);
 
         BitRust { data: new_data }
-    }
-
-    fn bitwise_op<F>(&self, other: &BitRust, op: F) -> PyResult<BitRust>
-    where
-        F: Fn(bool, bool) -> bool,
-    {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-
-        // Otherwise, allocate a new BitVec
-        let mut result = helpers::BV::with_capacity(self.len());
-        for i in 0..self.len() {
-            let self_bit = self.data[i];
-            let other_bit = other.data[i];
-            result.push(op(self_bit, other_bit));
-        }
-
-        Ok(BitRust { data: result })
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
@@ -424,33 +400,11 @@ impl BitRust {
     // An unchecked version of from_bin. Used when you're sure the input is valid.
     #[staticmethod]
     pub fn from_bin(binary_str: &str) -> Self {
-        let len = binary_str.len();
-        let mut b: helpers::BV = helpers::BV::with_capacity(len);
+        let mut b: helpers::BV = helpers::BV::with_capacity(binary_str.len());
 
-        // Process bytes at a time when possible
-        let bytes = binary_str.as_bytes();
-        let chunks = bytes.chunks_exact(8);
-        let remainder = chunks.remainder();
-
-        for chunk in chunks {
-            let mut byte = 0u8;
-            // Unroll the loop for better performance
-            byte = (byte << 1) | ((chunk[0] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[1] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[2] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[3] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[4] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[5] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[6] == b'1') as u8);
-            byte = (byte << 1) | ((chunk[7] == b'1') as u8);
-            b.extend_from_raw_slice(&[byte]);
+        for ch in binary_str.chars() {
+            b.push(if ch == '0' { false } else { true });
         }
-
-        // Handle remaining bits
-        for &bit in remainder {
-            b.push(bit == b'1');
-        }
-
         BitRust::new(b)
     }
 
@@ -621,7 +575,7 @@ impl BitRust {
 
     pub fn to_bin(&self) -> String {
         let mut result = String::with_capacity(self.len());
-        for bit in self.bits().iter() {
+        for bit in self.data.iter() {
             result.push(if *bit { '1' } else { '0' });
         }
         result
@@ -643,15 +597,30 @@ impl BitRust {
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {
-        self.bitwise_op(other, |a, b| a.clone() & b.clone())
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+        // TODO: Do we really need to clone twice in these methods?
+        let result = self.data.clone() & other.data.clone();
+        Ok(BitRust { data: result })
     }
 
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
-        self.bitwise_op(other, |a, b| a.clone() | b.clone())
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+
+        let result = self.data.clone() | other.data.clone();
+        Ok(BitRust { data: result })
     }
 
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
-        self.bitwise_op(other, |a, b| a.clone() ^ b.clone())
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+
+        let result = self.data.clone() ^ other.data.clone();
+        Ok(BitRust { data: result })
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
@@ -681,44 +650,10 @@ impl BitRust {
     }
 
     pub fn count(&self) -> usize {
-        if self.len() == 0 {
-            return 0;
-        }
-
-        let start_bit = 0;
-        let end_bit = start_bit + self.len();
-
-        // Find complete bytes we can process
-        let first_complete_byte = (start_bit + 7) / 8;
-        let last_complete_byte = end_bit / 8;
-
-        let mut count = 0;
-
-        // Handle any bits before the first complete byte
-        if first_complete_byte * 8 > start_bit {
-            for i in start_bit..(first_complete_byte * 8).min(end_bit) {
-                if self.data[i] {
-                    count += 1;
-                }
-            }
-        }
-
-        // Use hamming::weight for complete bytes
-        if last_complete_byte > first_complete_byte {
-            let raw_slice = &self.data.as_raw_slice()[first_complete_byte..last_complete_byte];
-            count += hamming::weight(raw_slice) as usize;
-        }
-
-        // Handle any remaining bits
-        if end_bit > last_complete_byte * 8 {
-            for i in (last_complete_byte * 8)..end_bit {
-                if self.data[i] {
-                    count += 1;
-                }
-            }
-        }
-
-        count
+        // Note that using hamming::weight is about twice as fast as:
+        // self.data.count_ones()
+        // which is the way that bitvec suggests.
+        hamming::weight(self.data.as_raw_slice()) as usize
     }
 
     /// Returns a new BitRust with all bits reversed.
@@ -731,18 +666,16 @@ impl BitRust {
     /// Returns the bool value at a given bit index.
     pub fn getindex(&self, mut bit_index: i64) -> PyResult<bool> {
         let length = self.len() as i64;
-        if bit_index >= length || bit_index < -length {
-            return Err(PyIndexError::new_err("Out of range."));
-        }
         if bit_index < 0 {
             bit_index += length;
         }
-        debug_assert!(bit_index >= 0);
-        let p = bit_index as usize;
-        Ok(self.bits()[p])
+        if bit_index >= length || bit_index < 0 {
+            return Err(PyIndexError::new_err("Out of range."));
+        }
+        Ok(self.data[bit_index as usize])
     }
 
-    /// Return a slice of the current BitRust. Uses a view on the current byte data.
+    /// Return a slice of the current BitRust.
     #[pyo3(signature = (start_bit, end_bit=None))]
     pub fn getslice(&self, start_bit: usize, end_bit: Option<usize>) -> PyResult<Self> {
         let end_bit = end_bit.unwrap_or(self.len());
@@ -778,7 +711,7 @@ impl BitRust {
                 return Err(PyValueError::new_err("end bit goes past the end"));
             }
             Ok(BitRust::new(
-                self.bits()[start_bit as usize..end_bit as usize]
+                self.data[start_bit as usize..end_bit as usize]
                     .iter()
                     .step_by(step as usize)
                     .collect(),
@@ -794,7 +727,7 @@ impl BitRust {
             debug_assert!(step < 0);
             let adjusted_end_bit = (end_bit + 1) as usize;
             Ok(BitRust::new(
-                self.bits()[adjusted_end_bit..=start_bit as usize]
+                self.data[adjusted_end_bit..=start_bit as usize]
                     .iter()
                     .rev()
                     .step_by(-step as usize)
@@ -911,8 +844,8 @@ impl BitRust {
 
     pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
         let len = self.len() as i64;
-        let positive_start = if start < 0 { start + len } else { start };
-        let positive_stop = if stop < 0 { stop + len } else { stop };
+        let mut positive_start = if start < 0 { start + len } else { start };
+        let mut positive_stop = if stop < 0 { stop + len } else { stop };
 
         if positive_start < 0 || positive_start >= len {
             return Err(PyIndexError::new_err("Start of slice out of bounds."));
@@ -923,24 +856,20 @@ impl BitRust {
         if step == 0 {
             return Err(PyValueError::new_err("Step cannot be zero."));
         }
+        if step < 0 {
+            positive_stop = positive_start - 1;
+            positive_start = positive_stop - (positive_stop - positive_start) / step;
+        }
+        let positive_step = if step > 0 { step } else { -step };
 
         let mut data = self.data.clone();
         let mut index = positive_start;
 
-        if step > 0 {
-            while index < positive_stop {
-                unsafe {
-                    data.set_unchecked(index as usize, value);
-                }
-                index += step;
+        while index < positive_stop {
+            unsafe {
+                data.set_unchecked(index as usize, value);
             }
-        } else {
-            while index > positive_stop {
-                unsafe {
-                    data.set_unchecked(index as usize, value);
-                }
-                index += step;
-            }
+            index += positive_step;
         }
 
         Ok(BitRust { data })
@@ -960,10 +889,6 @@ impl BitRust {
         *self = joined;
         Ok(())
     }
-
-    pub fn data(&self) -> Vec<u8> {
-        helpers::convert_bitrust_to_bytes(&self)
-    }
 }
 
 #[cfg(test)]
@@ -974,46 +899,46 @@ mod tests {
     fn from_bytes() {
         let data: Vec<u8> = vec![10, 20, 30];
         let bits = BitRust::from_bytes(data);
-        assert_eq!(*bits.data(), vec![10, 20, 30]);
+        assert_eq!(*bits.to_bytes(), vec![10, 20, 30]);
         assert_eq!(bits.len(), 24);
     }
 
     #[test]
     fn from_hex() {
         let bits = BitRust::from_hex_checked("0x0a_14  _1e").unwrap();
-        assert_eq!(*bits.data(), vec![10, 20, 30]);
+        assert_eq!(*bits.to_bytes(), vec![10, 20, 30]);
         assert_eq!(bits.len(), 24);
         let bits = BitRust::from_hex("");
         assert_eq!(bits.len(), 0);
         let bits = BitRust::from_hex_checked("hello");
         assert!(bits.is_err());
         let bits = BitRust::from_hex("1");
-        assert_eq!(*bits.data(), vec![16]);
+        assert_eq!(*bits.to_bytes(), vec![16]);
         assert_eq!(bits.len(), 4);
     }
 
     #[test]
     fn from_bin() {
         let bits = BitRust::from_bin("00001010");
-        assert_eq!(*bits.data(), vec![10]);
+        assert_eq!(*bits.to_bytes(), vec![10]);
         assert_eq!(bits.len(), 8);
         let bits = BitRust::from_bin_checked("").unwrap();
         assert_eq!(bits.len(), 0);
         let bits = BitRust::from_bin_checked("hello");
         assert!(bits.is_err());
         let bits = BitRust::from_bin_checked("1").unwrap();
-        assert_eq!(*bits.data(), vec![128]);
+        assert_eq!(*bits.to_bytes(), vec![128]);
         assert_eq!(bits.len(), 1);
     }
 
     #[test]
     fn from_zeros() {
         let bits = BitRust::from_zeros(8);
-        assert_eq!(*bits.data(), vec![0]);
+        assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex().unwrap(), "00");
         let bits = BitRust::from_zeros(9);
-        assert_eq!(*bits.data(), vec![0, 0]);
+        assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
         let bits = BitRust::from_zeros(0);
         assert_eq!(bits.len(), 0);
@@ -1022,14 +947,14 @@ mod tests {
     #[test]
     fn from_ones() {
         let bits = BitRust::from_ones(8);
-        assert_eq!(*bits.data(), vec![255]);
+        assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex().unwrap(), "ff");
         let bits = BitRust::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
         assert!(bits.to_hex().is_err());
-        assert_eq!((*bits.data())[0], 0xff);
-        assert_eq!((*bits.data())[1] & 0x80, 0x80);
+        assert_eq!((*bits.to_bytes())[0], 0xff);
+        assert_eq!((*bits.to_bytes())[1] & 0x80, 0x80);
         assert_eq!(bits.len(), 9);
         let bits = BitRust::from_ones(0);
         assert_eq!(bits.len(), 0);
