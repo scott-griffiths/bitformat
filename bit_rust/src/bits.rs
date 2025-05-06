@@ -1,16 +1,17 @@
 use std::fmt;
 
 use bitvec::prelude::*;
+use bytemuck::cast_slice;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyRefMut, PyResult};
-
 /// Internal module for helper functions.
 mod helpers {
     use super::*;
-
-    pub type BV = BitVec<u8, Msb0>;
-    pub type BS = BitSlice<u8, Msb0>;
+    // The choice of size is interesting. Can choose u8, u16, u32, u64.
+    // Not sure of all the performance implications yet.
+    pub type BV = BitVec<u64, Msb0>;
+    pub type BS = BitSlice<u64, Msb0>;
 
     // An implementation of the KMP algorithm for bit slices.
     pub fn compute_lps(pattern: &BS) -> Vec<usize> {
@@ -112,11 +113,7 @@ mod helpers {
     }
 
     pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
-        // If we're byte-aligned and have a whole number of bytes, we can copy directly
-        if bits.len() % 8 == 0 {
-            return bits.data.as_raw_slice()[0..bits.len() / 8].to_vec();
-        }
-
+        
         // Otherwise, we need to create a new byte array with the correct bits
         let num_bytes = (bits.len() + 7) / 8; // Round up to nearest byte
         let mut result = Vec::with_capacity(num_bytes);
@@ -661,7 +658,8 @@ impl BitRust {
         // Note that using hamming::weight is about twice as fast as:
         // self.data.count_ones()
         // which is the way that bitvec suggests.
-        hamming::weight(self.data.as_raw_slice()) as usize
+        let bytes: &[u8] = cast_slice(self.data.as_raw_slice());
+        hamming::weight(bytes) as usize
     }
 
     /// Returns a new BitRust with all bits reversed.
