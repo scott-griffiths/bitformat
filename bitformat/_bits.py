@@ -1229,36 +1229,6 @@ class Bits(_BaseBits):
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def byte_swap(self, bytelength: int | None = None, /) -> Bits:
-        """Change the byte endianness. Return new Bits.
-
-        The whole of the Bits will be byte-swapped. It must be a multiple
-        of bytelength long.
-
-        :param bytelength: An int giving the number of bytes to swap.
-        :type bytelength: int or None
-        :return: A new Bits object with byte-swapped data.
-        :rtype: Bits
-        """
-        if len(self) % 8 != 0:
-            raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
-                             "This error can be caused by using an endianness modifier on non-whole byte data.")
-        if bytelength is None:
-            bytelength = len(self) // 8
-        if bytelength == 0:
-            return Bits()
-        if bytelength < 0:
-            raise ValueError(f"Negative bytelength given: {bytelength}.")
-        if len(self) % (bytelength * 8) != 0:
-            raise ValueError(
-                f"The Bits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
-            )
-        chunks = []
-        for startbit in range(0, len(self), bytelength * 8):
-            x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
-            chunks.append(Bits.from_bytes(x[::-1]))
-        return Bits.from_joined(chunks)
-
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
         """Return new Bits with bs inserted at bit position pos.
 
@@ -1414,17 +1384,16 @@ class MutableBits(_BaseBits):
         bs._bitstore = self._bitstore.getslice(start, end).get_mutable_copy()
         return bs
 
-    # TODO
-    def byte_swap(self, bytelength: int | None = None, /) -> Bits:
-        """Change the byte endianness. Return new Bits.
+    def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:
+        """Change the byte endianness in-place. Return the MutableBits.
 
-        The whole of the Bits will be byte-swapped. It must be a multiple
+        The whole of the MutableBits will be byte-swapped. It must be a multiple
         of bytelength long.
 
         :param bytelength: An int giving the number of bytes to swap.
         :type bytelength: int or None
-        :return: A new Bits object with byte-swapped data.
-        :rtype: Bits
+        :return: The MutableBits object with byte-swapped data.
+        :rtype: MutableBits
         """
         if len(self) % 8 != 0:
             raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
@@ -1432,18 +1401,20 @@ class MutableBits(_BaseBits):
         if bytelength is None:
             bytelength = len(self) // 8
         if bytelength == 0:
-            return Bits()
+            return MutableBits()
         if bytelength < 0:
             raise ValueError(f"Negative bytelength given: {bytelength}.")
         if len(self) % (bytelength * 8) != 0:
             raise ValueError(
-                f"The Bits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
+                f"The MutableBits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
             )
         chunks = []
         for startbit in range(0, len(self), bytelength * 8):
             x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
             chunks.append(Bits.from_bytes(x[::-1]))
-        return Bits.from_joined(chunks)
+        x = Bits.from_joined(chunks)
+        self._bitstore = x._bitstore
+        return self
 
     # TODO
     def insert(self, pos: int, bs: BitsType, /) -> Bits:
@@ -1537,10 +1508,11 @@ class MutableBits(_BaseBits):
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
+        # TODO: This can be done without so much copying as it's allowed to be in-place.
         x = MutableBits.from_joined([self._slice(0, start),
-                                 self._slice(start + n, end),
-                                 self._slice(start, start + n),
-                                 self._slice(end, len(self))])
+                                     self._slice(start + n, end),
+                                     self._slice(start, start + n),
+                                     self._slice(end, len(self))])
         self._bitstore = x._bitstore
         return self
 

@@ -888,16 +888,16 @@ class TestManyDifferentThings:
         assert b == a * 10
 
     def test_reverse_bytes(self):
-        a = Bits("0x123456")
-        a = a.byte_swap()
+        a = MutableBits("0x123456")
+        a.byte_swap()
         assert a == "0x563412"
         b = a + "0b1"
         with pytest.raises(ValueError):
-            _ = b.byte_swap()
-        a = Bits("0x54")
+            b.byte_swap()
+        a = MutableBits("0x54")
         a = a.byte_swap()
         assert a == "0x54"
-        a = Bits()
+        a = MutableBits()
         a = a.byte_swap()
         assert not a
 
@@ -1327,18 +1327,18 @@ class TestBugs:
             a.rol(5, start=-4, end=-6)
 
     def test_byte_swap_int(self):
-        s = Bits("0xf234567f")
-        s = s.byte_swap(1)
+        s = MutableBits("0xf234567f")
+        s.byte_swap(1)
         assert s == "0xf234567f"
-        s = s.byte_swap(2)
+        s.byte_swap(2)
         assert s == "0x34f27f56"
-        s = s.byte_swap(2)
+        s.byte_swap(2)
         assert s == "0xf234567f"
         with pytest.raises(ValueError):
-            _ = s.byte_swap(3)
+            s.byte_swap(3)
 
     def test_byte_swap_errors(self):
-        s = Bits("0x0011223344556677")
+        s = MutableBits("0x0011223344556677")
         with pytest.raises(TypeError):
             s.byte_swap("z")
         with pytest.raises(ValueError):
@@ -1385,8 +1385,8 @@ def test_overwrite_with_self():
 
 def test_byte_swap():
     b = Bits.from_bytes(b"\x01\x02\x03\x04")
-    b = b.byte_swap()
-    assert b == "0x04030201"
+    c = b.to_mutable().byte_swap()
+    assert c == "0x04030201"
 
 
 def test_overlapping_bits():
@@ -1400,7 +1400,7 @@ def test_overlapping_bits():
     assert y == Bits("0b00011111")
     _ = ~y
     _ = y.to_mutable().set(0, [0, 1, 2, 3, 4, 5, 6, 7])
-    _ = y.byte_swap()
+    _ = y.to_mutable().byte_swap()
     _ = y.to_mutable().ror(1)
     _ = y.to_mutable().rol(1)
     assert a == "0x00fff0"
@@ -1410,7 +1410,7 @@ def test_overlapping_bits():
     y = ~y
     assert y == Bits("0b11100000")
     y = y.to_mutable().set(0, [2, 3]).freeze()
-    y = y.byte_swap()
+    y = y.to_mutable().byte_swap().freeze()
     y = y.to_mutable().ror(2)
     y = y.rol(1)
     assert a == "0x00fff0"

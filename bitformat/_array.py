@@ -533,7 +533,8 @@ class Array:
         if self.item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
                              f"The '{self._dtype}' format is {self.item_size} bits long.")
-        self.data = self._proxy.byte_swap(self.item_size // 8)
+        # TODO: Tidy up when Proxy replaced with MutableBits.
+        self.data = self._proxy.to_mutable().byte_swap(self.item_size // 8).freeze()
 
     def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
