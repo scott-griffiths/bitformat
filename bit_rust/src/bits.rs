@@ -195,7 +195,7 @@ impl BitRust {
         match bits_vec.len() {
             0 => BitRust::from_zeros(0),
             1 => {
-                // For a single BitRust, create a view into it
+                // For a single BitRust, just clone it.
                 let bits = bits_vec[0];
                 BitRust {
                     data: bits.data.clone(),
@@ -644,11 +644,10 @@ impl BitRust {
         hamming::weight(bytes) as usize
     }
 
-    /// Returns a new BitRust with all bits reversed.
-    pub fn reverse(&self) -> BitRust {
-        let mut data = self.data.clone();
-        data.reverse();
-        BitRust { data }
+    /// Reverses all bits in place.
+    pub fn reverse(&mut self) -> () {
+        self.data.reverse();
+        ()
     }
 
     /// Returns the bool value at a given bit index.
@@ -1000,22 +999,19 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let b = BitRust::from_bin("11110000");
-        let bp = b.reverse();
-        assert_eq!(bp.to_bin(), "00001111");
-        let b = BitRust::from_bin("1");
-        let bp = b.reverse();
-        assert_eq!(bp.to_bin(), "1");
-        let empty = BitRust::from_bin("");
-        let empty_p = empty.reverse();
-        assert_eq!(empty_p.to_bin(), "");
-        let b = BitRust::from_bin("11001");
-        let bp = b.reverse();
-        assert_eq!(bp.to_bin(), "10011");
-        let hex_str = "98798379287592836521000cbdbeff";
-        let long = BitRust::from_hex(hex_str);
-        let rev = long.reverse();
-        assert_eq!(rev.reverse(), long);
+        let mut b = BitRust::from_bin("11110000");
+        b.reverse();
+        assert_eq!(b.to_bin(), "00001111");
+        let mut b = BitRust::from_bin("1");
+        b.reverse();
+        assert_eq!(b.to_bin(), "1");
+        let mut empty = BitRust::from_bin("");
+        empty.reverse();
+        assert_eq!(empty.to_bin(), "");
+        let mut b = BitRust::from_bin("11001");
+        b.reverse();
+        assert_eq!(b.to_bin(), "10011");
+
     }
 
     #[test]

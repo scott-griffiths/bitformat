@@ -24,10 +24,8 @@ def test_join():
     b = BitRust.from_ones(4)
     c = BitRust.join([a, b])
     assert c.to_bin() == '00001111'
-    d = c.reverse()
-    assert d.to_bin() == '11110000'
-    e = c & d
-    assert e.to_bin() == '00000000'
+    c.reverse()
+    assert c.to_bin() == '11110000'
 
 def test_find():
     a = BitRust.from_bin('00000110001110')

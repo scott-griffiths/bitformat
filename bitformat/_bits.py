@@ -1381,29 +1381,6 @@ class Bits(_BaseBits):
             ]
         )
 
-    def set(self, value: Any, pos: int | Sequence[int]) -> Bits:
-        """Return new Bits with one or many bits set to 1 or 0.
-
-        :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
-        :type value: Any
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Sequence[int]
-        :return: A new Bits object with the set bits.
-        :rtype: Bits
-
-        Raises IndexError if pos < -len(self) or pos >= len(self).
-
-        """
-        v = True if value else False
-        s = Bits()
-        if not isinstance(pos, Sequence):
-            s._bitstore = self._bitstore.set_index(v, pos)
-        elif isinstance(pos, range):
-            s._bitstore = self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
-        else:
-            s._bitstore = self._bitstore.set_from_sequence(v, pos)
-        return s
-
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.
@@ -1461,35 +1438,34 @@ class Bits(_BaseBits):
         x._bitstore = BitRust.join(replacement_list)
         return x
 
-    def reverse(self) -> Bits:
-        """Reverse bits.
-
-        :return: A new Bits object with the reversed bits.
-        :rtype: Bits
-
-        """
-        x = self.__class__()
-        bs = self._bitstore.reverse()
-        x._bitstore = bs
+    def to_mutable(self) -> MutableBits:
+        x = MutableBits()
+        x._bitstore = self._bitstore.get_mutable_copy()
         return x
 
 
 class MutableBits(_BaseBits):
 
+    def freeze(self) -> Bits:
+        """Convert to an immutable Bits instance. A copy of the data will be made."""
+        x = Bits()
+        x._bitstore = self._bitstore.get_mutable_copy()
+        return x
+
     __hash__ = None
-    """The hash method is disabled for a ``MutableBits`` object as it is mutable."""
+    """The hash method is not available for a ``MutableBits`` object as it is mutable."""
 
     def __copy__(self: MutableBits) -> MutableBits:
         """Return a new copy of the MutableBits for the copy module.
         """
-        # TODO: make a copy!
-        return self
+        x = MutableBits()
+        x._bitstore = self._bitstore.get_mutable_copy()
+        return x
 
-    # TODO
-    def _slice(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a  slice, without error checking. No copy of data is made - it's just a view."""
+    def _slice(self: MutableBits, start: int, end: int) -> MutableBits:
+        """Used internally to get a slice, without error checking. A copy of the data is made."""
         bs = self.__class__()
-        bs._bitstore = self._bitstore.getslice(start, end)
+        bs._bitstore = self._bitstore.getslice(start, end).get_mutable_copy()
         return bs
 
     # TODO
@@ -1652,7 +1628,7 @@ class MutableBits(_BaseBits):
             ]
         )
 
-    def set_mut(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
+    def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
         """Set one or many bits set to 1 or 0. Returns self.
 
         :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
@@ -1732,15 +1708,14 @@ class MutableBits(_BaseBits):
         x._bitstore = BitRust.join(replacement_list)
         return x
 
-    def reverse_mut(self) -> MutableBits:
+    def reverse(self) -> MutableBits:
         """Reverse bits.
 
         :return: self
         :rtype: MutableBits
 
         """
-        # TODO: reverse_mut in Rust
-        self._bitstore = self._bitstore.reverse()
+        self._bitstore.reverse()
         return self
 
 

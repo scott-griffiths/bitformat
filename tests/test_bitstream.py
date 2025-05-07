@@ -2,7 +2,7 @@
 
 import pytest
 import copy
-from bitformat import Bits
+from bitformat import Bits, MutableBits
 
 
 class TestFlexibleInitialisation:
@@ -540,13 +540,13 @@ class TestAdding:
 
     def test_reverse(self):
         s = Bits("0b0011")
-        s = s.reverse()
+        s = s.to_mutable().reverse()
         assert s.bin == "1100"
-        s = Bits("0b10")
-        s = s.reverse()
+        s = MutableBits("0b10")
+        s.reverse()
         assert s.bin == "01"
-        s = Bits()
-        s = s.reverse()
+        s = MutableBits()
+        s.reverse()
         assert s.bin == ""
 
     def test_init_with_concatenated_strings(self):
@@ -572,9 +572,9 @@ class TestAdding:
 
     def test_large_equals(self):
         s1 = Bits.from_zeros(1000000)
-        s2 = Bits.from_zeros(1000000)
-        s1 = s1.set(True, [-1, 55, 53214, 534211, 999999])
-        s2 = s2.set(True, [-1, 55, 53214, 534211, 999999])
+        s2 = MutableBits.from_zeros(1000000)
+        s1 = s1.to_mutable().set(True, [-1, 55, 53214, 534211, 999999])
+        s2.set(True, [-1, 55, 53214, 534211, 999999])
         assert s1 == s2
         s1 = s1.set(True, 800000)
         assert s1 != s2
@@ -841,10 +841,13 @@ class TestManyDifferentThings:
 
     def test_reverse_with_slice(self):
         a = Bits("0x0012ff")
-        a = a.reverse()
-        assert a == "0xff4800"
-        a = a[8:16].reverse()
-        assert a == "0x12"
+        b = a.to_mutable()
+        b.reverse()
+        assert a == "0x0012ff"
+        assert b == "0xff4800"
+        a = a[8:16].to_mutable()
+        a.reverse()
+        assert a == "0x48"
 
     def test_cut(self):
         a = Bits("0x00112233445")
@@ -978,9 +981,9 @@ class TestManyDifferentThings:
 class TestSet:
     def test_set(self):
         a = Bits.from_zeros(16)
-        a = a.set(True, 0)
+        a = a.to_mutable().set(True, 0)
         assert a == "0b10000000 00000000"
-        a = a.set(1, 15)
+        a.set(1, 15)
         assert a == "0b10000000 00000001"
         b = a[4:12]
         b = b.set(True, 1)
@@ -995,38 +998,39 @@ class TestSet:
             _ = b.set(True, 8)
 
     def test_set_negative_index(self):
-        a = Bits.from_string('0b0110000000')
-        a = a.set(1, -1)
+        a = MutableBits.from_string('0b0110000000')
+        a.set(1, -1)
         assert a.bin == "0110000001"
-        a = a.set(1, [-1, -10])
+        a.set(1, [-1, -10])
         assert a.bin == "1110000001"
         with pytest.raises(IndexError):
-            _ = a.set(1, [-11])
+            a.set(1, [-11])
 
     def test_set_list(self):
         a = Bits.from_zeros(18)
-        a = a.set(True, range(18))
-        assert a.i == -1
-        a = a.set(False, range(18))
+        b = a.to_mutable().set(True, range(18))
+        assert b.i == -1
         assert a.i == 0
+        b.set(False, range(18))
+        assert b.i == 0
 
     def test_unset(self):
-        a = Bits.from_ones(16)
-        a = a.set(False, 0)
+        a = MutableBits.from_ones(16)
+        a.set(False, 0)
         assert ~a == "0b10000000 00000000"
-        a = a.set(0, 15)
+        a.set(0, 15)
         assert ~a == "0b10000000 00000001"
         b = a[4:12]
-        b = b.set(False, 1)
+        b.set(False, 1)
         assert ~b == "0b01000000"
-        b = b.set(False, -1)
+        b.set(False, -1)
         assert ~b == "0b01000001"
-        b = b.set(False, -8)
+        b.set(False, -8)
         assert ~b == "0b11000001"
         with pytest.raises(IndexError):
-            _ = b.set(False, -9)
+            b.set(False, -9)
         with pytest.raises(IndexError):
-            _ = b.set(False, 8)
+            b.set(False, 8)
 
 
 class TestInvert:
@@ -1395,7 +1399,7 @@ def test_overlapping_bits():
     assert x == "0x0ff"
     assert y == Bits("0b00011111")
     _ = ~y
-    _ = y.set(0, [0, 1, 2, 3, 4, 5, 6, 7])
+    _ = y.to_mutable().set(0, [0, 1, 2, 3, 4, 5, 6, 7])
     _ = y.byte_swap()
     _ = y.ror(1)
     _ = y.rol(1)
@@ -1405,7 +1409,7 @@ def test_overlapping_bits():
     assert y == Bits("0b00011111")
     y = ~y
     assert y == Bits("0b11100000")
-    y = y.set(0, [2, 3])
+    y = y.to_mutable().set(0, [2, 3]).freeze()
     y = y.byte_swap()
     y = y.ror(2)
     y = y.rol(1)

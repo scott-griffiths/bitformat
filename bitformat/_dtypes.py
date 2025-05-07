@@ -873,6 +873,8 @@ class Register:
         cls.kind_to_def[kind] = definition
         setattr(bitformat.Bits, kind.value, property(fget=definition.get_fn,
                                                      doc=f"The Bits as {definition.description}. Read only."))
+        setattr(bitformat.MutableBits, kind.value, property(fget=definition.get_fn,
+                                                     doc=f"The Bits as {definition.description}. Read only."))
         if definition.endianness_variants:
 
             def fget_be(b):
@@ -892,6 +894,7 @@ class Register:
                                          ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
                 doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
                 setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))
+                setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, doc=doc))
 
     @classmethod
     # @functools.lru_cache(CACHE_SIZE)
