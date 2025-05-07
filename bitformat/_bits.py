@@ -1643,14 +1643,14 @@ class MutableBits(_BaseBits):
         """
         v = True if value else False
         if not isinstance(pos, Sequence):
-            self._bitstore.set_index_mut(v, pos)
+            self._bitstore.set_index(v, pos)
         elif isinstance(pos, range):
-            self._bitstore.set_from_slice_mut(v, pos.start or 0, pos.stop, pos.step or 1)
+            self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
         else:
-            self._bitstore.set_from_sequence_mut(v, pos)
+            self._bitstore.set_from_sequence(v, pos)
         return self
 
-    # TODO: Probably refactor to share code and make into replace_mut
+    # TODO
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.

@@ -798,7 +798,7 @@ impl BitRust {
         self.data.any()
     }
 
-    pub fn set_from_sequence_mut(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
+    pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
             let pos = if idx < 0 {
                 let neg_idx = (idx + self.len() as i64) as usize;
@@ -818,22 +818,11 @@ impl BitRust {
         Ok(())
     }
 
-    pub fn set_from_sequence(&self, value: bool, indices: Vec<i64>) -> PyResult<BitRust> {
-        let mut new_bitrust = self.clone();
-        new_bitrust.set_from_sequence_mut(value, indices)?;
-        Ok(new_bitrust)
-    }
-
-    pub fn set_index_mut(&mut self, value: bool, index: i64) -> PyResult<()> {
-        self.set_from_sequence_mut(value, vec![index])
-    }
-
-    // Return new BitRust with bit at index set to value.
-    pub fn set_index(&self, value: bool, index: i64) -> PyResult<Self> {
+    pub fn set_index(&mut self, value: bool, index: i64) -> PyResult<()> {
         self.set_from_sequence(value, vec![index])
     }
 
-    pub fn set_from_slice_mut(
+    pub fn set_from_slice(
         &mut self,
         value: bool,
         start: i64,
@@ -874,12 +863,6 @@ impl BitRust {
         }
 
         Ok(())
-    }
-
-    pub fn set_from_slice(&self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<Self> {
-        let mut new_bitrust = self.clone();
-        new_bitrust.set_from_slice_mut(value, start, stop, step)?;
-        Ok(new_bitrust)
     }
 
     /// Return a copy with a real copy of the data.
@@ -1116,12 +1099,12 @@ mod tests {
 
     #[test]
     fn test_set_index() {
-        let b = BitRust::from_zeros(10);
-        let b = b.set_index(true, 0).unwrap();
+        let mut b = BitRust::from_zeros(10);
+        b.set_index(true, 0).unwrap();
         assert_eq!(b.to_bin(), "1000000000");
-        let b = b.set_index(true, -1).unwrap();
+        b.set_index(true, -1).unwrap();
         assert_eq!(b.to_bin(), "1000000001");
-        let b = b.set_index(false, 0).unwrap();
+        b.set_index(false, 0).unwrap();
         assert_eq!(b.to_bin(), "0000000001");
     }
 
@@ -1189,13 +1172,13 @@ mod tests {
 
     #[test]
     fn test_set_from_slice() {
-        let bits = BitRust::from_bin("00000000");
-        let set_bits = bits.set_from_slice(true, 1, 7, 2).unwrap();
-        assert_eq!(set_bits.to_bin(), "01010100");
-        let set_bits = bits.set_from_slice(true, -7, -1, 2).unwrap();
-        assert_eq!(set_bits.to_bin(), "01010100");
-        let set_bits = bits.set_from_slice(false, 1, 7, 2).unwrap();
-        assert_eq!(set_bits.to_bin(), "00000000");
+        let mut bits = BitRust::from_bin("00000000");
+        bits.set_from_slice(true, 1, 7, 2).unwrap();
+        assert_eq!(bits.to_bin(), "01010100");
+        bits.set_from_slice(true, -7, -1, 2).unwrap();
+        assert_eq!(bits.to_bin(), "01010100");
+        bits.set_from_slice(false, 1, 7, 2).unwrap();
+        assert_eq!(bits.to_bin(), "00000000");
     }
 
     #[test]
@@ -1295,9 +1278,9 @@ mod tests {
 
     #[test]
     fn test_set_from_sequence_perfomance() {
-        let bits = BitRust::from_zeros(10000000);
-        let set_bits = bits.set_from_sequence(true, vec![0]).unwrap();
-        let c = set_bits.count();
+        let mut bits = BitRust::from_zeros(10000000);
+        bits.set_from_sequence(true, vec![0]).unwrap();
+        let c = bits.count();
         assert_eq!(c, 1);
     }
 }
