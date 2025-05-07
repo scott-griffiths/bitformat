@@ -9,9 +9,10 @@ use pyo3::{pyclass, pymethods, PyRef, PyRefMut, PyResult};
 mod helpers {
     use super::*;
     // The choice of size is interesting. Can choose u8, u16, u32, u64.
+    // Also can choose Lsb0 or Msb0.
     // Not sure of all the performance implications yet.
-    pub type BV = BitVec<u64, Msb0>;
-    pub type BS = BitSlice<u64, Msb0>;
+    pub type BV = BitVec<u8, Msb0>;
+    pub type BS = BitSlice<u8, Msb0>;
 
     // An implementation of the KMP algorithm for bit slices.
     pub fn compute_lps(pattern: &BS) -> Vec<usize> {
@@ -113,33 +114,14 @@ mod helpers {
     }
 
     pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
-        
-        // Otherwise, we need to create a new byte array with the correct bits
-        let num_bytes = (bits.len() + 7) / 8; // Round up to nearest byte
-        let mut result = Vec::with_capacity(num_bytes);
-
-        // Process 8 bits at a time
-        let mut current_byte: u8 = 0;
-        let mut bits_in_byte: usize = 0;
-
-        for i in 0..bits.len() {
-            current_byte = (current_byte << 1) | (bits.data[i] as u8);
-            bits_in_byte += 1;
-
-            if bits_in_byte == 8 {
-                result.push(current_byte);
-                current_byte = 0;
-                bits_in_byte = 0;
-            }
+        // This only works because BV = BitVec<u8, Msb0>. If we use a wider base this needs a fix.
+        let mut bytes = cast_slice(bits.data.as_raw_slice()).to_vec();
+        let byte_len = bytes.len();
+        if bits.len() % 8 != 0 {
+            let mask = 0xff << (8 - (bits.len() % 8));
+            bytes[byte_len- 1] &= mask;
         }
-
-        // Handle any remaining bits in the last partial byte
-        if bits_in_byte > 0 {
-            current_byte <<= 8 - bits_in_byte; // Left align the remaining bits
-            result.push(current_byte);
-        }
-
-        result
+        bytes
     }
 }
 

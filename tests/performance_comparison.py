@@ -34,7 +34,7 @@ def test_cutting_bitformat():
     return c
 
 def test_primes_bitstring():
-    limit = 100_000_000
+    limit = 50_000_000
     is_prime = bitstring.BitArray(limit)
     is_prime.set(True)
     # Manually set 0 and 1 to be not prime.
@@ -47,7 +47,7 @@ def test_primes_bitstring():
     return twin_primes
 
 def test_primes_bitarray():
-    limit = 100_000_000
+    limit = 50_000_000
     is_prime = ones(limit)
     is_prime[:2] = False
 
@@ -56,10 +56,10 @@ def test_primes_bitarray():
         if is_prime[i]:  # i is prime, so all multiples are not
             is_prime[i * i :: i] = False
     x = is_prime.count(bitarray("101")) + 1
-    assert x == 440_312
+    assert x == 239101
 
 def test_primes_bitformat():
-    limit = 100_000_000
+    limit = 50_000_000
     is_prime = bitformat.MutableBits.from_ones(limit)
     # Manually set 0 and 1 to be not prime.
     is_prime.set_mut(False, [0, 1])
@@ -68,7 +68,7 @@ def test_primes_bitformat():
         if is_prime[i]:
             is_prime.set_mut(False, range(i * i, limit, i))
     twin_primes = len(list(is_prime.find_all('0b101')))
-    assert twin_primes == 440_312
+    assert twin_primes == 239101
     return twin_primes
 
 def test_token_parsing_bitstring():
@@ -89,13 +89,13 @@ def test_token_parsing_bitformat():
     s = bitformat.Bits.from_joined(s)
 
 def test_count_bitstring():
-    s = bitstring.BitArray(100000000)
-    s.set(1, [10, 100, 1000, 10000000])
+    s = bitstring.BitArray(1_000_000_000)
+    s.set(1, range(0, 1_000_000_000, 7))
     return s.count(1)
 
 def test_count_bitformat():
-    s = bitformat.MutableBits.from_zeros(100000000)
-    s.set_mut(1, [10, 100, 1000, 10000000])
+    s = bitformat.MutableBits.from_zeros(1_000_000_000)
+    s.set_mut(1, range(0, 1_000_000_000, 7))
     return s.count(1)
 
 def test_finding_bitstring():
