@@ -66,13 +66,13 @@ class TestNoPosAttribute:
 
     def test_rol(self):
         s = Bits.from_string("0b0001")
-        t = s.rol(1)
+        t = s.to_mutable().rol(1)
         assert s == "0b0001"
         assert t == "0b0010"
 
     def test_ror(self):
         s = Bits.from_string("0b1000")
-        t = s.ror(1)
+        t = s.to_mutable().ror(1)
         assert s == "0b1000"
         assert t == "0b0100"
 

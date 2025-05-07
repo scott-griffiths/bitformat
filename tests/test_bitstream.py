@@ -1138,43 +1138,43 @@ class TestMoreMisc:
             assert a.f == float(s)
 
     def test_ror(self):
-        a = Bits("0b11001")
-        a = a.ror(0)
+        a = Bits("0b11001").to_mutable()
+        a.ror(0)
         assert a == "0b11001"
-        a = a.ror(1)
+        a.ror(1)
         assert a == "0b11100"
-        a = a.ror(5)
+        a.ror(5)
         assert a == "0b11100"
-        a = a.ror(101)
+        a.ror(101)
         assert a == "0b01110"
-        a = Bits("0b1")
-        a = a.ror(1000000)
+        a = MutableBits("0b1")
+        a.ror(1000000)
         assert a == "0b1"
 
     def test_ror_errors(self):
-        a = Bits()
+        a = MutableBits()
         with pytest.raises(ValueError):
-            _ = a.ror(0)
+            a.ror(0)
         a += "0b001"
         with pytest.raises(ValueError):
-            _ = a.ror(-1)
+            a.ror(-1)
 
     def test_rol(self):
-        a = Bits("0b11001")
-        a = a.rol(0)
+        a = MutableBits("0b11001")
+        a.rol(0)
         assert a == "0b11001"
-        a = a.rol(1)
+        a.rol(1)
         assert a == "0b10011"
         a = a.rol(5)
         assert a == "0b10011"
-        a = a.rol(101)
+        a.rol(101)
         assert a == "0b00111"
         a = Bits("0b1")
-        a = a.rol(1000000)
+        a = a.to_mutable().rol(1000000)
         assert a == "0b1"
 
     def test_rol_errors(self):
-        a = Bits()
+        a = MutableBits()
         with pytest.raises(ValueError):
             a.rol(0)
         a += "0b001"
@@ -1314,17 +1314,17 @@ class TestBugs:
         assert s == "0x001212fe"
 
     def test_rotate_start_and_end(self):
-        a = Bits("0b110100001")
-        a = a.rol(1, 3, 6)
+        a = MutableBits("0b110100001")
+        a.rol(1, 3, 6)
         assert a == "0b110001001"
-        a = a.ror(1, start=-4)
+        a.ror(1, start=-4)
         assert a == "0b110001100"
-        a = a.rol(202, end=-5)
+        a.rol(202, end=-5)
         assert a == "0b001101100"
-        a = a.ror(3, end=4)
+        a.ror(3, end=4)
         assert a == "0b011001100"
         with pytest.raises(ValueError):
-            _ = a.rol(5, start=-4, end=-6)
+            a.rol(5, start=-4, end=-6)
 
     def test_byte_swap_int(self):
         s = Bits("0xf234567f")
@@ -1401,8 +1401,8 @@ def test_overlapping_bits():
     _ = ~y
     _ = y.to_mutable().set(0, [0, 1, 2, 3, 4, 5, 6, 7])
     _ = y.byte_swap()
-    _ = y.ror(1)
-    _ = y.rol(1)
+    _ = y.to_mutable().ror(1)
+    _ = y.to_mutable().rol(1)
     assert a == "0x00fff0"
     assert zeros == "0x00"
     assert x == "0x0ff"
@@ -1411,7 +1411,7 @@ def test_overlapping_bits():
     assert y == Bits("0b11100000")
     y = y.to_mutable().set(0, [2, 3]).freeze()
     y = y.byte_swap()
-    y = y.ror(2)
+    y = y.to_mutable().ror(2)
     y = y.rol(1)
     assert a == "0x00fff0"
     assert zeros == "0x00"

@@ -108,7 +108,7 @@ class _BaseBits:
     # ----- Class Methods -----
 
     @classmethod
-    def _from_any(cls: Type[Bits], any_: BitsType, /) -> Bits:
+    def _from_any(cls, any_: BitsType, /) -> Bits:
         """Create a new :class:`Bits` from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
@@ -125,13 +125,15 @@ class _BaseBits:
             a = Bits() + '0x3f' + b'hello'
 
         """
-        if isinstance(any_, cls):
+        if isinstance(any_, _BaseBits):
             return any_
         if isinstance(any_, str):
             return cls.from_string(any_)
         elif isinstance(any_, (bytes, bytearray, memoryview)):
             return cls.from_bytes(any_)
-        raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a Bits object.")
+        raise TypeError(
+            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
+        )
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -218,7 +220,7 @@ class _BaseBits:
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitRust.join([Bits._from_any(item)._bitstore for item in sequence])
+        x._bitstore = BitRust.join([cls._from_any(item)._bitstore for item in sequence])
         return x
 
     @classmethod
@@ -1325,62 +1327,6 @@ class Bits(_BaseBits):
                                     self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the left.
-
-        :param n: The number of bits to rotate by.
-        :type n: int
-        :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
-        :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
-        :return: A new Bits object with the rotated bits.
-        :rtype: Bits
-
-        Raises ValueError if bits < 0.
-
-        """
-        if not len(self):
-            raise ValueError("Cannot rotate an empty Bits.")
-        if n < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
-        n %= end - start
-        return Bits.from_joined([self._slice(0, start),
-                                 self._slice(start + n, end),
-                                 self._slice(start, start + n),
-                                 self._slice(end, len(self))])
-
-    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the right.
-
-        :param n: The number of bits to rotate by.
-        :type n: int
-        :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
-        :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
-        :return: A new Bits object with the rotated bits.
-        :rtype: Bits
-
-        Raises ValueError if bits < 0.
-
-        """
-        if len(self) == 0:
-            raise ValueError("Cannot rotate an empty Bits.")
-        if n < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
-        n %= end - start
-        return Bits.from_joined(
-            [
-                self._slice(0, start),
-                self._slice(end - n, end),
-                self._slice(start, end - n),
-                self._slice(end, len(self)),
-            ]
-        )
-
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> Bits:
         """Return new Bits with all occurrences of old replaced with new.
@@ -1570,9 +1516,8 @@ class MutableBits(_BaseBits):
                                     self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    # TODO
-    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the left.
+    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
+        """Return MutableBits with bit pattern rotated to the left.
 
         :param n: The number of bits to rotate by.
         :type n: int
@@ -1592,14 +1537,15 @@ class MutableBits(_BaseBits):
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        return Bits.from_joined([self._slice(0, start),
+        x = MutableBits.from_joined([self._slice(0, start),
                                  self._slice(start + n, end),
                                  self._slice(start, start + n),
                                  self._slice(end, len(self))])
+        self._bitstore = x._bitstore
+        return self
 
-    # TODO
-    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> Bits:
-        """Return new Bits with bit pattern rotated to the right.
+    def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
+        """Return MutableBits with bit pattern rotated to the right.
 
         :param n: The number of bits to rotate by.
         :type n: int
@@ -1619,7 +1565,7 @@ class MutableBits(_BaseBits):
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        return Bits.from_joined(
+        x = MutableBits.from_joined(
             [
                 self._slice(0, start),
                 self._slice(end - n, end),
@@ -1627,6 +1573,8 @@ class MutableBits(_BaseBits):
                 self._slice(end, len(self)),
             ]
         )
+        self._bitstore = x._bitstore
+        return self
 
     def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
         """Set one or many bits set to 1 or 0. Returns self.
