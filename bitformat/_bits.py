@@ -240,7 +240,7 @@ class _BaseBits:
 
         """
         if n == 0:
-            return Bits()
+            return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
@@ -296,7 +296,7 @@ class _BaseBits:
 
         """
         if n == 0:
-            return Bits()
+            return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
         x = super().__new__(cls)
@@ -1229,50 +1229,6 @@ class Bits(_BaseBits):
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def insert(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs inserted at bit position pos.
-
-        :param pos: The bit position to insert at.
-        :type pos: int
-        :param bs: The Bits to insert.
-        :type bs: BitsType
-        :return: A new Bits object with the inserted bits.
-        :rtype: Bits
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        """
-        bs = self._from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos, None)])
-        return x
-
-    def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
-        """Return new Bits with one or many bits inverted between 0 and 1.
-
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Iterable[int] or None
-        :return: A new Bits object with the inverted bits.
-        :rtype: Bits
-
-        Raises IndexError if pos < -len(self) or pos >= len(self).
-
-        """
-        x = self.__class__()
-        if pos is None:
-            x._bitstore = self._bitstore.invert_all()
-        elif not isinstance(pos, abc.Iterable):
-            x._bitstore = self._bitstore.invert_single_bit(pos)
-        else:
-            x._bitstore = self._bitstore.invert_bit_list(list(pos))
-        return x
-
     def to_mutable(self) -> MutableBits:
         x = MutableBits()
         x._bitstore = self._bitstore.get_mutable_copy()
@@ -1335,16 +1291,15 @@ class MutableBits(_BaseBits):
         self._bitstore = x._bitstore
         return self
 
-    # TODO
-    def insert(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs inserted at bit position pos.
+    def insert(self, pos: int, bs: BitsType, /) -> MutableBits:
+        """Return the MutableBits with bs inserted at bit position pos.
 
         :param pos: The bit position to insert at.
         :type pos: int
         :param bs: The Bits to insert.
         :type bs: BitsType
-        :return: A new Bits object with the inserted bits.
-        :rtype: Bits
+        :return: MutableBits object with the inserted bits.
+        :rtype: MutableBits
 
         Raises ValueError if pos < 0 or pos > len(self).
 
@@ -1354,32 +1309,29 @@ class MutableBits(_BaseBits):
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+        self._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
                                     bs._bitstore,
                                     self._bitstore.getslice(pos, None)])
-        return x
+        return self
 
-    # TODO
-    def invert(self, pos: Iterable[int] | int | None = None) -> Bits:
-        """Return new Bits with one or many bits inverted between 0 and 1.
+    def invert(self, pos: Iterable[int] | int | None = None) -> MutableBits:
+        """Return the MutableBits with one or many bits inverted between 0 and 1.
 
         :param pos: Either a single bit position or an iterable of bit positions.
         :type pos: int or Iterable[int] or None
-        :return: A new Bits object with the inverted bits.
-        :rtype: Bits
+        :return: The MutableBits object with the inverted bits.
+        :rtype: MutableBits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
         """
-        x = self.__class__()
         if pos is None:
-            x._bitstore = self._bitstore.invert_all()
+            self._bitstore.invert_all()
         elif not isinstance(pos, abc.Iterable):
-            x._bitstore = self._bitstore.invert_single_bit(pos)
+            self._bitstore.invert_single_bit(pos)
         else:
-            x._bitstore = self._bitstore.invert_bit_list(list(pos))
-        return x
+            self._bitstore.invert_bit_list(list(pos))
+        return self
 
     def overwrite(self, pos: int, bs: BitsType, /) -> MutableBits:
         """Return new MutableBits with bs overwritten at bit position pos.

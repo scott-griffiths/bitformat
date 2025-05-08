@@ -261,10 +261,10 @@ class TestAppend:
 
 
 def test_insert():
-    s = Bits("0x0011")
+    s = MutableBits("0x0011")
     s = s.insert(8, Bits("0x22"))
     assert s.hex == "002211"
-    s = Bits.from_ones(0)
+    s = MutableBits.from_ones(0)
     s = s.insert(0, "0b101")
     assert s.bin == "101"
 
@@ -291,7 +291,7 @@ class TestSlice:
 
 class TestInsert:
     def test_insert(self):
-        s1 = Bits("0x123456")
+        s1 = MutableBits("0x123456")
         s2 = Bits("0xff")
         s1 = s1.insert(8, s2)
         assert s1.hex == "12ff3456"
@@ -303,14 +303,14 @@ class TestInsert:
             _ = s1.insert(1000, "0b1")
 
     def test_insert_null(self):
-        s = Bits("0x123")
+        s = MutableBits("0x123")
         s = s.insert(3, Bits())
         assert s.hex == "123"
 
     def test_insert_bits(self):
         one = Bits("0b1")
         zero = Bits("0b0")
-        s = Bits("0b00").insert(0, one)
+        s = MutableBits("0b00").insert(0, one)
         assert s.bin == "100"
         s = s.insert(0, zero)
         assert s.bin == "0100"
@@ -488,7 +488,7 @@ class TestAdding:
         assert s3.bin == s4.bin
 
     def test_insert_using_auto(self):
-        s = Bits("0xff")
+        s = MutableBits("0xff")
         s = s.insert(4, "0x00")
         assert s.hex == "f00f"
 
@@ -1035,26 +1035,26 @@ class TestSet:
 
 class TestInvert:
     def test_invert_bits(self):
-        a = Bits("0b111000")
+        a = MutableBits("0b111000")
         a = a.invert(range(len(a)))
         assert a == "0b000111"
         a = a.invert([0, 1, -1])
         assert a == "0b110110"
 
     def test_invert_whole_bit_stream(self):
-        a = Bits("0b11011")
+        a = MutableBits("0b11011")
         a = a.invert()
         assert a == "0b00100"
 
     def test_invert_single_bit(self):
-        a = Bits("0b000001")
+        a = MutableBits("0b000001")
         a = a.invert(0)
         assert a.bin == "100001"
         a = a.invert(-1)
         assert a.bin == "100000"
 
     def test_invert_errors(self):
-        a = Bits.from_zeros(10)
+        a = MutableBits.from_zeros(10)
         with pytest.raises(IndexError):
             _ = a.invert(10)
         with pytest.raises(IndexError):
