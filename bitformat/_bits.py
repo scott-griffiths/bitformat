@@ -1224,7 +1224,7 @@ class Bits(_BaseBits):
         return self
 
     def _slice(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a  slice, without error checking. No copy of data is made - it's just a view."""
+        """Used internally to get a slice, without error checking. No copy of data is made - it's just a view."""
         bs = self.__class__()
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
