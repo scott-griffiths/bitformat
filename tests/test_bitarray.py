@@ -54,7 +54,7 @@ class TestNoPosAttribute:
         assert a == "0b1111110000"
 
     def test_overwrite(self):
-        s = Bits.from_string("0b01110")
+        s = MutableBits.from_string("0b01110")
         s = s.overwrite(1, "0b000")
         assert s == "0b00000"
 

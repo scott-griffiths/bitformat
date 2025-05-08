@@ -323,24 +323,24 @@ class TestInsert:
 class TestOverwriting:
     def test_overwrite_bit(self):
         s = Bits("0b0")
-        s = s.overwrite(0, "0b1")
+        s = s.to_mutable().overwrite(0, "0b1")
         assert s.bin == "1"
 
     def test_overwrite_limits(self):
-        s = Bits.from_dtype("bin", "0b11111")
+        s = MutableBits.from_dtype("bin", "0b11111")
         s = s.overwrite(0, "0b000")
         assert s.bin == "00011"
         s = s.overwrite(2, "0b000")
         assert s.bin == "00000"
 
     def test_overwrite_null(self):
-        s = Bits("0x342563fedec")
+        s = MutableBits("0x342563fedec")
         s2 = s[:]
         s = s.overwrite(23, Bits())
         assert s.bin == s2.bin
 
     def test_overwrite_position(self):
-        s1 = Bits("0x0123456")
+        s1 = MutableBits("0x0123456")
         s2 = Bits("0xff")
         s1 = s1.overwrite(8, s2)
         assert s1.hex == "01ff456"
@@ -348,7 +348,7 @@ class TestOverwriting:
         assert s1.hex == "ffff456"
 
     def test_overwrite_with_self(self):
-        s = Bits("0x123")
+        s = MutableBits("0x123")
         s = s.overwrite(0, s)
         assert s == "0x123"
 
@@ -389,12 +389,12 @@ class TestAdding:
         assert s.hex == "ffee"
 
     def test_overwrite_errors(self):
-        s = Bits("0b11111")
+        s = MutableBits("0b11111")
         with pytest.raises(ValueError):
-            _ = s.overwrite(-10, Bits("0b1"))
+            s.overwrite(-10, Bits("0b1"))
         with pytest.raises(ValueError):
-            _ = s.overwrite(6, Bits("0b1"))
-        s = s.overwrite(5, "bin=0")
+            s.overwrite(6, Bits("0b1"))
+        s.overwrite(5, "bin=0")
         assert s.bin == "111110"
         s = s.overwrite(1, Bits("0x00"))
         assert s.bin == "100000000"
@@ -493,10 +493,10 @@ class TestAdding:
         assert s.hex == "f00f"
 
     def test_overwrite_using_auto(self):
-        s = Bits("0x0110")
-        s = s.overwrite(0, "0b1")
+        s = MutableBits("0x0110")
+        s.overwrite(0, "0b1")
         assert s.hex == "8110"
-        s = s.overwrite(0, "")
+        s.overwrite(0, "")
         assert s.hex == "8110"
 
     def test_find_using_auto(self):
@@ -535,7 +535,7 @@ class TestAdding:
         assert s == "0xfab"
         s = s + s
         s = s + "0x100"
-        s = s.overwrite(4, "0x5")
+        s = s.to_mutable().overwrite(4, "0x5")
         assert s == "0xf5bfab100"
 
     def test_reverse(self):
@@ -829,7 +829,7 @@ class TestManyDifferentThings:
     #     assert a[100:2:-1] == "0b1110001"
 
     def test_overwrite_order_and_bitpos(self):
-        a = Bits("0xff")
+        a = MutableBits("0xff")
         a = a.overwrite(0, "0xa")
         assert a == "0xaf"
         a = a.overwrite(4, "0xb")
@@ -1254,14 +1254,14 @@ class TestBugs:
 
     def test_function_negative_indices(self):
         # insert
-        s = Bits("0b0111")
+        s = MutableBits("0b0111")
         s = s.insert(-1, "0b0")
         assert s == "0b01101"
         with pytest.raises(ValueError):
             _ = s.insert(-1000, "0b0")
 
         # overwrite
-        t = Bits("0x77ab9988c7bf")
+        t = MutableBits("0x77ab9988c7bf")
         t = t.overwrite(-20, "0x666")
         assert t == "0x77ab998666bf"
 
@@ -1378,8 +1378,8 @@ def test_count():
 
 
 def test_overwrite_with_self():
-    s = Bits("0b1101")
-    s = s.overwrite(0, s)
+    s = MutableBits("0b1101")
+    s.overwrite(0, s)
     assert s == "0b1101"
 
 

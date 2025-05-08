@@ -1273,30 +1273,6 @@ class Bits(_BaseBits):
             x._bitstore = self._bitstore.invert_bit_list(list(pos))
         return x
 
-    def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs overwritten at bit position pos.
-
-        :param pos: The bit position to start overwriting at.
-        :type pos: int
-        :param bs: The Bits to overwrite.
-        :type bs: BitsType
-        :return: A new Bits object with the overwritten bits.
-        :rtype: Bits
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        """
-        bs = self._from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos + len(bs), None)])
-        return x
-
     def to_mutable(self) -> MutableBits:
         x = MutableBits()
         x._bitstore = self._bitstore.get_mutable_copy()
@@ -1405,16 +1381,15 @@ class MutableBits(_BaseBits):
             x._bitstore = self._bitstore.invert_bit_list(list(pos))
         return x
 
-    # TODO
-    def overwrite(self, pos: int, bs: BitsType, /) -> Bits:
-        """Return new Bits with bs overwritten at bit position pos.
+    def overwrite(self, pos: int, bs: BitsType, /) -> MutableBits:
+        """Return new MutableBits with bs overwritten at bit position pos.
 
         :param pos: The bit position to start overwriting at.
         :type pos: int
-        :param bs: The Bits to overwrite.
+        :param bs: The Bits to overwrite with.
         :type bs: BitsType
-        :return: A new Bits object with the overwritten bits.
-        :rtype: Bits
+        :return: The mutated MutableBits object with the overwritten bits.
+        :rtype: MutableBits
 
         Raises ValueError if pos < 0 or pos > len(self).
 
@@ -1424,11 +1399,10 @@ class MutableBits(_BaseBits):
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        x = self.__class__()
-        x._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
+        self._bitstore = BitRust.join([self._bitstore.getslice(0, pos),
                                     bs._bitstore,
                                     self._bitstore.getslice(pos + len(bs), None)])
-        return x
+        return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
         """Return MutableBits with bit pattern rotated to the left.
