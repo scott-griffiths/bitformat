@@ -3,7 +3,7 @@
 import pytest
 import sys
 import bitformat
-from bitformat import Bits, Dtype, DtypeTuple
+from bitformat import Bits, Dtype, DtypeTuple, MutableBits
 import math
 
 sys.path.insert(0, "..")
@@ -33,7 +33,7 @@ class TestAll:
 
 class TestNoPosAttribute:
     def test_replace(self):
-        s = Bits.from_string("0b01")
+        s = MutableBits.from_string("0b01")
         s = s.replace("0b1", "0b11")
         assert s == "0b011"
 
@@ -86,7 +86,7 @@ class Testbyte_aligned:
         assert p == 4
         p = a.rfind("0xff")
         assert p == 20
-        a = a.replace("0xff", "")
+        a = a.to_mutable().replace("0xff", "")
         assert a == "0x000"
 
     def test_byte_aligned(self):
@@ -98,7 +98,7 @@ class Testbyte_aligned:
         assert p == 16
         p = a.rfind("0xff")
         assert p == 8
-        a = a.replace("0xff", "")
+        a = a.to_mutable().replace("0xff", "")
         assert a == "0x000ff"
         bitformat.Options().byte_aligned = False
 

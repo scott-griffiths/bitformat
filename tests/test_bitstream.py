@@ -152,28 +152,28 @@ class TestShift:
 
 class TestReplace:
     def test_replace1(self):
-        a = Bits("0b1")
+        a = MutableBits("0b1")
         a = a.replace("0b1", "0b0", byte_aligned=True)
         assert a.bin == "0"
         a = a.replace("0b1", "0b0", byte_aligned=True)
         assert a.bin == "0"
 
     def test_replace2(self):
-        a = Bits("0b00001111111")
+        a = MutableBits("0b00001111111")
         a = a.replace("0b1", "0b0", byte_aligned=True)
         assert a.bin == "00001111011"
         a = a.replace("0b1", "0b0", byte_aligned=False)
         assert a.bin == "00000000000"
 
     def test_replace3(self):
-        a = Bits("0b0")
+        a = MutableBits("0b0")
         a = a.replace("0b0", "0b110011111", byte_aligned=True)
         assert a.bin == "110011111"
         a = a.replace("0b11", "", byte_aligned=False)
         assert a.bin == "001"
 
     def test_replace4(self):
-        a = Bits("0x00114723ef4732344700")
+        a = MutableBits("0x00114723ef4732344700")
         a = a.replace("0x47", "0x00", byte_aligned=True)
         assert a.hex == "00110023ef0032340000"
         a = a.replace("0x00", "", byte_aligned=True)
@@ -189,22 +189,22 @@ class TestReplace:
         a = Bits.from_string("0xab")
         b = Bits.from_string("0xcd")
         c = Bits.from_string("0xabef")
-        c = c.replace(a, b)
+        c = c.to_mutable().replace(a, b)
         assert c == "0xcdef"
         assert a == "0xab"
         assert b == "0xcd"
-        a = Bits("0x0011223344").replace("0x11", "0xfff", byte_aligned=True)
+        a = MutableBits("0x0011223344").replace("0x11", "0xfff", byte_aligned=True)
         assert a == "0x00fff223344"
 
     def test_replace_with_self(self):
-        a = Bits("0b11")
+        a = MutableBits("0b11")
         a = a.replace("0b1", a)
         assert a == "0xf"
         a = a.replace(a, a)
         assert a == "0xf"
 
     def test_replace_count(self):
-        a = Bits("0x223344223344223344")
+        a = MutableBits("0x223344223344223344")
         a = a.replace("0x2", "0x0", count=0, byte_aligned=True)
         assert a.hex == "223344223344223344"
         a = a.replace("0x2", "0x0", count=1, byte_aligned=True)
@@ -215,7 +215,7 @@ class TestReplace:
         assert a.hex == "02444422444422334444"
 
     def test_replace_errors(self):
-        a = Bits("0o123415")
+        a = MutableBits("0o123415")
         with pytest.raises(ValueError):
             a.replace("", Bits("0o7"), byte_aligned=True)
 
@@ -1245,10 +1245,10 @@ class TestMoreMisc:
 
 class TestBugs:
     def test_bug_in_replace(self):
-        s = Bits("0x00112233")
+        s = MutableBits("0x00112233")
         s = s.replace("0x22", "0xffff", start=8, byte_aligned=True)
         assert s == "0x0011ffff33"
-        s = Bits("0x0123412341234")
+        s = MutableBits("0x0123412341234")
         s = s.replace("0x23", "0xf", start=9, byte_aligned=True)
         assert s == "0x012341f41f4"
 
@@ -1296,7 +1296,7 @@ class TestBugs:
         assert li == ["0x3", "0x4"]
 
         # startswith
-        s = Bits("0xfe0012fe1200fe")
+        s = MutableBits("0xfe0012fe1200fe")
         assert s[-16:].starts_with("0x00f")
         assert s[:-40].starts_with("0xfe00")
         assert not s[:-41].starts_with("0xfe00")
@@ -1308,9 +1308,9 @@ class TestBugs:
         assert s[:-4].ends_with("0x00f")
 
         # replace
-        s = s.replace("0xfe", "", end=-1)
+        s.replace("0xfe", "", end=-1)
         assert s == "0x00121200fe"
-        s = s.replace("0x00", "", start=-24)
+        s.replace("0x00", "", start=-24)
         assert s == "0x001212fe"
 
     def test_rotate_start_and_end(self):
@@ -1417,3 +1417,12 @@ def test_overlapping_bits():
     assert zeros == "0x00"
     assert x == "0x0ff"
     assert y == Bits("0b01100000")
+
+def test_mutable_freeze():
+    a = MutableBits('0x0000')
+    b = a.freeze()
+    assert isinstance(b, Bits)
+    assert a == b
+    a.set(1, -1)
+    assert a == '0x0001'
+    assert b.hex == '0000'

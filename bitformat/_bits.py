@@ -25,7 +25,7 @@ BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 CACHE_SIZE = 256
 
 
-@functools.lru_cache(CACHE_SIZE)
+# @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore(token: str) -> BitRust:
     if token[0] != "0":
         dtype_str, value_str = token.split("=", 1)
@@ -51,7 +51,7 @@ def token_to_bitstore(token: str) -> BitRust:
     raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
 
-@functools.lru_cache(CACHE_SIZE)
+# @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitRust:
     s = "".join(s.split())  # Remove whitespace
     # Find all the commas, ignoring those in other structures.
@@ -1297,63 +1297,6 @@ class Bits(_BaseBits):
                                     self._bitstore.getslice(pos + len(bs), None)])
         return x
 
-    def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
-                count: int | None = None, byte_aligned: bool | None = None) -> Bits:
-        """Return new Bits with all occurrences of old replaced with new.
-
-        :param old: The Bits to replace.
-        :type old: BitsType
-        :param new: The replacement Bits.
-        :type new: BitsType
-        :param start: Any occurrences that start before this will not be replaced.
-        :type start: int, optional
-        :param end: Any occurrences that finish after this will not be replaced.
-        :type end: int, optional
-        :param count: The maximum number of replacements to make. Defaults to all.
-        :type count: int, optional
-        :param byte_aligned: If True, replacements will only be made on byte boundaries.
-        :type byte_aligned: bool, optional
-        :return: A new Bits object with the replaced bits.
-        :rtype: Bits
-
-        Raises ValueError if old is empty or if start or end are out of range.
-
-        """
-        if count == 0:
-            return self
-        old = self._from_any(old)
-        new = self._from_any(new)
-        if len(old) == 0:
-            raise ValueError("Empty Bits cannot be replaced.")
-        start, end = self._validate_slice(start, end)
-        if byte_aligned is None:
-            byte_aligned = Options().byte_aligned
-        # First find all the places where we want to do the replacements
-        starting_points: list[int] = []
-        if byte_aligned:
-            start += (8 - start % 8) % 8
-        for x in self[start:end].find_all(old, byte_aligned=byte_aligned):
-            x += start
-            if not starting_points:
-                starting_points.append(x)
-            elif x >= starting_points[-1] + len(old):
-                # Can only replace here if it hasn't already been replaced!
-                starting_points.append(x)
-            if count != 0 and len(starting_points) == count:
-                break
-        if not starting_points:
-            return self
-        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
-        for i in range(len(starting_points) - 1):
-            replacement_list.append(new._bitstore)
-            replacement_list.append(self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
-        # Final replacement
-        replacement_list.append(new._bitstore)
-        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
-        x = self.__class__()
-        x._bitstore = BitRust.join(replacement_list)
-        return x
-
     def to_mutable(self) -> MutableBits:
         x = MutableBits()
         x._bitstore = self._bitstore.get_mutable_copy()
@@ -1363,7 +1306,7 @@ class Bits(_BaseBits):
 class MutableBits(_BaseBits):
 
     def freeze(self) -> Bits:
-        """Convert to an immutable Bits instance. A copy of the data will be made."""
+        """Convert to an immutable Bits instance."""
         x = Bits()
         x._bitstore = self._bitstore.get_mutable_copy()
         return x
@@ -1570,10 +1513,9 @@ class MutableBits(_BaseBits):
             self._bitstore.set_from_sequence(v, pos)
         return self
 
-    # TODO
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
-                count: int | None = None, byte_aligned: bool | None = None) -> Bits:
-        """Return new Bits with all occurrences of old replaced with new.
+                count: int | None = None, byte_aligned: bool | None = None) -> MutableBits:
+        """Return MutableBits with all occurrences of old replaced with new.
 
         :param old: The Bits to replace.
         :type old: BitsType
@@ -1588,15 +1530,15 @@ class MutableBits(_BaseBits):
         :param byte_aligned: If True, replacements will only be made on byte boundaries.
         :type byte_aligned: bool, optional
         :return: A new Bits object with the replaced bits.
-        :rtype: Bits
+        :rtype: MutableBits
 
         Raises ValueError if old is empty or if start or end are out of range.
 
         """
         if count == 0:
             return self
-        old = self._from_any(old)
-        new = self._from_any(new)
+        old = MutableBits._from_any(old)
+        new = MutableBits._from_any(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -1617,16 +1559,16 @@ class MutableBits(_BaseBits):
                 break
         if not starting_points:
             return self
-        replacement_list = [self._bitstore.getslice(0, starting_points[0])]
+        original = self._bitstore.get_mutable_copy()
+        replacement_list = [original.getslice(0, starting_points[0]).get_mutable_copy()]
         for i in range(len(starting_points) - 1):
-            replacement_list.append(new._bitstore)
-            replacement_list.append(self._bitstore.getslice(starting_points[i] + len(old), starting_points[i + 1]))
+            replacement_list.append(new._bitstore.get_mutable_copy())
+            replacement_list.append(original.getslice(starting_points[i] + len(old), starting_points[i + 1]))
         # Final replacement
-        replacement_list.append(new._bitstore)
-        replacement_list.append(self._bitstore.getslice(starting_points[-1] + len(old), None))
-        x = self.__class__()
-        x._bitstore = BitRust.join(replacement_list)
-        return x
+        replacement_list.append(new._bitstore.get_mutable_copy())
+        replacement_list.append(original.getslice(starting_points[-1] + len(old), None))
+        self._bitstore = BitRust.join(replacement_list)
+        return self
 
     def reverse(self) -> MutableBits:
         """Reverse bits.
