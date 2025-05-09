@@ -8,6 +8,7 @@ import io
 import functools
 from ast import literal_eval
 from collections import abc
+from functools import lru_cache
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
@@ -24,8 +25,6 @@ BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
-
-# @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore(token: str) -> BitRust:
     if token[0] != "0":
         dtype_str, value_str = token.split("=", 1)
@@ -51,7 +50,6 @@ def token_to_bitstore(token: str) -> BitRust:
     raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
 
-# @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore(s: str) -> BitRust:
     s = "".join(s.split())  # Remove whitespace
     # Find all the commas, ignoring those in other structures.
@@ -69,11 +67,12 @@ def str_to_bitstore(s: str) -> BitRust:
             bracket_depth -= 1
     tokens.append(s[token_start:])
     tokens = [token for token in tokens if token]
-    if len(tokens) == 1:
-        return token_to_bitstore(tokens[0])
-    if not tokens:
-        return BitRust.from_zeros(0)
     return BitRust.join([token_to_bitstore(token) for token in tokens])
+
+# When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
+@functools.lru_cache(CACHE_SIZE)
+def str_to_bitstore_cached(s: str) -> BitRust:
+    return str_to_bitstore(s)
 
 
 class _BaseBits:
@@ -106,34 +105,6 @@ class _BaseBits:
         return x
 
     # ----- Class Methods -----
-
-    @classmethod
-    def _from_any(cls, any_: BitsType, /) -> Bits:
-        """Create a new :class:`Bits` from one of the many things that can be used to build it.
-
-        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
-
-        :param any_: The object to convert to a :class:`Bits`.
-        :type any_: BitsType
-
-        :raises TypeError: If no builder can be found.
-
-        .. code-block:: python
-
-            # Bits._from_any will be called internally to convert to Bits
-            a = Bits() + '0x3f' + b'hello'
-
-        """
-        if isinstance(any_, _BaseBits):
-            return any_
-        if isinstance(any_, str):
-            return cls.from_string(any_)
-        elif isinstance(any_, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any_)
-        raise TypeError(
-            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
-        )
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -172,34 +143,6 @@ class _BaseBits:
         """
         x = super().__new__(cls)
         x._bitstore = BitRust.from_bin("".join("1" if x else "0" for x in i))
-        return x
-
-    @classmethod
-    def from_string(cls, s: str, /) -> Bits:
-        """
-        Create a new :class:`Bits` from a formatted string.
-
-        This method initializes a new instance of the :class:`Bits` class using a formatted string.
-
-        :param s: The formatted string to convert to a :class:`Bits`.
-        :type s: str
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_string("0xff01")
-            b = Bits.from_string("0b1")
-            c = Bits.from_string("u12 = 31, f16=-0.25")
-
-        The `__init__` method for `Bits` redirects to the `from_string` method and is sometimes more convenient:
-
-        .. code-block:: python
-
-            a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = str_to_bitstore(s)
         return x
 
     @classmethod
@@ -408,7 +351,7 @@ class _BaseBits:
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
-        suffix = _BaseBits._from_any(suffix)
+        suffix = self._from_any(suffix)
         if len(suffix) <= len(self):
             return self._slice(len(self) - len(suffix), len(self)) == suffix
         return False
@@ -459,7 +402,7 @@ class _BaseBits:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._find_all(bs, count, ba)
 
@@ -574,7 +517,7 @@ class _BaseBits:
         if end < start.
 
         """
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
@@ -590,7 +533,7 @@ class _BaseBits:
         :rtype: bool
 
         """
-        prefix = _BaseBits._from_any(prefix)
+        prefix = self._from_any(prefix)
         if len(prefix) <= len(self):
             return self._slice(0, len(prefix)) == prefix
         return False
@@ -653,7 +596,7 @@ class _BaseBits:
         return
 
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         self._bitstore = bs._bitstore
 
     def _set_bytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
@@ -962,7 +905,7 @@ class _BaseBits:
         """
         if bs is self:
             return self
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore & bs._bitstore
         return s
@@ -975,7 +918,7 @@ class _BaseBits:
         """
         if bs is self:
             return self
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore | bs._bitstore
         return s
@@ -986,7 +929,7 @@ class _BaseBits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = _BaseBits._from_any(bs)
+        bs = self._from_any(bs)
         s = object.__new__(self.__class__)
         s._bitstore = self._bitstore ^ bs._bitstore
         return s
@@ -1046,7 +989,7 @@ class _BaseBits:
 
         """
         try:
-            return self._bitstore == _BaseBits._from_any(bs)._bitstore
+            return self._bitstore == self._from_any(bs)._bitstore
         except TypeError:
             return False
 
@@ -1215,6 +1158,53 @@ class Bits(_BaseBits):
             end = self._slice(length - 800, length)
             return hash(((start + end).to_bytes(), length))
 
+    @classmethod
+    def from_string(cls, s: str, /) -> Bits:
+        """
+        Create a new :class:`Bits` from a formatted string.
+
+        This method initializes a new instance of the :class:`Bits` class using a formatted string.
+
+        :param s: The formatted string to convert to a :class:`Bits`.
+        :type s: str
+        :rtype: Bits
+
+        .. code-block:: python
+
+            a = Bits.from_string("0xff01")
+            b = Bits.from_string("0b1")
+            c = Bits.from_string("u12 = 31, f16=-0.25")
+
+        The `__init__` method for `Bits` redirects to the `from_string` method and is sometimes more convenient:
+
+        .. code-block:: python
+
+            a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
+
+        """
+        x = super().__new__(cls)
+        x._bitstore = str_to_bitstore_cached(s)
+        return x
+
+    @classmethod
+    def _from_any(cls, any_: BitsType, /) -> Bits:
+        """Create a new class instance from one of the many things that can be used to build it.
+
+        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
+        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
+
+        Used interally only.
+        """
+        if isinstance(any_, _BaseBits):
+            return any_
+        if isinstance(any_, str):
+            return cls.from_string(any_)
+        elif isinstance(any_, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(any_)
+        raise TypeError(
+            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
+        )
+
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
         # Check if the method exists in MutableBits
@@ -1255,6 +1245,53 @@ class MutableBits(_BaseBits):
         """Convert to an immutable Bits instance."""
         x = Bits()
         x._bitstore = self._bitstore.get_mutable_copy()
+        return x
+
+    @classmethod
+    def _from_any(cls, any_: BitsType, /) -> Bits:
+        """Create a new class instance from one of the many things that can be used to build it.
+
+        This method will be implicitly called whenever an object needs to be promoted to a :class:`MutableBits`.
+        The builder can delegate to :meth:`MutableBits.from_bytes` or :meth:`MutableBits.from_string` as appropriate.
+
+        Used interally only.
+        """
+        if isinstance(any_, _BaseBits):
+            return any_
+        if isinstance(any_, str):
+            return cls.from_string(any_)
+        elif isinstance(any_, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(any_)
+        raise TypeError(
+            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
+        )
+
+    @classmethod
+    def from_string(cls, s: str, /) -> MutableBits:
+        """
+        Create a new :class:`MutableBits` from a formatted string.
+
+        This method initializes a new instance of the :class:`MutableBits` class using a formatted string.
+
+        :param s: The formatted string to convert to a :class:`MutableBits`.
+        :type s: str
+        :rtype: Bits
+
+        .. code-block:: python
+
+            a = MutableBits.from_string("0xff01")
+            b = MutableBits.from_string("0b1")
+            c = MutableBits.from_string("u12 = 31, f16=-0.25")
+
+        The `__init__` method for `MutableBits` redirects to the `from_string` method and is sometimes more convenient:
+
+        .. code-block:: python
+
+            a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
+
+        """
+        x = super().__new__(cls)
+        x._bitstore = str_to_bitstore(s)
         return x
 
     __hash__ = None
