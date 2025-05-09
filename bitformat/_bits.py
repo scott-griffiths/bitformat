@@ -1215,6 +1215,20 @@ class Bits(_BaseBits):
             end = self._slice(length - 800, length)
             return hash(((start + end).to_bytes(), length))
 
+    def __getattr__(self, name):
+        """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
+        # Check if the method exists in MutableBits
+        if hasattr(MutableBits, name) and callable(getattr(MutableBits, name)):
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'. "
+                f"Did you mean to use the MutableBits class? Or you could replace '.{name}(...)' with '.to_mutable().{name}(...)'."
+            )
+
+        # Default behavior
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
+
     def __copy__(self: Bits) -> Bits:
         """Return a new copy of the Bits for the copy module.
 
@@ -1306,7 +1320,7 @@ class MutableBits(_BaseBits):
         """
         if len(self) % 8 != 0:
             raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
-                             "This error can be caused by using an endianness modifier on non-whole byte data.")
+                             "This error can also be caused by using an endianness modifier on non-whole byte data.")
         if bytelength is None:
             bytelength = len(self) // 8
         if bytelength == 0:
