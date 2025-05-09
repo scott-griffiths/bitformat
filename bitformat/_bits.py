@@ -1259,6 +1259,40 @@ class MutableBits(_BaseBits):
         bs._bitstore = self._bitstore.getslice(start, end).get_mutable_copy()
         return bs
 
+    def append(self, bs: BitsType, /) -> MutableBits:
+        """Append bits to the end of the current MutableBits in-place.
+
+        :param bs: The bits to append.
+        :type bs: BitsType
+        :return: Self with appended bits.
+        :rtype: MutableBits
+
+        .. code-block:: python
+
+            a = MutableBits('0x0f')
+            a.append('0x0a')  # a now contains 0x0fa
+        """
+        bs = self._from_any(bs)
+        self._bitstore = BitRust.join([self._bitstore, bs._bitstore]).get_mutable_copy()
+        return self
+
+    def prepend(self, bs: BitsType, /) -> MutableBits:
+        """Prepend bits to the beginning of the current MutableBits in-place.
+
+        :param bs: The bits to prepend.
+        :type bs: BitsType
+        :return: Self with prepended bits.
+        :rtype: MutableBits
+
+        .. code-block:: python
+
+            a = MutableBits('0x0f')
+            a.prepend('0x0a')  # a now contains 0x0a0f
+        """
+        bs = self._from_any(bs)
+        self._bitstore = BitRust.join([bs._bitstore, self._bitstore]).get_mutable_copy()
+        return self
+
     def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:
         """Change the byte endianness in-place. Return the MutableBits.
 
