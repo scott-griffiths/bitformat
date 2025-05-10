@@ -25,32 +25,33 @@ BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
-def token_to_bitstore(token: str) -> BitRust:
-    if token[0] != "0":
-        dtype_str, value_str = token.split("=", 1)
-        try:
-            dtype = Dtype.from_string(dtype_str)
-        except ValueError:
-            raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
-                             "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
-        if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
-            return dtype.pack(value_str)._bitstore
-        try:
-            value = literal_eval(value_str)
-        except ValueError:
-            raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
-        return dtype.pack(value)._bitstore
+@functools.lru_cache(CACHE_SIZE)
+def token_to_bitstore_cached(token: str) -> BitRust:
+    if token and token[0] == '0':
+        if token.startswith("0x"):
+            return BitRust.from_hex_checked(token)
+        elif token.startswith("0b"):
+            return BitRust.from_bin_checked(token)
+        elif token.startswith("0o"):
+            return BitRust.from_oct_checked(token)
+        else:
+            raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
+    dtype_str, value_str = token.split("=", 1)
+    try:
+        dtype = Dtype.from_string(dtype_str)
+    except ValueError:
+        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
+                         "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
+    if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
+        return dtype.pack(value_str)._bitstore
+    try:
+        value = literal_eval(value_str)
+    except ValueError:
+        raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
+    return dtype.pack(value)._bitstore
 
-    if token.startswith("0x"):
-        return BitRust.from_hex_checked(token)
-    if token.startswith("0b"):
-        return BitRust.from_bin_checked(token)
-    if token.startswith("0o"):
-        return BitRust.from_oct_checked(token)
-    raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
 
-
-def str_to_bitstore(s: str) -> BitRust:
+def split_into_tokens(s: str) -> list[str]:
     s = "".join(s.split())  # Remove whitespace
     # Find all the commas, ignoring those in other structures.
     # This isn't a rigorous check - if brackets are mismatched it will be picked up later.
@@ -61,18 +62,19 @@ def str_to_bitstore(s: str) -> BitRust:
         if c == "," and bracket_depth == 0:
             tokens.append(s[token_start:i])
             token_start = i + 1
-        elif c in "([{":
+        elif c in "([":
             bracket_depth += 1
-        elif c in ")]}":
+        elif c in ")]":
             bracket_depth -= 1
     tokens.append(s[token_start:])
-    tokens = [token for token in tokens if token]
-    return BitRust.join([token_to_bitstore(token) for token in tokens])
+    return tokens
+
 
 # When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore_cached(s: str) -> BitRust:
-    return str_to_bitstore(s)
+    tokens = split_into_tokens(s)
+    return BitRust.join([token_to_bitstore_cached(t) for t in tokens if t])
 
 
 class _BaseBits:
@@ -101,7 +103,7 @@ class _BaseBits:
         if s is None:
             x._bitstore = BitRust.from_zeros(0)
         else:
-            x._bitstore = str_to_bitstore(s)
+            x._bitstore = str_to_bitstore_cached(s).get_mutable_copy()
         return x
 
     # ----- Class Methods -----
@@ -1291,7 +1293,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = str_to_bitstore(s)
+        x._bitstore = str_to_bitstore_cached(s).get_mutable_copy()
         return x
 
     __hash__ = None
