@@ -210,7 +210,7 @@ impl BitRust {
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend(bits.data.clone());
+                    bv.extend(&bits.data);
                 }
 
                 // Create new BitRust with the combined data
@@ -490,7 +490,7 @@ impl BitRust {
         let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
         for bits in bitrust_vec {
-            bv.extend(bits.data.iter());
+            bv.extend_from_bitslice(&bits.data);
         }
         BitRust::new(bv)
     }
@@ -592,8 +592,7 @@ impl BitRust {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        // TODO: Do we really need to clone twice in these methods?
-        let result = self.data.clone() & other.data.clone();
+        let result = self.data.clone() & &other.data;
         Ok(BitRust { data: result })
     }
 
@@ -602,7 +601,7 @@ impl BitRust {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
 
-        let result = self.data.clone() | other.data.clone();
+        let result = self.data.clone() | &other.data;
         Ok(BitRust { data: result })
     }
 
@@ -611,7 +610,7 @@ impl BitRust {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
 
-        let result = self.data.clone() ^ other.data.clone();
+        let result = self.data.clone() ^ &other.data;
         Ok(BitRust { data: result })
     }
 
@@ -657,14 +656,14 @@ impl BitRust {
 
     /// Append in-place
     pub fn append(&mut self, other: &BitRust) -> () {
-        self.data.extend(other.data.clone());
+        self.data.extend(&other.data);
         ()
     }
 
     /// Prepend in-place
     pub fn prepend(&mut self, other: &BitRust) -> () {
         let mut new_data = other.data.clone();
-        new_data.extend(self.data.clone());
+        new_data.extend(&self.data);
         self.data = new_data;
         ()
     }
