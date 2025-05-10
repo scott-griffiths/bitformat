@@ -1,4 +1,5 @@
 use std::fmt;
+use std::ops::Not;
 
 use bitvec::prelude::*;
 use bytemuck::cast_slice;
@@ -210,7 +211,7 @@ impl BitRust {
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend(&bits.data);
+                    bv.extend_from_bitslice(&bits.data);
                 }
 
                 // Create new BitRust with the combined data
@@ -744,26 +745,20 @@ impl BitRust {
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
     pub fn invert(&mut self, pos: Option<usize>) -> Self {
-        let mut data = self.data.clone();
-
         match pos {
             None => {
                 // Invert all bits
-                // TODO: Should be using the not() method on bitvec.
-                for i in 0..self.len() {
-                    let old_val = data[i];
-                    data.set(i, !old_val);
-                }
+                BitRust { data: self.data.clone().not() }
             }
             Some(pos) => {
                 // Invert a single bit
                 let index = pos;
+                let mut data = self.data.clone();
                 let old_val = data[index];
                 data.set(index, !old_val);
+                BitRust { data }
             }
         }
-
-        BitRust { data }
     }
 
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
@@ -799,7 +794,7 @@ impl BitRust {
     }
 
     pub fn invert_all(&mut self) -> () {
-        self.data = !self.data.clone(); // TODO: Shouldn't need a clone here.
+        self.data = self.data.clone().not();
         ()
     }
 
