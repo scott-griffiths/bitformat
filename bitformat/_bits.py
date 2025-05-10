@@ -1307,7 +1307,7 @@ class MutableBits(_BaseBits):
             a.append('0x0a')  # a now contains 0x0fa
         """
         bs = self._from_any(bs)
-        self._bitstore = BitRust.join([self._bitstore, bs._bitstore])
+        self._bitstore.append(bs._bitstore)
         return self
 
     def prepend(self, bs: BitsType, /) -> MutableBits:
@@ -1324,7 +1324,7 @@ class MutableBits(_BaseBits):
             a.prepend('0x0a')  # a now contains 0x0a0f
         """
         bs = self._from_any(bs)
-        self._bitstore = BitRust.join([bs._bitstore, self._bitstore])
+        self._bitstore.prepend(bs._bitstore)
         return self
 
     def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:

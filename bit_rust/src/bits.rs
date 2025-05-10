@@ -210,7 +210,7 @@ impl BitRust {
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend(&bits.data[0..bits.len()]);
+                    bv.extend(bits.data.clone());
                 }
 
                 // Create new BitRust with the combined data
@@ -486,8 +486,13 @@ impl BitRust {
 
     #[staticmethod]
     pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
-        let my_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
-        BitRust::join_internal(&my_vec)
+        let bitrust_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
+        let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
+        let mut bv = helpers::BV::with_capacity(total_len);
+        for bits in bitrust_vec {
+            bv.extend(bits.data.iter());
+        }
+        BitRust::new(bv)
     }
 
     /// Convert to bytes, padding with zero bits if needed.
@@ -647,6 +652,20 @@ impl BitRust {
     /// Reverses all bits in place.
     pub fn reverse(&mut self) -> () {
         self.data.reverse();
+        ()
+    }
+
+    /// Append in-place
+    pub fn append(&mut self, other: &BitRust) -> () {
+        self.data.extend(other.data.clone());
+        ()
+    }
+
+    /// Prepend in-place
+    pub fn prepend(&mut self, other: &BitRust) -> () {
+        let mut new_data = other.data.clone();
+        new_data.extend(self.data.clone());
+        self.data = new_data;
         ()
     }
 
