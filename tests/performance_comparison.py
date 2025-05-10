@@ -71,22 +71,42 @@ def test_primes_bitformat():
     assert twin_primes == 239101
     return twin_primes
 
-def test_token_parsing_bitstring():
+def test_token_parsing_mutating_bitformat():
+    b = bitformat.MutableBits()
+    for i in range(10000):
+        b.append("u12=244, f32=0.4")
+        b.append("0x3e44f, 0b11011, 0o75523")
+        b.append(bitformat.Bits.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]))
+        b.append(bitformat.Bits.from_zeros(104))
+    return b
+
+def test_token_parsing_mutating_bitstring():
     s = bitstring.BitArray()
     for i in range(10000):
         s += 'uint:12=244, float:32=0.4'
         s += '0x3e44f, 0b11011, 0o75523'
         s += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']
         s += bitstring.BitArray(104)
+    return s
 
-def test_token_parsing_bitformat():
+def test_token_parsing_joining_bitformat():
     s = []
     for i in range(10000):
         s.append(bitformat.Bits.from_string('u12=244, f32=0.4'))
         s.append(bitformat.Bits.from_string('0x3e44f, 0b11011, 0o75523'))
         s.append(bitformat.Bits.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
         s.append(bitformat.Bits.from_zeros(104))
-    s = bitformat.Bits.from_joined(s)
+    return bitformat.Bits.from_joined(s)
+
+def test_token_parsing_joining_bitstring():
+    s = []
+    for i in range(10000):
+        s.append(bitstring.Bits.fromstring('uint:12=244, float:32=0.4'))
+        s.append(bitstring.Bits.fromstring('0x3e44f, 0b11011, 0o75523'))
+        s.append(bitstring.Bits([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
+        s.append(bitstring.Bits(104))
+    return bitstring.Bits().join(s)
+
 
 def test_count_bitstring():
     s = bitstring.BitArray(1_000_000_000)
@@ -151,7 +171,8 @@ def main():
     fn_pairs = [
         FunctionPairs("Cutting", test_cutting_bitstring, test_cutting_bitformat),
         FunctionPairs("Primes", test_primes_bitstring, test_primes_bitformat),
-        FunctionPairs("Token parsing", test_token_parsing_bitstring, test_token_parsing_bitformat),
+        FunctionPairs("Token parsing mutating", test_token_parsing_mutating_bitstring, test_token_parsing_mutating_bitformat),
+        FunctionPairs("Token parsing joining", test_token_parsing_joining_bitstring, test_token_parsing_joining_bitformat),
         FunctionPairs("Count", test_count_bitstring, test_count_bitformat),
         FunctionPairs("Finding", test_finding_bitstring, test_finding_bitformat),
     ]
