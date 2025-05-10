@@ -1141,6 +1141,25 @@ class _BaseBits:
         """Return the length of the Bits in bits."""
         return len(self._bitstore)
 
+    @classmethod
+    def _from_any(cls, any_: BitsType, /) -> Bits:
+        """Create a new class instance from one of the many things that can be used to build it.
+
+        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
+        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
+
+        Used interally only.
+        """
+        if isinstance(any_, _BaseBits):
+            return any_
+        if isinstance(any_, str):
+            return Bits.from_string(any_)
+        elif isinstance(any_, (bytes, bytearray, memoryview)):
+            return cls.from_bytes(any_)
+        raise TypeError(
+            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
+        )
+
 
 class Bits(_BaseBits):
 
@@ -1188,25 +1207,6 @@ class Bits(_BaseBits):
         x._bitstore = str_to_bitstore_cached(s)
         return x
 
-    @classmethod
-    def _from_any(cls, any_: BitsType, /) -> Bits:
-        """Create a new class instance from one of the many things that can be used to build it.
-
-        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
-
-        Used interally only.
-        """
-        if isinstance(any_, _BaseBits):
-            return any_
-        if isinstance(any_, str):
-            return cls.from_string(any_)
-        elif isinstance(any_, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any_)
-        raise TypeError(
-            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
-        )
-
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
         # Check if the method exists in MutableBits
@@ -1248,25 +1248,6 @@ class MutableBits(_BaseBits):
         x = Bits()
         x._bitstore = self._bitstore.get_mutable_copy()
         return x
-
-    @classmethod
-    def _from_any(cls, any_: BitsType, /) -> Bits:
-        """Create a new class instance from one of the many things that can be used to build it.
-
-        This method will be implicitly called whenever an object needs to be promoted to a :class:`MutableBits`.
-        The builder can delegate to :meth:`MutableBits.from_bytes` or :meth:`MutableBits.from_string` as appropriate.
-
-        Used interally only.
-        """
-        if isinstance(any_, _BaseBits):
-            return any_
-        if isinstance(any_, str):
-            return cls.from_string(any_)
-        elif isinstance(any_, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any_)
-        raise TypeError(
-            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
-        )
 
     @classmethod
     def from_string(cls, s: str, /) -> MutableBits:
@@ -1326,7 +1307,7 @@ class MutableBits(_BaseBits):
             a.append('0x0a')  # a now contains 0x0fa
         """
         bs = self._from_any(bs)
-        self._bitstore = BitRust.join([self._bitstore, bs._bitstore]).get_mutable_copy()
+        self._bitstore = BitRust.join([self._bitstore, bs._bitstore])
         return self
 
     def prepend(self, bs: BitsType, /) -> MutableBits:
@@ -1343,7 +1324,7 @@ class MutableBits(_BaseBits):
             a.prepend('0x0a')  # a now contains 0x0a0f
         """
         bs = self._from_any(bs)
-        self._bitstore = BitRust.join([bs._bitstore, self._bitstore]).get_mutable_copy()
+        self._bitstore = BitRust.join([bs._bitstore, self._bitstore])
         return self
 
     def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:
