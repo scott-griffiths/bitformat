@@ -3,6 +3,7 @@ use crate::bitrust::BitRust;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::BitRustIterator;
+use std::ops::Not;
 
 #[pyclass]
 pub struct MutableBitRust {
@@ -230,38 +231,50 @@ impl MutableBitRust {
         self.inner.prepend(&other.inner)
     }
 
+    // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
-    pub fn invert(&mut self, pos: Option<usize>) -> BitRust {
-        self.inner.invert(pos)
+    pub fn invert(&mut self, pos: Option<usize>) -> Self {
+        match pos {
+            None => {
+                // Invert all bits
+                MutableBitRust{ inner: BitRust { data: self.inner.data.clone().not() }}
+            }
+            Some(pos) => {
+                // Invert a single bit
+                let index = pos;
+                let mut data = self.inner.data.clone();
+                let old_val = data[index];
+                data.set(index, !old_val);
+                MutableBitRust{ inner: BitRust { data }}
+            }
+        }
     }
 
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
-        self.inner.invert_bit_list(pos_list)
+        for pos in pos_list {
+            let pos: usize = helpers::validate_index(pos, self.len())?;
+            let value = self.inner.data[pos];
+            self.inner.data.set(pos, !value);
+        }
+        Ok(())
     }
 
     pub fn invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
-        self.inner.invert_single_bit(pos)
+        let pos: usize = helpers::validate_index(pos, self.len())?;
+        let mut new_data = self.inner.data.clone();
+        let bv = &mut new_data;
+        let value = bv[pos];
+        self.inner.data.set(pos, !value);
+        Ok(())
     }
 
     pub fn invert_all(&mut self) {
-        self.inner.invert_all()
+        self.inner.data = self.inner.data.clone().not();
     }
 
     pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
-            let pos = if idx < 0 {
-                let neg_idx = (idx + self.inner.len() as i64) as usize;
-                if neg_idx >= self.inner.len() {
-                    return Err(PyIndexError::new_err("Index out of range"));
-                }
-                neg_idx
-            } else {
-                let pos = idx as usize;
-                if pos >= self.inner.len() {
-                    return Err(PyIndexError::new_err("Index out of range"));
-                }
-                pos
-            };
+            let pos: usize = helpers::validate_index(idx, self.inner.len())?;
             self.inner.data.set(pos, value);
         }
         Ok(())

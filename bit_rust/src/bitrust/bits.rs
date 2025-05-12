@@ -1,9 +1,8 @@
 use std::fmt;
-use std::ops::Not;
 use crate::bitrust::helpers;
 use bitvec::prelude::*;
 use bytemuck::cast_slice;
-use pyo3::exceptions::{PyIndexError, PyValueError};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
@@ -525,60 +524,6 @@ impl BitRust {
         }
     }
 
-    // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
-    #[pyo3(signature = (pos=None))]
-    pub fn invert(&mut self, pos: Option<usize>) -> Self {
-        match pos {
-            None => {
-                // Invert all bits
-                BitRust { data: self.data.clone().not() }
-            }
-            Some(pos) => {
-                // Invert a single bit
-                let index = pos;
-                let mut data = self.data.clone();
-                let old_val = data[index];
-                data.set(index, !old_val);
-                BitRust { data }
-            }
-        }
-    }
-
-    pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
-        for pos in pos_list {
-            if pos < -(self.len() as i64) || pos >= self.len() as i64 {
-                return Err(PyIndexError::new_err("Index out of range."));
-            }
-            let pos = if pos < 0 {
-                (pos + self.len() as i64) as usize
-            } else {
-                pos as usize
-            };
-            let value = self.data[pos];
-            self.data.set(pos, !value);
-        }
-        Ok(())
-    }
-
-    pub fn invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
-        if pos < -(self.len() as i64) || pos >= self.len() as i64 {
-            return Err(PyIndexError::new_err("Index out of range."));
-        }
-        let pos = if pos < 0 {
-            (pos + self.len() as i64) as usize
-        } else {
-            pos as usize
-        };
-        let mut new_data = self.data.clone();
-        let bv = &mut new_data;
-        let value = bv[pos];
-        self.data.set(pos, !value);
-        Ok(())
-    }
-
-    pub fn invert_all(&mut self) {
-        self.data = self.data.clone().not();
-    }
 
     /// Returns true if all of the bits are set to 1.
     pub fn all_set(&self) -> bool {
@@ -725,15 +670,14 @@ mod tests {
 
     #[test]
     fn test_invert() {
-        let mut b = BitRust::from_bin("0");
+        let mut b = MutableBitRust::from_bin("0");
         assert_eq!(b.invert(None).to_bin(), "1");
-        let mut b = BitRust::from_bin("01110");
+        let mut b = MutableBitRust::from_bin("01110");
         assert_eq!(b.invert(None).to_bin(), "10001");
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
-        let mut long = BitRust::from_hex(hex_str);
-        let mut temp = long.invert(None);
+        let mut long = MutableBitRust::from_hex(hex_str);
+        let temp = long.invert(None);
         assert_eq!(long.len(), temp.len());
-        assert_eq!(temp.invert(None), long);
     }
 
     #[test]
@@ -887,7 +831,7 @@ mod tests {
 
     #[test]
     fn test_invert_bit_list() {
-        let mut bits = BitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin("0000");
         bits.invert_bit_list(vec![0, 2]).unwrap();
         assert_eq!(bits.to_bin(), "1010");
         bits.invert_bit_list(vec![-1, -3]).unwrap();
@@ -909,10 +853,10 @@ mod tests {
 
     #[test]
     fn test_invert_all() {
-        let mut bits = BitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin("0000");
         bits.invert_all();
         assert_eq!(bits.to_bin(), "1111");
-        let mut bits = BitRust::from_bin("1010");
+        let mut bits = MutableBitRust::from_bin("1010");
         bits.invert_all();
         assert_eq!(bits.to_bin(), "0101");
     }
@@ -927,7 +871,7 @@ mod tests {
 
     #[test]
     fn test_invert_single_bit() {
-        let mut bits = BitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin("0000");
         bits.invert_single_bit(1).unwrap();
         assert_eq!(bits.to_bin(), "0100");
         bits.invert_single_bit(-1).unwrap();
