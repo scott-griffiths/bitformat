@@ -5,8 +5,9 @@ use bitvec::prelude::*;
 use bytemuck::cast_slice;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::{pyclass, pymethods, PyRef, PyRefMut, PyResult};
+use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
+use crate::bitrust::{BitRustIterator, BitRustBoolIterator};
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
@@ -91,54 +92,6 @@ impl BitRust {
                 None => None,
             }
         })
-    }
-}
-
-#[pyclass]
-pub struct BitRustIterator {
-    positions: Vec<usize>,
-    index: usize,
-}
-
-#[pymethods]
-impl BitRustIterator {
-    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
-        slf
-    }
-
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<usize> {
-        if slf.index < slf.positions.len() {
-            let pos = slf.positions[slf.index];
-            slf.index += 1;
-            Some(pos)
-        } else {
-            None
-        }
-    }
-}
-
-#[pyclass]
-struct BitRustBoolIterator {
-    bits: Py<BitRust>,
-    index: usize,
-    length: usize,
-}
-
-#[pymethods]
-impl BitRustBoolIterator {
-    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
-        slf
-    }
-
-    fn __next__(&mut self, py: Python<'_>) -> PyResult<Option<bool>> {
-        if self.index < self.length {
-            let bits = self.bits.borrow(py);
-            let result = bits.getindex(self.index as i64);
-            self.index += 1;
-            result.map(Some)
-        } else {
-            Ok(None)
-        }
     }
 }
 

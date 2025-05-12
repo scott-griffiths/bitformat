@@ -2,7 +2,7 @@ use crate::bitrust::helpers;
 use crate::bitrust::BitRust;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
-use crate::bitrust::bits::BitRustIterator;
+use crate::bitrust::BitRustIterator;
 
 #[pyclass]
 pub struct MutableBitRust {
