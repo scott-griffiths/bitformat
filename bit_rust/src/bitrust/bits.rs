@@ -232,7 +232,7 @@ impl BitRust {
         let mut b: helpers::BV = helpers::BV::with_capacity(binary_str.len());
 
         for ch in binary_str.chars() {
-            b.push(if ch == '0' { false } else { true });
+            b.push(ch != '0');
         }
         BitRust::new(b)
     }
@@ -240,11 +240,7 @@ impl BitRust {
     #[staticmethod]
     pub fn from_hex_checked(hex: &str) -> PyResult<Self> {
         // Ignore any leading '0x'
-        let mut new_hex = if hex.starts_with("0x") {
-            hex[2..].to_string()
-        } else {
-            hex.to_string()
-        };
+        let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
         // Remove any underscores or whitespace characters
         new_hex.retain(|c| c != '_' && !c.is_whitespace());
         let is_odd_length: bool = new_hex.len() % 2 != 0;
@@ -340,7 +336,7 @@ impl BitRust {
 
     /// Convert to bytes, padding with zero bits if needed.
     pub fn to_bytes(&self) -> Vec<u8> {
-        helpers::convert_bitrust_to_bytes(&self)
+        helpers::convert_bitrust_to_bytes(self)
     }
 
     // Return bytes that can easily be converted to an int in Python
@@ -459,9 +455,9 @@ impl BitRust {
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
         if bytealigned {
-            helpers::find_bitvec_bytealigned(&self, &b, start)
+            helpers::find_bitvec_bytealigned(self, b, start)
         } else {
-            helpers::find_bitvec(&self, &b, start)
+            helpers::find_bitvec(self, b, start)
         }
     }
 
@@ -492,23 +488,20 @@ impl BitRust {
     }
 
     /// Reverses all bits in place.
-    pub fn reverse(&mut self) -> () {
+    pub fn reverse(&mut self) {
         self.data.reverse();
-        ()
     }
 
     /// Append in-place
-    pub fn append(&mut self, other: &BitRust) -> () {
+    pub fn append(&mut self, other: &BitRust) {
         self.data.extend(&other.data);
-        ()
     }
 
     /// Prepend in-place
-    pub fn prepend(&mut self, other: &BitRust) -> () {
+    pub fn prepend(&mut self, other: &BitRust) {
         let mut new_data = other.data.clone();
         new_data.extend(&self.data);
         self.data = new_data;
-        ()
     }
 
     /// Returns the bool value at a given bit index.
@@ -635,9 +628,8 @@ impl BitRust {
         Ok(())
     }
 
-    pub fn invert_all(&mut self) -> () {
+    pub fn invert_all(&mut self) {
         self.data = self.data.clone().not();
-        ()
     }
 
     /// Returns true if all of the bits are set to 1.
@@ -717,7 +709,7 @@ impl MutableBitRust {
     pub fn set_slice(&mut self, start: usize, end: usize, value: &MutableBitRust) -> PyResult<()> {
         let start_slice = self.getslice(0, Some(start))?;
         let end_slice = self.getslice(end, Some(self.len()))?;
-        let joined = MutableBitRust::join_internal(&vec![&start_slice, value, &end_slice]);
+        let joined = MutableBitRust::join_internal(&[&start_slice, value, &end_slice]);
         *self = joined;
         Ok(())
     }
@@ -880,15 +872,15 @@ impl MutableBitRust {
     }
 
     // Mutable operations
-    pub fn reverse(&mut self) -> () {
+    pub fn reverse(&mut self) {
         self.inner.reverse()
     }
 
-    pub fn append(&mut self, other: &MutableBitRust) -> () {
+    pub fn append(&mut self, other: &MutableBitRust) {
         self.inner.append(&other.inner)
     }
 
-    pub fn prepend(&mut self, other: &MutableBitRust) -> () {
+    pub fn prepend(&mut self, other: &MutableBitRust) {
         self.inner.prepend(&other.inner)
     }
 
@@ -905,7 +897,7 @@ impl MutableBitRust {
         self.inner.invert_single_bit(pos)
     }
 
-    pub fn invert_all(&mut self) -> () {
+    pub fn invert_all(&mut self) {
         self.inner.invert_all()
     }
 
