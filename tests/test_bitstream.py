@@ -982,7 +982,7 @@ class TestSet:
     def test_set(self):
         a = Bits.from_zeros(16)
         a = a.to_mutable().set(True, 0)
-        assert a == "0b10000000 00000000"
+        assert a == MutableBits("0b10000000 00000000")
         a.set(1, 15)
         assert a == "0b10000000 00000001"
         b = a[4:12]
@@ -1017,7 +1017,8 @@ class TestSet:
     def test_unset(self):
         a = MutableBits.from_ones(16)
         a.set(False, 0)
-        assert ~a == "0b10000000 00000000"
+        b = ~a
+        assert b == "0b10000000 00000000"
         a.set(0, 15)
         assert ~a == "0b10000000 00000001"
         b = a[4:12]

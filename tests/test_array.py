@@ -914,7 +914,6 @@ class TestDelegation:
         a = Array("f32", [0, -10, 0.5])
         b = a.to_bits()
         assert str(a.data) == str(b)
-        assert repr(a.data) == repr(b)
 
     def test_copy(self):
         a = Array("u8", [1, 2, 3])
