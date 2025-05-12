@@ -1,0 +1,120 @@
+/// Helper functions.
+use super::*;
+use bitvec::prelude::*;
+use bytemuck::cast_slice;
+
+// The choice of size is interesting. Can choose u8, u16, u32, u64.
+// Also can choose Lsb0 or Msb0.
+// Not sure of all the performance implications yet.
+pub type BV = BitVec<u8, Msb0>;
+pub type BS = BitSlice<u8, Msb0>;
+
+// An implementation of the KMP algorithm for bit slices.
+pub fn compute_lps(pattern: &BS) -> Vec<usize> {
+    let len = pattern.len();
+    let mut lps = vec![0; len];
+    let mut i = 1;
+    let mut len_prev = 0;
+
+    while i < len {
+        match pattern[i] == pattern[len_prev] {
+            true => {
+                len_prev += 1;
+                lps[i] = len_prev;
+                i += 1;
+            }
+            false if len_prev != 0 => len_prev = lps[len_prev - 1],
+            false => {
+                lps[i] = 0;
+                i += 1;
+            }
+        }
+    }
+    lps
+}
+
+pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
+    // Early return if needle is empty or longer than haystack
+    if needle.len() == 0 {
+        return Some(start);
+    }
+    if needle.len() > haystack.len() - start {
+        return None;
+    }
+
+    let lps = compute_lps(&needle.data[0..needle.len()]);
+    let mut i = start; // index for haystack
+    let mut j = 0; // index for needle
+
+    while i < haystack.len() {
+        if needle.data[j] == haystack.data[i] {
+            i += 1;
+            j += 1;
+        }
+        if j == needle.len() {
+            let match_position = i - j;
+            return Some(match_position);
+        }
+        if i < haystack.len() && needle.data[j] != haystack.data[i] {
+            if j != 0 {
+                j = lps[j - 1];
+            } else {
+                i += 1;
+            }
+        }
+    }
+    None
+}
+
+// The same as find_bitvec but only returns matches that are a multiple of 8.
+pub fn find_bitvec_bytealigned(
+    haystack: &BitRust,
+    needle: &BitRust,
+    start: usize,
+) -> Option<usize> {
+    // Early return if needle is empty or longer than haystack
+    if needle.len() == 0 {
+        return Some(start);
+    }
+    if needle.len() > haystack.len() - start {
+        return None;
+    }
+
+    let lps = compute_lps(&needle.data[0..needle.len()]);
+    let mut i = start; // index for haystack
+    let mut j = 0; // index for needle
+
+    while i < haystack.len() {
+        if needle.data[j] == haystack.data[i] {
+            i += 1;
+            j += 1;
+        }
+        if j == needle.len() {
+            let match_position = i - j;
+            if match_position % 8 == 0 {
+                return Some(match_position);
+            } else {
+                j = lps[j - 1];
+            }
+        }
+        if i < haystack.len() && needle.data[j] != haystack.data[i] {
+            if j != 0 {
+                j = lps[j - 1];
+            } else {
+                i += 1;
+            }
+        }
+    }
+    None
+}
+
+pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
+    // This only works because BV = BitVec<u8, Msb0>. If we use a wider base this needs a fix.
+    let mut bytes = cast_slice(bits.data.as_raw_slice()).to_vec();
+    let byte_len = bytes.len();
+    if bits.len() % 8 != 0 {
+        let mask = 0xff << (8 - (bits.len() % 8));
+        bytes[byte_len- 1] &= mask;
+    }
+    bytes
+}
