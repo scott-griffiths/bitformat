@@ -2,7 +2,8 @@
 use super::*;
 use bitvec::prelude::*;
 use bytemuck::cast_slice;
-
+use pyo3::exceptions::PyIndexError;
+use pyo3::PyResult;
 // The choice of size is interesting. Can choose u8, u16, u32, u64.
 // Also can choose Lsb0 or Msb0.
 // Not sure of all the performance implications yet.
@@ -117,4 +118,16 @@ pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
         bytes[byte_len- 1] &= mask;
     }
     bytes
+}
+
+pub fn validate_index(index: i64, length: usize) -> PyResult<usize> {
+    let index = if index < 0 {
+        length as i64 + index
+    } else {
+        index
+    };
+    if index >= length as i64 || index < 0 {
+        return Err(PyIndexError::new_err("Out of range."));
+    }
+    Ok(index as usize)
 }

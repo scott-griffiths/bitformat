@@ -459,15 +459,9 @@ impl BitRust {
     }
 
     /// Returns the bool value at a given bit index.
-    pub fn getindex(&self, mut bit_index: i64) -> PyResult<bool> {
-        let length = self.len() as i64;
-        if bit_index < 0 {
-            bit_index += length;
-        }
-        if bit_index >= length || bit_index < 0 {
-            return Err(PyIndexError::new_err("Out of range."));
-        }
-        Ok(self.data[bit_index as usize])
+    pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
+        let index = helpers::validate_index(bit_index, self.len())?;
+        Ok(self.data[index])
     }
 
     /// Return a slice of the current BitRust.
