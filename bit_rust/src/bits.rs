@@ -166,19 +166,7 @@ impl fmt::Debug for BitRust {
 
 impl PartialEq for BitRust {
     fn eq(&self, other: &Self) -> bool {
-        // First check if they have the same length
-        if self.len() != other.len() {
-            return false;
-        }
-
-        // Otherwise compare bit by bit
-        // TODO: Must be a faster way!
-        for i in 0..self.len() {
-            if self.data[i] != other.data[i] {
-                return false;
-            }
-        }
-        true
+        self.data == other.data
     }
 }
 
@@ -804,19 +792,7 @@ pub struct MutableBitRust {
 
 impl PartialEq for MutableBitRust {
     fn eq(&self, other: &Self) -> bool {
-        // First check if they have the same length
-        if self.len() != other.len() {
-            return false;
-        }
-
-        // Otherwise compare bit by bit
-        // TODO: Must be a faster way!
-        for i in 0..self.len() {
-            if self.inner.data[i] != other.inner.data[i] {
-                return false;
-            }
-        }
-        true
+        self.inner.data == other.inner.data
     }
 }
 
