@@ -15,14 +15,6 @@ pub struct BitRust {
     pub(crate) data: helpers::BV,
 }
 
-impl Clone for BitRust {
-    fn clone(&self) -> Self {
-        BitRust {
-            data: self.data.clone(),
-        }
-    }
-}
-
 impl fmt::Debug for BitRust {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.len() > 100 {
@@ -440,29 +432,6 @@ impl BitRust {
         hamming::weight(bytes) as usize
     }
 
-    /// Reverses all bits in place.
-    pub fn reverse(&mut self) {
-        self.data.reverse();
-    }
-
-    /// Append in-place
-    pub fn append(&mut self, other: &BitRust) {
-        self.data.extend(&other.data);
-    }
-
-    /// Prepend in-place
-    pub fn prepend(&mut self, other: &BitRust) {
-        let mut new_data = other.data.clone();
-        new_data.extend(&self.data);
-        self.data = new_data;
-    }
-
-    /// Returns the bool value at a given bit index.
-    pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
-        let index = helpers::validate_index(bit_index, self.len())?;
-        Ok(self.data[index])
-    }
-
     /// Return a slice of the current BitRust.
     #[pyo3(signature = (start_bit, end_bit=None))]
     pub fn getslice(&self, start_bit: usize, end_bit: Option<usize>) -> PyResult<Self> {
@@ -544,10 +513,10 @@ impl BitRust {
         }
     }
 
-    // The immutable BitRust is already frozen, so just return self.
-    // TODO: Not sure this makes sense.
-    pub fn freeze(&self) -> BitRust {
-        self.clone()
+    /// Returns the bool value at a given bit index.
+    pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
+        let index = helpers::validate_index(bit_index, self.len())?;
+        Ok(self.data[index])
     }
 }
 
@@ -653,16 +622,16 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let mut b = BitRust::from_bin("11110000");
+        let mut b = MutableBitRust::from_bin("11110000");
         b.reverse();
         assert_eq!(b.to_bin(), "00001111");
-        let mut b = BitRust::from_bin("1");
+        let mut b = MutableBitRust::from_bin("1");
         b.reverse();
         assert_eq!(b.to_bin(), "1");
-        let mut empty = BitRust::from_bin("");
+        let mut empty = MutableBitRust::from_bin("");
         empty.reverse();
         assert_eq!(empty.to_bin(), "");
-        let mut b = BitRust::from_bin("11001");
+        let mut b = MutableBitRust::from_bin("11001");
         b.reverse();
         assert_eq!(b.to_bin(), "10011");
 

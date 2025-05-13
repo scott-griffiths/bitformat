@@ -218,19 +218,6 @@ impl MutableBitRust {
         self.inner.findall(&bs.inner, byte_aligned)
     }
 
-    // Mutable operations
-    pub fn reverse(&mut self) {
-        self.inner.reverse()
-    }
-
-    pub fn append(&mut self, other: &MutableBitRust) {
-        self.inner.append(&other.inner)
-    }
-
-    pub fn prepend(&mut self, other: &MutableBitRust) {
-        self.inner.prepend(&other.inner)
-    }
-
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
     #[pyo3(signature = (pos=None))]
     pub fn invert(&mut self, pos: Option<usize>) -> Self {
@@ -320,6 +307,7 @@ impl MutableBitRust {
 
         Ok(())
     }
+
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> MutableBitRust {
         MutableBitRust {
@@ -331,7 +319,26 @@ impl MutableBitRust {
 
     // Convert to immutable BitRust
     pub fn freeze(&self) -> BitRust {
-        self.inner.clone()
+        BitRust {
+            data: self.inner.data.clone(),
+        }
+    }
+
+    /// Reverses all bits in place.
+    pub fn reverse(&mut self) {
+        self.inner.data.reverse();
+    }
+
+    /// Append in-place
+    pub fn append(&mut self, other: &MutableBitRust) {
+        self.inner.data.extend(&other.inner.data);
+    }
+
+    /// Prepend in-place
+    pub fn prepend(&mut self, other: &MutableBitRust) {
+        let mut new_data = other.inner.data.clone();
+        new_data.extend(&self.inner.data);
+        self.inner.data = new_data;
     }
 
 }
