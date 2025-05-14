@@ -46,7 +46,7 @@ impl PartialEq for BitRust {
 
 /// Private helper methods. Not part of the Python interface.
 impl BitRust {
-    fn new(bv: helpers::BV) -> Self {
+    pub fn new(bv: helpers::BV) -> Self {
         BitRust { data: bv }
     }
 
@@ -62,7 +62,7 @@ impl BitRust {
         let mut new_data = BitVec::new();
         new_data.extend_from_bitslice(&self.data[start_bit..end_bit]);
 
-        BitRust { data: new_data }
+        BitRust::new(new_data)
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
@@ -377,7 +377,7 @@ impl BitRust {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         let result = self.data.clone() & &other.data;
-        Ok(BitRust { data: result })
+        Ok(BitRust::new(result))
     }
 
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
@@ -386,7 +386,7 @@ impl BitRust {
         }
 
         let result = self.data.clone() | &other.data;
-        Ok(BitRust { data: result })
+        Ok(BitRust::new(result))
     }
 
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
@@ -395,7 +395,7 @@ impl BitRust {
         }
 
         let result = self.data.clone() ^ &other.data;
-        Ok(BitRust { data: result })
+        Ok(BitRust::new(result))
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
@@ -507,9 +507,7 @@ impl BitRust {
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> MutableBitRust {
         MutableBitRust {
-            inner: BitRust {
-                data: self.data.clone(),
-            }
+            inner: BitRust::new(self.data.clone()),
         }
     }
 

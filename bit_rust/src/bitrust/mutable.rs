@@ -45,8 +45,8 @@ impl MutableBitRust {
         }
     }
 
-    pub(crate) fn new(bv: &helpers::BV) -> Self {
-        Self { inner: BitRust { data: bv.clone() }}
+    pub fn new(bv: &helpers::BV) -> Self {
+        Self { inner: BitRust::new(bv.clone()) }
     }
 }
 
@@ -224,7 +224,7 @@ impl MutableBitRust {
         match pos {
             None => {
                 // Invert all bits
-                MutableBitRust{ inner: BitRust { data: self.inner.data.clone().not() }}
+                MutableBitRust::new(&self.inner.data.clone().not())
             }
             Some(pos) => {
                 // Invert a single bit
@@ -232,7 +232,7 @@ impl MutableBitRust {
                 let mut data = self.inner.data.clone();
                 let old_val = data[index];
                 data.set(index, !old_val);
-                MutableBitRust{ inner: BitRust { data }}
+                MutableBitRust::new(&data)
             }
         }
     }
@@ -310,18 +310,12 @@ impl MutableBitRust {
 
     /// Return a copy with a real copy of the data.
     pub fn get_mutable_copy(&self) -> MutableBitRust {
-        MutableBitRust {
-            inner: BitRust {
-                data: self.inner.data.clone(),
-            }
-        }
+        MutableBitRust::new(&self.inner.data.clone())
     }
 
     // Convert to immutable BitRust
     pub fn freeze(&self) -> BitRust {
-        BitRust {
-            data: self.inner.data.clone(),
-        }
+        BitRust::new(self.inner.data.clone())
     }
 
     /// Reverses all bits in place.
