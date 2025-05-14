@@ -505,7 +505,7 @@ impl BitRust {
     }
 
     /// Return a copy with a real copy of the data.
-    pub fn get_mutable_copy(&self) -> MutableBitRust {
+    pub fn clone_as_mutable(&self) -> MutableBitRust {
         MutableBitRust {
             inner: BitRust::new(self.data.clone()),
         }
@@ -715,7 +715,7 @@ mod tests {
         assert_eq!(a.len(), 24);
         let b = a.getslice(1, None).unwrap();
         assert_eq!(b.len(), 23);
-        let c = b.get_mutable_copy();
+        let c = b.clone_as_mutable();
         assert_eq!(c.len(), 23);
     }
 
@@ -1045,7 +1045,7 @@ mod tests {
         assert_eq!(empty_mutable.freeze().len(), 0);
 
         let mut another_empty = MutableBitRust::from_zeros(0);
-        another_empty.append(&empty_immutable.get_mutable_copy());
+        another_empty.append(&empty_immutable.clone_as_mutable());
         assert_eq!(another_empty.len(), 0);
     }
 

@@ -883,11 +883,11 @@ class _BaseBits:
         if isinstance(self, MutableBits):
             # Mutable bits are mutable, so we need to copy them.
             x = self.__class__()
-            x._bitstore = self._bitstore.freeze().get_mutable_copy()
+            x._bitstore = self._bitstore.freeze().clone_as_mutable()
             x._bitstore.invert_all()
             return x
         x = self.__class__()
-        x._bitstore = self._bitstore.get_mutable_copy()
+        x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.invert_all()
         x._bitstore = x._bitstore.freeze()
         return x
@@ -1254,7 +1254,7 @@ class Bits(_BaseBits):
 
     def to_mutable(self) -> MutableBits:
         x = MutableBits()
-        x._bitstore = self._bitstore.get_mutable_copy()
+        x._bitstore = self._bitstore.clone_as_mutable()
         return x
 
 
@@ -1273,7 +1273,7 @@ class MutableBits(_BaseBits):
             return any_
         if isinstance(any_, Bits):
             x = MutableBits()
-            x._bitstore = any_._bitstore.get_mutable_copy()
+            x._bitstore = any_._bitstore.clone_as_mutable()
             return x
         if isinstance(any_, str):
             return cls.from_string(any_)
@@ -1288,7 +1288,7 @@ class MutableBits(_BaseBits):
         if s is None:
             x._bitstore = MutableBitRust.from_zeros(0)
         else:
-            x._bitstore = str_to_bitstore_cached(s).get_mutable_copy()
+            x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
     def freeze(self) -> Bits:
@@ -1409,7 +1409,7 @@ class MutableBits(_BaseBits):
         # TODO: This could be factored out a bit better than this.
         if not isinstance(x, cls):
             xp = object.__new__(cls)
-            xp._bitstore = x._bitstore.get_mutable_copy()
+            xp._bitstore = x._bitstore.clone_as_mutable()
             return xp
         else:
             return x
@@ -1491,7 +1491,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = str_to_bitstore_cached(s).get_mutable_copy()
+        x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
     __hash__ = None
@@ -1501,7 +1501,7 @@ class MutableBits(_BaseBits):
         """Return a new copy of the MutableBits for the copy module.
         """
         x = MutableBits()
-        x._bitstore = self._bitstore.get_mutable_copy()
+        x._bitstore = self._bitstore.clone_as_mutable()
         return x
 
     def _slice(self: MutableBits, start: int, end: int) -> MutableBits:

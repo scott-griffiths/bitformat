@@ -201,7 +201,7 @@ class Array:
     def from_bits(cls, dtype: str | Dtype, b: Bits) -> Array:
         x = cls._partial_init(dtype)
         # We may change the internal BitRust, so need to make a copy here.
-        x._bitstore = b._bitstore.get_mutable_copy()
+        x._bitstore = b._bitstore.clone_as_mutable()
         return x
 
     @classmethod
@@ -278,7 +278,7 @@ class Array:
         """Create Bits from value according to the token_name and token_length"""
         b = self._dtype.pack(value)
         x = MutableBits()
-        x._bitstore = b._bitstore.get_mutable_copy()
+        x._bitstore = b._bitstore.clone_as_mutable()
         return x
 
     def __len__(self) -> int:
@@ -722,13 +722,13 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        self._bitstore = new_data._bitstore.get_mutable_copy()
+        self._bitstore = new_data._bitstore.clone_as_mutable()
         return self
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
         a_copy = Array(self.dtype)
-        a_copy._bitstore = self._bitstore.get_mutable_copy()
+        a_copy._bitstore = self._bitstore.clone_as_mutable()
         a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
         return a_copy
 

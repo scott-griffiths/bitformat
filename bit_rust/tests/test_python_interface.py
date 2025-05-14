@@ -24,6 +24,7 @@ def test_join():
     b = BitRust.from_ones(4)
     c = BitRust.join([a, b])
     assert c.to_bin() == '00001111'
+    c = c.clone_as_mutable()
     c.reverse()
     assert c.to_bin() == '11110000'
 
