@@ -59,7 +59,7 @@ impl BitRust {
         debug_assert!(start_bit <= end_bit);
         debug_assert!(end_bit <= self.len());
 
-        let mut new_data = BitVec::new();
+        let mut new_data = BitVec::with_capacity(end_bit - start_bit);
         new_data.extend_from_bitslice(&self.data[start_bit..end_bit]);
 
         BitRust::new(new_data)
@@ -85,6 +85,8 @@ impl BitRust {
         })
     }
 }
+
+
 
 /// Public Python-facing methods.
 #[pymethods]
@@ -269,11 +271,10 @@ impl BitRust {
 
     #[staticmethod]
     pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
-        let bitrust_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
-        let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
+        let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
-        for bits in bitrust_vec {
-            bv.extend_from_bitslice(&bits.data);
+        for bits_ref in bits_vec.iter() {
+            bv.extend_from_bitslice(&bits_ref.data);
         }
         BitRust::new(bv)
     }
