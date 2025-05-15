@@ -11,7 +11,7 @@ pub type BV = BitVec<u8, Msb0>;
 pub type BS = BitSlice<u8, Msb0>;
 
 // An implementation of the KMP algorithm for bit slices.
-pub fn compute_lps(pattern: &BS) -> Vec<usize> {
+fn compute_lps(pattern: &BS) -> Vec<usize> {
     let len = pattern.len();
     let mut lps = vec![0; len];
     let mut i = 1;
@@ -36,32 +36,30 @@ pub fn compute_lps(pattern: &BS) -> Vec<usize> {
 
 pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
-    if needle.len() == 0 {
-        return Some(start);
-    }
-    if needle.len() > haystack.len() - start {
+    if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
     }
 
-    let lps = compute_lps(&needle.data[0..needle.len()]);
+    let lps = compute_lps(&needle.data);
     let mut i = start; // index for haystack
     let mut j = 0; // index for needle
 
     while i < haystack.len() {
+        // Match current bits
         if needle.data[j] == haystack.data[i] {
             i += 1;
             j += 1;
-        }
-        if j == needle.len() {
-            let match_position = i - j;
-            return Some(match_position);
-        }
-        if i < haystack.len() && needle.data[j] != haystack.data[i] {
-            if j != 0 {
-                j = lps[j - 1];
-            } else {
-                i += 1;
+
+            // Check if we found a match
+            if j == needle.len() {
+                return Some(i - j);
             }
+        } else if j != 0 {
+            // Mismatch after at least one match - use KMP to skip
+            j = lps[j - 1];
+        } else {
+            // Mismatch at first position - move forward
+            i += 1;
         }
     }
     None
@@ -74,36 +72,35 @@ pub fn find_bitvec_bytealigned(
     start: usize,
 ) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
-    if needle.len() == 0 {
-        return Some(start);
-    }
-    if needle.len() > haystack.len() - start {
+    if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
     }
 
-    let lps = compute_lps(&needle.data[0..needle.len()]);
+    let lps = compute_lps(&needle.data);
     let mut i = start; // index for haystack
     let mut j = 0; // index for needle
 
     while i < haystack.len() {
+        // Match current bits
         if needle.data[j] == haystack.data[i] {
             i += 1;
             j += 1;
-        }
-        if j == needle.len() {
-            let match_position = i - j;
-            if match_position % 8 == 0 {
-                return Some(match_position);
-            } else {
+
+            // Check if we found a match
+            if j == needle.len() {
+                let match_position = i - j;
+                if match_position % 8 == 0 {
+                    return Some(match_position);
+                }
+                // Not byte-aligned, continue searching
                 j = lps[j - 1];
             }
-        }
-        if i < haystack.len() && needle.data[j] != haystack.data[i] {
-            if j != 0 {
-                j = lps[j - 1];
-            } else {
-                i += 1;
-            }
+        } else if j != 0 {
+            // Mismatch after at least one match - use KMP to skip
+            j = lps[j - 1];
+        } else {
+            // Mismatch at first position - move forward
+            i += 1;
         }
     }
     None
