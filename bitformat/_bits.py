@@ -214,11 +214,11 @@ class _BaseBits:
             6
 
         """
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        p = self._bitstore.find(bs._bitstore, 0, ba)
+        p = self._bitstore.find(bs, 0, ba)
         return None if p == -1 else p
 
     def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
@@ -241,7 +241,7 @@ class _BaseBits:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._find_all(bs, count, ba)
 
@@ -425,9 +425,9 @@ class _BaseBits:
 
     # ----- Private Methods -----
 
-    def _find_all(self, bs: Bits, count: int | None, byte_aligned: bool) -> Iterable[int]:
+    def _find_all(self, bs: BitRust, count: int | None, byte_aligned: bool) -> Iterable[int]:
         c = 0
-        for i in self._bitstore.findall(bs._bitstore, byte_aligned):
+        for i in self._bitstore.findall(bs, byte_aligned):
             if count is not None and c >= count:
                 return
             c += 1
@@ -1364,7 +1364,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = MutableBitRust.join([create_bitrust_from_any(item).clone_as_mutable() for item in sequence])
+        x._bitstore = MutableBitRust.join([create_bitrust_from_any(item) for item in sequence])
         return x
 
     @classmethod
@@ -1533,8 +1533,8 @@ class MutableBits(_BaseBits):
             a = MutableBits('0x0f')
             a.append('0x0a')  # a now contains 0x0fa
         """
-        bs = self._from_any(bs)
-        self._bitstore.append(bs._bitstore)
+        bs = create_bitrust_from_any(bs)
+        self._bitstore.append(bs)
         return self
 
     def prepend(self, bs: BitsType, /) -> MutableBits:
@@ -1550,8 +1550,8 @@ class MutableBits(_BaseBits):
             a = MutableBits('0x0f')
             a.prepend('0x0a')  # a now contains 0x0a0f
         """
-        bs = self._from_any(bs)
-        self._bitstore.prepend(bs._bitstore)
+        bs = create_bitrust_from_any(bs)
+        self._bitstore.prepend(bs)
         return self
 
     def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:
@@ -1599,14 +1599,14 @@ class MutableBits(_BaseBits):
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos, None)])
+        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).freeze(),
+                                    bs,
+                                    self._bitstore.getslice(pos, None).freeze()])
         return self
 
     def invert(self, pos: Iterable[int] | int | None = None) -> MutableBits:
@@ -1641,14 +1641,14 @@ class MutableBits(_BaseBits):
         Raises ValueError if pos < 0 or pos > len(self).
 
         """
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         if pos < 0:
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos),
-                                    bs._bitstore,
-                                    self._bitstore.getslice(pos + len(bs), None)])
+        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).freeze(),
+                                    bs,
+                                    self._bitstore.getslice(pos + len(bs), None).freeze()])
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1758,8 +1758,8 @@ class MutableBits(_BaseBits):
         """
         if count == 0:
             return self
-        old = MutableBits._from_any(old)
-        new = MutableBits._from_any(new)
+        old = Bits._from_any(old)  # TODO switch to not create Bits
+        new = Bits._from_any(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -1780,7 +1780,7 @@ class MutableBits(_BaseBits):
                 break
         if not starting_points:
             return self
-        original = self._bitstore
+        original = self._bitstore.freeze()
         replacement_list = [original.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new._bitstore)

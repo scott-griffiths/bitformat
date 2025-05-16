@@ -1,7 +1,7 @@
 import sys
 
 sys.path.insert(0, "..")
-from bitformat import Bits
+from bitformat import Bits, MutableBits
 import random
 import math
 import itertools
@@ -23,7 +23,7 @@ def test_chunking(benchmark):
 
 def test_count(benchmark):
     def count():
-        s = Bits.from_zeros(100000000)
+        s = MutableBits.from_zeros(100000000)
         s = s.set(1, [10, 100, 1000, 10000000])
         return s.count(1)
 
@@ -33,7 +33,7 @@ def test_count(benchmark):
 
 def test_token_parsing(benchmark):
     def token_parsing():
-        s = Bits()
+        s = MutableBits()
         for i in range(10000):
             s += "u12=244, f32=0.4"
             s += "0x3e44f, 0b11011, 0o75523"

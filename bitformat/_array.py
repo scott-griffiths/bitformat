@@ -10,7 +10,7 @@ from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
 import operator
 import sys
-from bitformat.bit_rust import MutableBitRust
+from bitformat.bit_rust import MutableBitRust, BitRust
 
 __all__ = ["Array", "BitsProxy"]
 
@@ -274,12 +274,9 @@ class Array:
         if self.item_size == 0 or self.item_size is None:
             raise ValueError(f"A fixed length data type is needed for an Array, received '{new_dtype}'.")
 
-    def _create_element(self, value: ElementType) -> MutableBits:
+    def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
-        b = self._dtype.pack(value)
-        x = MutableBits()
-        x._bitstore = b._bitstore.clone_as_mutable()
-        return x
+        return self._dtype.pack(value)
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
@@ -297,7 +294,7 @@ class Array:
             if step != 1:
                 d = []
                 for s in range(start * self.item_size, stop * self.item_size, step * self.item_size):
-                    d.append(self._bitstore.getslice(s, s + self.item_size))
+                    d.append(self._bitstore.getslice(s, s + self.item_size).freeze())
                 a = self.__class__(self._dtype)
                 a._bitstore = MutableBitRust.join(d)
                 return a
@@ -318,18 +315,14 @@ class Array:
     @overload
     def __setitem__(self, key: int, value: ElementType, /) -> None: ...
 
-    def __setitem__(
-        self, key: slice | int, value: Iterable[ElementType] | ElementType, /
-    ) -> None:
+    def __setitem__(self, key: slice | int, value: Iterable[ElementType] | ElementType, /) -> None:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = MutableBits()
-                for x in value:
-                    new_data += self._create_element(x)
-                self._bitstore.set_slice(start * self.item_size, stop * self.item_size, new_data._bitstore)
+                new_data = BitRust.join([self._create_element(x)._bitstore for x in value])
+                self._bitstore.set_slice(start * self.item_size, stop * self.item_size, new_data)
                 return
             items_in_slice = len(range(start, stop, step))
             if not isinstance(value, Sized):
@@ -354,8 +347,8 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start * self.item_size),
-                                               self._bitstore.getslice(stop * self.item_size, None)])
+                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start * self.item_size).freeze(),
+                                               self._bitstore.getslice(stop * self.item_size, None).freeze()])
                 return
             # We need to delete from the end or the earlier positions will change
             r = (
@@ -364,16 +357,16 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, s * self.item_size),
-                                               self._bitstore.getslice((s + 1) * self.item_size, None)])
+                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, s * self.item_size).freeze(),
+                                               self._bitstore.getslice((s + 1) * self.item_size, None).freeze()])
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self.item_size * key
-            self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start),
-                                           self._bitstore.getslice(start + self.item_size, None)])
+            self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start).freeze(),
+                                           self._bitstore.getslice(start + self.item_size, None).freeze()])
 
     def __repr__(self) -> str:
         bitstore_length = len(self._bitstore)
@@ -449,9 +442,7 @@ class Array:
         """
         if len(self._proxy) % self.item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
-        self._bitstore = MutableBitRust.join(
-            [self._bitstore, self._create_element(x)._bitstore]
-        )
+        self._bitstore.append(self._create_element(x)._bitstore)
 
     def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> None:
         """
@@ -466,9 +457,7 @@ class Array:
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
-            self._bitstore = MutableBitRust.join(
-                [self._bitstore, MutableBits.from_bytes(iterable)._bitstore]
-            )
+            self._bitstore.append(Bits.from_bytes(iterable)._bitstore)
             return
         if len(self._proxy) % self.item_size != 0:
             raise ValueError(f"Cannot extend Array as its data length ({len(self._proxy)} bits) "
@@ -478,12 +467,12 @@ class Array:
                 raise TypeError(f"Cannot extend an Array with format '{self._dtype}' "
                                 f"from an Array of format '{iterable._dtype}'.")
             # No need to iterate over the elements, we can just append the data
-            self._bitstore = MutableBitRust.join([self._bitstore, iterable._bitstore])
+            self._bitstore.append(iterable._bitstore.freeze())
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
-            to_join = [self._bitstore] + [self._create_element(item)._bitstore for item in iterable]
-            self._bitstore = MutableBitRust.join(to_join)
+            to_join = [self._create_element(item)._bitstore for item in iterable]
+            self._bitstore.append(BitRust.join(to_join))
 
     def insert(self, pos: int, x: ElementType, /) -> None:
         """
@@ -500,10 +489,10 @@ class Array:
         pos = min(
             pos, len(self)
         )  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
-        v = self._create_element(x)
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos * self.item_size),
+        v = self._create_element(x)  # TODO: Version of _create_element that just returns the BitRust
+        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos * self.item_size).freeze(),
                                        v._bitstore,
-                                       self._bitstore.getslice(pos * self.item_size, None)])
+                                       self._bitstore.getslice(pos * self.item_size, None).freeze()])
 
     def pop(self, pos: int = -1, /) -> ElementType:
         """
@@ -746,7 +735,7 @@ class Array:
                 mutablebitrust_slice.iand(value._bitstore)
             elif op == operator.ior:
                 mutablebitrust_slice.ior(value._bitstore)
-            self._bitstore.set_slice(start, start + self.item_size, mutablebitrust_slice)
+            self._bitstore.set_slice(start, start + self.item_size, mutablebitrust_slice.freeze())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
