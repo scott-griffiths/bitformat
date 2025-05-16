@@ -25,6 +25,18 @@ BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
+
+def create_bitrust_from_any(any_: BitsType) -> BitRust:
+    if isinstance(any_,  Bits):
+        return any_._bitstore
+    if isinstance(any_, MutableBits):
+        return any_._bitstore.freeze()
+    if isinstance(any_, str):
+        return str_to_bitstore_cached(any_)
+    if isinstance(any_, (bytes, bytearray, memoryview)):
+        return BitRust.from_bytes(any_)
+    raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
+
 @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore_cached(token: str) -> BitRust:
     if token and token[0] == '0':
@@ -344,11 +356,11 @@ class _BaseBits:
         if end < start.
 
         """
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._bitstore.rfind(bs._bitstore, 0, ba)
+        p = self._bitstore.rfind(bs, 0, ba)
         return None if p == -1 else p
 
     def starts_with(self, prefix: BitsType) -> bool:
@@ -423,8 +435,7 @@ class _BaseBits:
         return
 
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
-        bs = self._from_any(bs)
-        self._bitstore = bs._bitstore
+        self._bitstore = create_bitrust_from_any(bs)
 
     def _set_bytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
         """Set the data from a bytes or bytearray object."""
@@ -735,9 +746,9 @@ class _BaseBits:
         """
         if bs is self:
             return self
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore & bs._bitstore
+        s._bitstore = self._bitstore & bs
         return s
 
     def __or__(self: Bits, bs: BitsType, /) -> Bits:
@@ -748,9 +759,9 @@ class _BaseBits:
         """
         if bs is self:
             return self
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore | bs._bitstore
+        s._bitstore = self._bitstore | bs
         return s
 
     def __xor__(self: Bits, bs: BitsType, /) -> Bits:
@@ -759,9 +770,9 @@ class _BaseBits:
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = self._from_any(bs)
+        bs = create_bitrust_from_any(bs)
         s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore ^ bs._bitstore
+        s._bitstore = self._bitstore ^ bs
         return s
 
     def __rand__(self: Bits, bs: BitsType, /) -> Bits:
@@ -819,7 +830,8 @@ class _BaseBits:
 
         """
         try:
-            return self._bitstore == self._from_any(bs)._bitstore
+            other = self._from_any(bs)._bitstore
+            return self._bitstore == other
         except TypeError:
             return False
 
@@ -999,9 +1011,7 @@ class Bits(_BaseBits):
             return cls.from_string(any_)
         elif isinstance(any_, (bytes, bytearray, memoryview)):
             return cls.from_bytes(any_)
-        raise TypeError(
-            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
-        )
+        raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object.")
 
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
@@ -1084,7 +1094,7 @@ class Bits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitRust.join([cls._from_any(item)._bitstore for item in sequence])
+        x._bitstore = BitRust.join([create_bitrust_from_any(item) for item in sequence])
         return x
 
     @classmethod
@@ -1354,7 +1364,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = MutableBitRust.join([cls._from_any(item)._bitstore for item in sequence])
+        x._bitstore = MutableBitRust.join([create_bitrust_from_any(item).clone_as_mutable() for item in sequence])
         return x
 
     @classmethod
