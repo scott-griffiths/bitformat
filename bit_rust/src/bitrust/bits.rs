@@ -705,7 +705,7 @@ mod tests {
     #[test]
     fn test_set_mutable_slice() {
         let mut a = MutableBitRust::from_hex("0011223344");
-        let b = MutableBitRust::from_hex("ff");
+        let b = BitRust::from_hex("ff");
         a.set_slice(8, 16, &b).unwrap();
         assert_eq!(a.to_hex().unwrap(), "00ff223344");
     }
@@ -979,7 +979,7 @@ mod tests {
         m.reverse();
         assert_eq!(m.to_bin(), "0011");
 
-        let other = MutableBitRust::from_bin("1111");
+        let other = BitRust::from_bin("1111");
         m.append(&other);
         assert_eq!(m.to_bin(), "00111111");
 
@@ -1001,7 +1001,7 @@ mod tests {
     #[test]
     fn mutable_find_operations() {
         let haystack = MutableBitRust::from_bin("00110011");
-        let needle = MutableBitRust::from_bin("11");
+        let needle = BitRust::from_bin("11");
 
         assert_eq!(haystack.find(&needle, 0, false), Some(2));
         assert_eq!(haystack.find(&needle, 3, false), Some(6));
@@ -1026,7 +1026,7 @@ mod tests {
     #[test]
     fn mutable_immutable_interaction() {
         let pattern1 = MutableBitRust::from_bin("1100");
-        let pattern2 = MutableBitRust::from_bin("0011");
+        let pattern2 = BitRust::from_bin("0011");
 
         let mut m = MutableBitRust::new(&pattern1.inner.data);
 
@@ -1046,7 +1046,7 @@ mod tests {
         assert_eq!(empty_mutable.freeze().len(), 0);
 
         let mut another_empty = MutableBitRust::from_zeros(0);
-        another_empty.append(&empty_immutable.clone_as_mutable());
+        another_empty.append(&empty_immutable);
         assert_eq!(another_empty.len(), 0);
     }
 
@@ -1085,7 +1085,7 @@ mod tests {
     #[test]
     fn set_mutable_slice_with_bit_rust() {
         let mut m = MutableBitRust::from_bin("00000000");
-        let pattern = MutableBitRust::from_bin("1111");
+        let pattern = BitRust::from_bin("1111");
 
         m.set_slice(2, 6, &pattern).unwrap();
         assert_eq!(m.to_bin(), "00111100");

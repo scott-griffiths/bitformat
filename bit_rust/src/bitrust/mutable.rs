@@ -17,14 +17,14 @@ impl PartialEq for MutableBitRust {
 }
 
 impl MutableBitRust {
-    fn join_internal(bits_vec: &[&MutableBitRust]) -> Self {
+    fn join_internal(bits_vec: &[&BitRust]) -> Self {
         match bits_vec.len() {
             0 => MutableBitRust::from_zeros(0),
             1 => {
                 // For a single BitRust, just clone it.
                 let bits = bits_vec[0];
                 MutableBitRust {
-                    inner: BitRust{ data: bits.inner.data.clone()}
+                    inner: BitRust{ data: bits.data.clone()}
                 }
             }
             _ => {
@@ -36,7 +36,7 @@ impl MutableBitRust {
 
                 // Extend with each view's bits
                 for bits in bits_vec {
-                    bv.extend_from_bitslice(&bits.inner.data);
+                    bv.extend_from_bitslice(&bits.data);
                 }
 
                 // Create new BitRust with the combined data
@@ -53,9 +53,9 @@ impl MutableBitRust {
 #[pymethods]
 impl MutableBitRust {
 
-    pub fn set_slice(&mut self, start: usize, end: usize, value: &MutableBitRust) -> PyResult<()> {
-        let start_slice = self.getslice(0, Some(start))?;
-        let end_slice = self.getslice(end, Some(self.len()))?;
+    pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
+        let start_slice = self.getslice(0, Some(start))?.freeze();
+        let end_slice = self.getslice(end, Some(self.len()))?.freeze();
         let joined = MutableBitRust::join_internal(&[&start_slice, value, &end_slice]);
         *self = joined;
         Ok(())
@@ -143,12 +143,12 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn join(bits_vec: Vec<PyRef<MutableBitRust>>) -> Self {
-        let bitrust_vec: Vec<&MutableBitRust> = bits_vec.iter().map(|x| &**x).collect();
+    pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
+        let bitrust_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
         let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
         for bits in bitrust_vec {
-            bv.extend_from_bitslice(&bits.inner.data);
+            bv.extend_from_bitslice(&bits.data);
         }
         MutableBitRust::new(&bv)
     }
@@ -205,17 +205,17 @@ impl MutableBitRust {
         self.inner.any_set()
     }
 
-    pub fn find(&self, b: &MutableBitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.find(&b.inner, start, bytealigned)
+    pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
+        self.inner.find(&b, start, bytealigned)
     }
 
-    pub fn rfind(&self, b: &MutableBitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.rfind(&b.inner, start, bytealigned)
+    pub fn rfind(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
+        self.inner.rfind(&b, start, bytealigned)
     }
 
     #[pyo3(signature = (bs, byte_aligned=false))]
-    pub fn findall(&self, bs: &MutableBitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
-        self.inner.findall(&bs.inner, byte_aligned)
+    pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
+        self.inner.findall(&bs, byte_aligned)
     }
 
     // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
@@ -324,13 +324,13 @@ impl MutableBitRust {
     }
 
     /// Append in-place
-    pub fn append(&mut self, other: &MutableBitRust) {
-        self.inner.data.extend(&other.inner.data);
+    pub fn append(&mut self, other: &BitRust) {
+        self.inner.data.extend(&other.data);
     }
 
     /// Prepend in-place
-    pub fn prepend(&mut self, other: &MutableBitRust) {
-        let mut new_data = other.inner.data.clone();
+    pub fn prepend(&mut self, other: &BitRust) {
+        let mut new_data = other.data.clone();
         new_data.extend(&self.inner.data);
         self.inner.data = new_data;
     }
