@@ -963,8 +963,14 @@ class _BaseBits:
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = self.__class__._from_any(bs)
-        return bs.__add__(self)
+        bs = create_bitrust_from_any(bs).clone_as_mutable()
+        bs.append(self._bitstore)
+        x = self.__class__()
+        if isinstance(self, Bits):
+            x._bitstore = bs.freeze()
+        else:
+            x._bitstore = bs
+        return x
 
     def __rmul__(self: Bits, n: int, /) -> Bits:
         """Return Bits consisting of n concatenations of self.
@@ -1022,16 +1028,9 @@ class Bits(_BaseBits):
 
         Used internally only.
         """
-        if isinstance(any_, Bits):
-            return any_
-        if isinstance(any_, MutableBits):
-            return any_.freeze()
-
-        if isinstance(any_, str):
-            return cls.from_string(any_)
-        elif isinstance(any_, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any_)
-        raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object.")
+        x = cls()
+        x._bitstore = create_bitrust_from_any(any_)
+        return x
 
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
@@ -1299,19 +1298,9 @@ class MutableBits(_BaseBits):
 
         Used internally only.
         """
-        if isinstance(any_, MutableBits):
-            return any_
-        if isinstance(any_, Bits):
-            x = MutableBits()
-            x._bitstore = any_._bitstore.clone_as_mutable()
-            return x
-        if isinstance(any_, str):
-            return cls.from_string(any_)
-        elif isinstance(any_, (bytes, bytearray, memoryview)):
-            return cls.from_bytes(any_)
-        raise TypeError(
-            f"Cannot convert '{any_}' of type {type(any_)} to a {cls.__name__} object."
-        )
+        x = cls()
+        x._bitstore = create_bitrust_from_any(any_).clone_as_mutable()
+        return x
 
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)

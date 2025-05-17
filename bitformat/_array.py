@@ -4,7 +4,7 @@ import math
 from collections.abc import Sized, Sequence
 from typing import Union, Iterable, Any, overload, TextIO
 
-from bitformat._bits import Bits, BitsType, MutableBits
+from bitformat._bits import Bits, BitsType, MutableBits, create_bitrust_from_any
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
@@ -144,7 +144,7 @@ class Array:
 
     @data.setter
     def data(self, value: BitsType) -> None:
-        self._mutable_bitrust = MutableBits._from_any(value)._bitstore
+        self._mutable_bitrust = create_bitrust_from_any(value).clone_as_mutable()
 
     def _get_bit_slice(self, start: int, stop: int | None) -> MutableBits:
         x = MutableBits()
@@ -637,18 +637,18 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = MutableBits._from_any(value)
+        value = create_bitrust_from_any(value).clone_as_mutable()
         if len(value) != self.item_size:
             raise ValueError(f"Bitwise op {op} needs a Bits of length {self.item_size} to match "
                              f"format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self.item_size, self.item_size):
             mutablebitrust_slice = self._mutable_bitrust.getslice(start, start + self.item_size)
             if op == operator.ixor:
-                mutablebitrust_slice.ixor(value._bitstore)
+                mutablebitrust_slice.ixor(value)
             elif op == operator.iand:
-                mutablebitrust_slice.iand(value._bitstore)
+                mutablebitrust_slice.iand(value)
             elif op == operator.ior:
-                mutablebitrust_slice.ior(value._bitstore)
+                mutablebitrust_slice.ior(value)
             self._mutable_bitrust.set_slice(start, start + self.item_size, mutablebitrust_slice.freeze())
         return self
 
