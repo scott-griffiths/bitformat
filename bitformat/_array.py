@@ -12,98 +12,10 @@ import operator
 import sys
 from bitformat.bit_rust import MutableBitRust, BitRust
 
-__all__ = ["Array", "BitsProxy"]
+__all__ = ["Array"]
 
 # The possible types stored in each element of the Array
 ElementType = Union[float, str, int, bytes, bool, Bits, MutableBits]
-
-
-class BitsProxy:
-    """A Proxy object to access the data in an ``Array`` as if it were a ``Bits`` object.
-
-    This allows the mutable data in the ``Array`` to be accessed using the ``Bits`` methods without a copy being made,
-    facilitating operations like slicing, bitwise manipulation, and other Bits methods on the ``Array``'s data.
-    Usage is almost exactly the same as for ``Bits``, but some special methods such as ``__copy__`` and ``__hash__``
-    behave differently.
-
-    Note that a ``BitsProxy`` is mutable, and its value will change as the ``Array`` changes. To copy to an immutable
-    ``Bits`` object use the ``to_bits()`` method on the ``Array``.
-
-    See the ``Bits`` class for more information on the available methods.
-
-    """
-
-    def __init__(self, array: Array) -> None:
-        """Initialise the with an ``Array`` object to make a proxy to its bit data."""
-        self._array = array
-
-    def __len__(self) -> int:
-        return len(self._array._mutable_bitrust)
-
-    def __getattr__(self, name):
-        """Delegate attribute access to the internal bit storage."""
-        x = MutableBits()
-        x._bitstore = self._array._mutable_bitrust
-        return getattr(x, name)
-
-    def __copy__(self):
-        """Creates a copy of the ``BitsProxy`` object as a real immutable ``Bits`` object."""
-        x = MutableBits()
-        x._bitstore = self._array._mutable_bitrust
-        return x[:]
-
-    __hash__ = None
-    """The hash method is disabled for a ``BitsProxy`` object as it is mutable."""
-
-    def __eq__(self, other):
-        if isinstance(other, BitsProxy):
-            return self._bitstore == other._bitstore
-        try:
-            return self._bitstore == MutableBits._from_any(other)._bitstore
-        except TypeError:
-            return False
-
-
-# List of special methods to delegate
-special_methods = [
-    "__add__",
-    "__and__",
-    "__bool__",
-    "__contains__",
-    "__ge__",
-    "__getitem__",
-    "__gt__",
-    "__invert__",
-    "__iter__",
-    "__le__",
-    "__lshift__",
-    "__lt__",
-    "__mul__",
-    "__or__",
-    "__radd__",
-    "__rand__",
-    "__repr__",
-    "__rmul__",
-    "__ror__",
-    "__rshift__",
-    "__rxor__",
-    "__str__",
-    "__xor__",
-]
-
-
-def method_factory(name):
-    def method(self, *args, **kwargs):
-        x = MutableBits()
-        x._bitstore = self._array._mutable_bitrust
-        return getattr(x, name)(*args, **kwargs)
-
-    return method
-
-
-# Dynamically create special methods on BitsProxy
-for method_name in special_methods:
-    setattr(BitsProxy, method_name, method_factory(method_name))
 
 
 class Array:
@@ -156,7 +68,6 @@ class Array:
       gives the leftovers at the end of the data.
     """
 
-    _proxy: BitsProxy
     _mutable_bitrust: MutableBitRust
     _dtype: Dtype
 
@@ -174,7 +85,6 @@ class Array:
     def _partial_init(cls, dtype: str | Dtype) -> Array:
         """Code common to the various constructor methods."""
         x = super().__new__(cls)
-        x._proxy = BitsProxy(x)
         x._set_dtype(dtype)
         return x
 
@@ -226,9 +136,11 @@ class Array:
         return f"Array of {self._dtype.info()} with {len(self)} items and {len(self._mutable_bitrust)} bits of data."
 
     @property
-    def data(self) -> BitsProxy:
+    def data(self) -> Bits:
         """Property that provides access to the ``Array`` data through a ``BitsProxy``."""
-        return self._proxy
+        x = Bits()
+        x._bitstore = self._mutable_bitrust.freeze()
+        return x
 
     @data.setter
     def data(self, value: BitsType) -> None:
@@ -425,12 +337,12 @@ class Array:
             else:
                 # No length supplied - use the current length instead
                 dtype = DtypeSingle.from_params(dtype.kind, self.dtype.size)
-        return [
-            dtype.unpack(self._proxy[start : start + dtype.bit_length])
-            for start in range(
-                0, len(self._proxy) - dtype.bit_length + 1, dtype.bit_length
-            )
-        ]
+        l = []
+        for start in range(0, len(self._mutable_bitrust) - dtype.bit_length + 1, dtype.bit_length):
+            b = Bits()
+            b._bitstore = self._mutable_bitrust.getslice(start, start + dtype.bit_length)
+            l.append(dtype.unpack(b))
+        return l
 
     def append(self, x: ElementType, /) -> None:
         """
@@ -440,7 +352,7 @@ class Array:
         :type x: ElementType
         :return: None
         """
-        if len(self._proxy) % self.item_size != 0:
+        if len(self._mutable_bitrust) % self.item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._mutable_bitrust.append(self._create_element(x)._bitstore)
 
@@ -459,8 +371,8 @@ class Array:
             # extend the bit data by appending on the end
             self._mutable_bitrust.append(Bits.from_bytes(iterable)._bitstore)
             return
-        if len(self._proxy) % self.item_size != 0:
-            raise ValueError(f"Cannot extend Array as its data length ({len(self._proxy)} bits) "
+        if len(self._mutable_bitrust) % self.item_size != 0:
+            raise ValueError(f"Cannot extend Array as its data length ({len(self._mutable_bitrust)} bits) "
                              f"is not a multiple of the format length ({self.item_size} bits).")
         if isinstance(iterable, Array):
             if self._dtype != iterable._dtype:
@@ -522,8 +434,10 @@ class Array:
         if self.item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
                              f"The '{self._dtype}' format is {self.item_size} bits long.")
-        # TODO: Tidy up when Proxy replaced with MutableBits.
-        self.data = self._proxy.byte_swap(self.item_size // 8).freeze()
+        b = MutableBits()
+        b._bitstore = self._mutable_bitrust.clone_as_mutable()
+        b.byte_swap(self.item_size // 8)
+        self._mutable_bitrust = b._bitstore
 
     def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
@@ -544,7 +458,7 @@ class Array:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self._proxy.to_bytes()
+        return self._mutable_bitrust.to_bytes()
 
     def to_bits(self) -> Bits:
         """Return as a Bits object. As Arrays are mutable we need to return a copy."""
@@ -553,12 +467,12 @@ class Array:
         return x
 
     def reverse(self) -> None:
-        trailing_bit_length = len(self._proxy) % self.item_size
+        trailing_bit_length = len(self._mutable_bitrust) % self.item_size
         if trailing_bit_length != 0:
-            raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._proxy)} bits) "
+            raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._mutable_bitrust)} bits) "
                              f"is not a multiple of the format length ({self.item_size} bits).")
         self._mutable_bitrust = MutableBits.from_joined([self._get_bit_slice(s - self.item_size, s)
-                                           for s in range(len(self._proxy), 0, -self.item_size)])._bitstore
+                                           for s in range(len(self._mutable_bitrust), 0, -self.item_size)])._bitstore
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None, groups: int | None = None,
            width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
@@ -608,22 +522,22 @@ class Array:
         if not isinstance(dtype1, DtypeSingle) or (dtype2 is not None and not isinstance(dtype2, DtypeSingle)):
             raise ValueError("Array.pp() only supports simple Dtypes, not ones which represent arrays.")
 
-        trailing_bit_length = len(self._proxy) % token_length
+        trailing_bit_length = len(self._mutable_bitrust) % token_length
         format_sep = " : "  # String to insert on each line between multiple formats
         dtype1_str = str(dtype1)
         dtype2_str = ""
         if dtype2 is not None:
             dtype2_str = f", dtype2='{dtype2}'"
-        data = self._proxy if trailing_bit_length == 0 else self._get_bit_slice(0, len(self._proxy) - trailing_bit_length)
-        length = len(self._proxy) // token_length
+        data = self._get_bit_slice(0, len(self._mutable_bitrust) - trailing_bit_length)
+        length = len(self._mutable_bitrust) // token_length
         len_str = colour.green + str(length) + colour.off
         stream.write(
-            f"<{self.__class__.__name__} dtype1='{dtype1_str}'{dtype2_str}, length={len_str}, item_size={token_length} bits, total data size={(len(self._proxy) + 7) // 8} bytes> [\n"
+            f"<{self.__class__.__name__} dtype1='{dtype1_str}'{dtype2_str}, length={len_str}, item_size={token_length} bits, total data size={(len(self._mutable_bitrust) + 7) // 8} bytes> [\n"
         )
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._proxy) - trailing_bit_length, None).unpack("bin"))
+            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._mutable_bitrust) - trailing_bit_length, None).unpack("bin"))
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:
@@ -650,7 +564,9 @@ class Array:
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
         for _ in range(len(self)):
-            yield self._dtype.unpack(self._proxy[start : start + self.item_size])
+            b = MutableBits()
+            b._bitstore = self._mutable_bitrust.getslice(start, start + self.item_size)
+            yield self._dtype.unpack(b)
             start += self.item_size
 
     def __copy__(self) -> Array:
@@ -675,7 +591,9 @@ class Array:
                 return op(a)
 
         for i in range(len(self)):
-            v = self._dtype.unpack(self._proxy[self.item_size * i : self.item_size * (i + 1)])
+            b = MutableBits()
+            b._bitstore = self._mutable_bitrust.getslice(self.item_size * i, self.item_size * (i + 1))
+            v = self._dtype.unpack(b)
             try:
                 new_data += new_array._create_element(partial_op(v))
             except (ZeroDivisionError, ValueError) as e:
@@ -700,7 +618,9 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            v = self._dtype.unpack(self._proxy[self.item_size * i : self.item_size * (i + 1)])
+            b = MutableBits()
+            b._bitstore = self._mutable_bitrust.getslice(self.item_size * i, self.item_size * (i + 1))
+            v = self._dtype.unpack(b)
             try:
                 new_data += self._create_element(op(v, value))
             except (ZeroDivisionError, ValueError) as e:
@@ -755,8 +675,12 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            a = self._dtype.unpack(self._proxy[self.item_size * i : self.item_size * (i + 1)])
-            b = other._dtype.unpack(other._proxy[other.item_size * i : other.item_size * (i + 1)])
+            a_bits = MutableBits()
+            a_bits._bitstore = self._mutable_bitrust.getslice(self.item_size * i, self.item_size * (i + 1))
+            b_bits = MutableBits()
+            b_bits._bitstore = other._mutable_bitrust.getslice(other.item_size * i, other.item_size * (i + 1))
+            a = self._dtype.unpack(a_bits)
+            b = other._dtype.unpack(b_bits)
             try:
                 new_data += new_array._create_element(op(a, b))
             except (ValueError, ZeroDivisionError) as e:

@@ -908,7 +908,7 @@ class TestDelegation:
         a = Array("i4", [1, 2, 5, 5])
         b = a.data
         a[0] = 3
-        assert b[0:4] == "0b0011"
+        assert b[0:4] == "0b0001"
 
     def test_str(self):
         a = Array("f32", [0, -10, 0.5])
@@ -935,9 +935,7 @@ class TestDelegation:
 
     def test_hash(self):
         a = Array("u8", [1])
-        assert isinstance(a.data, collections.abc.Hashable) is False
-        with pytest.raises(TypeError):
-            _ = set([a.data])
+        assert isinstance(a.data, collections.abc.Hashable) is True
 
 
 def test_array_of_array():

@@ -32,7 +32,7 @@ __author__ = "Scott Griffiths"
 
 from ._version import VERSION as __version__
 from ._bits import Bits, MutableBits
-from ._array import Array, BitsProxy
+from ._array import Array
 from ._dtypes import DtypeDefinition, Register, Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ._fieldtype import FieldType
 from ._field import Field
@@ -124,7 +124,7 @@ for dt in dtype_definitions:
     Register().add_dtype(dt)
 
 
-__all__ = ["Bits", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "BitsProxy", "Expression",
+__all__ = ["Bits", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
            "Options", "Repeat", "Register", "Endianness", "If", "Pass", "Reader", "DtypeKind", "MutableBits"]
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.

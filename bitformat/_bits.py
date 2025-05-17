@@ -27,12 +27,12 @@ CACHE_SIZE = 256
 
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
+    if isinstance(any_, str):
+        return str_to_bitstore_cached(any_)
     if isinstance(any_,  Bits):
         return any_._bitstore
     if isinstance(any_, MutableBits):
         return any_._bitstore.freeze()
-    if isinstance(any_, str):
-        return str_to_bitstore_cached(any_)
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return BitRust.from_bytes(any_)
     raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
@@ -873,8 +873,18 @@ class _BaseBits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        # TODO: This should be a clone and an __iadd__. And it should be a append, not a join!
-        return self.__class__.from_joined([self, Bits._from_any(bs)])
+        bs = create_bitrust_from_any(bs)
+        x = self.__class__()
+        if isinstance(self, Bits):
+            x._bitstore = self._bitstore.clone_as_mutable()
+            x._bitstore.append(bs)
+            x._bitstore = x._bitstore.freeze()
+        else:
+            x._bitstore = self._bitstore.freeze()
+            x._bitstore = x._bitstore.clone_as_mutable()
+            x._bitstore.append(bs)
+            x._bitstore.freeze()
+        return x
 
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
