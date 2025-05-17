@@ -37,6 +37,18 @@ def create_bitrust_from_any(any_: BitsType) -> BitRust:
         return BitRust.from_bytes(any_)
     raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
 
+def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
+    if isinstance(any_, str):
+        return str_to_mutable_bitstore(any_)
+    if isinstance(any_,  Bits):
+        return any_._bitstore.clone_as_mutable()
+    if isinstance(any_, MutableBits):
+        return any_._bitstore.clone()
+    if isinstance(any_, (bytes, bytearray, memoryview)):
+        return MutableBitRust.from_bytes(any_)
+    raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a MutableBitRust object.")
+
+
 @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore_cached(token: str) -> BitRust:
     if token and token[0] == '0':
@@ -87,6 +99,11 @@ def split_into_tokens(s: str) -> list[str]:
 def str_to_bitstore_cached(s: str) -> BitRust:
     tokens = split_into_tokens(s)
     return BitRust.join([token_to_bitstore_cached(t) for t in tokens if t])
+
+
+def str_to_mutable_bitstore(s: str) -> MutableBitRust:
+    tokens = split_into_tokens(s)
+    return MutableBitRust.join([token_to_bitstore_cached(t) for t in tokens if t])
 
 
 class _BaseBits:
@@ -881,7 +898,7 @@ class _BaseBits:
             x._bitstore = x._bitstore.freeze()
         else:
             x._bitstore = self._bitstore.freeze()
-            x._bitstore = x._bitstore.clone_as_mutable()
+            x._bitstore = x._bitstore.as_mutable()
             x._bitstore.append(bs)
             x._bitstore.freeze()
         return x
@@ -963,7 +980,7 @@ class _BaseBits:
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = create_bitrust_from_any(bs).clone_as_mutable()
+        bs = create_mutable_bitrust_from_any(bs)
         bs.append(self._bitstore)
         x = self.__class__()
         if isinstance(self, Bits):
@@ -1299,7 +1316,7 @@ class MutableBits(_BaseBits):
         Used internally only.
         """
         x = cls()
-        x._bitstore = create_bitrust_from_any(any_).clone_as_mutable()
+        x._bitstore = create_mutable_bitrust_from_any(any_)
         return x
 
     def __new__(cls, s: str | None = None, /) -> Bits:
@@ -1428,7 +1445,7 @@ class MutableBits(_BaseBits):
         # TODO: This could be factored out a bit better than this.
         if not isinstance(x, cls):
             xp = object.__new__(cls)
-            xp._bitstore = x._bitstore.clone_as_mutable()
+            xp._bitstore = x._bitstore.as_mutable()
             return xp
         else:
             return x
@@ -1520,7 +1537,7 @@ class MutableBits(_BaseBits):
         """Return a new copy of the MutableBits for the copy module.
         """
         x = MutableBits()
-        x._bitstore = self._bitstore.clone_as_mutable()
+        x._bitstore = self._bitstore.clone()
         return x
 
     def _slice(self: MutableBits, start: int, end: int) -> MutableBits:

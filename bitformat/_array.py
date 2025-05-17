@@ -61,7 +61,7 @@ class Array:
 
     **Properties:**
 
-    - ``data``: The binary data of the ``Array`` as a ``BitsProxy`` object.
+    - ``data``: The binary data of the ``Array`` as a ``MutableBits`` object.
     - ``dtype``: The data type of the elements in the ``Array``.
     - ``item_size``: The length *in bits* of a single item. Read only.
     - ``trailing_bits``: If the data length is not a multiple of the dtype length, this ``Bits``
@@ -111,7 +111,10 @@ class Array:
     def from_bits(cls, dtype: str | Dtype, b: Bits) -> Array:
         x = cls._partial_init(dtype)
         # We may change the internal BitRust, so need to make a copy here.
-        x._mutable_bitrust = b._bitstore.clone_as_mutable()
+        if isinstance(b, MutableBits):
+            x._mutable_bitrust = b._bitstore.clone()
+        else:
+            x._mutable_bitrust = b._bitstore.clone_as_mutable()
         return x
 
     @classmethod
@@ -136,10 +139,14 @@ class Array:
         return f"Array of {self._dtype.info()} with {len(self)} items and {len(self._mutable_bitrust)} bits of data."
 
     @property
-    def data(self) -> Bits:
-        """Property that provides access to the ``Array`` data through a ``BitsProxy``."""
-        x = Bits()
-        x._bitstore = self._mutable_bitrust.freeze()
+    def data(self) -> MutableBits:
+        """Property that provides access to the ``Array`` data as a ``MutableBits``.
+
+        Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
+        Call ``.freeze()`` on the ``MutableBits`` to return an immutable copy of the data as a ``Bits`` object.
+        """
+        x = MutableBits()
+        x._bitstore = self._mutable_bitrust
         return x
 
     @data.setter
@@ -433,7 +440,7 @@ class Array:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
                              f"The '{self._dtype}' format is {self.item_size} bits long.")
         b = MutableBits()
-        b._bitstore = self._mutable_bitrust.clone_as_mutable()
+        b._bitstore = self._mutable_bitrust.clone()
         b.byte_swap(self.item_size // 8)
         self._mutable_bitrust = b._bitstore
 
@@ -625,13 +632,13 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        self._mutable_bitrust = new_data._bitstore.clone_as_mutable()
+        self._mutable_bitrust = new_data._bitstore.clone()
         return self
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
         a_copy = Array(self.dtype)
-        a_copy._mutable_bitrust = self._mutable_bitrust.clone_as_mutable()
+        a_copy._mutable_bitrust = self._mutable_bitrust.clone()
         a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
         return a_copy
 

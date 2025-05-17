@@ -123,7 +123,7 @@ def test_finding_bitstring():
     i = random.randrange(0, 2 ** 20000000)
     s = bitstring.BitArray(uint=i, length=20000000)
     for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
-        x = len(list(s.findall(ss)))
+        x = len(list(s.findall(ss, count=100)))
     return x
 
 def test_finding_bitformat():
@@ -131,7 +131,7 @@ def test_finding_bitformat():
     i = random.randrange(0, 2 ** 20000000)
     s = bitformat.Bits.from_dtype('u20000000', i)
     for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
-        x = len(list(s.find_all(ss)))
+        x = len(list(s.find_all(ss, count=100)))
     return x
 
 class FunctionPairs:

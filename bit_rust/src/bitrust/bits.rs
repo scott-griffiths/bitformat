@@ -511,10 +511,18 @@ impl BitRust {
         self.data.any()
     }
 
-    /// Return a copy with a real copy of the data.
+    /// Return as a MutableBitRust with a copy of the data.
     pub fn clone_as_mutable(&self) -> MutableBitRust {
         MutableBitRust {
             inner: BitRust::new(self.data.clone()),
+        }
+    }
+
+    // Return as a MutableBitRust, taking ownership of the data.
+    pub fn as_mutable(&mut self) -> MutableBitRust {
+        let data = std::mem::take(&mut self.data);
+        MutableBitRust {
+            inner: BitRust::new(data),
         }
     }
 

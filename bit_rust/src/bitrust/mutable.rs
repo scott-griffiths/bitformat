@@ -315,7 +315,7 @@ impl MutableBitRust {
     }
 
     /// Return a copy with a real copy of the data.
-    pub fn clone_as_mutable(&self) -> MutableBitRust {
+    pub fn clone(&self) -> MutableBitRust {
         MutableBitRust::new(&self.inner.data.clone())
     }
 
