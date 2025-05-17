@@ -186,9 +186,9 @@ class Array:
         if self.item_size == 0 or self.item_size is None:
             raise ValueError(f"A fixed length data type is needed for an Array, received '{new_dtype}'.")
 
-    def _create_element(self, value: ElementType) -> Bits:
+    def _create_element(self, value: ElementType) -> BitRust:
         """Create Bits from value according to the token_name and token_length"""
-        return self._dtype.pack(value)
+        return self._dtype.pack(value)._bitstore
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
@@ -233,7 +233,7 @@ class Array:
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = BitRust.join([self._create_element(x)._bitstore for x in value])
+                new_data = BitRust.join([self._create_element(x) for x in value])
                 self._mutable_bitrust.set_slice(start * self.item_size, stop * self.item_size, new_data)
                 return
             items_in_slice = len(range(start, stop, step))
@@ -242,7 +242,7 @@ class Array:
             if len(value) == items_in_slice:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
-                    self._mutable_bitrust.set_slice(s * self.item_size, s * self.item_size + len(x), x._bitstore)
+                    self._mutable_bitrust.set_slice(s * self.item_size, s * self.item_size + len(x), x)
             else:
                 raise ValueError(f"Can't assign {len(value)} values to an extended slice of length {items_in_slice}.")
         else:
@@ -252,7 +252,7 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self.item_size * key
             x = self._create_element(value)
-            self._mutable_bitrust.set_slice(start, start + len(x), x._bitstore)
+            self._mutable_bitrust.set_slice(start, start + len(x), x)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
@@ -354,7 +354,7 @@ class Array:
         """
         if len(self._mutable_bitrust) % self.item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
-        self._mutable_bitrust.append(self._create_element(x)._bitstore)
+        self._mutable_bitrust.append(self._create_element(x))
 
     def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> None:
         """
@@ -383,7 +383,7 @@ class Array:
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
-            to_join = [self._create_element(item)._bitstore for item in iterable]
+            to_join = [self._create_element(item) for item in iterable]
             self._mutable_bitrust.append(BitRust.join(to_join))
 
     def insert(self, pos: int, x: ElementType, /) -> None:
@@ -398,12 +398,10 @@ class Array:
         """
         if pos < 0:
             pos += len(self)
-        pos = min(
-            pos, len(self)
-        )  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
-        v = self._create_element(x)  # TODO: Version of _create_element that just returns the BitRust
+        pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
+        v = self._create_element(x)
         self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, pos * self.item_size).freeze(),
-                                       v._bitstore,
+                                       v,
                                        self._mutable_bitrust.getslice(pos * self.item_size, None).freeze()])
 
     def pop(self, pos: int = -1, /) -> ElementType:
@@ -573,9 +571,7 @@ class Array:
         a_copy = self.__class__.from_bits(self._dtype, self.to_bits())
         return a_copy
 
-    def _apply_op_to_all_elements(
-        self, op, value: int | float | None, is_comparison: bool = False
-    ) -> Array:
+    def _apply_op_to_all_elements(self, op, value: int | float | None, is_comparison: bool = False) -> Array:
         """Apply op with value to each element of the Array and return a new Array"""
         if isinstance(self._dtype, DtypeTuple):
             raise ValueError(f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeTuple dtype.")
@@ -595,17 +591,15 @@ class Array:
             b._bitstore = self._mutable_bitrust.getslice(self.item_size * i, self.item_size * (i + 1))
             v = self._dtype.unpack(b)
             try:
-                new_data += new_array._create_element(partial_op(v))
+                new_data += new_array._dtype.pack(partial_op(v))
             except (ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
                     index = i
                 failures += 1
         if failures != 0:
-            raise ValueError(
-                f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
-                f'First error at index {index} was: "{msg}"'
-            )
+            raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
+                             f'First error at index {index} was: "{msg}"')
         new_array._mutable_bitrust = new_data._bitstore
         return new_array
 
@@ -622,7 +616,7 @@ class Array:
             b._bitstore = self._mutable_bitrust.getslice(self.item_size * i, self.item_size * (i + 1))
             v = self._dtype.unpack(b)
             try:
-                new_data += self._create_element(op(v, value))
+                new_data += self._dtype.pack(op(v, value))
             except (ZeroDivisionError, ValueError) as e:
                 if failures == 0:
                     msg = str(e)
@@ -682,7 +676,7 @@ class Array:
             a = self._dtype.unpack(a_bits)
             b = other._dtype.unpack(b_bits)
             try:
-                new_data += new_array._create_element(op(a, b))
+                new_data += new_array._dtype.pack(op(a, b))
             except (ValueError, ZeroDivisionError) as e:
                 if failures == 0:
                     msg = str(e)
