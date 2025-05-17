@@ -8,7 +8,6 @@ A collection of items that don't fit into any other category.
 
 * :class:`Expression`: Allows values parsed to be used in an f-string like way elsewhere in a :class:`Format`.
 * :class:`Options`: Used to set and get global options for the module.
-* :class:`BitsProxy`: Allows the data stored in an :class:`Array` to be accessed using the methods and properties of a :class:`Bits` object.
 * :class:`Register`: Stores information about what data types are supported.
 * :class:`DtypeKind`: The kind of data type.
 * :class:`Endianness`: The endianness of the data type.
@@ -28,16 +27,6 @@ A collection of items that don't fit into any other category.
 .. _options:
 
 .. autoclass:: bitformat.Options
-   :members:
-   :undoc-members:
-   :member-order: groupwise
-
-----
-
-.. _bitsproxy:
-
-
-.. autoclass:: bitformat.BitsProxy
    :members:
    :undoc-members:
    :member-order: groupwise

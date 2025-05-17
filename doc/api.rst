@@ -51,7 +51,7 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         class Array {
             + int item_size
             + Dtype dtype
-            + BitsProxy data
+            + MutableBits data
             + from_iterable()
             + from_bytes()
             + ...()
@@ -154,7 +154,6 @@ Other classes and enums are :ref:`listed here. <misc>` Some of the more importan
 
 * :ref:`Expression <expression>` -- Use Field values elsewhere for conditionals and other logic.
 * :ref:`Options <options>` -- Getting and setting module-wide options.
-* :ref:`BitsProxy <bitsproxy>` -- Used by :class:`Array` to allow the data to behave more like :class:`Bits`.
 
 
 -------------
