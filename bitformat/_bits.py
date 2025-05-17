@@ -190,9 +190,12 @@ class _BaseBits:
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
         """
-        suffix = self._from_any(suffix)
+        suffix = create_bitrust_from_any(suffix)
         if len(suffix) <= len(self):
-            return self._slice(len(self) - len(suffix), len(self)) == suffix
+            if isinstance(self, Bits):
+                return self._bitstore.getslice(len(self) - len(suffix), len(self)) == suffix
+            else:
+                return self._bitstore.getslice(len(self) - len(suffix), len(self)).freeze() == suffix
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -372,9 +375,12 @@ class _BaseBits:
         :rtype: bool
 
         """
-        prefix = self._from_any(prefix)
+        prefix = create_bitrust_from_any(prefix)
         if len(prefix) <= len(self):
-            return self._slice(0, len(prefix)) == prefix
+            if isinstance(self, Bits):
+                return self._bitstore.getslice(0, len(prefix)) == prefix
+            else:
+                return self._bitstore.getslice(0, len(prefix)).freeze() == prefix
         return False
 
     def to_bytes(self) -> bytes:
@@ -830,8 +836,11 @@ class _BaseBits:
 
         """
         try:
-            other = self._from_any(bs)._bitstore
-            return self._bitstore == other
+            other = create_bitrust_from_any(bs)
+            if isinstance(self, Bits):  # TODO: This could be more streamlined.
+                return self._bitstore == other
+            else:
+                return self._bitstore.freeze() == other
         except TypeError:
             return False
 
@@ -864,6 +873,7 @@ class _BaseBits:
 
     def __add__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
+        # TODO: This should be a clone and an __iadd__. And it should be a append, not a join!
         return self.__class__.from_joined([self, Bits._from_any(bs)])
 
     @overload
@@ -1758,8 +1768,8 @@ class MutableBits(_BaseBits):
         """
         if count == 0:
             return self
-        old = Bits._from_any(old)  # TODO switch to not create Bits
-        new = Bits._from_any(new)
+        old = create_bitrust_from_any(old)
+        new = create_bitrust_from_any(new)
         if len(old) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
@@ -1769,7 +1779,7 @@ class MutableBits(_BaseBits):
         starting_points: list[int] = []
         if byte_aligned:
             start += (8 - start % 8) % 8
-        for x in self[start:end].find_all(old, byte_aligned=byte_aligned):
+        for x in self[start:end]._find_all(old, None, byte_aligned=byte_aligned):
             x += start
             if not starting_points:
                 starting_points.append(x)
@@ -1783,10 +1793,10 @@ class MutableBits(_BaseBits):
         original = self._bitstore.freeze()
         replacement_list = [original.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
-            replacement_list.append(new._bitstore)
+            replacement_list.append(new)
             replacement_list.append(original.getslice(starting_points[i] + len(old), starting_points[i + 1]))
         # Final replacement
-        replacement_list.append(new._bitstore)
+        replacement_list.append(new)
         replacement_list.append(original.getslice(starting_points[-1] + len(old), None))
         self._bitstore = MutableBitRust.join(replacement_list)
         return self
