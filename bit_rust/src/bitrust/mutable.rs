@@ -16,6 +16,12 @@ impl PartialEq for MutableBitRust {
     }
 }
 
+impl PartialEq<BitRust> for MutableBitRust {
+    fn eq(&self, other: &BitRust) -> bool {
+        self.inner.data == other.data
+    }
+}
+
 impl MutableBitRust {
     fn join_internal(bits_vec: &[&BitRust]) -> Self {
         match bits_vec.len() {

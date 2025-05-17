@@ -44,6 +44,12 @@ impl PartialEq for BitRust {
     }
 }
 
+impl PartialEq<MutableBitRust> for BitRust {
+    fn eq(&self, other: &MutableBitRust) -> bool {
+        self.data == other.inner.data
+    }
+}
+
 /// Private helper methods. Not part of the Python interface.
 impl BitRust {
     pub fn new(bv: helpers::BV) -> Self {
