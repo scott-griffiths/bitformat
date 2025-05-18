@@ -60,8 +60,8 @@ impl MutableBitRust {
 impl MutableBitRust {
 
     pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
-        let start_slice = self.getslice(0, Some(start))?.freeze();
-        let end_slice = self.getslice(end, Some(self.len()))?.freeze();
+        let start_slice = self.getslice(0, Some(start))?.clone_as_immutable();
+        let end_slice = self.getslice(end, Some(self.len()))?.clone_as_immutable();
         let joined = MutableBitRust::join_internal(&[&start_slice, value, &end_slice]);
         *self = joined;
         Ok(())
@@ -319,9 +319,18 @@ impl MutableBitRust {
         MutableBitRust::new(&self.inner.data.clone())
     }
 
-    // Convert to immutable BitRust
-    pub fn freeze(&self) -> BitRust {
+    // Convert to immutable BitRust - cloning the data.
+    pub fn clone_as_immutable(&self) -> BitRust {
         BitRust::new(self.inner.data.clone())
+    }
+
+    /// Convert to immutable BitRust - without cloning the data.
+    pub fn as_immutable(&mut self) -> BitRust {
+        let data = std::mem::take(&mut self.inner.data);
+
+        // let empty_data = helpers::BV::new();
+        // let data = std::mem::replace(&mut self.inner.data, empty_data);
+        BitRust::new(data)
     }
 
     /// Reverses all bits in place.

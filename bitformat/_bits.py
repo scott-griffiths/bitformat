@@ -32,7 +32,7 @@ def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_,  Bits):
         return any_._bitstore
     if isinstance(any_, MutableBits):
-        return any_._bitstore.freeze()
+        return any_._bitstore.clone_as_immutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return BitRust.from_bytes(any_)
     raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
@@ -212,7 +212,7 @@ class _BaseBits:
             if isinstance(self, Bits):
                 return self._bitstore.getslice(len(self) - len(suffix), len(self)) == suffix
             else:
-                return self._bitstore.getslice(len(self) - len(suffix), len(self)).freeze() == suffix
+                return self._bitstore.getslice(len(self) - len(suffix), len(self)).clone_as_immutable() == suffix
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -397,7 +397,7 @@ class _BaseBits:
             if isinstance(self, Bits):
                 return self._bitstore.getslice(0, len(prefix)) == prefix
             else:
-                return self._bitstore.getslice(0, len(prefix)).freeze() == prefix
+                return self._bitstore.getslice(0, len(prefix)).clone_as_immutable() == prefix
         return False
 
     def to_bytes(self) -> bytes:
@@ -857,7 +857,7 @@ class _BaseBits:
             if isinstance(self, Bits):  # TODO: This could be more streamlined.
                 return self._bitstore == other
             else:
-                return self._bitstore.freeze() == other
+                return self._bitstore.clone_as_immutable() == other
         except TypeError:
             return False
 
@@ -895,12 +895,12 @@ class _BaseBits:
         if isinstance(self, Bits):
             x._bitstore = self._bitstore.clone_as_mutable()
             x._bitstore.append(bs)
-            x._bitstore = x._bitstore.freeze()
+            x._bitstore = x._bitstore.clone_as_immutable()
         else:
-            x._bitstore = self._bitstore.freeze()
+            x._bitstore = self._bitstore.clone_as_immutable()
             x._bitstore = x._bitstore.as_mutable()
             x._bitstore.append(bs)
-            x._bitstore.freeze()
+            x._bitstore.clone_as_immutable()
         return x
 
     @overload
@@ -932,13 +932,13 @@ class _BaseBits:
         if isinstance(self, MutableBits):
             # Mutable bits are mutable, so we need to copy them.
             x = self.__class__()
-            x._bitstore = self._bitstore.freeze().clone_as_mutable()
+            x._bitstore = self._bitstore.clone_as_immutable().clone_as_mutable()
             x._bitstore.invert_all()
             return x
         x = self.__class__()
         x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.invert_all()
-        x._bitstore = x._bitstore.freeze()
+        x._bitstore = x._bitstore.as_immutable()
         return x
 
     def __lshift__(self: Bits, n: int, /) -> Bits:
@@ -984,7 +984,7 @@ class _BaseBits:
         bs.append(self._bitstore)
         x = self.__class__()
         if isinstance(self, Bits):
-            x._bitstore = bs.freeze()
+            x._bitstore = bs.as_immutable()
         else:
             x._bitstore = bs
         return x
@@ -1330,7 +1330,7 @@ class MutableBits(_BaseBits):
     def freeze(self) -> Bits:
         """Convert to an immutable Bits instance."""
         x = Bits()
-        x._bitstore = self._bitstore.freeze()
+        x._bitstore = self._bitstore.clone_as_immutable()
         return x
 
     @classmethod
@@ -1630,9 +1630,8 @@ class MutableBits(_BaseBits):
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).freeze(),
-                                    bs,
-                                    self._bitstore.getslice(pos, None).freeze()])
+        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).as_immutable(), bs,
+                                              self._bitstore.getslice(pos, None).as_immutable()])
         return self
 
     def invert(self, pos: Iterable[int] | int | None = None) -> MutableBits:
@@ -1672,9 +1671,9 @@ class MutableBits(_BaseBits):
             pos += len(self)
         if pos < 0 or pos > len(self):
             raise ValueError("Overwrite starts outside boundary of Bits.")
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).freeze(),
-                                    bs,
-                                    self._bitstore.getslice(pos + len(bs), None).freeze()])
+        # TODO: This should use setitem. Although there's an argument that both overwrite and insert could be replaced with setitem..?
+        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).as_immutable(), bs,
+                                              self._bitstore.getslice(pos + len(bs), None).as_immutable()])
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1806,7 +1805,7 @@ class MutableBits(_BaseBits):
                 break
         if not starting_points:
             return self
-        original = self._bitstore.freeze()
+        original = self._bitstore.clone_as_immutable()
         replacement_list = [original.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new)

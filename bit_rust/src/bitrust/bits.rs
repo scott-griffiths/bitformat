@@ -946,7 +946,7 @@ mod tests {
     #[test]
     fn freeze_preserves_data() {
         let mutable = MutableBitRust::from_bin("1100");
-        let immutable = mutable.freeze();
+        let immutable = mutable.clone_as_immutable();
         assert_eq!(immutable.to_bin(), "1100");
     }
 
@@ -955,7 +955,7 @@ mod tests {
         let mut mutable = MutableBitRust::from_bin("0000");
         mutable.set_index(true, 1).unwrap();
         mutable.set_index(true, 2).unwrap();
-        let immutable = mutable.freeze();
+        let immutable = mutable.clone_as_immutable();
         assert_eq!(immutable.to_bin(), "0110");
     }
 

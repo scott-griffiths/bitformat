@@ -213,7 +213,7 @@ class Array:
             if step != 1:
                 d = []
                 for s in range(start * self.item_size, stop * self.item_size, step * self.item_size):
-                    d.append(self._mutable_bitrust.getslice(s, s + self.item_size).freeze())
+                    d.append(self._mutable_bitrust.getslice(s, s + self.item_size).clone_as_immutable())
                 a = self.__class__(self._dtype)
                 a._mutable_bitrust = MutableBitRust.join(d)
                 return a
@@ -266,8 +266,8 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, start * self.item_size).freeze(),
-                                               self._mutable_bitrust.getslice(stop * self.item_size, None).freeze()])
+                self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, start * self.item_size).clone_as_immutable(),
+                                               self._mutable_bitrust.getslice(stop * self.item_size, None).clone_as_immutable()])
                 return
             # We need to delete from the end or the earlier positions will change
             r = (
@@ -276,16 +276,16 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, s * self.item_size).freeze(),
-                                               self._mutable_bitrust.getslice((s + 1) * self.item_size, None).freeze()])
+                self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, s * self.item_size).clone_as_immutable(),
+                                               self._mutable_bitrust.getslice((s + 1) * self.item_size, None).clone_as_immutable()])
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self.item_size * key
-            self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, start).freeze(),
-                                           self._mutable_bitrust.getslice(start + self.item_size, None).freeze()])
+            self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, start).clone_as_immutable(),
+                                           self._mutable_bitrust.getslice(start + self.item_size, None).clone_as_immutable()])
 
     def __repr__(self) -> str:
         bitstore_length = len(self._mutable_bitrust)
@@ -386,7 +386,7 @@ class Array:
                 raise TypeError(f"Cannot extend an Array with format '{self._dtype}' "
                                 f"from an Array of format '{iterable._dtype}'.")
             # No need to iterate over the elements, we can just append the data
-            self._mutable_bitrust.append(iterable._mutable_bitrust.freeze())
+            self._mutable_bitrust.append(iterable._mutable_bitrust.clone_as_immutable())
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
@@ -407,9 +407,9 @@ class Array:
             pos += len(self)
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, pos * self.item_size).freeze(),
+        self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, pos * self.item_size).clone_as_immutable(),
                                        v,
-                                       self._mutable_bitrust.getslice(pos * self.item_size, None).freeze()])
+                                       self._mutable_bitrust.getslice(pos * self.item_size, None).clone_as_immutable()])
 
     def pop(self, pos: int = -1, /) -> ElementType:
         """
@@ -468,7 +468,7 @@ class Array:
     def to_bits(self) -> Bits:
         """Return as a Bits object. As Arrays are mutable we need to return a copy."""
         x = Bits()
-        x._bitstore = self._mutable_bitrust.freeze()
+        x._bitstore = self._mutable_bitrust.clone_as_immutable()
         return x
 
     def reverse(self) -> None:
@@ -656,7 +656,7 @@ class Array:
                 mutablebitrust_slice.iand(value)
             elif op == operator.ior:
                 mutablebitrust_slice.ior(value)
-            self._mutable_bitrust.set_slice(start, start + self.item_size, mutablebitrust_slice.freeze())
+            self._mutable_bitrust.set_slice(start, start + self.item_size, mutablebitrust_slice.clone_as_immutable())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
