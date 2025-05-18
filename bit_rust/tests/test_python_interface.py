@@ -29,8 +29,8 @@ def test_join():
     assert c.to_bin() == '11110000'
 
 def test_find():
-    a = BitRust.from_bin('00000110001110')
-    b = BitRust.from_bin('11')
+    a = BitRust.from_bin_checked('00000110001110')
+    b = BitRust.from_bin_checked('11')
     assert a.find(b, 0, False) == 5
     assert a.find(b, 0, True) is None
 

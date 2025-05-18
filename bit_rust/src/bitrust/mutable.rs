@@ -1,13 +1,29 @@
-use crate::bitrust::helpers;
+use crate::bitrust::{bits, helpers};
 use crate::bitrust::BitRust;
 use pyo3::exceptions::{PyIndexError, PyValueError};
-use pyo3::{pyclass, pymethods, PyRef, PyResult};
+use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use crate::bitrust::BitRustIterator;
 use std::ops::Not;
+use bits::BitCollection;
 
 #[pyclass]
 pub struct MutableBitRust {
     pub(crate) inner: BitRust,
+}
+
+impl BitCollection for MutableBitRust {
+    fn len(&self) -> usize {
+        self.inner.len()
+    }
+    fn from_zeros(length: usize) -> Self {
+        Self { inner: BitRust::from_zeros(length) }
+    }
+    fn from_ones(length: usize) -> Self {
+        Self { inner: BitRust::from_ones(length) }
+    }
+    fn from_bytes(data: Vec<u8>) -> Self {
+        Self { inner: BitRust::from_bytes(data) }
+    }
 }
 
 impl PartialEq for MutableBitRust {
@@ -100,27 +116,33 @@ impl MutableBitRust {
 
     #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
-        Self { inner: BitRust::from_zeros(length) }
+        BitCollection::from_zeros(length)
     }
 
     #[staticmethod]
     pub fn from_ones(length: usize) -> Self {
-        Self { inner: BitRust::from_ones(length) }
+        BitCollection::from_ones(length)
+    }
+
+    #[staticmethod]
+    pub fn from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
+        let mut bv = helpers::BV::with_capacity(values.len());
+
+        for value in values {
+            let b: bool = value.extract(py)?;
+            bv.push(b);
+        }
+        Ok(Self { inner: BitRust::new(bv)})
     }
 
     #[staticmethod]
     pub fn from_bytes(data: Vec<u8>) -> Self {
-        Self { inner: BitRust::from_bytes(data) }
+        BitCollection::from_bytes(data)
     }
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         Self { inner: BitRust::from_bytes_with_offset(data, offset) }
-    }
-
-    #[staticmethod]
-    pub fn from_bin(binary_str: &str) -> Self {
-        Self { inner: BitRust::from_bin(binary_str) }
     }
 
     #[staticmethod]
@@ -159,12 +181,8 @@ impl MutableBitRust {
         MutableBitRust::new(&bv)
     }
 
-    pub fn len(&self) -> usize {
-        self.inner.len()
-    }
-
     pub fn __len__(&self) -> usize {
-        self.inner.__len__()
+        self.inner.len()
     }
 
     pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {

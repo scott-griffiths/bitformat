@@ -559,7 +559,7 @@ class _BaseBits:
         return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _set_bool(self, value: bool) -> None:
-        self._bitstore = BitRust.from_bin("1") if value else BitRust.from_bin("0")
+        self._bitstore = BitRust.from_bools([bool(value)])
         return
 
     def _get_bool(self) -> bool:
@@ -1109,7 +1109,7 @@ class Bits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitRust.from_bin("".join("1" if x else "0" for x in i))
+        x._bitstore = BitRust.from_bools([bool(x) for x in i])
         return x
 
     @classmethod
@@ -1370,7 +1370,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = MutableBitRust.from_bin("".join("1" if x else "0" for x in i))
+        x._bitstore = MutableBitRust.from_bools([bool(x) for x in i])
         return x
 
     @classmethod

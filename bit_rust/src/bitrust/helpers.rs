@@ -4,6 +4,7 @@ use bitvec::prelude::*;
 use bytemuck::cast_slice;
 use pyo3::exceptions::PyIndexError;
 use pyo3::PyResult;
+use bits::BitCollection;
 // The choice of size is interesting. Can choose u8, u16, u32, u64.
 // Also can choose Lsb0 or Msb0.
 // Not sure of all the performance implications yet.

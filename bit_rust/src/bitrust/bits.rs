@@ -8,11 +8,37 @@ use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
 use crate::bitrust::{BitRustIterator, BitRustBoolIterator};
 
+pub trait BitCollection {
+    fn len(&self) -> usize;
+    fn from_zeros(length: usize) -> Self;
+    fn from_ones(length: usize) -> Self;
+    fn from_bytes(data: Vec<u8>) -> Self;
+}
+
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
 #[pyclass]
 pub struct BitRust {
     pub(crate) data: helpers::BV,
+}
+
+impl BitCollection for BitRust {
+    fn len(&self) -> usize {
+        self.data.len()
+    }
+    fn from_zeros(length: usize) -> Self {
+        BitRust::new(helpers::BV::repeat(false, length))
+    }
+    fn from_ones(length: usize) -> Self {
+        BitRust::new(helpers::BV::repeat(true, length))
+    }
+    fn from_bytes(data: Vec<u8>) -> Self {
+        let bits = data.as_slice().view_bits::<Msb0>();
+        let mut bv = helpers::BV::new();
+        bv.extend_from_bitslice(bits);
+        BitRust::new(bv)
+    }
+
 }
 
 impl fmt::Debug for BitRust {
@@ -54,10 +80,6 @@ impl PartialEq<MutableBitRust> for BitRust {
 impl BitRust {
     pub fn new(bv: helpers::BV) -> Self {
         BitRust { data: bv }
-    }
-
-    pub(crate) fn len(&self) -> usize {
-        self.data.len()
     }
 
     /// Slice used internally without bounds checking.
@@ -129,20 +151,17 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
-        BitRust::new(helpers::BV::repeat(false, length))
+        BitCollection::from_zeros(length)
     }
 
     #[staticmethod]
     pub fn from_ones(length: usize) -> Self {
-        BitRust::new(helpers::BV::repeat(true, length))
+        BitCollection::from_ones(length)
     }
 
     #[staticmethod]
     pub fn from_bytes(data: Vec<u8>) -> Self {
-        let bits = data.as_slice().view_bits::<Msb0>();
-        let mut bv = helpers::BV::new();
-        bv.extend_from_bitslice(bits);
-        BitRust::new(bv)
+        BitCollection::from_bytes(data)
     }
 
     #[staticmethod]
@@ -151,6 +170,17 @@ impl BitRust {
         let mut bv = BitRust::from_bytes(data).data;
         bv.drain(..offset);
         BitRust::new(bv)
+    }
+
+    #[staticmethod]
+    pub fn from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
+        let mut bv = helpers::BV::with_capacity(values.len());
+
+        for value in values {
+            let b: bool = value.extract(py)?;
+            bv.push(b);
+        }
+        Ok(BitRust::new(bv))
     }
 
     #[staticmethod]
@@ -177,17 +207,6 @@ impl BitRust {
         }
         b.set_uninitialized(false);
         Ok(BitRust::new(b))
-    }
-
-    // An unchecked version of from_bin. Used when you're sure the input is valid.
-    #[staticmethod]
-    pub fn from_bin(binary_str: &str) -> Self {
-        let mut b: helpers::BV = helpers::BV::with_capacity(binary_str.len());
-
-        for ch in binary_str.chars() {
-            b.push(ch != '0');
-        }
-        BitRust::new(b)
     }
 
     #[staticmethod]
@@ -258,7 +277,7 @@ impl BitRust {
                 }
             }
         }
-        Ok(BitRust::from_bin(&bin_str))
+        Ok(BitRust::from_bin_checked(&bin_str)?)
     }
 
     #[staticmethod]
@@ -272,7 +291,7 @@ impl BitRust {
             };
             bin_str.push_str(&format!("{:03b}", digit)); // Format as 3-bit binary
         }
-        BitRust::from_bin(&bin_str)
+        BitRust::from_bin_checked(&bin_str).unwrap()
     }
 
     #[staticmethod]
@@ -562,7 +581,7 @@ mod tests {
 
     #[test]
     fn from_bin() {
-        let bits = BitRust::from_bin("00001010");
+        let bits = BitRust::from_bin_checked("00001010").unwrap();
         assert_eq!(*bits.to_bytes(), vec![10]);
         assert_eq!(bits.len(), 8);
         let bits = BitRust::from_bin_checked("").unwrap();
@@ -605,7 +624,7 @@ mod tests {
 
     #[test]
     fn get_index() {
-        let bits = BitRust::from_bin("001100");
+        let bits = BitRust::from_bin_checked("001100").unwrap();
         assert_eq!(bits.getindex(0).unwrap(), false);
         assert_eq!(bits.getindex(1).unwrap(), false);
         assert_eq!(bits.getindex(2).unwrap(), true);
@@ -635,16 +654,16 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let mut b = MutableBitRust::from_bin("11110000");
+        let mut b = MutableBitRust::from_bin_checked("11110000").unwrap();
         b.reverse();
         assert_eq!(b.to_bin(), "00001111");
-        let mut b = MutableBitRust::from_bin("1");
+        let mut b = MutableBitRust::from_bin_checked("1").unwrap();
         b.reverse();
         assert_eq!(b.to_bin(), "1");
-        let mut empty = MutableBitRust::from_bin("");
+        let mut empty = MutableBitRust::from_bin_checked("").unwrap();
         empty.reverse();
         assert_eq!(empty.to_bin(), "");
-        let mut b = MutableBitRust::from_bin("11001");
+        let mut b = MutableBitRust::from_bin_checked("11001").unwrap();
         b.reverse();
         assert_eq!(b.to_bin(), "10011");
 
@@ -652,9 +671,9 @@ mod tests {
 
     #[test]
     fn test_invert() {
-        let mut b = MutableBitRust::from_bin("0");
+        let mut b = MutableBitRust::from_bin_checked("0").unwrap();
         assert_eq!(b.invert(None).to_bin(), "1");
-        let mut b = MutableBitRust::from_bin("01110");
+        let mut b = MutableBitRust::from_bin_checked("01110").unwrap();
         assert_eq!(b.invert(None).to_bin(), "10001");
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
         let mut long = MutableBitRust::from_hex(hex_str);
@@ -667,13 +686,13 @@ mod tests {
         let b1 = BitRust::from_zeros(10);
         let b2 = BitRust::from_ones(2);
         assert_eq!(b1.find(&b2, 0, false), None);
-        let b3 = BitRust::from_bin("00001110");
-        let b4 = BitRust::from_bin("01");
+        let b3 = BitRust::from_bin_checked("00001110").unwrap();
+        let b4 = BitRust::from_bin_checked("01").unwrap();
         assert_eq!(b3.find(&b4, 0, false), Some(3));
         assert_eq!(b3.find(&b4, 2, false), Some(3));
 
-        let s = BitRust::from_bin("0000110110000");
-        let f = BitRust::from_bin("11011");
+        let s = BitRust::from_bin_checked("0000110110000").unwrap();
+        let f = BitRust::from_bin_checked("11011").unwrap();
         let p = s.find(&f, 0, false).unwrap();
         assert_eq!(p, 4);
 
@@ -687,7 +706,7 @@ mod tests {
     #[test]
     fn test_rfind() {
         let b1 = BitRust::from_hex("00780f0");
-        let b2 = BitRust::from_bin("1111");
+        let b2 = BitRust::from_bin_checked("1111").unwrap();
         assert_eq!(b1.rfind(&b2, 0, false), Some(20));
         assert_eq!(b1.find(&b2, 0, false), Some(9));
     }
@@ -736,14 +755,14 @@ mod tests {
 
     #[test]
     fn test_getslice() {
-        let a = BitRust::from_bin("00010001");
+        let a = BitRust::from_bin_checked("00010001").unwrap();
         assert_eq!(a.getslice(0, Some(4)).unwrap().to_bin(), "0001");
         assert_eq!(a.getslice(4, Some(8)).unwrap().to_bin(), "0001");
     }
 
     #[test]
     fn test_all_set() {
-        let b = BitRust::from_bin("111");
+        let b = BitRust::from_bin_checked("111").unwrap();
         assert!(b.all_set());
         let c = BitRust::from_oct("7777777777");
         assert!(c.all_set());
@@ -771,7 +790,7 @@ mod tests {
 
     #[test]
     fn test_to_int_byte_data() {
-        let a = BitRust::from_bin("111111111");
+        let a = BitRust::from_bin_checked("111111111").unwrap();
         let b = a.to_int_byte_data(false);
         assert_eq!(b, vec![1, 255]);
         let c = a.to_int_byte_data(true);
@@ -803,17 +822,17 @@ mod tests {
 
     #[test]
     fn test_to_oct() {
-        let bits = BitRust::from_bin("001010011");
+        let bits = BitRust::from_bin_checked("001010011").unwrap();
         assert_eq!(bits.to_oct().unwrap(), "123");
-        let bits = BitRust::from_bin("111");
+        let bits = BitRust::from_bin_checked("111").unwrap();
         assert_eq!(bits.to_oct().unwrap(), "7");
-        let bits = BitRust::from_bin("000");
+        let bits = BitRust::from_bin_checked("000").unwrap();
         assert_eq!(bits.to_oct().unwrap(), "0");
     }
 
     #[test]
     fn test_invert_bit_list() {
-        let mut bits = MutableBitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin_checked("0000").unwrap();
         bits.invert_bit_list(vec![0, 2]).unwrap();
         assert_eq!(bits.to_bin(), "1010");
         bits.invert_bit_list(vec![-1, -3]).unwrap();
@@ -824,7 +843,7 @@ mod tests {
 
     #[test]
     fn test_set_from_slice() {
-        let mut bits = MutableBitRust::from_bin("00000000");
+        let mut bits = MutableBitRust::from_bin_checked("00000000").unwrap();
         bits.set_from_slice(true, 1, 7, 2).unwrap();
         assert_eq!(bits.to_bin(), "01010100");
         bits.set_from_slice(true, -7, -1, 2).unwrap();
@@ -835,25 +854,25 @@ mod tests {
 
     #[test]
     fn test_invert_all() {
-        let mut bits = MutableBitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin_checked("0000").unwrap();
         bits.invert_all();
         assert_eq!(bits.to_bin(), "1111");
-        let mut bits = MutableBitRust::from_bin("1010");
+        let mut bits = MutableBitRust::from_bin_checked("1010").unwrap();
         bits.invert_all();
         assert_eq!(bits.to_bin(), "0101");
     }
 
     #[test]
     fn test_any_set() {
-        let bits = BitRust::from_bin("0000");
+        let bits = BitRust::from_bin_checked("0000").unwrap();
         assert!(!bits.any_set());
-        let bits = BitRust::from_bin("1000");
+        let bits = BitRust::from_bin_checked("1000").unwrap();
         assert!(bits.any_set());
     }
 
     #[test]
     fn test_invert_single_bit() {
-        let mut bits = MutableBitRust::from_bin("0000");
+        let mut bits = MutableBitRust::from_bin_checked("0000").unwrap();
         bits.invert_single_bit(1).unwrap();
         assert_eq!(bits.to_bin(), "0100");
         bits.invert_single_bit(-1).unwrap();
@@ -862,24 +881,24 @@ mod tests {
 
     #[test]
     fn test_xor() {
-        let a = BitRust::from_bin("1100");
-        let b = BitRust::from_bin("1010");
+        let a = BitRust::from_bin_checked("1100").unwrap();
+        let b = BitRust::from_bin_checked("1010").unwrap();
         let result = a.__xor__(&b).unwrap();
         assert_eq!(result.to_bin(), "0110");
     }
 
     #[test]
     fn test_or() {
-        let a = BitRust::from_bin("1100");
-        let b = BitRust::from_bin("1010");
+        let a = BitRust::from_bin_checked("1100").unwrap();
+        let b = BitRust::from_bin_checked("1010").unwrap();
         let result = a.__or__(&b).unwrap();
         assert_eq!(result.to_bin(), "1110");
     }
 
     #[test]
     fn test_and2() {
-        let a = BitRust::from_bin("1100");
-        let b = BitRust::from_bin("1010");
+        let a = BitRust::from_bin_checked("1100").unwrap();
+        let b = BitRust::from_bin_checked("1010").unwrap();
         let result = a.__and__(&b).unwrap();
         assert_eq!(result.to_bin(), "1000");
     }
@@ -894,24 +913,24 @@ mod tests {
 
     #[test]
     fn test_len() {
-        let bits = BitRust::from_bin("1100");
+        let bits = BitRust::from_bin_checked("1100").unwrap();
         assert_eq!(bits.__len__(), 4);
-        let bits = BitRust::from_bin("101010");
+        let bits = BitRust::from_bin_checked("101010").unwrap();
         assert_eq!(bits.__len__(), 6);
     }
 
     #[test]
     fn test_eq() {
-        let a = BitRust::from_bin("1100");
-        let b = BitRust::from_bin("1100");
+        let a = BitRust::from_bin_checked("1100").unwrap();
+        let b = BitRust::from_bin_checked("1100").unwrap();
         assert!(a.__eq__(&b));
-        let c = BitRust::from_bin("1010");
+        let c = BitRust::from_bin_checked("1010").unwrap();
         assert!(!a.__eq__(&c));
     }
 
     #[test]
     fn test_getslice_withstep() {
-        let bits = BitRust::from_bin("11001100");
+        let bits = BitRust::from_bin_checked("11001100").unwrap();
         let slice = bits.getslice_with_step(0, 8, 2).unwrap();
         assert_eq!(slice.to_bin(), "1010");
         let slice = bits.getslice_with_step(7, -1, -2).unwrap();
@@ -938,21 +957,21 @@ mod tests {
 
     #[test]
     fn mutable_from_immutable() {
-        let immutable = BitRust::from_bin("1010");
+        let immutable = BitRust::from_bin_checked("1010").unwrap();
         let mutable = MutableBitRust::new(&(immutable.data));
         assert_eq!(mutable.to_bin(), "1010");
     }
 
     #[test]
     fn freeze_preserves_data() {
-        let mutable = MutableBitRust::from_bin("1100");
+        let mutable = MutableBitRust::from_bin_checked("1100").unwrap();
         let immutable = mutable.clone_as_immutable();
         assert_eq!(immutable.to_bin(), "1100");
     }
 
     #[test]
     fn modify_then_freeze() {
-        let mut mutable = MutableBitRust::from_bin("0000");
+        let mut mutable = MutableBitRust::from_bin_checked("0000").unwrap();
         mutable.set_index(true, 1).unwrap();
         mutable.set_index(true, 2).unwrap();
         let immutable = mutable.clone_as_immutable();
@@ -967,7 +986,7 @@ mod tests {
         let m2 = MutableBitRust::from_ones(4);
         assert_eq!(m2.to_bin(), "1111");
 
-        let m3 = MutableBitRust::from_bin("1010");
+        let m3 = MutableBitRust::from_bin_checked("1010").unwrap();
         assert_eq!(m3.to_bin(), "1010");
 
         let m4 = MutableBitRust::from_hex("a");
@@ -979,9 +998,9 @@ mod tests {
 
     #[test]
     fn mutable_equality() {
-        let m1 = MutableBitRust::from_bin("1100");
-        let m2 = MutableBitRust::from_bin("1100");
-        let m3 = MutableBitRust::from_bin("0011");
+        let m1 = MutableBitRust::from_bin_checked("1100").unwrap();
+        let m2 = MutableBitRust::from_bin_checked("1100").unwrap();
+        let m3 = MutableBitRust::from_bin_checked("0011").unwrap();
 
         assert!(m1.__eq__(&m2));
         assert!(!m1.__eq__(&m3));
@@ -989,11 +1008,11 @@ mod tests {
 
     #[test]
     fn mutable_operations() {
-        let mut m = MutableBitRust::from_bin("1100");
+        let mut m = MutableBitRust::from_bin_checked("1100").unwrap();
         m.reverse();
         assert_eq!(m.to_bin(), "0011");
 
-        let other = BitRust::from_bin("1111");
+        let other = BitRust::from_bin_checked("1111").unwrap();
         m.append(&other);
         assert_eq!(m.to_bin(), "00111111");
 
@@ -1003,7 +1022,7 @@ mod tests {
 
     #[test]
     fn mutable_getslice() {
-        let m = MutableBitRust::from_bin("11001010");
+        let m = MutableBitRust::from_bin_checked("11001010").unwrap();
 
         let slice1 = m.getslice(2, Some(6)).unwrap();
         assert_eq!(slice1.to_bin(), "0010");
@@ -1014,8 +1033,8 @@ mod tests {
 
     #[test]
     fn mutable_find_operations() {
-        let haystack = MutableBitRust::from_bin("00110011");
-        let needle = BitRust::from_bin("11");
+        let haystack = MutableBitRust::from_bin_checked("00110011").unwrap();
+        let needle = BitRust::from_bin_checked("11").unwrap();
 
         assert_eq!(haystack.find(&needle, 0, false), Some(2));
         assert_eq!(haystack.find(&needle, 3, false), Some(6));
@@ -1039,8 +1058,8 @@ mod tests {
 
     #[test]
     fn mutable_immutable_interaction() {
-        let pattern1 = MutableBitRust::from_bin("1100");
-        let pattern2 = BitRust::from_bin("0011");
+        let pattern1 = MutableBitRust::from_bin_checked("1100").unwrap();
+        let pattern2 = BitRust::from_bin_checked("0011").unwrap();
 
         let mut m = MutableBitRust::new(&pattern1.inner.data);
 
@@ -1057,7 +1076,7 @@ mod tests {
         assert_eq!(empty_mutable.count(), 0);
         assert!(!empty_mutable.any_set());
 
-        assert_eq!(empty_mutable.freeze().len(), 0);
+        assert_eq!(empty_mutable.clone_as_immutable().len(), 0);
 
         let mut another_empty = MutableBitRust::from_zeros(0);
         another_empty.append(&empty_immutable);
@@ -1082,7 +1101,7 @@ mod tests {
 
     #[test]
     fn mutable_edge_index_operations() {
-        let mut m = MutableBitRust::from_bin("1010");
+        let mut m = MutableBitRust::from_bin_checked("1010").unwrap();
 
         m.set_index(false, 0).unwrap();
         m.set_index(false, 3).unwrap();
@@ -1098,8 +1117,8 @@ mod tests {
 
     #[test]
     fn set_mutable_slice_with_bit_rust() {
-        let mut m = MutableBitRust::from_bin("00000000");
-        let pattern = BitRust::from_bin("1111");
+        let mut m = MutableBitRust::from_bin_checked("00000000").unwrap();
+        let pattern = BitRust::from_bin_checked("1111").unwrap();
 
         m.set_slice(2, 6, &pattern).unwrap();
         assert_eq!(m.to_bin(), "00111100");
@@ -1113,11 +1132,11 @@ mod tests {
 
     #[test]
     fn conversion_round_trip() {
-        let original = BitRust::from_bin("101010");
+        let original = BitRust::from_bin_checked("101010").unwrap();
         let mut mutable = MutableBitRust::new(&original.data);
         mutable.set_index(false, 0).unwrap();
         mutable.set_index(true, 1).unwrap();
-        let result = mutable.freeze();
+        let result = mutable.as_immutable();
 
         assert_eq!(result.to_bin(), "011010");
         assert_ne!(result.to_bin(), original.to_bin());
@@ -1126,7 +1145,7 @@ mod tests {
     // This one causes a panic that stops the other tests.
     // #[test]
     // fn mutable_to_representations() {
-    //     let m = MutableBitRust::from_bin("11110000");
+    //     let m = MutableBitRust::from_bin_checked("11110000");
     //
     //     assert_eq!(m.to_bin(), "11110000");
     //     assert_eq!(m.to_hex().unwrap(), "f0");
@@ -1152,7 +1171,7 @@ mod tests {
 
     #[test]
     fn negative_indexing_in_mutable() {
-        let mut m = MutableBitRust::from_bin("10101010");
+        let mut m = MutableBitRust::from_bin_checked("10101010").unwrap();
         m.invert_single_bit(-2).unwrap();
         assert_eq!(m.to_bin(), "10101000");
 
@@ -1163,7 +1182,7 @@ mod tests {
 
     #[test]
     fn mutable_getslice_edge_cases() {
-        let m = MutableBitRust::from_bin("11001010");
+        let m = MutableBitRust::from_bin_checked("11001010").unwrap();
 
         let empty = m.getslice(4, Some(4)).unwrap();
         assert_eq!(empty.to_bin(), "");
