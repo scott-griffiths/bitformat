@@ -620,7 +620,7 @@ def test_little_endian_uint():
     assert s.u_le == 100
     s = Bits("u_le32=999")
     assert s.u_le == 999
-    s = s.to_mutable().byte_swap()
+    s = s.to_mutable_bits().byte_swap()
     assert s.u == 999
     s = Bits.from_dtype("u_le24", 1001)
     assert s.u_le == 1001

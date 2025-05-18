@@ -189,7 +189,7 @@ class TestReplace:
         a = Bits.from_string("0xab")
         b = Bits.from_string("0xcd")
         c = Bits.from_string("0xabef")
-        c = c.to_mutable().replace(a, b)
+        c = c.to_mutable_bits().replace(a, b)
         assert c == "0xcdef"
         assert a == "0xab"
         assert b == "0xcd"
@@ -323,7 +323,7 @@ class TestInsert:
 class TestOverwriting:
     def test_overwrite_bit(self):
         s = Bits("0b0")
-        s = s.to_mutable().overwrite(0, "0b1")
+        s = s.to_mutable_bits().overwrite(0, "0b1")
         assert s.bin == "1"
 
     def test_overwrite_limits(self):
@@ -535,12 +535,12 @@ class TestAdding:
         assert s == "0xfab"
         s = s + s
         s = s + "0x100"
-        s = s.to_mutable().overwrite(4, "0x5")
+        s = s.to_mutable_bits().overwrite(4, "0x5")
         assert s == "0xf5bfab100"
 
     def test_reverse(self):
         s = Bits("0b0011")
-        s = s.to_mutable().reverse()
+        s = s.to_mutable_bits().reverse()
         assert s.bin == "1100"
         s = MutableBits("0b10")
         s.reverse()
@@ -573,7 +573,7 @@ class TestAdding:
     def test_large_equals(self):
         s1 = Bits.from_zeros(1000000)
         s2 = MutableBits.from_zeros(1000000)
-        s1 = s1.to_mutable().set(True, [-1, 55, 53214, 534211, 999999])
+        s1 = s1.to_mutable_bits().set(True, [-1, 55, 53214, 534211, 999999])
         s2.set(True, [-1, 55, 53214, 534211, 999999])
         assert s1 == s2
         s1 = s1.set(True, 800000)
@@ -841,11 +841,11 @@ class TestManyDifferentThings:
 
     def test_reverse_with_slice(self):
         a = Bits("0x0012ff")
-        b = a.to_mutable()
+        b = a.to_mutable_bits()
         b.reverse()
         assert a == "0x0012ff"
         assert b == "0xff4800"
-        a = a[8:16].to_mutable()
+        a = a[8:16].to_mutable_bits()
         a.reverse()
         assert a == "0x48"
 
@@ -981,7 +981,7 @@ class TestManyDifferentThings:
 class TestSet:
     def test_set(self):
         a = Bits.from_zeros(16)
-        a = a.to_mutable().set(True, 0)
+        a = a.to_mutable_bits().set(True, 0)
         assert a == MutableBits("0b10000000 00000000")
         a.set(1, 15)
         assert a == "0b10000000 00000001"
@@ -1008,7 +1008,7 @@ class TestSet:
 
     def test_set_list(self):
         a = Bits.from_zeros(18)
-        b = a.to_mutable().set(True, range(18))
+        b = a.to_mutable_bits().set(True, range(18))
         assert b.i == -1
         assert a.i == 0
         b.set(False, range(18))
@@ -1139,7 +1139,7 @@ class TestMoreMisc:
             assert a.f == float(s)
 
     def test_ror(self):
-        a = Bits("0b11001").to_mutable()
+        a = Bits("0b11001").to_mutable_bits()
         a.ror(0)
         assert a == "0b11001"
         a.ror(1)
@@ -1171,7 +1171,7 @@ class TestMoreMisc:
         a.rol(101)
         assert a == "0b00111"
         a = Bits("0b1")
-        a = a.to_mutable().rol(1000000)
+        a = a.to_mutable_bits().rol(1000000)
         assert a == "0b1"
 
     def test_rol_errors(self):
@@ -1386,7 +1386,7 @@ def test_overwrite_with_self():
 
 def test_byte_swap():
     b = Bits.from_bytes(b"\x01\x02\x03\x04")
-    c = b.to_mutable().byte_swap()
+    c = b.to_mutable_bits().byte_swap()
     assert c == "0x04030201"
 
 
@@ -1400,19 +1400,19 @@ def test_overlapping_bits():
     assert x == "0x0ff"
     assert y == Bits("0b00011111")
     _ = ~y
-    _ = y.to_mutable().set(0, [0, 1, 2, 3, 4, 5, 6, 7])
-    _ = y.to_mutable().byte_swap()
-    _ = y.to_mutable().ror(1)
-    _ = y.to_mutable().rol(1)
+    _ = y.to_mutable_bits().set(0, [0, 1, 2, 3, 4, 5, 6, 7])
+    _ = y.to_mutable_bits().byte_swap()
+    _ = y.to_mutable_bits().ror(1)
+    _ = y.to_mutable_bits().rol(1)
     assert a == "0x00fff0"
     assert zeros == "0x00"
     assert x == "0x0ff"
     assert y == Bits("0b00011111")
     y = ~y
     assert y == Bits("0b11100000")
-    y = y.to_mutable().set(0, [2, 3]).freeze()
-    y = y.to_mutable().byte_swap().freeze()
-    y = y.to_mutable().ror(2)
+    y = y.to_mutable_bits().set(0, [2, 3]).to_bits()
+    y = y.to_mutable_bits().byte_swap().to_bits()
+    y = y.to_mutable_bits().ror(2)
     y = y.rol(1)
     assert a == "0x00fff0"
     assert zeros == "0x00"
@@ -1421,7 +1421,7 @@ def test_overlapping_bits():
 
 def test_mutable_freeze():
     a = MutableBits('0x0000')
-    b = a.freeze()
+    b = a.to_bits()
     assert isinstance(b, Bits)
     assert a == b
     a.set(1, -1)

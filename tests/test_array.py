@@ -909,7 +909,7 @@ class TestDelegation:
         b = a.data
         a[0] = 3
         assert b[0:4] == "0b0011"
-        b = b.freeze()
+        b = b.to_bits()
         a[0] = 7
         assert b[0:4] == "0b0011"
 

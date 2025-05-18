@@ -1298,7 +1298,8 @@ class Bits(_BaseBits):
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
-    def to_mutable(self) -> MutableBits:
+    def to_mutable_bits(self) -> MutableBits:
+        """Create and return a mutable copy of the Bits as a MutableBits instance."""
         x = MutableBits()
         x._bitstore = self._bitstore.clone_as_mutable()
         return x
@@ -1327,8 +1328,8 @@ class MutableBits(_BaseBits):
             x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
-    def freeze(self) -> Bits:
-        """Convert to an immutable Bits instance."""
+    def to_bits(self) -> Bits:
+        """Create and return an immutable copy of the MutableBits as Bits instance."""
         x = Bits()
         x._bitstore = self._bitstore.clone_as_immutable()
         return x
