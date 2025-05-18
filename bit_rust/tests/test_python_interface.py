@@ -35,7 +35,7 @@ def test_find():
     assert a.find(b, 0, True) is None
 
 def test_from_oct():
-    a = BitRust.from_oct('776')
+    a = BitRust.from_oct_checked('776')
     assert a.to_bin() == '111111110'
     with pytest.raises(ValueError):
         b = BitRust.from_oct_checked('abc')

@@ -156,11 +156,6 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_oct(oct: &str) -> Self {
-        Self { inner: BitRust::from_oct(oct) }
-    }
-
-    #[staticmethod]
     pub fn from_oct_checked(oct: &str) -> PyResult<Self> {
         Ok(Self { inner: BitRust::from_oct_checked(oct)? })
     }

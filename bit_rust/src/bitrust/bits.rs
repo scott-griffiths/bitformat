@@ -262,20 +262,6 @@ impl BitRust {
     }
 
     #[staticmethod]
-    pub fn from_oct(oct: &str) -> Self {
-        let mut bin_str = String::new();
-        for ch in oct.chars() {
-            // Convert each ch to an integer
-            let digit = match ch.to_digit(8) {
-                Some(d) => d,
-                None => panic!("Invalid character"),
-            };
-            bin_str.push_str(&format!("{:03b}", digit)); // Format as 3-bit binary
-        }
-        BitRust::from_bin_checked(&bin_str).unwrap()
-    }
-
-    #[staticmethod]
     pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
         let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
@@ -745,7 +731,7 @@ mod tests {
     fn test_all_set() {
         let b = BitRust::from_bin_checked("111").unwrap();
         assert!(b.all_set());
-        let c = BitRust::from_oct("7777777777");
+        let c = BitRust::from_oct_checked("7777777777").unwrap();
         assert!(c.all_set());
     }
 
@@ -783,9 +769,9 @@ mod tests {
 
     #[test]
     fn test_from_oct() {
-        let bits = BitRust::from_oct("123");
+        let bits = BitRust::from_oct_checked("123").unwrap();
         assert_eq!(bits.to_bin(), "001010011");
-        let bits = BitRust::from_oct("7");
+        let bits = BitRust::from_oct_checked("7").unwrap();
         assert_eq!(bits.to_bin(), "111");
     }
 
@@ -973,7 +959,7 @@ mod tests {
         let m4 = MutableBitRust::from_hex_checked("a").unwrap();
         assert_eq!(m4.to_bin(), "1010");
 
-        let m5 = MutableBitRust::from_oct("12");
+        let m5 = MutableBitRust::from_oct_checked("12").unwrap();
         assert_eq!(m5.to_bin(), "001010");
     }
 
