@@ -53,11 +53,11 @@ def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
 def token_to_bitstore_cached(token: str) -> BitRust:
     if token and token[0] == '0':
         if token.startswith("0x"):
-            return BitRust.from_hex_checked(token)
+            return BitRust.from_hex(token)
         elif token.startswith("0b"):
-            return BitRust.from_bin_checked(token)
+            return BitRust.from_bin(token)
         elif token.startswith("0o"):
-            return BitRust.from_oct_checked(token)
+            return BitRust.from_oct(token)
         else:
             raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
     dtype_str, value_str = token.split("=", 1)
@@ -573,7 +573,7 @@ class _BaseBits:
 
     def _set_bin_safe(self, binstring: str, _length: None = None) -> None:
         """Reset the Bits to the value given in binstring."""
-        self._bitstore = BitRust.from_bin_checked(binstring)
+        self._bitstore = BitRust.from_bin(binstring)
 
     def _get_bin(self) -> str:
         """Return interpretation as a binary string."""
@@ -581,7 +581,7 @@ class _BaseBits:
 
     def _set_oct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
-        self._bitstore = BitRust.from_oct_checked(octstring)
+        self._bitstore = BitRust.from_oct(octstring)
 
     def _get_oct(self) -> str:
         """Return interpretation as an octal string."""
@@ -591,7 +591,7 @@ class _BaseBits:
 
     def _set_hex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
-        self._bitstore = BitRust.from_hex_checked(hexstring)
+        self._bitstore = BitRust.from_hex(hexstring)
 
     def _get_hex(self) -> str:
         """Return the hexadecimal representation as a string."""

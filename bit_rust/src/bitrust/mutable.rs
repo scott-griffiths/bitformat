@@ -147,17 +147,17 @@ impl MutableBitRust {
 
     #[staticmethod]
     pub fn from_bin_checked(binary_string: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_bin_checked(binary_string)? })
+        Ok(Self { inner: BitRust::from_bin(binary_string)? })
     }
 
     #[staticmethod]
     pub fn from_hex_checked(hex: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_hex_checked(hex)? })
+        Ok(Self { inner: BitRust::from_hex(hex)? })
     }
 
     #[staticmethod]
     pub fn from_oct_checked(oct: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_oct_checked(oct)? })
+        Ok(Self { inner: BitRust::from_oct(oct)? })
     }
 
     #[staticmethod]

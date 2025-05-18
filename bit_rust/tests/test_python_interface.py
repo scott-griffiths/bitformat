@@ -29,16 +29,16 @@ def test_join():
     assert c.to_bin() == '11110000'
 
 def test_find():
-    a = BitRust.from_bin_checked('00000110001110')
-    b = BitRust.from_bin_checked('11')
+    a = BitRust.from_bin('00000110001110')
+    b = BitRust.from_bin('11')
     assert a.find(b, 0, False) == 5
     assert a.find(b, 0, True) is None
 
 def test_from_oct():
-    a = BitRust.from_oct_checked('776')
+    a = BitRust.from_oct('776')
     assert a.to_bin() == '111111110'
     with pytest.raises(ValueError):
-        b = BitRust.from_oct_checked('abc')
+        b = BitRust.from_oct('abc')
     assert a.to_oct() == "776"
 
 def test_to_bytes():
