@@ -151,11 +151,6 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_hex(hex: &str) -> Self {
-        Self { inner: BitRust::from_hex(hex) }
-    }
-
-    #[staticmethod]
     pub fn from_hex_checked(hex: &str) -> PyResult<Self> {
         Ok(Self { inner: BitRust::from_hex_checked(hex)? })
     }
