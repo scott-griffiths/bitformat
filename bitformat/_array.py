@@ -236,6 +236,7 @@ class Array:
 
     def __setitem__(self, key: slice | int, value: Iterable[ElementType] | ElementType, /) -> None:
         if isinstance(key, slice):
+            # TODO: Use overwrite_slice instead of set_slice if possible (maybe that's a Rust-side change?)
             start, stop, step = key.indices(len(self))
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
@@ -259,7 +260,7 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self.item_size * key
             x = self._create_element(value)
-            self._mutable_bitrust.overwrite_slice(start, len(x), x)
+            self._mutable_bitrust.overwrite_slice(start, x)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
@@ -656,7 +657,7 @@ class Array:
                 mutablebitrust_slice.iand(value)
             elif op == operator.ior:
                 mutablebitrust_slice.ior(value)
-            self._mutable_bitrust.set_slice(start, start + self.item_size, mutablebitrust_slice.clone_as_immutable())
+            self._mutable_bitrust.overwrite_slice(start, mutablebitrust_slice.as_immutable())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:

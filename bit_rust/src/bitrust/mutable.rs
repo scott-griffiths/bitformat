@@ -65,14 +65,11 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn overwrite_slice(&mut self, start: usize, length: usize, value: &BitRust) -> PyResult<()> {
-        if start + length > self.len() || length > value.len() {
+    pub fn overwrite_slice(&mut self, start: usize, value: &BitRust) -> PyResult<()> {
+        if start + value.len() > self.len() {
             return Err(PyIndexError::new_err("Slice out of bounds"));
         }
-        for i in 0..length {
-            let bit = value.data[i];
-            self.inner.data.set(start + i, bit);
-        }
+        self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
         Ok(())
     }
 
