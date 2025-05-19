@@ -9,10 +9,50 @@ import timeit
 import random
 import math
 from math import isqrt
+from random import randrange
 
 
-from bitarray import bitarray
 from bitarray.util import ones
+from bitarray import bitarray
+from bitarray.util import int2ba, ba2int, pprint
+
+# This is copied from bitarray
+class SmallIntArray:
+    """
+    Class which allows efficiently storing an array of integers
+    represented by a specified number of bits.
+    For example, an array with 1000 5 bit integers can be created,
+    allowing each element in the array to take values form 0 to 31,
+    while the size of the object is 625 (5000/8) bytes.
+    """
+    def __init__(self, N, k):
+        self.N = N  # number of integers
+        self.k = k  # bits for each integer
+        self.array = bitarray(N * k)
+
+    def slice_i(self, i):
+        assert 0 <= i < self.N
+        return slice(self.k * i, self.k * (i + 1))
+
+    def __getitem__(self, i):
+        return ba2int(self.array[self.slice_i(i)])
+
+    def __setitem__(self, i, v):
+        self.array[self.slice_i(i)] = int2ba(v, self.k)
+
+def test_small_ints_bitarray():
+    # define array of integers, each represented by 5 bits
+    a = SmallIntArray(100000, 5)
+
+    for i in range(100000):
+        v = randrange(32)
+        a[i] = v
+
+def test_small_ints_bitformat():
+    a = bitformat.Array.from_zeros('u5', 100000)
+    for i in range(100000):
+        v = randrange(32)
+        a[i] = v
 
 
 def test_cutting_bitstring():
@@ -170,11 +210,14 @@ class TestSuite:
 def main():
     fn_pairs = [
         FunctionPairs("Cutting", test_cutting_bitstring, test_cutting_bitformat),
-        FunctionPairs("Primes", test_primes_bitstring, test_primes_bitformat),
         FunctionPairs("Token parsing mutating", test_token_parsing_mutating_bitstring, test_token_parsing_mutating_bitformat),
         FunctionPairs("Token parsing joining", test_token_parsing_joining_bitstring, test_token_parsing_joining_bitformat),
         FunctionPairs("Count", test_count_bitstring, test_count_bitformat),
         FunctionPairs("Finding", test_finding_bitstring, test_finding_bitformat),
+
+        # These are tested against examples provided by bitarray.
+        FunctionPairs("Primes", test_primes_bitarray, test_primes_bitformat),
+        FunctionPairs("Small ints", test_small_ints_bitarray, test_small_ints_bitformat)
     ]
     ts = TestSuite(fn_pairs)
     ts.run()
