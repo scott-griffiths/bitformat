@@ -15,7 +15,7 @@ The Basics
 The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to use and understand.
 
 * :ref:`Bits <bits>` -- An immutable container for storing binary data.
-* :ref:`MutableBits <mutable_bits>` -- A mutable verions of :class:`Bits`.
+* :ref:`MutableBits <mutable_bits>` -- A mutable version of :class:`Bits`.
 * :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
 * :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
 * :ref:`DtypeArray <dtypearray>` -- A sequence of :class:`Dtype` objects of the same type.
@@ -33,17 +33,19 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
     ---
     classDiagram
         direction BT
+        class MutableBits {
+            + append()
+            + byte_swap()
+            + replace()
+            + ...()
+        }
         class Bits {
             + from_string()
             + from_dtype()
             + from_bytes()
             + ...()
-            + byte_swap()
             + count()
             + find()
-            + insert()
-            + replace()
-            + reverse()
             + to_bytes()
             + unpack()
             + ...()
@@ -93,8 +95,9 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         DtypeArray --|> Dtype
         DtypeTuple --|> Dtype
         Array --* "1" Dtype : contains
-        Array --> Bits : interprets
+        Array --* "1" MutableBits : contains
         Reader --* "1" Bits : contains
+        MutableBits --* Bits : extends
 
 
 Field Types
@@ -163,12 +166,12 @@ Other classes and enums are :ref:`listed here. <misc>` Some of the more importan
     :maxdepth: 1
     :hidden:
 
-    parser_ref
     dtypes
     bits
     mutable_bits
     array
     reader
     fieldtypes
+    parser_ref
     misc
 
