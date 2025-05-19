@@ -1581,33 +1581,33 @@ class MutableBits(_BaseBits):
         self._bitstore.prepend(bs)
         return self
 
-    def byte_swap(self, bytelength: int | None = None, /) -> MutableBits:
+    def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:
         """Change the byte endianness in-place. Return the MutableBits.
 
         The whole of the MutableBits will be byte-swapped. It must be a multiple
-        of bytelength long.
+        of byte_length long.
 
-        :param bytelength: An int giving the number of bytes to swap.
-        :type bytelength: int or None
+        :param byte_length: An int giving the number of bytes to swap.
+        :type byte_length: int or None
         :return: The MutableBits object with byte-swapped data.
         :rtype: MutableBits
         """
         if len(self) % 8 != 0:
             raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
                              "This error can also be caused by using an endianness modifier on non-whole byte data.")
-        if bytelength is None:
-            bytelength = len(self) // 8
-        if bytelength == 0:
+        if byte_length is None:
+            byte_length = len(self) // 8
+        if byte_length == 0:
             return MutableBits()
-        if bytelength < 0:
-            raise ValueError(f"Negative bytelength given: {bytelength}.")
-        if len(self) % (bytelength * 8) != 0:
+        if byte_length < 0:
+            raise ValueError(f"Negative byte length given: {byte_length}.")
+        if len(self) % (byte_length * 8) != 0:
             raise ValueError(
-                f"The MutableBits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {bytelength} bytes."
+                f"The MutableBits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {byte_length} bytes."
             )
         chunks = []
-        for startbit in range(0, len(self), bytelength * 8):
-            x = self._slice(startbit, startbit + bytelength * 8).to_bytes()
+        for startbit in range(0, len(self), byte_length * 8):
+            x = self._slice(startbit, startbit + byte_length * 8).to_bytes()
             chunks.append(MutableBits.from_bytes(x[::-1]))
         x = MutableBits.from_joined(chunks)
         self._bitstore = x._bitstore
