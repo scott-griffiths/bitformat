@@ -24,6 +24,11 @@ impl BitCollection for MutableBitRust {
     fn from_bytes(data: Vec<u8>) -> Self {
         Self { inner: BitRust::from_bytes(data) }
     }
+    fn from_bin(binary_string: &str) -> Result<Self, String> {
+        // This makes sure we call the method defined in the trait, not the Python method.
+        <BitRust as BitCollection>::from_bin(binary_string)
+            .map(|inner| Self { inner })
+    }
 }
 
 impl PartialEq for MutableBitRust {
@@ -39,34 +44,6 @@ impl PartialEq<BitRust> for MutableBitRust {
 }
 
 impl MutableBitRust {
-    fn join_internal(bits_vec: &[&BitRust]) -> Self {
-        match bits_vec.len() {
-            0 => MutableBitRust::from_zeros(0),
-            1 => {
-                // For a single BitRust, just clone it.
-                let bits = bits_vec[0];
-                MutableBitRust {
-                    inner: BitRust{ data: bits.data.clone()}
-                }
-            }
-            _ => {
-                // Calculate total length first
-                let total_len: usize = bits_vec.iter().map(|b| b.len()).sum();
-
-                // Create new BitVec with exact capacity needed
-                let mut bv = helpers::BV::with_capacity(total_len);
-
-                // Extend with each view's bits
-                for bits in bits_vec {
-                    bv.extend_from_bitslice(&bits.data);
-                }
-
-                // Create new BitRust with the combined data
-                MutableBitRust { inner: BitRust{data: bv} }
-            }
-        }
-    }
-
     pub fn new(bv: &helpers::BV) -> Self {
         Self { inner: BitRust::new(bv.clone()) }
     }
@@ -76,10 +53,26 @@ impl MutableBitRust {
 impl MutableBitRust {
 
     pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
-        let start_slice = self.getslice(0, Some(start))?.clone_as_immutable();
-        let end_slice = self.getslice(end, Some(self.len()))?.clone_as_immutable();
-        let joined = MutableBitRust::join_internal(&[&start_slice, value, &end_slice]);
-        *self = joined;
+        let start_slice = self.getslice(0, Some(start))?.inner.data;
+        let value_slice = value.data.clone();
+        let end_slice = self.getslice(end, Some(self.len()))?.inner.data;
+
+        let mut new_data = start_slice;
+        new_data.extend(&value_slice);
+        new_data.extend(&end_slice);
+
+        self.inner.data = new_data;
+        Ok(())
+    }
+
+    pub fn overwrite_slice(&mut self, start: usize, length: usize, value: &BitRust) -> PyResult<()> {
+        if start + length > self.len() || length > value.len() {
+            return Err(PyIndexError::new_err("Slice out of bounds"));
+        }
+        for i in 0..length {
+            let bit = value.data[i];
+            self.inner.data.set(start + i, bit);
+        }
         Ok(())
     }
 

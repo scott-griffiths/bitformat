@@ -8,12 +8,13 @@ use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
 use crate::bitrust::{BitRustIterator, BitRustBoolIterator};
 
-pub trait BitCollection {
+pub trait BitCollection: Sized{
     fn len(&self) -> usize;
     fn from_zeros(length: usize) -> Self;
     fn from_ones(length: usize) -> Self;
     fn from_bytes(data: Vec<u8>) -> Self;
-}
+    fn from_bin(binary_string: &str) -> Result<Self, String>;
+    }
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
@@ -33,10 +34,30 @@ impl BitCollection for BitRust {
         BitRust::new(helpers::BV::repeat(true, length))
     }
     fn from_bytes(data: Vec<u8>) -> Self {
-        let bits = data.as_slice().view_bits::<Msb0>();
-        let mut bv = helpers::BV::new();
-        bv.extend_from_bitslice(bits);
+        let bits = data.view_bits::<Msb0>();
+        let bv = helpers::BV::from_bitslice(bits);
         BitRust::new(bv)
+    }
+
+    fn from_bin(binary_string: &str) -> Result<Self, String> {
+        // Ignore any leading '0b'
+        let s = binary_string.strip_prefix("0b").unwrap_or(binary_string);
+        let mut b: helpers::BV = helpers::BV::with_capacity(s.len());
+        for c in s.chars() {
+            match c {
+                '0' => b.push(false),
+                '1' => b.push(true),
+                '_' => continue,
+                c if c.is_whitespace() => continue,
+                _ => {
+                    return Err(format!(
+                        "Cannot convert from bin '{binary_string}: Invalid character '{c}'."
+                    ))
+                }
+            }
+        }
+        b.set_uninitialized(false);
+        Ok(BitRust::new(b))
     }
 
 }
@@ -94,11 +115,7 @@ impl BitRust {
     }
 
     // This works as a Rust version. Not sure how to make a proper Python interface.
-    fn find_all_rust<'a>(
-        &'a self,
-        b: &'a BitRust,
-        bytealigned: bool,
-    ) -> impl Iterator<Item = usize> + 'a {
+    fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = usize> + 'a {
         // Use the find fn to find all instances of b in self and return as an iterator
         let mut start: usize = 0;
         std::iter::from_fn(move || {
@@ -166,8 +183,8 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
-        assert!(offset < 8);
-        let mut bv = BitRust::from_bytes(data).data;
+        debug_assert!(offset < 8);
+        let mut bv: helpers::BV = Self::from_bytes(data).data;
         bv.drain(..offset);
         BitRust::new(bv)
     }
@@ -185,28 +202,10 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_bin(binary_string: &str) -> PyResult<Self> {
-        // Ignore any leading '0b'
-        let skip = if binary_string.starts_with("0b") {
-            2
-        } else {
-            0
-        };
-        let mut b: helpers::BV = helpers::BV::with_capacity(binary_string.len());
-        for c in binary_string.chars().skip(skip) {
-            match c {
-                '0' => b.push(false),
-                '1' => b.push(true),
-                '_' => continue,
-                c if c.is_whitespace() => continue,
-                _ => {
-                    return Err(PyValueError::new_err(format!(
-                        "Cannot convert from bin '{binary_string}: Invalid character '{c}'."
-                    )))
-                }
-            }
+        match BitCollection::from_bin(binary_string) {
+            Ok(result) => Ok(result),
+            Err(e) => Err(PyValueError::new_err(e))
         }
-        b.set_uninitialized(false);
-        Ok(BitRust::new(b))
     }
 
     #[staticmethod]

@@ -259,7 +259,7 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self.item_size * key
             x = self._create_element(value)
-            self._mutable_bitrust.set_slice(start, start + len(x), x)
+            self._mutable_bitrust.overwrite_slice(start, len(x), x)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
