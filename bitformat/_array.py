@@ -143,7 +143,7 @@ class Array:
         """Property that provides access to the ``Array`` data as a ``MutableBits``.
 
         Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
-        Call ``.freeze()`` on the ``MutableBits`` to return an immutable copy of the data as a ``Bits`` object.
+        Call ``.to_bits()`` on the ``MutableBits`` to return an immutable copy of the data as a ``Bits`` object.
         """
         x = MutableBits()
         x._bitstore = self._mutable_bitrust
