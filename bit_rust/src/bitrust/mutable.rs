@@ -160,6 +160,14 @@ impl MutableBitRust {
         }
         MutableBitRust::new(&bv)
     }
+    
+    pub fn to_u64(&self) -> u64 {
+        self.inner.to_u64()
+    }
+    
+    pub fn to_i64(&self) -> i64 {
+        self.inner.to_i64()
+    }
 
     pub fn __len__(&self) -> usize {
         self.inner.len()

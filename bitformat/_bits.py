@@ -482,6 +482,10 @@ class _BaseBits:
 
     def _set_u(self, u: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
+        # TODO: This could have a quicker version:
+        # If length <= 64 we create a new BitRust.from_int(i, length) method that does the range checking
+        # and creates the BitRust directly. Possibly for <= 128 will work?
+
         u = int(u)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
@@ -509,7 +513,11 @@ class _BaseBits:
         """Return data as an unsigned int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return int.from_bytes(self._bitstore.to_int_byte_data(False), byteorder="big", signed=False)
+        if len(self) <= 64:
+            return self._bitstore.to_u64()
+        else:
+            # Longer store are unlikely in practice - this method is slower but not bad.
+            return int.from_bytes(self._bitstore.to_int_byte_data(False), byteorder="big", signed=False)
 
     def _set_i(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
@@ -536,7 +544,10 @@ class _BaseBits:
         """Return data as a two's complement signed int."""
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
-        return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
+        if len(self) <= 64:
+            return self._bitstore.to_i64()
+        else:
+            return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
 
     def _set_f(self, f: float | str, length: int | None) -> None:
         if length is None:

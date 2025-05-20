@@ -149,6 +149,16 @@ impl BitRust {
         )
     }
 
+    pub fn to_u64(&self) -> u64 {
+        assert!(self.data.len() <= 64, "BitRust too long for u64");
+        self.data.load_be::<u64>()
+    }
+    
+    pub fn to_i64(&self) -> i64 {
+        assert!(self.data.len() <= 64, "BitRust too long for i64");
+        self.data.load_be::<i64>()
+    }
+
     #[pyo3(signature = (bs, byte_aligned=false))]
     pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
         // TODO: Cheating here by making the whole list first, then making an iterator from it.
