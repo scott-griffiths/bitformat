@@ -482,26 +482,27 @@ class _BaseBits:
 
     def _set_u(self, u: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given unsigned int interpretation."""
-        # TODO: This could have a quicker version:
-        # If length <= 64 we create a new BitRust.from_int(i, length) method that does the range checking
-        # and creates the BitRust directly. Possibly for <= 128 will work?
-
-        u = int(u)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
+        u = int(u)
+        if u >= (1 << length):
+            raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
+                             f"The allowed range is [0, {(1 << length) - 1}].")
+        if u < 0:
+            raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
+
         try:
-            if u >= (1 << length):
-                raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
-                                 f"The allowed range is [0, {(1 << length) - 1}].")
-            if u < 0:
-                raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
-            b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
-            offset = 8 - (length % 8)
-            if offset == 8:
-                self._bitstore = BitRust.from_bytes(b)
+            if length <= 64:
+                # Faster method for shorter lengths.
+                self._bitstore = BitRust.from_u64(u, length)
             else:
-                self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
-        except OverflowError as e:
+                b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
+                offset = 8 - (length % 8)
+                if offset == 8:
+                    self._bitstore = BitRust.from_bytes(b)
+                else:
+                    self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
+        except OverflowError as e:  # Catch overflow error from Rust code.
             if u >= (1 << length):
                 raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
                                  f"The allowed range is [0, {(1 << length) - 1}].")
@@ -521,6 +522,7 @@ class _BaseBits:
 
     def _set_i(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
+        # TODO: copy faster method of _set_u
         i = int(i)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with an 'i' initialiser.")

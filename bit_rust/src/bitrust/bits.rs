@@ -149,11 +149,19 @@ impl BitRust {
         )
     }
 
+    #[staticmethod]
+    pub fn from_u64(value: u64, length: usize) -> Self {
+        assert!(length <= 64, "BitRust too long for u64");
+        let mut bv = helpers::BV::repeat(false, length);
+        bv.store_be(value);
+        BitRust::new(bv)
+    }
+
     pub fn to_u64(&self) -> u64 {
         assert!(self.data.len() <= 64, "BitRust too long for u64");
         self.data.load_be::<u64>()
     }
-    
+
     pub fn to_i64(&self) -> i64 {
         assert!(self.data.len() <= 64, "BitRust too long for i64");
         self.data.load_be::<i64>()

@@ -105,6 +105,11 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
+    pub fn from_u64(value: u64, length: usize) -> Self {
+        Self { inner: BitRust::from_u64(value, length) }
+    }
+
+    #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
         BitCollection::from_zeros(length)
     }
@@ -160,11 +165,11 @@ impl MutableBitRust {
         }
         MutableBitRust::new(&bv)
     }
-    
+
     pub fn to_u64(&self) -> u64 {
         self.inner.to_u64()
     }
-    
+
     pub fn to_i64(&self) -> i64 {
         self.inner.to_i64()
     }
