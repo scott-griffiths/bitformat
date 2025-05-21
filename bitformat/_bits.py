@@ -1429,11 +1429,11 @@ class MutableBits(_BaseBits):
 
         :param i: The iterable to convert to a :class:`Bits`.
         :type i: Iterable[Any]
-        :rtype: Bits
+        :rtype: MutableBits
 
         .. code-block:: pycon
 
-            >>> Bits.from_bools([False, 0, 1, "Steven"]).bin
+            >>> MutableBits.from_bools([False, 0, 1, "Steven"]).bin
             '0011'
 
         """
@@ -1450,14 +1450,14 @@ class MutableBits(_BaseBits):
 
         :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
         :type sequence: Iterable[BitsType]
-        :rtype: Bits
+        :rtype: MutableBits
 
         .. code-block:: pycon
 
-            >>> Bits.from_joined([f'u6={x}' for x in range(6)])
-            Bits('0x001083105')
-            >>> Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
-            Bits('0x01f736f6d655f6279746573')
+            >>> MutableBits.from_joined([f'u6={x}' for x in range(6)])
+            MutableBits('0x001083105')
+            >>> MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+            MutableBits('0x01f736f6d655f6279746573')
 
         """
         x = super().__new__(cls)
@@ -1473,12 +1473,12 @@ class MutableBits(_BaseBits):
 
         :param n: The number of bits.
         :type n: int
-        :rtype: Bits
+        :rtype: MutableBits
 
         .. code-block:: pycon
 
-            >>> Bits.from_ones(5)
-            Bits('0b11111')
+            >>> MutableBits.from_ones(5)
+            MutableBits('0b11111')
 
         """
         if n == 0:
@@ -1499,14 +1499,14 @@ class MutableBits(_BaseBits):
         :param value: A value appropriate for the data type.
         :type value: Any
         :returns: A newly constructed ``Bits``.
-        :rtype: Bits
+        :rtype: MutableBits
 
         .. code-block:: pycon
 
-            >>> Bits.from_dtype("u8", 17)
-            Bits('0x11')
-            >>> Bits.from_dtype("(f16, i4, bool)", [2.25, -3, False])
-            Bits('0b010000001000000011010')
+            >>> MutableBits.from_dtype("u8", 17)
+            MutableBits('0x11')
+            >>> MutableBits.from_dtype("(f16, i4, bool)", [2.25, -3, False])
+            MutableBits('0b010000001000000011010')
 
         """
         if isinstance(dtype, str):
@@ -1532,11 +1532,11 @@ class MutableBits(_BaseBits):
         :param n: The number of bits.
         :type n: int
         :return: A Bits object with all bits set to zero.
-        :rtype: Bits
+        :rtype: MutableBits
 
         .. code-block:: python
 
-            a = Bits.from_zeros(500)  # 500 zero bits
+            a = MutableBits.from_zeros(500)  # 500 zero bits
 
         """
         if n == 0:
