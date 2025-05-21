@@ -138,6 +138,14 @@ class _BaseBits:
 
         :return: True if all bits are 1, otherwise False.
         :rtype: bool
+
+        .. code-block:: pycon
+
+            >>> Bits('0b1111').all()
+            True
+            >>> Bits('0b1011').all()
+            False
+
         """
         return self._bitstore.all_set()
 
@@ -147,6 +155,14 @@ class _BaseBits:
 
         :return: True if any bits are 1, otherwise False.
         :rtype: bool
+
+        .. code-block:: pycon
+
+            >>> Bits('0b0000').any()
+            False
+            >>> Bits('0b1000').any()
+            True
+
         """
         return self._bitstore.any_set()
 
@@ -179,6 +195,12 @@ class _BaseBits:
         :type count: int, optional
         :return: A generator yielding Bits chunks.
         :rtype: Iterator[Bits]
+
+        .. code-block:: pycon
+
+            >>> list(Bits('0b110011').chunks(2))
+            [Bits('0b11'), Bits('0b00'), Bits('0b11')]
+
         """
         if count is not None and count < 0:
             raise ValueError("Cannot cut - count must be >= 0.")
@@ -206,6 +228,14 @@ class _BaseBits:
         :type suffix: BitsType
         :return: True if the Bits ends with the suffix, otherwise False.
         :rtype: bool
+
+        .. code-block:: pycon
+
+            >>> Bits('0b101100').ends_with('0b100')
+            True
+            >>> Bits('0b101100').ends_with('0b101')
+            False
+
         """
         suffix = create_bitrust_from_any(suffix)
         if len(suffix) <= len(self):
@@ -258,6 +288,11 @@ class _BaseBits:
 
         Note that all occurrences of bs are found, even if they overlap.
 
+        .. code-block:: pycon
+
+            >>> list(Bits('0b10111011').find_all('0b11'))
+            [2, 3, 6]
+
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
@@ -270,8 +305,13 @@ class _BaseBits:
 
         Note that the output is designed to be helpful to users and is not considered part of the API.
         You should not use the output programmatically as it may change even between point versions.
-        """
 
+        .. code-block:: pycon
+
+            >>> Bits('0b1101').info()
+            '4 bits: binary = 1101, hex = d, unsigned int = 13, signed int = -3'
+
+        """
         def with_underscores(s: str) -> str:
             """Insert underscores every 4 characters."""
             return "_".join(s[x : x + 4] for x in range(0, len(s), 4))
@@ -375,6 +415,13 @@ class _BaseBits:
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
 
+        .. code-block:: pycon
+
+            >>> Bits('0b110110').rfind('0b1')
+            4
+            >>> Bits('0b110110').rfind('0b0')
+            5
+
         """
         bs = create_bitrust_from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
@@ -390,6 +437,13 @@ class _BaseBits:
         :type prefix: BitsType
         :return: True if the Bits starts with the prefix, otherwise False.
         :rtype: bool
+
+        .. code-block:: pycon
+
+            >>> Bits('0b101100').starts_with('0b101')
+            True
+            >>> Bits('0b101100').starts_with('0b100')
+            False
 
         """
         prefix = create_bitrust_from_any(prefix)
@@ -1377,9 +1431,10 @@ class MutableBits(_BaseBits):
         :type i: Iterable[Any]
         :rtype: Bits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
+            >>> Bits.from_bools([False, 0, 1, "Steven"]).bin
+            '0011'
 
         """
         x = super().__new__(cls)
@@ -1397,10 +1452,12 @@ class MutableBits(_BaseBits):
         :type sequence: Iterable[BitsType]
         :rtype: Bits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = Bits.from_joined([f'u6={x}' for x in range(64)])
-            b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+            >>> Bits.from_joined([f'u6={x}' for x in range(6)])
+            Bits('0x001083105')
+            >>> Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+            Bits('0x01f736f6d655f6279746573')
 
         """
         x = super().__new__(cls)
@@ -1418,9 +1475,10 @@ class MutableBits(_BaseBits):
         :type n: int
         :rtype: Bits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = Bits.from_ones(5)  # binary 11111
+            >>> Bits.from_ones(5)
+            Bits('0b11111')
 
         """
         if n == 0:
@@ -1443,10 +1501,12 @@ class MutableBits(_BaseBits):
         :returns: A newly constructed ``Bits``.
         :rtype: Bits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = Bits.from_dtype("u8", 17)
-            b = Bits.from_dtype("f16, i4, bool", [2.25, -3, False])
+            >>> Bits.from_dtype("u8", 17)
+            Bits('0x11')
+            >>> Bits.from_dtype("(f16, i4, bool)", [2.25, -3, False])
+            Bits('0b010000001000000011010')
 
         """
         if isinstance(dtype, str):
@@ -1568,10 +1628,12 @@ class MutableBits(_BaseBits):
         :return: Self with appended bits.
         :rtype: MutableBits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = MutableBits('0x0f')
-            a.append('0x0a')  # a now contains 0x0fa
+            >>> a = MutableBits('0x0f')
+            >>> a.append('0x0a')
+            MutableBits('0x0f0a')
+
         """
         bs = create_bitrust_from_any(bs)
         self._bitstore.append(bs)
@@ -1585,10 +1647,12 @@ class MutableBits(_BaseBits):
         :return: Self with prepended bits.
         :rtype: MutableBits
 
-        .. code-block:: python
+        .. code-block:: pycon
 
-            a = MutableBits('0x0f')
-            a.prepend('0x0a')  # a now contains 0x0a0f
+            >>> a = MutableBits('0x0f')
+            >>> a.prepend('0x0a')
+            MutableBits('0x0a0f')
+
         """
         bs = create_bitrust_from_any(bs)
         self._bitstore.prepend(bs)
