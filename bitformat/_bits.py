@@ -1768,9 +1768,9 @@ class MutableBits(_BaseBits):
 
         .. code-block:: pycon
 
-            >>> a = MutableBits('0b1011')
-            >>> a.overwrite(1, '0b00')
-            MutableBits('0b1001')
+            >>>> a = MutableBits.from_zeros(10)
+            >>> a.overwrite(2, '0b111')
+            MutableBits('0b0011100000')
 
         """
         bs = create_bitrust_from_any(bs)
@@ -1796,6 +1796,12 @@ class MutableBits(_BaseBits):
         :rtype: Bits
 
         Raises ValueError if bits < 0.
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b1011')
+            >>> a.rol(2)
+            MutableBits('0b1110')
 
         """
         if not len(self):
@@ -1825,6 +1831,12 @@ class MutableBits(_BaseBits):
         :rtype: Bits
 
         Raises ValueError if bits < 0.
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b1011')
+            >>> a.ror(1)
+            MutableBits('0b1101')
 
         """
         if len(self) == 0:
@@ -1856,6 +1868,16 @@ class MutableBits(_BaseBits):
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
+        .. code-block:: pycon
+
+            >>> a = MutableBits.from_zeros(10)
+            >>> a.set(1, 5)
+            MutableBits('0b0000010000')
+            >>> a.set(1, [-1, -2])
+            MutableBits('0b0000010011')
+            >>> a.set(0, range(8, 10))
+            MutableBits('0b0000010000')
+
         """
         v = True if value else False
         if not isinstance(pos, Sequence):
@@ -1886,6 +1908,12 @@ class MutableBits(_BaseBits):
         :rtype: MutableBits
 
         Raises ValueError if old is empty or if start or end are out of range.
+
+        .. code-block:: pycon
+
+            >>> s = MutableBits('0b10011')
+            >>> s.replace('0b1', '0xf')
+            MutableBits('0b11110011111111')
 
         """
         if count == 0:
@@ -1928,6 +1956,12 @@ class MutableBits(_BaseBits):
 
         :return: self
         :rtype: MutableBits
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b1011')
+            >>> a.reverse()
+            MutableBits('0b1101')
 
         """
         self._bitstore.reverse()
