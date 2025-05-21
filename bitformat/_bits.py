@@ -1668,6 +1668,13 @@ class MutableBits(_BaseBits):
         :type byte_length: int or None
         :return: The MutableBits object with byte-swapped data.
         :rtype: MutableBits
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0x12345678')
+            >>> a.byte_swap(2)
+            MutableBits('0x34127856')
+
         """
         if len(self) % 8 != 0:
             raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
@@ -1702,6 +1709,12 @@ class MutableBits(_BaseBits):
 
         Raises ValueError if pos < 0 or pos > len(self).
 
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b1011')
+            >>> a.insert(2, '0b00')
+            MutableBits('0b100011')
+
         """
         bs = create_bitrust_from_any(bs)
         if pos < 0:
@@ -1721,6 +1734,16 @@ class MutableBits(_BaseBits):
         :rtype: MutableBits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b10111')
+            >>> a.invert(1)
+            MutableBits('0b11111')
+            >>> a.invert([0, 2])
+            MutableBits('0b01011')
+            >>> a.invert()
+            MutableBits('0b10100')
 
         """
         if pos is None:
@@ -1742,6 +1765,12 @@ class MutableBits(_BaseBits):
         :rtype: MutableBits
 
         Raises ValueError if pos < 0 or pos > len(self).
+
+        .. code-block:: pycon
+
+            >>> a = MutableBits('0b1011')
+            >>> a.overwrite(1, '0b00')
+            MutableBits('0b1001')
 
         """
         bs = create_bitrust_from_any(bs)
