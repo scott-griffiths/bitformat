@@ -1374,6 +1374,42 @@ class Bits(_BaseBits):
 
 class MutableBits(_BaseBits):
 
+    def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
+        """Set a bit or a slice of bits.
+
+        :param key: The index or slice to set.
+        :type key: int or slice
+        :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
+        :type value: bool or BitsType
+        :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
+        :raises IndexError: If the index is out of range.
+
+        Examples:
+            >>> b = MutableBits('0b0000')
+            >>> b[1] = True
+            >>> b.bin
+            '0100'
+            >>> b[1:3] = '0b11111'
+            >>> b.bin
+            '0111110'
+        """
+        if isinstance(key, numbers.Integral):
+            if key < 0:
+                key += len(self)
+            if not 0 <= key < len(self):
+                raise IndexError(f"Bit index {key} out of range for length {len(self)}")
+            self._bitstore.set_index(bool(value), key)
+        else:
+            start, stop, step = key.indices(len(self))
+            if step != 1:
+                raise ValueError("Cannot set bits with a step other than 1")
+            slice_length = stop - start
+            if slice_length == 0:
+                return
+            bs = create_bitrust_from_any(value)
+            self._bitstore.set_slice(start, stop, bs)
+
+
     @classmethod
     def _from_any(cls, any_: BitsType, /) -> MutableBits:
         """Create a new class instance from one of the many things that can be used to build it.

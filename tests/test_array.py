@@ -901,8 +901,13 @@ class TestDelegation:
 
     def test_setitem(self):
         a = Array("i4", [1, 2, 5, 5])
-        with pytest.raises(TypeError):
-            a.data[-4:] = "0xf"
+        d = a.data
+        assert d._bitstore is a._mutable_bitrust
+        d[-4:] = "0xf"
+        assert a.unpack() == [1, 2, 5, -1]
+        a.data[:4] = '0b0000'
+        assert a.unpack() == [0, 2, 5, -1]
+        assert d._bitstore is a._mutable_bitrust
 
     def test_mutability(self):
         a = Array("i4", [1, 2, 5, 5])

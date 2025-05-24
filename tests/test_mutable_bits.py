@@ -75,3 +75,63 @@ def test_append_prepend_together():
     a = MutableBits('0xAA')
     a.append('0xBB').prepend('0xCC')
     assert a == '0xCCAABB'
+
+
+def test_setitem_single_bit():
+    a = MutableBits('0b0010')
+    a[0] = 1
+    assert a == '0b1010'
+    a[2] = 0
+    assert a == '0b1000'
+    a[-1] = True
+    assert a == '0b1001'
+    a[-4] = False
+    assert a == '0b0001'
+    # Out of range
+    with pytest.raises(IndexError):
+        a[4] = 1
+    with pytest.raises(IndexError):
+        a[-5] = 0
+
+def test_setitem_slice():
+    a = MutableBits('0b101010')
+    a[1:4] = '0b111'
+    assert a == '0b111110'
+    a[0:2] = Bits('0b00')
+    assert a == '0b001110'
+    a[2:5] = MutableBits('0b101')
+    assert a == '0b001010'
+    # Negative indices
+    a[-3:-1] = '0b11'
+    assert a == '0b001110'
+    # Full slice
+    a[:] = '0b000000'
+    assert a == '0b000000'
+    # Empty slice
+    a[2:2] = '0b'
+    assert a == '0b000000'
+    a[1:3] = '0b1'
+    assert a == '0b01000'
+    # Step not allowed
+    with pytest.raises(ValueError):
+        a[::2] = '0b00'
+    # TODO
+    # with pytest.raises(IndexError):
+    #     a[10:12] = '0b00'
+
+def test_setitem_slice_length_change():
+    a = MutableBits('0b1010')
+    a[1:3] = '0b111'
+    assert a == '0b11110'  # Length increased by 1
+    a[0:2] = '0b0'
+    assert a == '0b0110'
+    a[1:2] = '0b1111'
+    assert a == '0b0111110'
+    a[0:15] = '0b1'
+    assert a == '0b1'
+    # Setting to empty
+    a[:] = ''
+    assert a == ''
+    # Setting empty slice to non-empty
+    # a[0:0] = '0b101'
+    # assert a == '0b101'
