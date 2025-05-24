@@ -161,13 +161,13 @@ class Array:
         return self._dtype.bit_length
 
     @property
-    def trailing_bits(self) -> MutableBits:
+    def trailing_bits(self) -> Bits:
         """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
         bitstore_length = len(self._mutable_bitrust)
         trailing_bit_length = bitstore_length % self.item_size
         if trailing_bit_length == 0:
-            return MutableBits()
-        return self._get_bit_slice(bitstore_length - trailing_bit_length, bitstore_length)
+            return Bits()
+        return self._get_bit_slice(bitstore_length - trailing_bit_length, bitstore_length).to_bits()
 
     @property
     def dtype(self) -> Dtype:
@@ -233,7 +233,6 @@ class Array:
 
     def __setitem__(self, key: slice | int, value: Iterable[ElementType] | ElementType, /) -> None:
         if isinstance(key, slice):
-            # TODO: Use overwrite_slice instead of set_slice if possible (maybe that's a Rust-side change?)
             start, stop, step = key.indices(len(self))
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
@@ -257,7 +256,7 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self.item_size * key
             x = self._create_element(value)
-            self._mutable_bitrust.overwrite_slice(start, x)
+            self._mutable_bitrust.set_slice(start, start + self.item_size, x)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
@@ -654,7 +653,7 @@ class Array:
                 mutablebitrust_slice.iand(value)
             elif op == operator.ior:
                 mutablebitrust_slice.ior(value)
-            self._mutable_bitrust.overwrite_slice(start, mutablebitrust_slice.as_immutable())
+            self._mutable_bitrust.set_slice(start, start + self.item_size, mutablebitrust_slice.as_immutable())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:

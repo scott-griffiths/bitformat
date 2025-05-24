@@ -118,11 +118,13 @@ impl BitRust {
     fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = usize> + 'a {
         // Use the find fn to find all instances of b in self and return as an iterator
         let mut start: usize = 0;
+        let step = if bytealigned { 8 } else { 1 };
         std::iter::from_fn(move || {
             let found = self.find(b, start, bytealigned);
+
             match found {
                 Some(x) => {
-                    start = if bytealigned { x + 8 } else { x + 1 };
+                    start = x + step;
                     Some(x)
                 }
                 None => None,
