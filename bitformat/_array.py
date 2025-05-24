@@ -22,7 +22,7 @@ class Array:
     """
     An Array whose elements are all a single data type.
 
-    The ``Array`` data is stored compactly as a ``Bits`` object and the ``Array`` behaves very like
+    The ``Array`` data is stored compactly as a ``MutableBits`` object and the ``Array`` behaves very like
     a list of items of the given format.
 
     If the data length is not a multiple of the dtype length then the ``Array`` will have ``trailing_bits``
@@ -31,7 +31,7 @@ class Array:
     To construct, use a builder 'from' method:
 
     * ``Array.from_iterable(dtype, iterable)`` - Create and initialise from an iterable.
-    * ``Array.from_bits(dtype, b)`` - Create with data from a :class:`Bits` object.
+    * ``Array.from_bits(dtype, b)`` - Create with data from a :class:`Bits` or :class:`MutableBits` object.
     * ``Array.from_bytes(dtype, b)`` - Create with data from a ``bytes`` object.
     * ``Array.from_zeros(dtype, n)`` - Initialise with enough zero bits for ``n`` elements.
 
@@ -50,7 +50,7 @@ class Array:
     - ``pop([index])``: Remove and return an item. Default is the last item.
     - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
     - ``reverse()``: Reverse the order of all items.
-    - ``to_bits()``: Return the Array data as a Bits object.
+    - ``to_bits()``: Return the Array data as a MutableBits object.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
     - ``unpack()``: Return Array items as a list of values.
 
@@ -73,19 +73,12 @@ class Array:
 
     def __new__(cls, dtype: str | Dtype, iterable: Iterable | None = None) -> Array:
         if isinstance(iterable, (Bits, MutableBits)):
-            raise TypeError("The iterable argument in the Array init method should not be a Bits object. "
+            raise TypeError("The iterable argument in the Array init method should not be a Bits or MutableBits object. "
                             "Choose either from_bits() or from_iterable() instead.")
         if isinstance(iterable, (bytes, bytearray)):
             raise TypeError("The iterable argument in the Array init method should not be a bytes or bytearray object. "
                             "Choose either from_bytes() or from_iterable() instead.")
         x = cls.from_iterable(dtype, [] if iterable is None else iterable)
-        return x
-
-    @classmethod
-    def _partial_init(cls, dtype: str | Dtype) -> Array:
-        """Code common to the various constructor methods."""
-        x = super().__new__(cls)
-        x._set_dtype(dtype)
         return x
 
     @classmethod
@@ -103,13 +96,15 @@ class Array:
             a = Array.from_bytes('u8', b"some_bytes_maybe_from_a_file")
 
         """
-        x = cls._partial_init(dtype)
+        x = super().__new__(cls)
+        x._set_dtype(dtype)
         x._mutable_bitrust = MutableBitRust.from_bytes(b)
         return x
 
     @classmethod
     def from_bits(cls, dtype: str | Dtype, b: Bits) -> Array:
-        x = cls._partial_init(dtype)
+        x = super().__new__(cls)
+        x._set_dtype(dtype)
         # We may change the internal BitRust, so need to make a copy here.
         if isinstance(b, MutableBits):
             x._mutable_bitrust = b._bitstore.clone()
@@ -119,13 +114,15 @@ class Array:
 
     @classmethod
     def from_zeros(cls, dtype: str | Dtype, n: int) -> Array:
-        x = cls._partial_init(dtype)
+        x = super().__new__(cls)
+        x._set_dtype(dtype)
         x._mutable_bitrust = MutableBitRust.from_zeros(n * x.item_size)
         return x
 
     @classmethod
     def from_iterable(cls, dtype: str | Dtype, iterable: Iterable) -> Array:
-        x = cls._partial_init(dtype)
+        x = super().__new__(cls)
+        x._set_dtype(dtype)
         x._mutable_bitrust = MutableBitRust.from_zeros(0)
         x.extend(iterable)
         return x
