@@ -26,6 +26,20 @@ BitsType = Union["Bits", str, bytearray, bytes, memoryview]
 CACHE_SIZE = 256
 
 
+def _create_u_bitstore(u: int, length: int) -> BitRust:
+    assert u >= 0
+    if length <= 64:
+        # Faster method for shorter lengths.
+        return BitRust.from_u64(u, length)
+    else:
+        b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
+        offset = 8 - (length % 8)
+        if offset == 8:
+            return BitRust.from_bytes(b)
+        else:
+            return BitRust.from_bytes_with_offset(b, offset=offset)
+
+
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
         return str_to_bitstore_cached(any_)
@@ -539,30 +553,9 @@ class _BaseBits:
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
         u = int(u)
-        if u >= (1 << length):
-            raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
-                             f"The allowed range is [0, {(1 << length) - 1}].")
         if u < 0:
             raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
-
-        try:
-            if length <= 64:
-                # Faster method for shorter lengths.
-                self._bitstore = BitRust.from_u64(u, length)
-            else:
-                b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
-                offset = 8 - (length % 8)
-                if offset == 8:
-                    self._bitstore = BitRust.from_bytes(b)
-                else:
-                    self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
-        except OverflowError as e:  # Catch overflow error from Rust code.
-            if u >= (1 << length):
-                raise ValueError(f"{u} is too large an unsigned integer for a Bits of length {length}. "
-                                 f"The allowed range is [0, {(1 << length) - 1}].")
-            if u < 0:
-                raise ValueError(f"Cannot initialise an unsigned integer with the negative number {u}.")
-            raise e
+        self._bitstore = _create_u_bitstore(u, length)
 
     def _get_u(self) -> int:
         """Return data as an unsigned int."""

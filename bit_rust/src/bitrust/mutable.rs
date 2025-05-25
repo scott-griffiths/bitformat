@@ -105,8 +105,8 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_u64(value: u64, length: usize) -> Self {
-        Self { inner: BitRust::from_u64(value, length) }
+    pub fn from_u64(value: u64, length: usize) -> PyResult<Self> {
+        Ok(Self { inner: BitRust::from_u64(value, length)? })
     }
 
     #[staticmethod]
