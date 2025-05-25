@@ -1138,6 +1138,10 @@ class Bits(_BaseBits):
             end = self._slice(length - 800, length)
             return hash(((start + end).to_bytes(), length))
 
+    def __setitem__(self, key, value):
+        raise TypeError(f"'{self.__class__.__name__}' object does not support item assignment. "
+        f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
+
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
         """Create a new :class:`Bits` from a bytes object.
@@ -1748,13 +1752,7 @@ class MutableBits(_BaseBits):
             MutableBits('0b100011')
 
         """
-        bs = create_bitrust_from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).as_immutable(), bs,
-                                              self._bitstore.getslice(pos, None).as_immutable()])
+        self.__setitem__(slice(pos, pos), bs)
         return self
 
     def invert(self, pos: Iterable[int] | int | None = None) -> MutableBits:
@@ -1784,35 +1782,6 @@ class MutableBits(_BaseBits):
             self._bitstore.invert_single_bit(pos)
         else:
             self._bitstore.invert_bit_list(list(pos))
-        return self
-
-    def overwrite(self, pos: int, bs: BitsType, /) -> MutableBits:
-        """Return new MutableBits with bs overwritten at bit position pos.
-
-        :param pos: The bit position to start overwriting at.
-        :type pos: int
-        :param bs: The Bits to overwrite with.
-        :type bs: BitsType
-        :return: The mutated MutableBits object with the overwritten bits.
-        :rtype: MutableBits
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        .. code-block:: pycon
-
-            >>>> a = MutableBits.from_zeros(10)
-            >>> a.overwrite(2, '0b111')
-            MutableBits('0b0011100000')
-
-        """
-        bs = create_bitrust_from_any(bs)
-        if pos < 0:
-            pos += len(self)
-        if pos < 0 or pos > len(self):
-            raise ValueError("Overwrite starts outside boundary of Bits.")
-        # TODO: This should use setitem. Although there's an argument that both overwrite and insert could be replaced with setitem..?
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos).as_immutable(), bs,
-                                              self._bitstore.getslice(pos + len(bs), None).as_immutable()])
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:

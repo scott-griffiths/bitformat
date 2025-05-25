@@ -112,12 +112,11 @@ def test_setitem_slice():
     assert a == '0b000000'
     a[1:3] = '0b1'
     assert a == '0b01000'
-    # Step not allowed
+    # Stepping is not allowed
     with pytest.raises(ValueError):
         a[::2] = '0b00'
-    # TODO
-    # with pytest.raises(IndexError):
-    #     a[10:12] = '0b00'
+    a[10:12] = '0b00'  # Out of range, so just extends.
+    assert a == '0b0100000'
 
 def test_setitem_slice_length_change():
     a = MutableBits('0b1010')
