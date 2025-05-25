@@ -1402,8 +1402,6 @@ class MutableBits(_BaseBits):
             if step != 1:
                 raise ValueError("Cannot set bits with a step other than 1")
             slice_length = stop - start
-            if slice_length == 0:
-                return
             bs = create_bitrust_from_any(value)
             self._bitstore.set_slice(start, stop, bs)
 

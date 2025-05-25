@@ -133,5 +133,5 @@ def test_setitem_slice_length_change():
     a[:] = ''
     assert a == ''
     # Setting empty slice to non-empty
-    # a[0:0] = '0b101'
-    # assert a == '0b101'
+    a[0:0] = '0b101'
+    assert a == '0b101'
