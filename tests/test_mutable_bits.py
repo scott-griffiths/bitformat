@@ -134,3 +134,76 @@ def test_setitem_slice_length_change():
     # Setting empty slice to non-empty
     a[0:0] = '0b101'
     assert a == '0b101'
+
+def test_delitem_single_bit():
+    # Test deleting single bits
+    a = MutableBits('0b1010')
+    del a[1]
+    assert a == '0b110'
+
+    a = MutableBits('0b1010')
+    del a[-1]
+    assert a == '0b101'
+
+    # Out of range
+    with pytest.raises(IndexError):
+        a = MutableBits('0b101')
+        del a[3]
+
+    with pytest.raises(IndexError):
+        a = MutableBits('0b101')
+        del a[-4]
+
+
+def test_delitem_slice():
+    # Test deleting slices
+    a = MutableBits('0b101010')
+    del a[1:4]
+    assert a == '0b110'
+
+    # Negative indices
+    a = MutableBits('0b101010')
+    del a[-4:-2]
+    assert a == '0b1010'
+
+    # Empty slice should do nothing
+    a = MutableBits('0b1010')
+    del a[2:2]
+    assert a == '0b1010'
+
+    # Full slice deletion
+    a = MutableBits('0b1010')
+    del a[:]
+    assert a == ''
+
+    # Partial indices
+    a = MutableBits('0b101010')
+    del a[2:]  # Delete from index 2 to the end
+    assert a == '0b10'
+
+    a = MutableBits('0b101010')
+    del a[:2]  # Delete from start to index 2
+    assert a == '0b1010'
+
+
+def test_delitem_with_step():
+    # Test slices with step
+    a = MutableBits('0b101010')
+    with pytest.raises(ValueError):
+        del a[::2]  # Delete every other bit
+
+
+def test_delitem_edge_cases():
+    # Empty bits
+    a = MutableBits()
+    with pytest.raises(IndexError):
+        del a[0]
+
+    a = MutableBits('0b1010')
+    del a[10:20]  # Out of range slice, should do nothing
+    assert a == '0b1010'
+
+    # Delete last bit
+    a = MutableBits('0b1')
+    del a[0]
+    assert a == ''

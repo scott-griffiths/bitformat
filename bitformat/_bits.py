@@ -1142,6 +1142,11 @@ class Bits(_BaseBits):
         raise TypeError(f"'{self.__class__.__name__}' object does not support item assignment. "
         f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
 
+    def __delitem__(self, key):
+        raise TypeError(f"'{self.__class__.__name__}' object does not support item deletion. "
+        f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
+
+
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
         """Create a new :class:`Bits` from a bytes object.
@@ -1405,9 +1410,21 @@ class MutableBits(_BaseBits):
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot set bits with a step other than 1")
-            slice_length = stop - start
             bs = create_bitrust_from_any(value)
             self._bitstore.set_slice(start, stop, bs)
+
+    def __delitem__(self, key: int | slice) -> None:
+        if isinstance(key, numbers.Integral):
+            if key < 0:
+                key += len(self)
+            if not 0 <= key < len(self):
+                raise IndexError(f"Bit index {key} out of range for length {len(self)}")
+            self._bitstore.set_slice(key, key + 1, BitRust.from_zeros(0))
+        else:
+            start, stop, step = key.indices(len(self))
+            if step != 1:
+                raise ValueError("Cannot delete bits with a step other than 1")
+            self._bitstore.set_slice(start, stop, BitRust.from_zeros(0))
 
 
     @classmethod
