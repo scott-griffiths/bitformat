@@ -30,7 +30,10 @@ def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
     if length <= 64:
         # Faster method for shorter lengths.
-        return BitRust.from_u64(u, length)
+        try:
+            return BitRust.from_u64(u, length)
+        except OverflowError: # From Rust code
+            raise ValueError(f"Can't store integer value {u} in a bit length of {length}.")
     else:
         b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
         offset = 8 - (length % 8)
@@ -38,6 +41,23 @@ def _create_u_bitstore(u: int, length: int) -> BitRust:
             return BitRust.from_bytes(b)
         else:
             return BitRust.from_bytes_with_offset(b, offset=offset)
+
+
+def _create_i_bitstore(i: int, length: int) -> BitRust:
+    if length <= 64:
+        # Faster method for shorter lengths.
+        try:
+            return BitRust.from_i64(i, length)
+        except OverflowError: # From Rust code
+            raise ValueError(f"Can't store integer value {i} in a bit length of {length}.")
+    else:
+        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
+        offset = 8 - (length % 8)
+        if offset == 8:
+            return BitRust.from_bytes(b)
+        else:
+            return BitRust.from_bytes_with_offset(b, offset=offset)
+
 
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
@@ -569,25 +589,10 @@ class _BaseBits:
 
     def _set_i(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
-        # TODO: copy faster method of _set_u
-        i = int(i)
         if length is None or length == 0:
             raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
-        try:
-            if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
-            b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
-            offset = 8 - (length % 8)
-            if offset == 8:
-                self._bitstore = BitRust.from_bytes(b)
-            else:
-                self._bitstore = BitRust.from_bytes_with_offset(b, offset=offset)
-        except OverflowError as e:
-            if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-                raise ValueError(f"{i} is too large a signed integer for a Bits of length {length}. "
-                                 f"The allowed range is [{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}].")
-            raise e
+        i = int(i)
+        self._bitstore = _create_i_bitstore(i, length)
 
     def _get_i(self) -> int:
         """Return data as a two's complement signed int."""

@@ -110,6 +110,11 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
+    pub fn from_i64(value: i64, length: usize) -> PyResult<Self> {
+        Ok(Self { inner: BitRust::from_i64(value, length)? })
+    }
+
+    #[staticmethod]
     pub fn from_zeros(length: usize) -> Self {
         BitCollection::from_zeros(length)
     }
