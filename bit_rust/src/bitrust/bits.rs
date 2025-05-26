@@ -18,7 +18,7 @@ pub trait BitCollection: Sized{
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
-#[pyclass(eq)]
+#[pyclass(eq, frozen)]
 pub struct BitRust {
     pub(crate) data: helpers::BV,
 }
@@ -537,14 +537,6 @@ impl BitRust {
     pub fn clone_as_mutable(&self) -> MutableBitRust {
         MutableBitRust {
             inner: BitRust::new(self.data.clone()),
-        }
-    }
-
-    // Return as a MutableBitRust, taking ownership of the data.
-    pub fn as_mutable(&mut self) -> MutableBitRust {
-        let data = std::mem::take(&mut self.data);
-        MutableBitRust {
-            inner: BitRust::new(data),
         }
     }
 

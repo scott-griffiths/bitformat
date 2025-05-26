@@ -282,7 +282,8 @@ class _BaseBits:
         if cls is Bits:
             x._bitstore = xt._bitstore
         else:
-            x._bitstore = xt._bitstore.as_mutable()
+            # TODO: clone here shouldn't be needed.
+            x._bitstore = xt._bitstore.clone_as_mutable()
         return x
 
     @classmethod
@@ -315,7 +316,8 @@ class _BaseBits:
         if cls is Bits:
             x._bitstore = bs
         else:
-            x._bitstore = bs.as_mutable()
+            # TODO: clone here shouldn't be needed.
+            x._bitstore = bs.clone_as_mutable()
         return x
 
     @classmethod
@@ -1131,12 +1133,13 @@ class _BaseBits:
         """
         try:
             other = create_bitrust_from_any(bs)
+        except TypeError:
+            return False
+        else:
             if isinstance(self, Bits):  # TODO: This could be more streamlined.
                 return self._bitstore == other
             else:
                 return self._bitstore.clone_as_immutable() == other
-        except TypeError:
-            return False
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.
@@ -1175,7 +1178,8 @@ class _BaseBits:
             x._bitstore = x._bitstore.clone_as_immutable()
         else:
             x._bitstore = self._bitstore.clone_as_immutable()
-            x._bitstore = x._bitstore.as_mutable()
+            # TODO: clone here shouldn't be needed.
+            x._bitstore = x._bitstore.clone_as_mutable()
             x._bitstore.append(bs)
             x._bitstore.clone_as_immutable()
         return x
