@@ -1168,22 +1168,6 @@ class _BaseBits:
 
     # ----- Operators
 
-    def __add__(self: Bits, bs: BitsType, /) -> Bits:
-        """Concatenate Bits and return a new Bits."""
-        bs = create_bitrust_from_any(bs)
-        x = self.__class__()
-        if isinstance(self, Bits):
-            x._bitstore = self._bitstore.clone_as_mutable()
-            x._bitstore.append(bs)
-            x._bitstore = x._bitstore.clone_as_immutable()
-        else:
-            x._bitstore = self._bitstore.clone_as_immutable()
-            # TODO: clone here shouldn't be needed.
-            x._bitstore = x._bitstore.clone_as_mutable()
-            x._bitstore.append(bs)
-            x._bitstore.clone_as_immutable()
-        return x
-
     @overload
     def __getitem__(self: Bits, key: slice, /) -> Bits: ...
 
@@ -1330,6 +1314,15 @@ class Bits(_BaseBits):
         x._bitstore = create_bitrust_from_any(any_)
         return x
 
+    def __add__(self, bs: BitsType, /) -> Bits:
+        """Concatenate Bits and return a new Bits."""
+        bs = create_bitrust_from_any(bs)
+        x = self.__class__()
+        x._bitstore = self._bitstore.clone_as_mutable()
+        x._bitstore.append(bs)
+        x._bitstore = x._bitstore.as_immutable()
+        return x
+
     def __new__(cls, s: str | None = None, /) -> Bits:
         x = super().__new__(cls)
         if s is None:
@@ -1398,6 +1391,14 @@ class Bits(_BaseBits):
 
 
 class MutableBits(_BaseBits):
+
+    def __add__(self, bs: BitsType, /) -> MutableBits:
+        """Concatenate Bits and return a new Bits."""
+        bs = create_bitrust_from_any(bs)
+        x = self.__class__()
+        x._bitstore = self._bitstore.clone()
+        x._bitstore.append(bs)
+        return x
 
     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
         """Set a bit or a slice of bits.
