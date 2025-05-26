@@ -8,7 +8,6 @@ import io
 import functools
 from ast import literal_eval
 from collections import abc
-from functools import lru_cache
 from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
@@ -469,7 +468,7 @@ class _BaseBits:
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
-        Return whether the current Bits ends with suffix.
+        Return whether the current Bits or MutableBits ends with suffix.
 
         :param suffix: The Bits to search for.
         :type suffix: BitsType
@@ -1039,7 +1038,7 @@ class _BaseBits:
     # ----- Special Methods -----
 
     # ----- Logical
-    def __and__(self: Bits, bs: BitsType, /) -> Bits:
+    def __and__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'and' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1052,7 +1051,7 @@ class _BaseBits:
         s._bitstore = self._bitstore & bs
         return s
 
-    def __or__(self: Bits, bs: BitsType, /) -> Bits:
+    def __or__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1065,7 +1064,7 @@ class _BaseBits:
         s._bitstore = self._bitstore | bs
         return s
 
-    def __xor__(self: Bits, bs: BitsType, /) -> Bits:
+    def __xor__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1076,7 +1075,7 @@ class _BaseBits:
         s._bitstore = self._bitstore ^ bs
         return s
 
-    def __rand__(self: Bits, bs: BitsType, /) -> Bits:
+    def __rand__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'and' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1084,7 +1083,7 @@ class _BaseBits:
         """
         return self.__and__(bs)
 
-    def __ror__(self: Bits, bs: BitsType, /) -> Bits:
+    def __ror__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1092,7 +1091,7 @@ class _BaseBits:
         """
         return self.__or__(bs)
 
-    def __rxor__(self: Bits, bs: BitsType, /) -> Bits:
+    def __rxor__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1187,7 +1186,7 @@ class _BaseBits:
     @overload
     def __getitem__(self, key: int, /) -> bool: ...
 
-    def __getitem__(self: Bits, key: slice | int, /) -> Bits | bool:
+    def __getitem__(self, key: slice | int, /) -> Bits | MutableBits | bool:
         """Return a new Bits representing a slice of the current Bits."""
         if isinstance(key, numbers.Integral):
             return bool(self._bitstore.getindex(key))
@@ -1199,8 +1198,8 @@ class _BaseBits:
             bs._bitstore = self._bitstore.getslice_with_step(start, stop, step)
         return bs
 
-    def __invert__(self: Bits) -> Bits:
-        """Return the Bits with every bit inverted.
+    def __invert__(self) -> Bits | MutableBits:
+        """Return the instance with every bit inverted.
 
         Raises ValueError if the Bits is empty.
 
