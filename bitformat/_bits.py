@@ -71,6 +71,7 @@ def create_bitrust_from_any(any_: BitsType) -> BitRust:
         return BitRust.from_bytes(any_)
     raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
 
+
 def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
     if isinstance(any_, str):
         return str_to_mutable_bitstore(any_)
@@ -1828,12 +1829,12 @@ class MutableBits(_BaseBits):
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        # TODO: This can be done without so much copying as it's allowed to be in-place.
-        x = MutableBits.from_joined([self._slice(0, start),
-                                     self._slice(start + n, end),
-                                     self._slice(start, start + n),
-                                     self._slice(end, len(self))])
-        self._bitstore = x._bitstore
+        bs = self._bitstore.as_immutable()
+        new_bs = MutableBitRust.join([bs.getslice(0, start),
+                                      bs.getslice(start + n, end),
+                                      bs.getslice(start, start + n),
+                                      bs.getslice(end, len(bs))])
+        self._bitstore = new_bs
         return self
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1863,15 +1864,12 @@ class MutableBits(_BaseBits):
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        x = MutableBits.from_joined(
-            [
-                self._slice(0, start),
-                self._slice(end - n, end),
-                self._slice(start, end - n),
-                self._slice(end, len(self)),
-            ]
-        )
-        self._bitstore = x._bitstore
+        bs = self._bitstore.as_immutable()
+        new_bs = MutableBitRust.join([bs.getslice(0, start),
+                                      bs.getslice(end - n, end),
+                                      bs.getslice(start, end - n),
+                                      bs.getslice(end, len(bs))])
+        self._bitstore = new_bs
         return self
 
     def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
