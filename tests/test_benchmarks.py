@@ -74,13 +74,13 @@ def test_repeated_reading(benchmark):
 def test_primes(benchmark):
     def primes():
         limit = 1000000
-        is_prime = Bits.from_ones(limit)
+        is_prime = MutableBits.from_ones(limit)
         # Manually set 0 and 1 to be not prime.
-        is_prime = is_prime.set(False, [0, 1])
+        is_prime.set(False, [0, 1])
         # For every other integer, if it's set as prime then unset all of its multiples
         for i in range(2, math.ceil(math.sqrt(limit))):
             if is_prime[i]:
-                is_prime = is_prime.set(False, range(i * i, limit, i))
+                is_prime.set(False, range(i * i, limit, i))
         twin_primes = len(list(is_prime.find_all("0b101")))
         return twin_primes
 
