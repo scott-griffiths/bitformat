@@ -44,7 +44,7 @@ def _create_u_bitstore(u: int, length: int) -> BitRust:
 
 
 def _create_i_bitstore(i: int, length: int) -> BitRust:
-    if length <= 64:
+    if length < 64:
         # Faster method for shorter lengths.
         try:
             return BitRust.from_i64(i, length)
