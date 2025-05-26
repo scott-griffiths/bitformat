@@ -6,7 +6,7 @@ use crate::bitrust::BitRustIterator;
 use std::ops::Not;
 use bits::BitCollection;
 
-#[pyclass]
+#[pyclass(eq)]
 pub struct MutableBitRust {
     pub(crate) inner: BitRust,
 }
@@ -98,16 +98,6 @@ impl MutableBitRust {
 
         self.inner.data &= &other.inner.data;
         Ok(())
-    }
-
-    pub fn __eq__(&self, other: PyRef<PyAny>) -> PyResult<bool> {
-        if let Ok(other) = other.extract::<PyRef<BitRust>>() {
-            Ok(self.inner == *other)
-        } else if let Ok(other) = other.extract::<PyRef<MutableBitRust>>() {
-            Ok(self.inner == other.inner)
-        } else {
-            Ok(false)
-        }
     }
 
     #[staticmethod]

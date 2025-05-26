@@ -18,7 +18,7 @@ pub trait BitCollection: Sized{
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
-#[pyclass]
+#[pyclass(eq)]
 pub struct BitRust {
     pub(crate) data: helpers::BV,
 }
@@ -201,16 +201,6 @@ impl BitRust {
 
     pub fn __len__(&self) -> usize {
         self.len()
-    }
-
-    pub fn __eq__(&self, other: PyRef<PyAny>) -> PyResult<bool> {
-        if let Ok(other) = other.extract::<PyRef<BitRust>>() {
-            Ok(self.data == other.data)
-        } else if let Ok(other) = other.extract::<PyRef<MutableBitRust>>() {
-            Ok(self.data == other.inner.data)
-        } else {
-            Ok(false)
-        }
     }
 
     #[staticmethod]
@@ -936,9 +926,9 @@ mod tests {
     fn test_eq() {
         let a = BitRust::from_bin("1100").unwrap();
         let b = BitRust::from_bin("1100").unwrap();
-        assert!(a.__eq__(&b));
+        assert!(a == b);
         let c = BitRust::from_bin("1010").unwrap();
-        assert!(!a.__eq__(&c));
+        assert!(a != c);
     }
 
     #[test]
@@ -1015,8 +1005,8 @@ mod tests {
         let m2 = MutableBitRust::from_bin_checked("1100").unwrap();
         let m3 = MutableBitRust::from_bin_checked("0011").unwrap();
 
-        assert!(m1.__eq__(&m2));
-        assert!(!m1.__eq__(&m3));
+        assert!(m1 == m2);
+        assert!(m1 != m3);
     }
 
     #[test]
