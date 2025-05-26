@@ -203,8 +203,14 @@ impl BitRust {
         self.len()
     }
 
-    pub fn __eq__(&self, rhs: &BitRust) -> bool {
-        self == rhs
+    pub fn __eq__(&self, other: PyRef<PyAny>) -> PyResult<bool> {
+        if let Ok(other) = other.extract::<PyRef<BitRust>>() {
+            Ok(self.data == other.data)
+        } else if let Ok(other) = other.extract::<PyRef<MutableBitRust>>() {
+            Ok(self.data == other.inner.data)
+        } else {
+            Ok(false)
+        }
     }
 
     #[staticmethod]
