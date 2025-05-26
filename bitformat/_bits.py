@@ -164,6 +164,218 @@ class _BaseBits:
 
     # ----- Class Methods -----
 
+    @classmethod
+    def from_bytes(cls, b: bytes, /) -> Bits | MutableBits:
+        """Create a new instance from a bytes object.
+
+        :param b: The bytes object to convert to a :class:`Bits` or :class:`MutableBits`.
+        :type b: bytes
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
+
+        """
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = BitRust.from_bytes(b)
+        else:
+            x._bitstore = MutableBitRust.from_bytes(b)
+        return x
+
+    @classmethod
+    def from_bools(cls, i: Iterable[Any], /) -> Bits | MutableBits:
+        """
+        Create a new instance from an iterable by converting each element to a bool.
+
+        :param i: The iterable to convert to a :class:`Bits` or :class:`MutableBits`.
+        :type i: Iterable[Any]
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
+
+        """
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = BitRust.from_bools([bool(x) for x in i])
+        else:
+            x._bitstore = MutableBitRust.from_bools([bool(x) for x in i])
+        return x
+
+    @classmethod
+    def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits | MutableBits:
+        """
+        Create a new instance by concatenating a sequence of Bits objects.
+
+        This method concatenates a sequence of Bits objects into a single Bits or MutableBits object.
+
+        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
+        :type sequence: Iterable[BitsType]
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_joined([f'u6={x}' for x in range(64)])
+            b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+
+        """
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = BitRust.join([create_bitrust_from_any(item) for item in sequence])
+        else:
+            x._bitstore = MutableBitRust.join([create_bitrust_from_any(item) for item in sequence])
+        return x
+
+    @classmethod
+    def from_ones(cls, n: int, /) -> Bits | MutableBits:
+        """
+        Create a new instance with all bits set to one.
+
+        :param n: The number of bits.
+        :type n: int
+        :rtype: Bits | MutableBits
+
+        .. code-block:: pycon
+
+            >>> Bits.from_ones(5)
+            Bits('0b11111')
+
+        """
+        if n == 0:
+            return cls()
+        if n < 0:
+            raise ValueError(f"Negative bit length given: {n}.")
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = BitRust.from_ones(n)
+        else:
+            x._bitstore = MutableBitRust.from_ones(n)
+        return x
+
+    @classmethod
+    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits | MutableBits:
+        """
+        Pack a value according to a data type or data type tuple.
+
+        :param dtype: The data type to pack.
+        :type dtype: Dtype | str
+        :param value: A value appropriate for the data type.
+        :type value: Any
+        :returns: A newly constructed ``Bits`` or ``MutableBits`.
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_dtype("u8", 17)
+            b = Bits.from_dtype("f16, i4, bool", [2.25, -3, False])
+
+        """
+        if isinstance(dtype, str):
+            dtype = Dtype.from_string(dtype)
+        try:
+            xt = dtype.pack(value)
+        except (ValueError, TypeError) as e:
+            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = xt._bitstore
+        else:
+            x._bitstore = xt._bitstore.as_mutable()
+        return x
+
+    @classmethod
+    def from_random(cls, n: int, /, seed: int | None = None) -> Bits | MutableBits:
+        """
+        Create a new instance with all bits pseudo-randomly set.
+
+        :param n: The number of bits. Must be positive.
+        :type n: int
+        :param seed: An optional seed.
+        :type seed: int | None
+        :return: A Bits object with all bits set to zero.
+        :rtype: Bits | MutableBits
+
+        Note that this uses Python's pseudo-random number generator and so is
+        not suitable for cryptographic or other more serious purposes.
+
+        .. code-block:: python
+
+            a = Bits.from_random(1000000)  # A million random bits
+
+        """
+        if n == 0:
+            return Bits()
+        if seed is not None:
+            random.seed(seed)
+        value = random.getrandbits(n)
+        x = super().__new__(cls)
+        bs = _create_u_bitstore(value, n)
+        if cls is Bits:
+            x._bitstore = bs
+        else:
+            x._bitstore = bs.as_mutable()
+        return x
+
+    @classmethod
+    def from_string(cls, s: str, /) -> Bits | MutableBits:
+        """
+        Create a new instance from a formatted string.
+
+        This method initializes a new instance of :class:`Bits` or :class:`MutableBits` using a formatted string.
+
+        :param s: The formatted string to convert.
+        :type s: str
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_string("0xff01")
+            b = Bits.from_string("0b1")
+            c = Bits.from_string("u12 = 31, f16=-0.25")
+
+        The `__init__` method for `Bits` and `MutableBits` redirects to the `from_string` method and is sometimes more convenient:
+
+        .. code-block:: python
+
+            a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
+
+        """
+        x = super().__new__(cls)
+        if cls is Bits:
+            x._bitstore = str_to_bitstore_cached(s)
+        else:
+            x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
+        return x
+
+    @classmethod
+    def from_zeros(cls, n: int, /) -> Bits | MutableBits:
+        """
+        Create a new instance with all bits set to zero.
+
+        :param n: The number of bits.
+        :type n: int
+        :return: A Bits object with all bits set to zero.
+        :rtype: Bits | MutableBits
+
+        .. code-block:: python
+
+            a = Bits.from_zeros(500)  # 500 zero bits
+
+        """
+        if n == 0:
+            return cls()
+        if n < 0:
+            raise ValueError(f"Negative bit length given: {n}.")
+        x = super().__new__(cls)
+
+        if cls is Bits:
+            x._bitstore = BitRust.from_zeros(n)
+        else:
+            x._bitstore = MutableBitRust.from_zeros(n)
+        return x
 
     # ----- Instance Methods -----
 
@@ -1147,204 +1359,6 @@ class Bits(_BaseBits):
         raise TypeError(f"'{self.__class__.__name__}' object does not support item deletion. "
         f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
 
-
-    @classmethod
-    def from_bytes(cls, b: bytes, /) -> Bits:
-        """Create a new :class:`Bits` from a bytes object.
-
-        This method initializes a new instance of the :class:`Bits` class using a bytes object.
-
-        :param b: The bytes object to convert to a :class:`Bits`.
-        :type b: bytes
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = BitRust.from_bytes(b)
-        return x
-
-    @classmethod
-    def from_bools(cls, i: Iterable[Any], /) -> Bits:
-        """
-        Create a new :class:`Bits` from an iterable by converting each element to a bool.
-
-        This method initializes a new instance of the :class:`Bits` class using an iterable, where each element is converted to a boolean value.
-
-        :param i: The iterable to convert to a :class:`Bits`.
-        :type i: Iterable[Any]
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = BitRust.from_bools([bool(x) for x in i])
-        return x
-
-    @classmethod
-    def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits:
-        """
-        Return concatenation of Bits.
-
-        This method concatenates a sequence of Bits objects into a single Bits object.
-
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-        :type sequence: Iterable[BitsType]
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_joined([f'u6={x}' for x in range(64)])
-            b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = BitRust.join([create_bitrust_from_any(item) for item in sequence])
-        return x
-
-    @classmethod
-    def from_ones(cls, n: int, /) -> Bits:
-        """
-        Create a new :class:`Bits` with all bits set to one.
-
-        This method initializes a new instance of the :class:`Bits` class with all bits set to one.
-
-        :param n: The number of bits.
-        :type n: int
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_ones(5)  # binary 11111
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
-        x._bitstore = BitRust.from_ones(n)
-        return x
-
-    @classmethod
-    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits:
-        """
-        Pack a value according to a data type or data type tuple.
-
-        :param dtype: The data type to pack.
-        :type dtype: Dtype | str
-        :param value: A value appropriate for the data type.
-        :type value: Any
-        :returns: A newly constructed ``Bits``.
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_dtype("u8", 17)
-            b = Bits.from_dtype("f16, i4, bool", [2.25, -3, False])
-
-        """
-        if isinstance(dtype, str):
-            dtype = Dtype.from_string(dtype)
-        try:
-            x = dtype.pack(value)
-        except (ValueError, TypeError) as e:
-            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        # dtype.pack always returns a Bits, so may have to convert to MutableBits here
-        # TODO: This could be factored out a bit better than this.
-        if not isinstance(x, cls):
-            xp = object.__new__(cls)
-            xp._bitstore = x._bitstore
-            return xp
-        else:
-            return x
-
-    @classmethod
-    def from_zeros(cls, n: int, /) -> Bits:
-        """
-        Create a new Bits with all bits set to zero.
-
-        :param n: The number of bits.
-        :type n: int
-        :return: A Bits object with all bits set to zero.
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_zeros(500)  # 500 zero bits
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
-        x._bitstore = BitRust.from_zeros(n)
-        return x
-
-    @classmethod
-    def from_random(cls, n: int, /, seed: int | None = None) -> Bits:
-        """
-        Create a new Bits with all bits pseudo-randomly set.
-
-        :param n: The number of bits. Must be positive.
-        :type n: int
-        :param seed: An optional seed.
-        :type seed: int | None
-        :return: A Bits object with all bits set to zero.
-        :rtype: Bits
-
-        Note that this uses Python's pseudo-random number generator and so is
-        not suitable for cryptographic or other more serious purposes.
-
-        .. code-block:: python
-
-            a = Bits.from_random(1000000)  # A million random bits
-
-        """
-        if n == 0:
-            return Bits()
-        if seed is not None:
-            random.seed(seed)
-        value = random.getrandbits(n)
-        x = Bits.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
-        return x
-
-
-    @classmethod
-    def from_string(cls, s: str, /) -> Bits:
-        """
-        Create a new :class:`Bits` from a formatted string.
-
-        This method initializes a new instance of the :class:`Bits` class using a formatted string.
-
-        :param s: The formatted string to convert to a :class:`Bits`.
-        :type s: str
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_string("0xff01")
-            b = Bits.from_string("0b1")
-            c = Bits.from_string("u12 = 31, f16=-0.25")
-
-        The `__init__` method for `Bits` redirects to the `from_string` method and is sometimes more convenient:
-
-        .. code-block:: python
-
-            a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = str_to_bitstore_cached(s)
-        return x
-
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
         # Check if the method exists in MutableBits
@@ -1453,209 +1467,6 @@ class MutableBits(_BaseBits):
         """Create and return an immutable copy of the MutableBits as Bits instance."""
         x = Bits()
         x._bitstore = self._bitstore.clone_as_immutable()
-        return x
-
-    @classmethod
-    def from_bytes(cls, b: bytes, /) -> MutableBits:
-        """Create a new :class:`Bits` from a bytes object.
-
-        This method initializes a new instance of the :class:`Bits` class using a bytes object.
-
-        :param b: The bytes object to convert to a :class:`Bits`.
-        :type b: bytes
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = MutableBitRust.from_bytes(b)
-        return x
-
-    @classmethod
-    def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
-        """
-        Create a new :class:`Bits` from an iterable by converting each element to a bool.
-
-        This method initializes a new instance of the :class:`Bits` class using an iterable, where each element is converted to a boolean value.
-
-        :param i: The iterable to convert to a :class:`Bits`.
-        :type i: Iterable[Any]
-        :rtype: MutableBits
-
-        .. code-block:: pycon
-
-            >>> MutableBits.from_bools([False, 0, 1, "Steven"]).bin
-            '0011'
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = MutableBitRust.from_bools([bool(x) for x in i])
-        return x
-
-    @classmethod
-    def from_joined(cls, sequence: Iterable[BitsType], /) -> MutableBits:
-        """
-        Return concatenation of Bits.
-
-        This method concatenates a sequence of Bits objects into a single Bits object.
-
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-        :type sequence: Iterable[BitsType]
-        :rtype: MutableBits
-
-        .. code-block:: pycon
-
-            >>> MutableBits.from_joined([f'u6={x}' for x in range(6)])
-            MutableBits('0x001083105')
-            >>> MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
-            MutableBits('0x01f736f6d655f6279746573')
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = MutableBitRust.join([create_bitrust_from_any(item) for item in sequence])
-        return x
-
-    @classmethod
-    def from_ones(cls, n: int, /) -> MutableBits:
-        """
-        Create a new :class:`Bits` with all bits set to one.
-
-        This method initializes a new instance of the :class:`Bits` class with all bits set to one.
-
-        :param n: The number of bits.
-        :type n: int
-        :rtype: MutableBits
-
-        .. code-block:: pycon
-
-            >>> MutableBits.from_ones(5)
-            MutableBits('0b11111')
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
-        x._bitstore = MutableBitRust.from_ones(n)
-        return x
-
-    @classmethod
-    def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> MutableBits:
-        """
-        Pack a value according to a data type or data type tuple.
-
-        :param dtype: The data type to pack.
-        :type dtype: Dtype | str
-        :param value: A value appropriate for the data type.
-        :type value: Any
-        :returns: A newly constructed ``Bits``.
-        :rtype: MutableBits
-
-        .. code-block:: pycon
-
-            >>> MutableBits.from_dtype("u8", 17)
-            MutableBits('0x11')
-            >>> MutableBits.from_dtype("(f16, i4, bool)", [2.25, -3, False])
-            MutableBits('0b010000001000000011010')
-
-        """
-        if isinstance(dtype, str):
-            dtype = Dtype.from_string(dtype)
-        try:
-            x = dtype.pack(value)
-        except (ValueError, TypeError) as e:
-            raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        # dtype.pack always returns a Bits, so may have to convert to MutableBits here
-        # TODO: This could be factored out a bit better than this.
-        if not isinstance(x, cls):
-            xp = object.__new__(cls)
-            xp._bitstore = x._bitstore.as_mutable()
-            return xp
-        else:
-            return x
-
-    @classmethod
-    def from_zeros(cls, n: int, /) -> MutableBits:
-        """
-        Create a new Bits with all bits set to zero.
-
-        :param n: The number of bits.
-        :type n: int
-        :return: A Bits object with all bits set to zero.
-        :rtype: MutableBits
-
-        .. code-block:: python
-
-            a = MutableBits.from_zeros(500)  # 500 zero bits
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
-        x._bitstore = MutableBitRust.from_zeros(n)
-        return x
-
-    @classmethod
-    def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
-        """
-        Create a new Bits with all bits pseudo-randomly set.
-
-        :param n: The number of bits. Must be positive.
-        :type n: int
-        :param seed: An optional seed.
-        :type seed: int | None
-        :return: A Bits object with all bits set to zero.
-        :rtype: Bits
-
-        Note that this uses Python's pseudo-random number generator and so is
-        not suitable for cryptographic or other more serious purposes.
-
-        .. code-block:: python
-
-            a = Bits.from_random(1000000)  # A million random bits
-
-        """
-        if n == 0:
-            return Bits()
-        if seed is not None:
-            random.seed(seed)
-        value = random.getrandbits(n)
-        x = Bits.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
-        return x
-
-
-    @classmethod
-    def from_string(cls, s: str, /) -> MutableBits:
-        """
-        Create a new :class:`MutableBits` from a formatted string.
-
-        This method initializes a new instance of the :class:`MutableBits` class using a formatted string.
-
-        :param s: The formatted string to convert to a :class:`MutableBits`.
-        :type s: str
-        :rtype: Bits
-
-        .. code-block:: python
-
-            a = MutableBits.from_string("0xff01")
-            b = MutableBits.from_string("0b1")
-            c = MutableBits.from_string("u12 = 31, f16=-0.25")
-
-        The `__init__` method for `MutableBits` redirects to the `from_string` method and is sometimes more convenient:
-
-        .. code-block:: python
-
-            a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
-
-        """
-        x = super().__new__(cls)
-        x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
     __hash__ = None
