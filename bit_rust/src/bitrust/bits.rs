@@ -156,10 +156,6 @@ impl BitRust {
         if length > 64 {
             return Err(PyValueError::new_err("Length cannot be greater than 64 for u64 conversion."));
         }
-        if value >= (1u64 << length) {
-            return Err(PyValueError::new_err(format!("{value} is too large an unsigned integer for a bit length of {length}. 
-                             The allowed range is [0, {}].", (1u64 << length) - 1)));
-        }
         let mut bv = helpers::BV::repeat(false, length);
         bv.store_be(value);
         Ok(BitRust::new(bv))
@@ -169,10 +165,6 @@ impl BitRust {
     pub fn from_i64(value: i64, length: usize) -> PyResult<Self> {
         if length > 64 {
             return Err(PyValueError::new_err("Length cannot be greater than 64 for i64 conversion."));
-        }
-        if value >= (1i64 << (length - 1)) || value < -(1i64 << (length - 1)) {
-            return Err(PyValueError::new_err(format!("{value} is too large a signed integer for a bit length of {length}. 
-                             The allowed range is [{}, {}].", -(1 << (length - 1)), (1 << (length - 1)) - 1)));
         }
         let mut bv = helpers::BV::repeat(false, length);
         bv.store_be(value);

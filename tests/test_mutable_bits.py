@@ -207,3 +207,8 @@ def test_delitem_edge_cases():
     a = MutableBits('0b1')
     del a[0]
     assert a == ''
+
+def test_inplace_add():
+    a = MutableBits('0x123')
+    a += '0xff'
+    assert a == '0x123ff'

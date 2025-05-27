@@ -27,6 +27,9 @@ CACHE_SIZE = 256
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
+    if u >= (1 << length):
+        raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
+                         f"The allowed range is[0, {(1 << length) - 1}].")
     if length <= 64:
         # Faster method for shorter lengths.
         try:
@@ -43,6 +46,9 @@ def _create_u_bitstore(u: int, length: int) -> BitRust:
 
 
 def _create_i_bitstore(i: int, length: int) -> BitRust:
+    if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
+        raise ValueError(f"{i} is too large a signed integer for a bit length of {length}. "
+                         f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
     if length < 64:
         # Faster method for shorter lengths.
         try:
@@ -1399,6 +1405,12 @@ class MutableBits(_BaseBits):
         x._bitstore = self._bitstore.clone()
         x._bitstore.append(bs)
         return x
+
+    def __iadd__(self, bs: BitsType, /) -> MutableBits:
+        """Concatenate Bits in-place."""
+        bs = create_bitrust_from_any(bs)
+        self._bitstore.append(bs)
+        return self
 
     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
         """Set a bit or a slice of bits.
