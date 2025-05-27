@@ -26,7 +26,7 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 A few code snippets to whet the appetite. If anything here looks useful to you then bitformat might be what you need.
 
 Creating and manipulating bits:
-```pycon
+```python
     >>> from bitformat import MutableBits, Format, Array
     >>> b = MutableBits('0x123')
     >>> b += '0b110'
@@ -38,7 +38,7 @@ Creating and manipulating bits:
 
 Arrays of bits of a single data type:
 
-```pycon 
+```python
     >>> a = Array.from_bits('i5', b[:15])
     >>> a
     Array('i5', [2, 8, -1])
@@ -52,7 +52,7 @@ Arrays of bits of a single data type:
 
 Format creation and parsing:
 
-```pycon
+```python
     >>> f = Format("a_format: (x: u3, an_array: [i4; {x}], tuple(f16, f32), repeat {x + 1}: bool)")
     >>> f.parse(b'some_byte_data')
     67
@@ -100,7 +100,7 @@ which gives a quick introduction to the library and some worked examples.
 
 A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
 
-```pycon
+```python
 >>> from bitformat import *
 
 >>> a = Bits('0b1010')  # Create from a binary string
@@ -115,7 +115,7 @@ A variety of constructor methods are available to create `Bits`, including from 
 Although the examples above were created from a variety of data types, the `Bits` instance doesn't retain any knowledge of how it was created - it's just a sequence of bits.
 You can therefore interpret them however you'd like:
 
-```pycon
+```python
 >>> a.i
 -6
 >>> b.hex
@@ -150,7 +150,7 @@ Byte endianness for floating point and integer data types is specified with `_le
 
 An extensive set of operations are available to query `Bits` or to create new ones. For example:
 
-```pycon
+```python
 >>> a + b  # Concatenation
 Bits('0xa036')
 >>> c.find('0b11')  # Returns found bit position
@@ -166,7 +166,7 @@ Bits('0b1110101101')
 An `Array` class is provided which stores a contiguous sequence of `Bits` of the same data type.
 This is similar to the `array` type in the standard module of the same name, but it's not restricted to just a dozen or so types.
 
-```pycon
+```python
 >>> r = Array('i5', [4, -3, 0, 1, -5, 15])  # An array of 5 bit signed ints
 >>> r -= 2  # Operates on each element
 >>> r.unpack()
@@ -182,7 +182,7 @@ Bits('0b000101101111110111111100101101')
 
 The `Format` class can be used to give structure to bits, as well as storing the data in a human-readable form.
 
-```pycon
+```python
 >>> f = Format('(width: u12, height: u12, flags: [bool; 4])')
 >>> f.pack([320, 240, [True, False, True, False]])
 Bits('0x1400f0a')
@@ -207,7 +207,7 @@ The final line in the example above demonstrates how new `Bits` objects can be c
 
 The `Format` can be used symmetrically to both create and parse binary data:
 
-```pycon
+```python
 >>> f.parse(b'x\x048\x10')
 28
 >>> f
