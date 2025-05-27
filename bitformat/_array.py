@@ -31,8 +31,8 @@ class Array:
     To construct, use a builder 'from' method:
 
     * ``Array.from_iterable(dtype, iterable)`` - Create and initialise from an iterable.
-    * ``Array.from_bits(dtype, b)`` - Create with data from a :class:`Bits` or :class:`MutableBits` object.
-    * ``Array.from_bytes(dtype, b)`` - Create with data from a ``bytes`` object.
+    * ``Array.from_bits(dtype, bits)`` - Create with data from a :class:`Bits` or :class:`MutableBits` object.
+    * ``Array.from_bytes(dtype, bytes_data)`` - Create with data from a ``bytes`` -like object.
     * ``Array.from_zeros(dtype, n)`` - Initialise with enough zero bits for ``n`` elements.
 
     Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``,
@@ -82,13 +82,13 @@ class Array:
         return x
 
     @classmethod
-    def from_bytes(cls, dtype: str | Dtype, b: bytes | bytearray | memoryview) -> Array:
+    def from_bytes(cls, dtype: str | Dtype, bytes_data: bytes | bytearray | memoryview) -> Array:
         """Create a new :class:`Array` from a data type and a bytes object.
 
         :param dtype: The data type of the elements in the ``Array``.
         :type dtype: Dtype | str
-        :param b: The bytes object to convert to a :class:`Bits`.
-        :type b: bytes
+        :param bytes_data: The bytes object to convert to a :class:`Bits`.
+        :type bytes_data: bytes
         :rtype: Array
 
         .. code-block:: python
@@ -98,18 +98,18 @@ class Array:
         """
         x = super().__new__(cls)
         x._set_dtype(dtype)
-        x._mutable_bitrust = MutableBitRust.from_bytes(b)
+        x._mutable_bitrust = MutableBitRust.from_bytes(bytes_data)
         return x
 
     @classmethod
-    def from_bits(cls, dtype: str | Dtype, b: Bits) -> Array:
+    def from_bits(cls, dtype: str | Dtype, bits: Bits) -> Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         # We may change the internal BitRust, so need to make a copy here.
-        if isinstance(b, MutableBits):
-            x._mutable_bitrust = b._bitstore.clone()
+        if isinstance(bits, MutableBits):
+            x._mutable_bitrust = bits._bitstore.clone()
         else:
-            x._mutable_bitrust = b._bitstore.clone_as_mutable()
+            x._mutable_bitrust = bits._bitstore.clone_as_mutable()
         return x
 
     @classmethod
