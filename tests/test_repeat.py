@@ -1,4 +1,4 @@
-from bitformat import Repeat, Bits, Field, Format
+from bitformat import Repeat, Bits, Field, Format, Expression
 import pytest
 
 def test_creation():
@@ -44,6 +44,24 @@ def test_parsing_repeat():
     assert f != g
     assert f.value[0] == [1, 2, 3, 4]
     assert str(f[0]) == 'repeat{4}:\n    u8 = 1\n    u8 = 2\n    u8 = 3\n    u8 = 4'
+
+def test_repeat_str_with_expression():
+    r1 = Repeat.from_params(4, 'bool')
+    r2 = Repeat.from_params('{4}', 'bool')
+    r3 = Repeat.from_params(Expression('{4}'), 'bool')
+    assert str(r1) == str(r2)
+    assert str(r2) == str(r3)
+    assert repr(r1) == repr(r2)
+    assert repr(r2) == repr(r3)
+    with pytest.raises(ValueError):
+        _ = Repeat("repeat4: bool")
+    r4 = Repeat("repeat{4}: bool")
+    r5 = Repeat(" repeat{4}:bool")
+    assert str(r1) == str(r4)
+    assert repr(r1) == repr(r4)
+    assert str(r4) == str(r5)
+    assert repr(r4) == repr(r5)
+
 
 def test_pack_errors():
     r = Repeat("repeat {x}: u8")

@@ -92,7 +92,8 @@ class Repeat(FieldType):
 
     @override
     def _str(self, indent: Indenter, use_colour: bool) -> str:
-        count_str = str(self._count)
+        # We don't use str(self._count) here as that strips the {} from const expressions.
+        count_str = "{" + self._count.code_str + "}"
         s = indent(f"repeat{count_str}:")
         with indent:
             value_iter = iter(self.value) if self.value else iter([])
