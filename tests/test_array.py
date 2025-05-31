@@ -339,6 +339,12 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             a.reverse()
 
+    def test_reverse_chaining(self):
+        a = Array('i99', [1, 3, 5, 7, 9])
+        b = a[:]
+        a.reverse().reverse()
+        assert a == b
+
     def test_byte_swap(self):
         a = Array("u16")
         a.byte_swap()

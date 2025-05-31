@@ -468,13 +468,29 @@ class Array:
         x._bitstore = self._mutable_bitrust.clone_as_immutable()
         return x
 
-    def reverse(self) -> None:
+    def reverse(self) -> Array:
+        """
+        Reverse the order of all items in the Array in place.
+
+        :raises ValueError: If the Array's data length is not a multiple of the item size in bits.
+        :return: The Array object with its items reversed.
+        :rtype: Array
+
+        .. code-block:: pycon
+
+            >>> a = Array('i14', [-3, 0, 100])
+            >>> a.reverse()
+            Array('i14', [100, 0, -3])
+
+
+        """
         trailing_bit_length = len(self._mutable_bitrust) % self.item_size
         if trailing_bit_length != 0:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._mutable_bitrust)} bits) "
                              f"is not a multiple of the format length ({self.item_size} bits).")
         self._mutable_bitrust = MutableBits.from_joined([self._get_bit_slice(s - self.item_size, s)
                                            for s in range(len(self._mutable_bitrust), 0, -self.item_size)])._bitstore
+        return self
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None, groups: int | None = None,
            width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
