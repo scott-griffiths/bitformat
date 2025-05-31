@@ -50,7 +50,7 @@ class Array:
     - ``pop([index])``: Remove and return an item. Default is the last item.
     - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
     - ``reverse()``: Reverse the order of all items.
-    - ``to_bits()``: Return the Array data as a MutableBits object.
+    - ``to_bits()``: Return a copy of the Array data as an immutable ``Bits``.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
     - ``unpack()``: Return Array items as a list of values.
 
@@ -61,7 +61,7 @@ class Array:
 
     **Properties:**
 
-    - ``data``: The binary data of the ``Array`` as a ``MutableBits`` object.
+    - ``bits``: The binary data of the ``Array`` as a ``MutableBits`` object.
     - ``dtype``: The data type of the elements in the ``Array``.
     - ``item_size``: The length *in bits* of a single item. Read only.
     - ``trailing_bits``: If the data length is not a multiple of the dtype length, this ``Bits``
@@ -136,18 +136,18 @@ class Array:
         return f"Array of {self._dtype.info()} with {len(self)} items and {len(self._mutable_bitrust)} bits of data."
 
     @property
-    def data(self) -> MutableBits:
+    def bits(self) -> MutableBits:
         """Property that provides access to the ``Array`` data as a ``MutableBits``.
 
         Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
-        Call ``.to_bits()`` on the ``MutableBits`` to return an immutable copy of the data as a ``Bits`` object.
+        Use the ``to_bits()`` method if you need a copy of the data instead.
         """
         x = MutableBits()
         x._bitstore = self._mutable_bitrust
         return x
 
-    @data.setter
-    def data(self, value: BitsType) -> None:
+    @bits.setter
+    def bits(self, value: BitsType) -> None:
         self._mutable_bitrust = create_mutable_bitrust_from_any(value)
 
     def _get_bit_slice(self, start: int, stop: int | None) -> MutableBits:
@@ -463,7 +463,7 @@ class Array:
         return self._mutable_bitrust.to_bytes()
 
     def to_bits(self) -> Bits:
-        """Return as a Bits object. As Arrays are mutable we need to return a copy."""
+        """Return as a Bits object. This is an immutable copy of the current Array data."""
         x = Bits()
         x._bitstore = self._mutable_bitrust.clone_as_immutable()
         return x
@@ -558,7 +558,7 @@ class Array:
         if isinstance(other, Array):
             if self._dtype != other._dtype:
                 return False
-            if self.data != other.data:
+            if self._mutable_bitrust != other._mutable_bitrust:
                 return False
             return True
         return False
