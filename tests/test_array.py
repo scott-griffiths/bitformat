@@ -1053,3 +1053,7 @@ def test_info():
         assert len(i) > 0
         assert '\n' not in i
         # print(i)
+
+def test_chaining():
+    a = Array('u8').append(4).extend([3, 2]).insert(0, 100).reverse()
+    assert a.unpack() == [2, 3, 4, 100]

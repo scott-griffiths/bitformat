@@ -348,19 +348,21 @@ class Array:
             l.append(dtype.unpack(b))
         return l
 
-    def append(self, x: ElementType, /) -> None:
+    def append(self, x: ElementType, /) -> Array:
         """
         Append a single item to the end of the Array.
 
         :param x: The item to append.
         :type x: ElementType
-        :return: None
+        :return: The modified Array.
+        :rtype: Array
         """
         if len(self._mutable_bitrust) % self.item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
         self._mutable_bitrust.append(self._create_element(x))
+        return self
 
-    def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> None:
+    def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> Array:
         """
         Append new items to the end of the Array from an iterable.
 
@@ -369,12 +371,13 @@ class Array:
 
         :param iterable: The iterable containing elements to append to the Array.
         :type iterable: Array, bytes, bytearray, Bits, or any iterable of compatible elements
-        :return: None
+        :return: The extended Array.
+        :rtype: Array
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
             self._mutable_bitrust.append(Bits.from_bytes(iterable)._bitstore)
-            return
+            return self
         if len(self._mutable_bitrust) % self.item_size != 0:
             raise ValueError(f"Cannot extend Array as its data length ({len(self._mutable_bitrust)} bits) "
                              f"is not a multiple of the format length ({self.item_size} bits).")
@@ -389,8 +392,9 @@ class Array:
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._create_element(item) for item in iterable]
             self._mutable_bitrust.append(BitRust.join(to_join))
+        return self
 
-    def insert(self, pos: int, x: ElementType, /) -> None:
+    def insert(self, pos: int, x: ElementType, /) -> Array:
         """
         Insert a new element into the Array at position pos.
 
@@ -398,7 +402,8 @@ class Array:
         :type pos: int
         :param x: The item to insert.
         :type x: ElementType
-        :return: None
+        :return: The modified Array.
+        :rtype: Array
         """
         if pos < 0:
             pos += len(self)
@@ -407,6 +412,7 @@ class Array:
         self._mutable_bitrust = MutableBitRust.join([self._mutable_bitrust.getslice(0, pos * self.item_size).clone_as_immutable(),
                                        v,
                                        self._mutable_bitrust.getslice(pos * self.item_size, None).clone_as_immutable()])
+        return self
 
     def pop(self, pos: int = -1, /) -> ElementType:
         """
@@ -425,13 +431,14 @@ class Array:
         del self[pos]
         return x
 
-    def byte_swap(self) -> None:
+    def byte_swap(self) -> Array:
         """
         Change the endianness in-place of all items in the Array.
 
         If the Array format is not a whole number of bytes a ValueError will be raised.
 
-        :return: None
+        :return: The modified Array.
+        :rtype: Array
         """
         if self.item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
@@ -440,6 +447,7 @@ class Array:
         b._bitstore = self._mutable_bitrust.clone()
         b.byte_swap(self.item_size // 8)
         self._mutable_bitrust = b._bitstore
+        return self
 
     def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
