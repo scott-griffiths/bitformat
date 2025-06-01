@@ -16,18 +16,28 @@ impl BitCollection for MutableBitRust {
         self.inner.len()
     }
     fn from_zeros(length: usize) -> Self {
-        Self { inner: BitRust::from_zeros(length) }
+        Self { inner: <BitRust as BitCollection>::from_zeros(length) }
     }
     fn from_ones(length: usize) -> Self {
-        Self { inner: BitRust::from_ones(length) }
+        Self { inner: <BitRust as BitCollection>::from_ones(length) }
     }
     fn from_bytes(data: Vec<u8>) -> Self {
-        Self { inner: BitRust::from_bytes(data) }
+        Self { inner: <BitRust as BitCollection>::from_bytes(data) }
     }
     fn from_bin(binary_string: &str) -> Result<Self, String> {
-        // This makes sure we call the method defined in the trait, not the Python method.
-        <BitRust as BitCollection>::from_bin(binary_string)
-            .map(|inner| Self { inner })
+        Ok(Self { inner: <BitRust as BitCollection>::from_bin(binary_string)? })
+    }
+    fn from_oct(oct: &str) -> Result<Self, String> {
+        Ok(Self { inner: <BitRust as BitCollection>::from_oct(oct)? })
+    }
+    fn from_hex(hex: &str) -> Result<Self, String> {
+        Ok(Self { inner: <BitRust as BitCollection>::from_hex(hex)? })
+    }
+    fn from_u64(value: u64, length: usize) -> Self {
+        Self { inner: <BitRust as BitCollection>::from_u64(value, length) }
+    }
+    fn from_i64(value: i64, length: usize) -> Self {
+        Self { inner: <BitRust as BitCollection>::from_i64(value, length) }
     }
 }
 
@@ -101,13 +111,13 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_u64(value: u64, length: usize) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_u64(value, length)? })
+    pub fn from_u64(value: u64, length: usize) -> Self {
+        BitCollection::from_u64(value, length)
     }
 
     #[staticmethod]
-    pub fn from_i64(value: i64, length: usize) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_i64(value, length)? })
+    pub fn from_i64(value: i64, length: usize) -> Self {
+        BitCollection::from_i64(value, length)
     }
 
     #[staticmethod]
@@ -143,17 +153,26 @@ impl MutableBitRust {
 
     #[staticmethod]
     pub fn from_bin_checked(binary_string: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_bin(binary_string)? })
+        match BitCollection::from_bin(binary_string) {
+            Ok(bits) => Ok(bits),
+            Err(e) => Err(PyValueError::new_err(e)),
+        }
     }
 
     #[staticmethod]
     pub fn from_hex_checked(hex: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_hex(hex)? })
+        match BitCollection::from_hex(hex) {
+            Ok(bits) => Ok(bits),
+            Err(e) => Err(PyValueError::new_err(e)),
+        }
     }
 
     #[staticmethod]
     pub fn from_oct_checked(oct: &str) -> PyResult<Self> {
-        Ok(Self { inner: BitRust::from_oct(oct)? })
+        match BitCollection::from_oct(oct) {
+            Ok(bits) => Ok(bits),
+            Err(e) => Err(PyValueError::new_err(e)),
+        }
     }
 
     #[staticmethod]

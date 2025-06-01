@@ -14,6 +14,10 @@ pub trait BitCollection: Sized{
     fn from_ones(length: usize) -> Self;
     fn from_bytes(data: Vec<u8>) -> Self;
     fn from_bin(binary_string: &str) -> Result<Self, String>;
+    fn from_oct(octal_string: &str) -> Result<Self, String>;
+    fn from_hex(hex_string: &str) -> Result<Self, String>;
+    fn from_u64(value: u64, length: usize) -> Self;
+    fn from_i64(value: i64, length: usize) -> Self;
     }
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
@@ -58,6 +62,64 @@ impl BitCollection for BitRust {
         }
         b.set_uninitialized(false);
         Ok(BitRust::new(b))
+    }
+    fn from_oct(oct: &str) -> Result<Self, String> {
+        let mut bin_str = String::new();
+        let skip = if oct.starts_with("0o") { 2 } else { 0 };
+        for ch in oct.chars().skip(skip) {
+            match ch {
+                '0' => bin_str.push_str("000"),
+                '1' => bin_str.push_str("001"),
+                '2' => bin_str.push_str("010"),
+                '3' => bin_str.push_str("011"),
+                '4' => bin_str.push_str("100"),
+                '5' => bin_str.push_str("101"),
+                '6' => bin_str.push_str("110"),
+                '7' => bin_str.push_str("111"),
+                '_' => continue,
+                c if c.is_whitespace() => continue,
+                _ => {
+                    return Err(format!(
+                        "Cannot convert from oct '{oct}': Invalid character '{ch}'."
+                    ))
+                }
+            }
+        }
+        Ok(<BitRust as BitCollection>::from_bin(&bin_str)?)
+    }
+    fn from_hex(hex: &str) -> Result<Self, String> {
+        // Ignore any leading '0x'
+        let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
+        // Remove any underscores or whitespace characters
+        new_hex.retain(|c| c != '_' && !c.is_whitespace());
+        let is_odd_length: bool = new_hex.len() % 2 != 0;
+        if is_odd_length {
+            new_hex.push('0');
+        }
+        let data = match hex::decode(new_hex) {
+            Ok(d) => d,
+            Err(e) => {
+                return Err(format!(
+                    "Cannot convert from hex '{hex}': {}",
+                    e
+                ))
+            }
+        };
+        let mut bv = BitRust::from_bytes(data).data;
+        if is_odd_length {
+            bv.drain(bv.len() - 4..bv.len());
+        }
+        Ok(BitRust::new(bv))
+    }
+    fn from_u64(value: u64, length: usize) -> Self {
+        let mut bv = helpers::BV::repeat(false, length);
+        bv.store_be(value);
+        BitRust::new(bv)
+    }
+    fn from_i64(value: i64, length: usize) -> Self {
+        let mut bv = helpers::BV::repeat(false, length);
+        bv.store_be(value);
+        BitRust::new(bv)
     }
 
 }
@@ -152,25 +214,14 @@ impl BitRust {
     }
 
     #[staticmethod]
-    pub fn from_u64(value: u64, length: usize) -> PyResult<Self> {
-        if length > 64 {
-            return Err(PyValueError::new_err("Length cannot be greater than 64 for u64 conversion."));
-        }
-        let mut bv = helpers::BV::repeat(false, length);
-        bv.store_be(value);
-        Ok(BitRust::new(bv))
+    pub fn from_u64(value: u64, length: usize) -> Self {
+        BitCollection::from_u64(value, length)
     }
 
     #[staticmethod]
-    pub fn from_i64(value: i64, length: usize) -> PyResult<Self> {
-        if length > 64 {
-            return Err(PyValueError::new_err("Length cannot be greater than 64 for i64 conversion."));
-        }
-        let mut bv = helpers::BV::repeat(false, length);
-        bv.store_be(value);
-        Ok(BitRust::new(bv))
+    pub fn from_i64(value: i64, length: usize) -> Self {
+        BitCollection::from_i64(value, length)
     }
-
 
     pub fn to_u64(&self) -> u64 {
         assert!(self.data.len() <= 64, "BitRust too long for u64");
@@ -239,54 +290,18 @@ impl BitRust {
 
     #[staticmethod]
     pub fn from_hex(hex: &str) -> PyResult<Self> {
-        // Ignore any leading '0x'
-        let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
-        // Remove any underscores or whitespace characters
-        new_hex.retain(|c| c != '_' && !c.is_whitespace());
-        let is_odd_length: bool = new_hex.len() % 2 != 0;
-        if is_odd_length {
-            new_hex.push('0');
+        match BitCollection::from_hex(hex) {
+            Ok(result) => Ok(result),
+            Err(e) => Err(PyValueError::new_err(e))
         }
-        let data = match hex::decode(new_hex) {
-            Ok(d) => d,
-            Err(e) => {
-                return Err(PyValueError::new_err(format!(
-                    "Cannot convert from hex '{hex}': {}",
-                    e
-                )))
-            }
-        };
-        let mut bv = BitRust::from_bytes(data).data;
-        if is_odd_length {
-            bv.drain(bv.len() - 4..bv.len());
-        }
-        Ok(BitRust::new(bv))
     }
 
     #[staticmethod]
     pub fn from_oct(oct: &str) -> PyResult<Self> {
-        let mut bin_str = String::new();
-        let skip = if oct.starts_with("0o") { 2 } else { 0 };
-        for ch in oct.chars().skip(skip) {
-            match ch {
-                '0' => bin_str.push_str("000"),
-                '1' => bin_str.push_str("001"),
-                '2' => bin_str.push_str("010"),
-                '3' => bin_str.push_str("011"),
-                '4' => bin_str.push_str("100"),
-                '5' => bin_str.push_str("101"),
-                '6' => bin_str.push_str("110"),
-                '7' => bin_str.push_str("111"),
-                '_' => continue,
-                c if c.is_whitespace() => continue,
-                _ => {
-                    return Err(PyValueError::new_err(format!(
-                        "Cannot convert from oct '{oct}': Invalid character '{ch}'."
-                    )))
-                }
-            }
+        match BitCollection::from_oct(oct) {
+            Ok(x) => Ok(x),
+            Err(e) => Err(PyValueError::new_err(e))
         }
-        Ok(BitRust::from_bin(&bin_str)?)
     }
 
     #[staticmethod]
