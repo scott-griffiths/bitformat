@@ -1,5 +1,15 @@
 # Release Notes
 
+### June 2025: version 0.5.
+
+* Added the `MutableBits` class. The 'mutating' methods from `Bits` (which previously returned a new object) have been moved to the new class and now mutate it. The new class was needed as some performance targets were just impossible to hit without it.
+
+* Mutating methods in `Array` now return self so they can be chained.
+
+* `Array.data` has been renamed to `Array.bits` as it's now just a `MutableBits` (`BitsProxy` has been removed as it's no longer needed).
+
+* Significant performance improvements. Most tests now run as fast or faster than competing libraries - there are still some outliers to be worked on though.
+
 ### April 2025: version 0.4.
 
 * Changing status from alpha to beta as the API is now much more stable.

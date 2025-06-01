@@ -75,7 +75,7 @@ Format creation and parsing:
 ----
 
 ## Features
-* The `Bits` class represents a sequence of binary data of arbitrary length. It provides methods for creating, modifying and interpreting the data.
+* The `Bits` and `MutableBits` classes represent sequences of binary data of arbitrary length. They provide methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported with no arbitrary restrictions on length.
 * Data is always stored as a contiguous array of bits.
@@ -185,7 +185,6 @@ The `Format` class can be used to give structure to bits, as well as storing the
 ```python
 >>> f = Format('(width: u12, height: u12, flags: [bool; 4])')
 >>> f.pack([320, 240, [True, False, True, False]])
-Bits('0x1400f0a')
 >>> print(f)
 (
     width: u12 = 320
@@ -223,7 +222,7 @@ The `parse` method is able to lazily parse the input bytes, and simply returns t
 ## More to come
 
 The `bitformat` library is still in beta and is being actively developed.
-The first release was in September 2024, with the second arriving in January 2025 and the third in April. More features are being added steadily.
+The first release was in September 2024, with the second arriving in January 2025 and the third in April. Version 0.5 was released in June 2025. More features are being added steadily.
 
 There are a number of important features planned, some of which are from the `bitstring` library on which much of the core is based, and others are needed for a full binary format experience.
 
@@ -234,7 +233,7 @@ The (unordered) :todo: list includes:
 * **~~Field expressions~~.**  :sparkles: Done in v0.3 :sparkles:  Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
 * **~~New field types~~.** :sparkles: Done in v0.3 :sparkles:  Fields like `Repeat` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
-* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Early versions won't be well optimized, but tests so far are quite promising, and the design philosophy should mean that it can be made even more performant later.
+* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Version 0.5 received some significant speed boosts and is now competetive for _most_ use cases.
 * **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
 
 <sub>Copyright (c) 2024-2025 Scott Griffiths</sub>

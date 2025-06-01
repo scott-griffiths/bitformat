@@ -18,9 +18,9 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
 * :ref:`MutableBits <mutable_bits>` -- A mutable version of :class:`Bits`.
 * :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
 * :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
-* :ref:`DtypeArray <dtypearray>` -- A sequence of :class:`Dtype` objects of the same type.
-* :ref:`DtypeTuple <dtypetuple>` -- A sequence of :class:`Dtype` objects of different types.
-* :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same `Dtype`.
+* :ref:`DtypeArray <dtypearray>` -- A :class:`Dtype` representing a sequence of objects of the same type.
+* :ref:`DtypeTuple <dtypetuple>` -- A :class:`Dtype` representing a sequence of objects of different types.
+* :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same :class:`Dtype`.
 * :ref:`Reader <reader>` -- Read and parse :class:`Bits` as a bit stream with a bit position.
 
 .. mermaid::
@@ -50,6 +50,28 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + unpack()
             + ...()
         }
+        class Reader {
+            + Bits bits
+            + int pos
+            + read()
+            + peek()
+            + parse()
+        }
+        Reader --* "1" Bits : contains
+        MutableBits --* Bits : extends
+
+
+.. mermaid::
+
+    ---
+    title: Dtypes and Array
+    config:
+        class:
+            hideEmptyMembersBox: true
+    ---
+    classDiagram
+        direction BT
+        class MutableBits
         class Array {
             + int item_size
             + Dtype dtype
@@ -84,20 +106,11 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         class DtypeTuple {
             + List[Dtype] dtypes
         }
-        class Reader {
-            + Bits bits
-            + int pos
-            + read()
-            + peek()
-            + parse()
-        }
         DtypeSingle --|> Dtype
         DtypeArray --|> Dtype
         DtypeTuple --|> Dtype
         Array --* "1" Dtype : contains
         Array --* "1" MutableBits : contains
-        Reader --* "1" Bits : contains
-        MutableBits --* Bits : extends
 
 
 Field Types
