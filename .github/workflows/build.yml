@@ -27,13 +27,13 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu' || 'x86_64-pc-windows-msvc,i686-pc-windows-msvc,aarch64-pc-windows-msvc' }}
+          targets: ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu' || 'x86_64-pc-windows-msvc,i686-pc-windows-msvc' }}
 
       # Windows-specific setup
       - name: Windows Rust setup
         if: matrix.os == 'windows-latest'
         run: |
-          rustup target add x86_64-pc-windows-msvc i686-pc-windows-msvc aarch64-pc-windows-msvc
+          rustup target add x86_64-pc-windows-msvc i686-pc-windows-msvc
 
       # Linux-specific setup
       - name: Linux cross-compilation setup
@@ -56,7 +56,7 @@ jobs:
         run: |
           # Set environment variables directly in PowerShell
           $env:CIBW_BUILD = 'cp311-* cp312-* cp313-*'
-          $env:CIBW_ARCHS_WINDOWS = 'AMD64 x86 ARM64'
+          $env:CIBW_ARCHS_WINDOWS = 'AMD64 x86'
           $env:CIBW_BUILD_VERBOSITY = 3
           $env:CIBW_TEST_SKIP = '*-win32'
           
