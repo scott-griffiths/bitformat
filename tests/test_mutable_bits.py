@@ -212,3 +212,11 @@ def test_inplace_add():
     a = MutableBits('0x123')
     a += '0xff'
     assert a == '0x123ff'
+
+def test_inplace_mul():
+    a = MutableBits()
+    a *= 10000
+    assert a == MutableBits()
+    a += '0b10'
+    a *= 5
+    assert a == '0b1010101010'

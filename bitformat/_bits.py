@@ -1235,18 +1235,18 @@ class _BaseBits:
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
         x = self.__class__()
-        if n == 0:
-            return x
-        # No need to copy as the BitRust is immutable.
-        x._bitstore = self._bitstore
-        m = 1
-        old_len = len(self)
-        # Keep doubling the length for as long as we can
-        while m * 2 < n:
-            x._bitstore = BitRust.join([x._bitstore, x._bitstore])
-            m *= 2
-        # Then finish off with the remaining copies
-        x._bitstore = BitRust.join([x._bitstore, x[0: (n - m) * old_len]._bitstore])
+        mutable = MutableBitRust.from_zeros(0)
+
+        if isinstance(self._bitstore, BitRust):
+            b = self._bitstore
+            for _ in range(n):
+                mutable.append(b)
+            x._bitstore = mutable.as_immutable()
+        else:
+            b = self._bitstore.clone_as_immutable()
+            for _ in range(n):
+                mutable.append(b)
+            x._bitstore = mutable
         return x
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
