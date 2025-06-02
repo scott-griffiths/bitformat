@@ -18,7 +18,10 @@ pub trait BitCollection: Sized{
     fn from_hex(hex_string: &str) -> Result<Self, String>;
     fn from_u64(value: u64, length: usize) -> Self;
     fn from_i64(value: i64, length: usize) -> Self;
-    }
+    fn logical_or(&self, other: &BitRust) -> Self;
+    fn logical_and(&self, other: &BitRust) -> Self;
+    fn logical_xor(&self, other: &BitRust) -> Self;
+}
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
@@ -121,7 +124,27 @@ impl BitCollection for BitRust {
         bv.store_be(value);
         BitRust::new(bv)
     }
-
+    fn logical_or(&self, other: &BitRust) -> Self {
+        if self.len() != other.len() {
+            panic!("Cannot perform logical OR on BitRust of different lengths.");
+        }
+        let result = self.data.clone() | &other.data;
+        BitRust::new(result)
+    }
+    fn logical_and(&self, other: &BitRust) -> Self {
+        if self.len() != other.len() {
+            panic!("Cannot perform logical AND on BitRust of different lengths.");
+        }
+        let result = self.data.clone() & &other.data;
+        BitRust::new(result)
+    }
+    fn logical_xor(&self, other: &BitRust) -> Self {
+        if self.len() != other.len() {
+            panic!("Cannot perform logical XOR on BitRust of different lengths.");
+        }
+        let result = self.data.clone() ^ &other.data;
+        BitRust::new(result)
+    }
 }
 
 impl fmt::Debug for BitRust {
@@ -412,26 +435,21 @@ impl BitRust {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        let result = self.data.clone() & &other.data;
-        Ok(BitRust::new(result))
+        Ok(BitRust::logical_and(self, other))
     }
 
     pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-
-        let result = self.data.clone() | &other.data;
-        Ok(BitRust::new(result))
+        Ok(BitRust::logical_or(self, other))
     }
 
     pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-
-        let result = self.data.clone() ^ &other.data;
-        Ok(BitRust::new(result))
+        Ok(BitRust::logical_xor(self, other))
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {

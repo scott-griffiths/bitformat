@@ -220,3 +220,56 @@ def test_inplace_mul():
     a += '0b10'
     a *= 5
     assert a == '0b1010101010'
+
+def test_or():
+    a = MutableBits('0x0f')
+    b = MutableBits('0xf0')
+    c = a | b
+    assert c == '0xff'
+
+def test_ior():
+    a = MutableBits('0xf00')
+    a |= '0x00a'
+    assert a == '0xf0a'
+
+def test_iand():
+    a = MutableBits('0b1100')
+    a &= '0b1010'
+    assert a == '0b1000'
+    b = MutableBits('0b1111')
+    a &= b
+    assert a == '0b1000'
+    from bitformat._bits import Bits
+    c = Bits('0b0100')
+    a &= c
+    assert a == '0b0000'
+
+def test_and():
+    a = MutableBits('0b1100')
+    b = MutableBits('0b1010')
+    c = a & b
+    assert c == '0b1000'
+    d = Bits('0b0110')
+    e = a & d
+    assert e == '0b0100'
+
+def test_ixor():
+    a = MutableBits('0b1100')
+    a ^= '0b1010'
+    assert a == '0b0110'
+    b = MutableBits('0b0011')
+    a ^= b
+    assert a == '0b0101'
+    c = Bits('0b1100')
+    a ^= c
+    assert a == '0b1001'
+
+def test_xor():
+    a = MutableBits('0b1100')
+    b = MutableBits('0b1010')
+    c = a ^ b
+    assert c == '0b0110'
+    d = Bits('0b0110')
+    e = a ^ d
+    assert e == '0b1010'
+

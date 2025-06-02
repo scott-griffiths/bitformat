@@ -1059,7 +1059,7 @@ class _BaseBits:
         s._bitstore = self._bitstore & bs
         return s
 
-    def __or__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
+    def __or__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1072,7 +1072,7 @@ class _BaseBits:
         s._bitstore = self._bitstore | bs
         return s
 
-    def __xor__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
+    def __xor__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1083,7 +1083,7 @@ class _BaseBits:
         s._bitstore = self._bitstore ^ bs
         return s
 
-    def __rand__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
+    def __rand__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'and' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1091,7 +1091,7 @@ class _BaseBits:
         """
         return self.__and__(bs)
 
-    def __ror__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
+    def __ror__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'or' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.
@@ -1099,7 +1099,7 @@ class _BaseBits:
         """
         return self.__or__(bs)
 
-    def __rxor__(self: Bits, bs: BitsType, /) -> Bits | MutableBits:
+    def __rxor__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'xor' between two Bits. Returns new Bits.
 
         Raises ValueError if the two Bits have differing lengths.

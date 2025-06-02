@@ -39,6 +39,15 @@ impl BitCollection for MutableBitRust {
     fn from_i64(value: i64, length: usize) -> Self {
         Self { inner: <BitRust as BitCollection>::from_i64(value, length) }
     }
+    fn logical_or(&self, other: &BitRust) -> Self {
+        Self { inner: self.inner.logical_or(other) }
+    }
+    fn logical_and(&self, other: &BitRust) -> Self {
+        Self { inner: self.inner.logical_and(other) }
+    }
+    fn logical_xor(&self, other: &BitRust) -> Self {
+        Self { inner: self.inner.logical_xor(other) }
+    }
 }
 
 impl PartialEq for MutableBitRust {
@@ -108,6 +117,27 @@ impl MutableBitRust {
 
         self.inner.data &= &other.inner.data;
         Ok(())
+    }
+
+    pub fn __or__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+        Ok(MutableBitRust::logical_or(self, other))
+    }
+
+    pub fn __and__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+        Ok(MutableBitRust::logical_and(self, other))
+    }
+
+    pub fn __xor__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+        if self.len() != other.len() {
+            return Err(PyValueError::new_err("Lengths do not match."));
+        }
+        Ok(MutableBitRust::logical_xor(self, other))
     }
 
     #[staticmethod]
