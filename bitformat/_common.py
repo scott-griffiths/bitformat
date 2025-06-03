@@ -65,7 +65,6 @@ class Indenter:
         as a context manager.
 
         :param indent_size: The number of spaces to indent. If None, use the value of Options().indent_size.
-        :type indent_size: int | None
         """
         if indent_size is None:
             indent_size = Options().indent_size

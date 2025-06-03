@@ -18,7 +18,12 @@ copyright = f"2024 - {year}, Scott Griffiths"
 author = "Scott Griffiths"
 release = VERSION
 
-extensions = ["sphinx.ext.autodoc", "sphinxcontrib.mermaid", 'enum_tools.autoenum']
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinxcontrib.mermaid",
+    'enum_tools.autoenum',
+    'sphinx_autodoc_typehints',
+]
 autoapi_dirs = ["../bitformat/"]
 autoapi_add_toctree_entry = False
 autodoc_mock_imports = ["bitformat.bit_rust", "lark"]

@@ -80,9 +80,7 @@ class FieldType(abc.ABC):
         they are explicitly asked for.
 
         :param b: The bits to parse.
-        :type b: BitsType
         :return: The number of bits used.
-        :rtype: int
         """
         b = Bits() if b is None else Bits._from_any(b)
         self.clear()
@@ -97,9 +95,7 @@ class FieldType(abc.ABC):
         Pack with values for each non-const field.
 
         :param values: The values to pack.
-        :type values: Any, optional
         :param kwargs: Additional keyword arguments.
-        :rtype: None
         """
         if kwargs is None:
             kwargs = {}
@@ -111,9 +107,7 @@ class FieldType(abc.ABC):
         Unpack the field type from bits.
 
         :param b: The bits to unpack.
-        :type b: Bits, bytes, bytearray, optional
         :return: The unpacked value.
-        :rtype: Any or list[Any]
         """
         if b is not None:
             self.parse(b)
@@ -128,7 +122,6 @@ class FieldType(abc.ABC):
         Return a string representation of the field type.
 
         :return: The string representation.
-        :rtype: str
         """
         return self._str(Indenter(Options().indent_size), not Options().no_color)
 
@@ -137,7 +130,6 @@ class FieldType(abc.ABC):
         Return a detailed string representation of the field type.
 
         :return: The detailed string representation.
-        :rtype: str
         """
         return self._repr()
 
@@ -146,11 +138,8 @@ class FieldType(abc.ABC):
         Pretty-print the fieldtype to a stream (or stdout by default).
 
         :param stream: The stream to write to.
-        :type stream: TextIO
         :param indent: The number of spaces for each level of indentation. Defaults to Options().indent_size which defaults to 4.
-        :type indent: int
         :param depth: The maximum depth to print, or None for no limit.
-        :type depth: int or None
         """
         stream.write(self._str(Indenter(indent_size=indent, max_depth=depth), not Options().no_color))
         stream.write("\n")
@@ -163,9 +152,7 @@ class FieldType(abc.ABC):
         The type is inferred from the string, so it can be a Field, Format, or other FieldType.
 
         :param s: The string to parse.
-        :type s: str
         :return: The FieldType instance.
-        :rtype: FieldType
         """
         try:
             tree = field_parser.parse(s)
@@ -200,7 +187,6 @@ class FieldType(abc.ABC):
         Return the bits that represent the field.
 
         :return: The bits that represent the field.
-        :rtype: Bits
         """
         ...
 
@@ -210,7 +196,6 @@ class FieldType(abc.ABC):
         Return the bytes that represent the field. Pads with up to 7 zero bits if necessary.
 
         :return: The bytes that represent the field.
-        :rtype: bytes
         """
         b = self.to_bits()
         return b.to_bytes()
@@ -264,7 +249,6 @@ class FieldType(abc.ABC):
         Return the length of the FieldType in bits.
 
         :return: The length in bits.
-        :rtype: int
 
         Raises ValueError if length cannot be calculated or known.
         """

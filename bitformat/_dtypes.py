@@ -119,8 +119,6 @@ class Dtype(abc.ABC):
         """Create a new Dtype sub-class from a token string.
 
         :param s: The formatted string to convert to a Dtype.
-        :type s: str
-        :rtype: DtypeSingle | DtypeArray | DtypeTuple
 
         Some token string examples:
 

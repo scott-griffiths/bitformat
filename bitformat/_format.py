@@ -38,11 +38,8 @@ class Format(FieldType):
         Create a Format instance.
 
         :param fields: The field types to include in the format, optional.
-        :type fields: Sequence[FieldType or str] or None
         :param name: The name of the format, optional.
-        :type name: str
         :return: The Format instance.
-        :rtype: Format
         """
         x = super().__new__(cls)
         x._fields = []
@@ -83,9 +80,7 @@ class Format(FieldType):
         with commas separating strings that will be used to create other :class:`FieldType` instances.
 
         :param s: The string to parse.
-        :type s: str
         :return: The Format instance.
-        :rtype: Format
 
         .. code-block:: python
 
@@ -286,9 +281,7 @@ class Format(FieldType):
         Add a field to a copy of the format.
 
         :param other: The field to add.
-        :type other: FieldType or str
         :return: The updated format.
-        :rtype: Format
         """
         x = copy.copy(self)
         x.__iadd__(other)
@@ -299,7 +292,6 @@ class Format(FieldType):
         Append a field to the format.
 
         :param value: The field to append.
-        :type value: Any
         """
         self.__iadd__(value)
 
@@ -308,7 +300,6 @@ class Format(FieldType):
         Extend the format with multiple fields.
 
         :param values: The fields to add.
-        :type values: Iterable
         """
         for value in values:
             self.__iadd__(value)

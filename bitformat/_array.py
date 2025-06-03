@@ -86,10 +86,7 @@ class Array:
         """Create a new :class:`Array` from a data type and a bytes object.
 
         :param dtype: The data type of the elements in the ``Array``.
-        :type dtype: Dtype | str
         :param bytes_data: The bytes object to convert to a :class:`Bits`.
-        :type bytes_data: bytes
-        :rtype: Array
 
         .. code-block:: python
 
@@ -300,9 +297,7 @@ class Array:
         This can be useful for changing the representation of data within the Array, for example, from integers to floating-point numbers or vice versa.
 
         :param dtype: The target data type for the new Array.
-        :type dtype: str | Dtype
         :returns: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
-        :rtype: Array
 
         :raises ValueError: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
 
@@ -353,9 +348,7 @@ class Array:
         Append a single item to the end of the Array.
 
         :param x: The item to append.
-        :type x: ElementType
         :return: The modified Array.
-        :rtype: Array
         """
         if len(self._mutable_bitrust) % self.item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
@@ -370,9 +363,7 @@ class Array:
         The iterable can be another Array, bytes, bytearray, Bits, or any other iterable containing elements of a compatible type.
 
         :param iterable: The iterable containing elements to append to the Array.
-        :type iterable: Array, bytes, bytearray, Bits, or any iterable of compatible elements
         :return: The extended Array.
-        :rtype: Array
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
@@ -399,11 +390,8 @@ class Array:
         Insert a new element into the Array at position pos.
 
         :param pos: The position to insert the item.
-        :type pos: int
         :param x: The item to insert.
-        :type x: ElementType
         :return: The modified Array.
-        :rtype: Array
         """
         if pos < 0:
             pos += len(self)
@@ -421,9 +409,7 @@ class Array:
         Default is to return and remove the final element.
 
         :param pos: The position of the item to remove. Default is -1 (last item).
-        :type pos: int
         :return: The removed item.
-        :rtype: ElementType
         """
         if len(self) == 0:
             raise IndexError("Can't pop from an empty Array.")
@@ -438,7 +424,6 @@ class Array:
         If the Array format is not a whole number of bytes a ValueError will be raised.
 
         :return: The modified Array.
-        :rtype: Array
         """
         if self.item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
@@ -482,7 +467,6 @@ class Array:
 
         :raises ValueError: If the Array's data length is not a multiple of the item size in bits.
         :return: The Array object with its items reversed.
-        :rtype: Array
 
         .. code-block:: pycon
 
@@ -509,18 +493,12 @@ class Array:
         The output can be customized with various parameters to control the format, width, and display options.
 
         :param dtype1: Data type to display. Defaults to the current Array dtype.
-        :type dtype1: str or Dtype or None
         :param dtype2: Data type for addition display data.
-        :type dtype2: str or Dtype or None
         :param groups: How many groups of bits to display on each line. This overrides any value given for width.
-        :type groups: int or None
         :param width: Maximum width of printed lines in characters. Defaults to 80, but ignored if groups parameter is set.
             A single group will always be printed per line even if it exceeds the max width.
-        :type width: int
         :param show_offset: If True, shows the element offset in the first column of each line.
-        :type show_offset: bool
         :param stream: A TextIO object with a write() method. Defaults to sys.stdout.
-        :type stream: TextIO
         :return: None
         """
         colour = Colour(not Options().no_color)
@@ -575,9 +553,7 @@ class Array:
         used for element-wise comparison and will return a new Array of bools.
 
         :param other: The other Array to compare with.
-        :type other: Any
         :return: ``True`` if the Arrays are equal, ``False`` otherwise.
-        :rtype: bool
         """
         if isinstance(other, Array):
             if self._dtype != other._dtype:

@@ -24,11 +24,8 @@ class Repeat(FieldType):
         Create a Repeat instance.
 
         :param count: An Expression or int giving the number of repetitions to do.
-        :type count: int or str or Expression
         :param fieldtype: The FieldType to repeat.
-        :type fieldtype: FieldType or str
         :return: The Repeat instance.
-        :rtype: Repeat
         """
         x = super().__new__(cls)
         if isinstance(count, str):
@@ -70,9 +67,7 @@ class Repeat(FieldType):
         The fieldtype can be a :class:`Format` to group multiple fields together.
 
         :param s: The string to parse.
-        :type s: str
         :return: The Repeat instance.
-        :rtype: Repeat
 
         .. code-block:: python
 
@@ -207,7 +202,6 @@ class Repeat(FieldType):
         The count of the Repeat field.
 
         :return: The count of the Repeat field.
-        :rtype: Expression
         """
         return self._count
 
@@ -217,7 +211,6 @@ class Repeat(FieldType):
         Set the count of the Repeat field.
 
         :param value: The new count value.
-        :type value: Expression | int | str
         """
         if isinstance(value, str):
             value = Expression.from_string(value)

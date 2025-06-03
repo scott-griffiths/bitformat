@@ -174,8 +174,6 @@ class _BaseBits:
         """Create a new instance from a bytes object.
 
         :param b: The bytes object to convert to a :class:`Bits` or :class:`MutableBits`.
-        :type b: bytes
-        :rtype: Bits | MutableBits
 
         .. code-block:: python
 
@@ -195,8 +193,6 @@ class _BaseBits:
         Create a new instance from an iterable by converting each element to a bool.
 
         :param i: The iterable to convert to a :class:`Bits` or :class:`MutableBits`.
-        :type i: Iterable[Any]
-        :rtype: Bits | MutableBits
 
         .. code-block:: python
 
@@ -218,8 +214,6 @@ class _BaseBits:
         This method concatenates a sequence of Bits objects into a single Bits or MutableBits object.
 
         :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-        :type sequence: Iterable[BitsType]
-        :rtype: Bits | MutableBits
 
         .. code-block:: python
 
@@ -240,8 +234,6 @@ class _BaseBits:
         Create a new instance with all bits set to one.
 
         :param n: The number of bits.
-        :type n: int
-        :rtype: Bits | MutableBits
 
         .. code-block:: pycon
 
@@ -266,11 +258,8 @@ class _BaseBits:
         Pack a value according to a data type or data type tuple.
 
         :param dtype: The data type to pack.
-        :type dtype: Dtype | str
         :param value: A value appropriate for the data type.
-        :type value: Any
         :returns: A newly constructed ``Bits`` or ``MutableBits`.
-        :rtype: Bits | MutableBits
 
         .. code-block:: python
 
@@ -298,11 +287,8 @@ class _BaseBits:
         Create a new instance with all bits pseudo-randomly set.
 
         :param n: The number of bits. Must be positive.
-        :type n: int
         :param seed: An optional seed.
-        :type seed: int | None
-        :return: A Bits object with all bits set to zero.
-        :rtype: Bits | MutableBits
+        :return: A newly constructed ``Bits`` or ``MutableBits` with randomly data.
 
         Note that this uses Python's pseudo-random number generator and so is
         not suitable for cryptographic or other more serious purposes.
@@ -334,8 +320,7 @@ class _BaseBits:
         This method initializes a new instance of :class:`Bits` or :class:`MutableBits` using a formatted string.
 
         :param s: The formatted string to convert.
-        :type s: str
-        :rtype: Bits | MutableBits
+        :return: A newly constructed ``Bits`` or ``MutableBits`.
 
         .. code-block:: python
 
@@ -363,9 +348,7 @@ class _BaseBits:
         Create a new instance with all bits set to zero.
 
         :param n: The number of bits.
-        :type n: int
         :return: A Bits object with all bits set to zero.
-        :rtype: Bits | MutableBits
 
         .. code-block:: python
 
@@ -390,8 +373,7 @@ class _BaseBits:
         """
         Return True if all bits are equal to 1, otherwise return False.
 
-        :return: True if all bits are 1, otherwise False.
-        :rtype: bool
+        :return: ``True`` if all bits are 1, otherwise ``False``.
 
         .. code-block:: pycon
 
@@ -407,8 +389,7 @@ class _BaseBits:
         """
         Return True if any bits are equal to 1, otherwise return False.
 
-        :return: True if any bits are 1, otherwise False.
-        :rtype: bool
+        :return: ``True`` if any bits are 1, otherwise ``False``.
 
         .. code-block:: pycon
 
@@ -425,9 +406,7 @@ class _BaseBits:
         Return count of total number of either zero or one bits.
 
         :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
-        :type value: Any
         :return: The count of bits set to 1 or 0.
-        :rtype: int
 
         .. code-block:: pycon
 
@@ -444,11 +423,8 @@ class _BaseBits:
         Return Bits generator by cutting into bits sized chunks.
 
         :param chunk_size: The size in bits of the chunks to generate.
-        :type chunk_size: int
         :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
-        :type count: int, optional
         :return: A generator yielding Bits chunks.
-        :rtype: Iterator[Bits]
 
         .. code-block:: pycon
 
@@ -479,9 +455,7 @@ class _BaseBits:
         Return whether the current Bits or MutableBits ends with suffix.
 
         :param suffix: The Bits to search for.
-        :type suffix: BitsType
-        :return: True if the Bits ends with the suffix, otherwise False.
-        :rtype: bool
+        :return: ``True`` if the Bits ends with the suffix, otherwise ``False``.
 
         .. code-block:: pycon
 
@@ -506,11 +480,8 @@ class _BaseBits:
         Returns the bit position if found, or None if not found.
 
         :param bs: The Bits to find.
-        :type bs: BitsType
-        :param byte_aligned: If True, the Bits will only be found on byte boundaries.
-        :type byte_aligned: bool, optional
+        :param byte_aligned: If ``True``, the Bits will only be found on byte boundaries.
         :return: The bit position if found, or None if not found.
-        :rtype: int or None
 
         .. code-block:: pycon
 
@@ -529,13 +500,9 @@ class _BaseBits:
         """Find all occurrences of bs. Return generator of bit positions.
 
         :param bs: The Bits to find.
-        :type bs: BitsType
         :param count: The maximum number of occurrences to find.
-        :type count: int, optional
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
-        :type byte_aligned: bool, optional
         :return: A generator yielding bit positions.
-        :rtype: Iterable[int]
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
@@ -602,19 +569,12 @@ class _BaseBits:
         """Pretty print the Bits's value.
 
         :param dtype1: First data type to display.
-        :type dtype1: str or Dtype or None
         :param dtype2: Optional second data type.
-        :type dtype2: str or Dtype or None
         :param groups: How many groups of bits to display on each line. This overrides any value given for width.
-        :type groups: int or None
         :param width: Max width of printed lines. Defaults to 80, but ignored if groups parameter is set.
             A single group will always be printed per line even if it exceeds the max width.
-        :type width: int
         :param show_offset: If True (the default) shows the bit offset in the first column of each line.
-        :type show_offset: bool
         :param stream: A TextIO object with a write() method. Defaults to sys.stdout.
-        :type stream: TextIO
-        :return: None
 
         .. code-block:: pycon
 
@@ -660,11 +620,8 @@ class _BaseBits:
         Returns a the bit position if found, or None if not found.
 
         :param bs: The Bits to find.
-        :type bs: BitsType
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
-        :type byte_aligned: bool, optional
         :return: The bit position if found, or None if not found.
-        :rtype: int or None
 
         Raises ValueError if bs is empty, if start < 0, if end > len(self) or
         if end < start.
@@ -688,9 +645,7 @@ class _BaseBits:
         """Return whether the current Bits starts with prefix.
 
         :param prefix: The Bits to search for.
-        :type prefix: BitsType
         :return: True if the Bits starts with the prefix, otherwise False.
-        :rtype: bool
 
         .. code-block:: pycon
 
@@ -714,7 +669,6 @@ class _BaseBits:
         Up to seven zero bits will be added at the end to byte align.
 
         :return: The Bits as bytes.
-        :rtype: bytes
 
         """
         return self._bitstore.to_bytes()
@@ -728,9 +682,7 @@ class _BaseBits:
         are provided as a shortcut. For example instead of ``b.unpack('bin')`` you can use ``b.bin``.
 
         :param fmt: The data type or list of data types to interpret the Bits as.
-        :type fmt: Dtype | str | list[Dtype | str]
         :return: The interpreted value(s).
-        :rtype: Any or list[Any]
 
         .. code-block:: pycon
 
@@ -1416,9 +1368,7 @@ class MutableBits(_BaseBits):
         """Set a bit or a slice of bits.
 
         :param key: The index or slice to set.
-        :type key: int or slice
         :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
-        :type value: bool or BitsType
         :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
         :raises IndexError: If the index is out of range.
 
@@ -1505,9 +1455,7 @@ class MutableBits(_BaseBits):
         """Append bits to the end of the current MutableBits in-place.
 
         :param bs: The bits to append.
-        :type bs: BitsType
         :return: Self with appended bits.
-        :rtype: MutableBits
 
         .. code-block:: pycon
 
@@ -1524,9 +1472,7 @@ class MutableBits(_BaseBits):
         """Prepend bits to the beginning of the current MutableBits in-place.
 
         :param bs: The bits to prepend.
-        :type bs: BitsType
         :return: Self with prepended bits.
-        :rtype: MutableBits
 
         .. code-block:: pycon
 
@@ -1546,9 +1492,7 @@ class MutableBits(_BaseBits):
         of byte_length long.
 
         :param byte_length: An int giving the number of bytes to swap.
-        :type byte_length: int or None
         :return: The MutableBits object with byte-swapped data.
-        :rtype: MutableBits
 
         .. code-block:: pycon
 
@@ -1582,11 +1526,8 @@ class MutableBits(_BaseBits):
         """Return the MutableBits with bs inserted at bit position pos.
 
         :param pos: The bit position to insert at.
-        :type pos: int
         :param bs: The Bits to insert.
-        :type bs: BitsType
         :return: MutableBits object with the inserted bits.
-        :rtype: MutableBits
 
         Raises ValueError if pos < 0 or pos > len(self).
 
@@ -1604,9 +1545,7 @@ class MutableBits(_BaseBits):
         """Return the MutableBits with one or many bits inverted between 0 and 1.
 
         :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Iterable[int] or None
         :return: The MutableBits object with the inverted bits.
-        :rtype: MutableBits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -1633,13 +1572,9 @@ class MutableBits(_BaseBits):
         """Return MutableBits with bit pattern rotated to the left.
 
         :param n: The number of bits to rotate by.
-        :type n: int
         :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
         :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
         :return: A new Bits object with the rotated bits.
-        :rtype: Bits
 
         Raises ValueError if bits < 0.
 
@@ -1668,13 +1603,9 @@ class MutableBits(_BaseBits):
         """Return MutableBits with bit pattern rotated to the right.
 
         :param n: The number of bits to rotate by.
-        :type n: int
         :param start: Start of slice to rotate. Defaults to 0.
-        :type start: int, optional
         :param end: End of slice to rotate. Defaults to len(self).
-        :type end: int, optional
         :return: A new Bits object with the rotated bits.
-        :rtype: Bits
 
         Raises ValueError if bits < 0.
 
@@ -1703,11 +1634,8 @@ class MutableBits(_BaseBits):
         """Set one or many bits set to 1 or 0. Returns self.
 
         :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
-        :type value: Any
         :param pos: Either a single bit position or an iterable of bit positions.
-        :type pos: int or Sequence[int]
         :return: self
-        :rtype: MutableBits
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -1736,19 +1664,12 @@ class MutableBits(_BaseBits):
         """Return MutableBits with all occurrences of old replaced with new.
 
         :param old: The Bits to replace.
-        :type old: BitsType
         :param new: The replacement Bits.
-        :type new: BitsType
         :param start: Any occurrences that start before this will not be replaced.
-        :type start: int, optional
         :param end: Any occurrences that finish after this will not be replaced.
-        :type end: int, optional
         :param count: The maximum number of replacements to make. Defaults to all.
-        :type count: int, optional
         :param byte_aligned: If True, replacements will only be made on byte boundaries.
-        :type byte_aligned: bool, optional
         :return: A new Bits object with the replaced bits.
-        :rtype: MutableBits
 
         Raises ValueError if old is empty or if start or end are out of range.
 
@@ -1798,7 +1719,6 @@ class MutableBits(_BaseBits):
         """Reverse bits.
 
         :return: self
-        :rtype: MutableBits
 
         .. code-block:: pycon
 

@@ -29,16 +29,11 @@ class Field(FieldType):
         Create a Field instance from parameters.
 
         :param dtype: The data type of the field.
-        :type dtype: Dtype or str
         :param name: The name of the field, optional.
-        :type name: str
         :param value: The value of the field, optional.
-        :type value: Any
         :param const: Whether the field is constant, optional.
-        :type const: bool
         :return: The Field instance.
 
-        :rtype: Field
         """
         x = super().__new__(cls)
         x._bits = None
@@ -96,13 +91,9 @@ class Field(FieldType):
         Create a Field instance from bits.
 
         :param b: The bits to parse.
-        :type b: Bits, str, Iterable, bytearray, bytes, or memoryview
         :param name: The name of the field, optional.
-        :type name: str
         :param const: Whether the field is constant, defaults to False.
-        :type const: bool
         :return: The Field instance.
-        :rtype: Field
         """
         b = Bits._from_any(b)
         if len(b) == 0:
@@ -115,13 +106,9 @@ class Field(FieldType):
         Create a Field instance from bytes.
 
         :param b: The bytes to parse.
-        :type b: bytes or bytearray
         :param name: The name of the field, optional.
-        :type name: str
         :param const: Whether the field is constant, defaults to False.
-        :type const: bool
         :return: The Field instance.
-        :rtype: Field
         """
         return cls.from_params(DtypeSingle.from_params(DtypeKind.BYTES, len(b)), name, b, const)
 
