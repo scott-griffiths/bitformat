@@ -31,8 +31,6 @@ jobs:
             action: '3.12'
           - name: CPython 3.13
             action: '3.13'
-          - name: CPython 3.14
-            action: '3.14'
     steps:
       - uses: actions/checkout@v3
         with:
