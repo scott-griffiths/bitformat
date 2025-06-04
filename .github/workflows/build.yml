@@ -73,18 +73,10 @@ jobs:
           CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto ppc64le s390x' || 'auto' }}
           CIBW_ARCHS_MACOS: 'auto'
           CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
-          CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
-          CIBW_MUSLLINUX_X86_64_IMAGE: 'musllinux_1_1'
           CIBW_BEFORE_ALL_LINUX: >
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             source $HOME/.cargo/env
-          CIBW_BEFORE_BUILD_LINUX: >
-            source $HOME/.cargo/env &&
-            if [ "$CIBW_ARCH" == "x86_64" ] || [ "$CIBW_ARCH" == "amd64" ]; then rustup target add x86_64-unknown-linux-gnu;
-            elif [ "$CIBW_ARCH" == "aarch64" ]; then rustup target add aarch64-unknown-linux-gnu;
-            elif [ "$CIBW_ARCH" == "ppc64le" ]; then rustup target add powerpc64le-unknown-linux-gnu;
-            elif [ "$CIBW_ARCH" == "s390x" ]; then rustup target add s390x-unknown-linux-gnu;
-            fi
+          CIBW_SKIP: "*-musllinux_i686" # Skip problematic i686 musllinux builds
           CIBW_BEFORE_BUILD_MACOS: >
             rustup target add x86_64-apple-darwin aarch64-apple-darwin
           MACOSX_DEPLOYMENT_TARGET: 10.12
