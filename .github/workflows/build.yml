@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, 'ubuntu-24.04-arm', windows-latest, 'macos-13', 'macos-14']
 
     steps:
       - uses: actions/checkout@v3
@@ -27,27 +27,26 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.os == 'macos-latest' && 'x86_64-apple-darwin,aarch64-apple-darwin' || matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu' || 'x86_64-pc-windows-msvc,i686-pc-windows-msvc' }}
+          targets: >-
+            ${{ (matrix.os == 'macos-13' && 'x86_64-apple-darwin') ||
+                (matrix.os == 'macos-14' && 'aarch64-apple-darwin') ||
+                (matrix.os == 'ubuntu-latest' && 'x86_64-unknown-linux-gnu,aarch64-unknown-linux-gnu,powerpc64le-unknown-linux-gnu,s390x-unknown-linux-gnu') ||
+                (matrix.os == 'ubuntu-24.04-arm' && 'aarch64-unknown-linux-gnu') ||
+                (matrix.os == 'windows-latest' && 'x86_64-pc-windows-msvc,i686-pc-windows-msvc') ||
+                '' }}
 
-      # Windows-specific setup
-      - name: Windows Rust setup
-        if: matrix.os == 'windows-latest'
-        run: |
-          rustup target add x86_64-pc-windows-msvc i686-pc-windows-msvc
-
-      # Linux-specific setup
+      # Linux-specific setup for cross-compilation host
       - name: Linux cross-compilation setup
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest' # Runs on the x64 host
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          rustup target add aarch64-unknown-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu gcc-powerpc64le-linux-gnu g++-powerpc64le-linux-gnu gcc-s390x-linux-gnu g++-s390x-linux-gnu
 
       - name: Set up QEMU
-        if: matrix.os == 'ubuntu-latest'
+        if: runner.os == 'Linux' && runner.arch == 'X64' # For emulating other archs on x64 Linux runner
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: arm64
+          platforms: all # arm64, ppc64le, s390x etc.
 
       # Windows: install and run cibuildwheel manually
       - name: Build wheels (Windows)
@@ -55,14 +54,12 @@ jobs:
         shell: pwsh
         run: |
           # Set environment variables directly in PowerShell
-          $env:CIBW_BUILD = 'cp311-* cp312-* cp313-*'
-          $env:CIBW_ARCHS_WINDOWS = 'AMD64 x86'
+          $env:CIBW_ARCHS_WINDOWS = 'auto'
           $env:CIBW_BUILD_VERBOSITY = 3
-          $env:CIBW_TEST_SKIP = '*-win32'
-          
+
           # Ensure Cargo is in the PATH
           $env:PATH = "$env:USERPROFILE\.cargo\bin;$env:PATH"
-          
+
           # Run cibuildwheel
           python -m pip install cibuildwheel==2.23.2
           python -m cibuildwheel --output-dir wheelhouse
@@ -72,19 +69,24 @@ jobs:
         if: matrix.os != 'windows-latest'
         uses: pypa/cibuildwheel@v2.23.2
         env:
-          CIBW_BUILD: 'cp311-* cp312-* cp313-*'
           CIBW_BUILD_VERBOSITY: 3
-          CIBW_ARCHS_LINUX: 'x86_64 aarch64'
-          CIBW_ARCHS_MACOS: 'x86_64 arm64'
+          CIBW_ARCHS_LINUX: ${{ runner.arch == 'X64' && 'auto ppc64le s390x' || 'auto' }}
+          CIBW_ARCHS_MACOS: 'auto'
           CIBW_ENVIRONMENT: 'PATH="$HOME/.cargo/bin:$PATH"'
           CIBW_MANYLINUX_X86_64_IMAGE: 'manylinux2014'
           CIBW_MUSLLINUX_X86_64_IMAGE: 'musllinux_1_1'
-          CIBW_BEFORE_BUILD_MACOS: >
-            rustup target add x86_64-apple-darwin aarch64-apple-darwin
           CIBW_BEFORE_ALL_LINUX: >
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
+            source $HOME/.cargo/env
+          CIBW_BEFORE_BUILD_LINUX: >
             source $HOME/.cargo/env &&
-            rustup target add x86_64-unknown-linux-gnu
+            if [ "$CIBW_ARCH" == "x86_64" ] || [ "$CIBW_ARCH" == "amd64" ]; then rustup target add x86_64-unknown-linux-gnu;
+            elif [ "$CIBW_ARCH" == "aarch64" ]; then rustup target add aarch64-unknown-linux-gnu;
+            elif [ "$CIBW_ARCH" == "ppc64le" ]; then rustup target add powerpc64le-unknown-linux-gnu;
+            elif [ "$CIBW_ARCH" == "s390x" ]; then rustup target add s390x-unknown-linux-gnu;
+            fi
+          CIBW_BEFORE_BUILD_MACOS: >
+            rustup target add x86_64-apple-darwin aarch64-apple-darwin
           MACOSX_DEPLOYMENT_TARGET: 10.12
 
       - name: Build sdist
