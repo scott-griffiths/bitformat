@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "bitformat"
-version = "0.5.1"
+version = "0.5.2"
 description = "A Python library for creating and parsing binary formats."
 readme = "README.md"
 authors = [
