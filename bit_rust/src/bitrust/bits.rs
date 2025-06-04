@@ -565,6 +565,17 @@ impl BitRust {
         }
     }
 
+    pub fn clone_as_immutable(&self) -> BitRust {
+        // TODO? We don't need to clone the data, just return the same BitRust instance.
+        BitRust {
+            data: self.data.clone(),
+        }
+    }
+
+    pub fn clone(&self) -> BitRust {
+        self.clone_as_immutable()
+    }
+
     /// Returns the bool value at a given bit index.
     pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
         let index = helpers::validate_index(bit_index, self.len())?;

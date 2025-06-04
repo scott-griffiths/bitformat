@@ -68,9 +68,7 @@ def _create_i_bitstore(i: int, length: int) -> BitRust:
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
         return str_to_bitstore_cached(any_)
-    if isinstance(any_,  Bits):
-        return any_._bitstore
-    if isinstance(any_, MutableBits):
+    if isinstance(any_,  _BaseBits):
         return any_._bitstore.clone_as_immutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return BitRust.from_bytes(any_)
@@ -80,10 +78,8 @@ def create_bitrust_from_any(any_: BitsType) -> BitRust:
 def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
     if isinstance(any_, str):
         return str_to_mutable_bitstore(any_)
-    if isinstance(any_,  Bits):
+    if isinstance(any_,  _BaseBits):
         return any_._bitstore.clone_as_mutable()
-    if isinstance(any_, MutableBits):
-        return any_._bitstore.clone()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return MutableBitRust.from_bytes(any_)
     raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a MutableBitRust object.")
@@ -1152,16 +1148,11 @@ class _BaseBits:
         """
         if len(self) == 0:
             raise ValueError("Cannot invert empty Bits.")
-        if isinstance(self, MutableBits):
-            # Mutable bits are mutable, so we need to copy them.
-            x = self.__class__()
-            x._bitstore = self._bitstore.clone_as_immutable().clone_as_mutable()
-            x._bitstore.invert_all()
-            return x
         x = self.__class__()
         x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.invert_all()
-        x._bitstore = x._bitstore.as_immutable()
+        if isinstance(self, Bits):
+            x._bitstore = x._bitstore.as_immutable()
         return x
 
     def __lshift__(self: Bits, n: int, /) -> Bits:
