@@ -293,25 +293,6 @@ impl MutableBitRust {
         self.inner.findall(&bs, byte_aligned)
     }
 
-    // Return new BitRust with single bit flipped. If pos is None then flip all the bits.
-    #[pyo3(signature = (pos=None))]
-    pub fn invert(&mut self, pos: Option<usize>) -> Self {
-        match pos {
-            None => {
-                // Invert all bits
-                MutableBitRust::new(self.inner.data.clone().not())
-            }
-            Some(pos) => {
-                // Invert a single bit
-                let index = pos;
-                let mut data = self.inner.data.clone();
-                let old_val = data[index];
-                data.set(index, !old_val);
-                MutableBitRust::new(data)
-            }
-        }
-    }
-
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
         for pos in pos_list {
             let pos: usize = helpers::validate_index(pos, self.len())?;

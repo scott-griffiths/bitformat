@@ -719,13 +719,14 @@ mod tests {
     #[test]
     fn test_invert() {
         let mut b = MutableBitRust::from_bin_checked("0").unwrap();
-        assert_eq!(b.invert(None).to_bin(), "1");
+        b.invert_all();
+        assert_eq!(b.to_bin(), "1");
         let mut b = MutableBitRust::from_bin_checked("01110").unwrap();
-        assert_eq!(b.invert(None).to_bin(), "10001");
+        b.invert_all();
+        assert_eq!(b.to_bin(), "10001");
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
         let mut long = MutableBitRust::from_hex_checked(hex_str).unwrap();
-        let temp = long.invert(None);
-        assert_eq!(long.len(), temp.len());
+        long.invert_all();
     }
 
     #[test]
