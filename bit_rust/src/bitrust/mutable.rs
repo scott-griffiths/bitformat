@@ -374,16 +374,9 @@ impl MutableBitRust {
         BitRust::new(self.inner.data.clone())
     }
     
-    pub fn clone(&self) -> MutableBitRust {
-        self.clone_as_mutable()
-    }
-
     /// Convert to immutable BitRust - without cloning the data.
     pub fn as_immutable(&mut self) -> BitRust {
         let data = std::mem::take(&mut self.inner.data);
-
-        // let empty_data = helpers::BV::new();
-        // let data = std::mem::replace(&mut self.inner.data, empty_data);
         BitRust::new(data)
     }
 

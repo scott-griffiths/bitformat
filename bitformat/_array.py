@@ -103,10 +103,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         # We may change the internal BitRust, so need to make a copy here.
-        if isinstance(bits, MutableBits):
-            x._mutable_bitrust = bits._bitstore.clone()
-        else:
-            x._mutable_bitrust = bits._bitstore.clone_as_mutable()
+        x._mutable_bitrust = bits._bitstore.clone_as_mutable()
         return x
 
     @classmethod
@@ -429,7 +426,7 @@ class Array:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
                              f"The '{self._dtype}' format is {self.item_size} bits long.")
         b = MutableBits()
-        b._bitstore = self._mutable_bitrust.clone()
+        b._bitstore = self._mutable_bitrust.clone_as_mutable()
         b.byte_swap(self.item_size // 8)
         self._mutable_bitrust = b._bitstore
         return self
@@ -629,13 +626,13 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        self._mutable_bitrust = new_data._bitstore.clone()
+        self._mutable_bitrust = new_data._bitstore.clone_as_mutable()
         return self
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
         a_copy = Array(self.dtype)
-        a_copy._mutable_bitrust = self._mutable_bitrust.clone()
+        a_copy._mutable_bitrust = self._mutable_bitrust.clone_as_mutable()
         a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
         return a_copy
 

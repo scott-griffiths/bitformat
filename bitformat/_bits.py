@@ -575,10 +575,7 @@ class _BaseBits:
         except OverflowError:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
             b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-        if isinstance(self, MutableBits):
-            self._bitstore = MutableBitRust.from_bytes(b)
-        else:
-            self._bitstore = BitRust.from_bytes(b)
+        self._bitstore = BitRust.from_bytes(b)
 
     def _get_f(self) -> float:
         """Interpret the whole Bits as a big-endian float."""
@@ -1492,7 +1489,7 @@ class MutableBits(_BaseBits):
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
         x = self.__class__()
-        x._bitstore = self._bitstore.clone()
+        x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.append(bs)
         return x
 
@@ -1572,7 +1569,7 @@ class MutableBits(_BaseBits):
         """Return a new copy of the MutableBits for the copy module.
         """
         x = MutableBits()
-        x._bitstore = self._bitstore.clone()
+        x._bitstore = self._bitstore.clone_as_mutable()
         return x
 
     def _slice(self: MutableBits, start: int, end: int) -> MutableBits:
