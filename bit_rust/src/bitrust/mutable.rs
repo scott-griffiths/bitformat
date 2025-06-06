@@ -6,7 +6,7 @@ use crate::bitrust::BitRustIterator;
 use std::ops::Not;
 use bits::BitCollection;
 
-#[pyclass(eq)]
+#[pyclass]
 pub struct MutableBitRust {
     pub(crate) inner: BitRust,
 }
@@ -70,6 +70,14 @@ impl MutableBitRust {
 
 #[pymethods]
 impl MutableBitRust {
+
+    pub fn equals_bitrust(&self, other: &BitRust) -> bool {
+        self.inner.data == other.data
+    }
+
+    pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
+        self.inner.data == other.inner.data
+    }
 
     pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
         if end - start == value.len() {

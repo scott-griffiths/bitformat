@@ -2,7 +2,7 @@ use std::fmt;
 use crate::bitrust::helpers;
 use bitvec::prelude::*;
 use bytemuck::cast_slice;
-use pyo3::exceptions::PyValueError;
+use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
@@ -25,7 +25,7 @@ pub trait BitCollection: Sized{
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
-#[pyclass(eq, frozen)]
+#[pyclass(frozen)]
 pub struct BitRust {
     pub(crate) data: helpers::BV,
 }
@@ -234,6 +234,22 @@ impl BitRust {
                 length,
             },
         )
+    }
+
+    fn __eq__(&self, _other: PyRef<Self>) -> PyResult<bool> {
+        return Err(PyNotImplementedError::new_err(
+            "Use the equals_bitrust or equals_mutable_bitrust methods for equality checks.",
+        ));
+    }
+
+    // Used for a quick, explicit check, rather than using == which needs to deal with more types.
+    pub fn equals_bitrust(&self, other: &BitRust) -> bool {
+        self.data == other.data
+    }
+
+    // Used for a quick, explicit check, rather than using == which needs to deal with more types.
+    pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
+        self.data == other.inner.data
     }
 
     #[staticmethod]

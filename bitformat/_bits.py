@@ -263,10 +263,7 @@ class _BaseBits:
         """
         suffix = create_bitrust_from_any(suffix)
         if len(suffix) <= len(self):
-            if isinstance(self, Bits):
-                return self._bitstore.getslice(len(self) - len(suffix), len(self)) == suffix
-            else:
-                return self._bitstore.getslice(len(self) - len(suffix), len(self)).clone_as_immutable() == suffix
+            return self._bitstore.getslice(len(self) - len(suffix), len(self)).equals_bitrust(suffix)
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -453,10 +450,7 @@ class _BaseBits:
         """
         prefix = create_bitrust_from_any(prefix)
         if len(prefix) <= len(self):
-            if isinstance(self, Bits):
-                return self._bitstore.getslice(0, len(prefix)) == prefix
-            else:
-                return self._bitstore.getslice(0, len(prefix)).clone_as_immutable() == prefix
+            return self._bitstore.getslice(0, len(prefix)).equals_bitrust(prefix)
         return False
 
     def to_bytes(self) -> bytes:
@@ -889,11 +883,7 @@ class _BaseBits:
             other = create_bitrust_from_any(bs)
         except TypeError:
             return False
-        else:
-            if isinstance(self, Bits):  # TODO: This could be more streamlined.
-                return self._bitstore == other
-            else:
-                return self._bitstore.clone_as_immutable() == other
+        return self._bitstore.equals_bitrust(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.

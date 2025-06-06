@@ -558,7 +558,7 @@ class Array:
         if isinstance(other, Array):
             if self._dtype != other._dtype:
                 return False
-            if self._mutable_bitrust != other._mutable_bitrust:
+            if not self._mutable_bitrust.equals_mutable_bitrust(other._mutable_bitrust):
                 return False
             return True
         return False
