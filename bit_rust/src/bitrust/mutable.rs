@@ -63,8 +63,8 @@ impl PartialEq<BitRust> for MutableBitRust {
 }
 
 impl MutableBitRust {
-    pub fn new(bv: &helpers::BV) -> Self {
-        Self { inner: BitRust::new(bv.clone()) }
+    pub fn new(bv: helpers::BV) -> Self {
+        Self { inner: BitRust::new(bv) }
     }
 }
 
@@ -221,7 +221,7 @@ impl MutableBitRust {
         for bits in bitrust_vec {
             bv.extend_from_bitslice(&bits.data);
         }
-        MutableBitRust::new(&bv)
+        MutableBitRust::new(bv)
     }
 
     pub fn to_u64(&self) -> u64 {
@@ -299,7 +299,7 @@ impl MutableBitRust {
         match pos {
             None => {
                 // Invert all bits
-                MutableBitRust::new(&self.inner.data.clone().not())
+                MutableBitRust::new(self.inner.data.clone().not())
             }
             Some(pos) => {
                 // Invert a single bit
@@ -307,7 +307,7 @@ impl MutableBitRust {
                 let mut data = self.inner.data.clone();
                 let old_val = data[index];
                 data.set(index, !old_val);
-                MutableBitRust::new(&data)
+                MutableBitRust::new(data)
             }
         }
     }
@@ -385,7 +385,7 @@ impl MutableBitRust {
 
     /// Return a copy with a real copy of the data.
     pub fn clone_as_mutable(&self) -> MutableBitRust {
-        MutableBitRust::new(&self.inner.data.clone())
+        MutableBitRust::new(self.inner.data.clone())
     }
 
     // Convert to immutable BitRust - cloning the data.

@@ -1005,7 +1005,7 @@ mod tests {
     #[test]
     fn mutable_from_immutable() {
         let immutable = BitRust::from_bin("1010").unwrap();
-        let mutable = MutableBitRust::new(&(immutable.data));
+        let mutable = MutableBitRust::new(immutable.data);
         assert_eq!(mutable.to_bin(), "1010");
     }
 
@@ -1108,7 +1108,7 @@ mod tests {
         let pattern1 = MutableBitRust::from_bin_checked("1100").unwrap();
         let pattern2 = BitRust::from_bin("0011").unwrap();
 
-        let mut m = MutableBitRust::new(&pattern1.inner.data);
+        let mut m = MutableBitRust::new(pattern1.inner.data);
 
         m.set_slice(0, 2, &pattern2).unwrap();
         assert_eq!(m.to_bin(), "001100");
@@ -1180,13 +1180,12 @@ mod tests {
     #[test]
     fn conversion_round_trip() {
         let original = BitRust::from_bin("101010").unwrap();
-        let mut mutable = MutableBitRust::new(&original.data);
+        let mut mutable = MutableBitRust::new(original.data);
         mutable.set_index(false, 0).unwrap();
         mutable.set_index(true, 1).unwrap();
         let result = mutable.as_immutable();
 
         assert_eq!(result.to_bin(), "011010");
-        assert_ne!(result.to_bin(), original.to_bin());
     }
 
     // This one causes a panic that stops the other tests.
