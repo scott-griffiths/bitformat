@@ -88,15 +88,15 @@ impl MutableBitRust {
             self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
             return Ok(());
         }
-        let start_slice = self.getslice(0, Some(start))?.inner.data;
-        let value_slice = value.data.clone();
-        let end_slice = self.getslice(end, Some(self.len()))?.inner.data;
+        let data = std::mem::take(&mut self.inner.data);
+        let start_slice = data[..start].to_bitvec();
+        let end_slice = data[end..].to_bitvec();
 
         let mut new_data = start_slice;
-        new_data.extend(&value_slice);
-        new_data.extend(&end_slice);
+        new_data.extend(&value.data);
+        new_data.extend(end_slice);
 
-        self.inner.data = new_data;
+        self.inner.data = new_data.into();
         Ok(())
     }
 
@@ -323,15 +323,15 @@ impl MutableBitRust {
 
     pub fn invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
         let pos: usize = helpers::validate_index(pos, self.len())?;
-        let mut new_data = self.inner.data.clone();
-        let bv = &mut new_data;
-        let value = bv[pos];
-        self.inner.data.set(pos, !value);
+        let mut data = std::mem::take(&mut self.inner.data);
+        let value = data[pos];
+        data.set(pos, !value);
+        self.inner.data = data;
         Ok(())
     }
 
     pub fn invert_all(&mut self) {
-        self.inner.data = self.inner.data.clone().not();
+        self.inner.data = std::mem::take(&mut self.inner.data).not();
     }
 
     pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
@@ -418,8 +418,9 @@ impl MutableBitRust {
 
     /// Prepend in-place
     pub fn prepend(&mut self, other: &BitRust) {
-        let mut new_data = other.data.clone();
-        new_data.extend(&self.inner.data);
+        let self_data = std::mem::take(&mut self.inner.data);
+        let mut new_data = other.data.to_bitvec();
+        new_data.extend(self_data);
         self.inner.data = new_data;
     }
 
