@@ -768,7 +768,7 @@ class TestManyDifferentThings:
         for i in [0, 1, 23]:
             assert len(list(s.find_all("0b1", count=i))) == i
         with pytest.raises(ValueError):
-            _ = s.find_all("0b1", byte_aligned=True, count=-1)
+            _ = list(s.find_all("0b1", byte_aligned=True, count=-1))
 
     def test_contains(self):
         a = Bits("0b1") + "0x0001dead0001"

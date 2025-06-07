@@ -473,15 +473,6 @@ class _BaseBits:
 
     # ----- Private Methods -----
 
-    def _find_all(self, bs: BitRust, count: int | None, byte_aligned: bool) -> Iterable[int]:
-        c = 0
-        for i in self._bitstore.findall(bs, byte_aligned):
-            if count is not None and c >= count:
-                return
-            c += 1
-            yield i
-        return
-
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
         self._bitstore = create_bitrust_from_any(bs)
 
@@ -1228,7 +1219,13 @@ class Bits(_BaseBits):
             raise ValueError("In find_all, count must be >= 0.")
         bs = create_bitrust_from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        return self._find_all(bs, count, ba)
+        c = 0
+        for i in self._bitstore.findall(bs, ba):
+            if count is not None and c >= count:
+                return
+            c += 1
+            yield i
+        return
 
     def __iter__(self) -> Iterable[bool]:
         """Iterate over the bits."""
@@ -1261,11 +1258,11 @@ class Bits(_BaseBits):
 
     def __setitem__(self, key, value):
         raise TypeError(f"'{self.__class__.__name__}' object does not support item assignment. "
-        f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
+        f"Did you mean to use the MutableBits class? Or you could call to_mutable_bits() to convert to a MutableBits.")
 
     def __delitem__(self, key):
         raise TypeError(f"'{self.__class__.__name__}' object does not support item deletion. "
-        f"Did you mean to use the MutableBits class? Or you could call to_mutable() to convert to a MutableBits.")
+        f"Did you mean to use the MutableBits class? Or you could call to_mutable_bits() to convert to a MutableBits.")
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
@@ -1273,7 +1270,7 @@ class Bits(_BaseBits):
         if hasattr(MutableBits, name) and callable(getattr(MutableBits, name)):
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{name}'. "
-                f"Did you mean to use the MutableBits class? Or you could replace '.{name}(...)' with '.to_mutable().{name}(...)'."
+                f"Did you mean to use the MutableBits class? Or you could replace '.{name}(...)' with '.to_mutable_bits().{name}(...)'."
             )
 
         # Default behavior
@@ -1549,6 +1546,19 @@ class MutableBits(_BaseBits):
                 raise ValueError("Cannot delete bits with a step other than 1")
             self._bitstore.set_slice(start, stop, BitRust.from_zeros(0))
 
+    def __getattr__(self, name):
+        """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
+        # Check if the method exists in Bits
+        if hasattr(Bits, name) and callable(getattr(Bits, name)):
+            raise AttributeError(
+                f"'{self.__class__.__name__}' object has no attribute '{name}'. "
+                f"Did you mean to use the Bits class? Or you could replace '.{name}(...)' with '.to_bits().{name}(...)'."
+            )
+
+        # Default behavior
+        raise AttributeError(
+            f"'{self.__class__.__name__}' object has no attribute '{name}'"
+        )
 
     @classmethod
     def _from_any(cls, any_: BitsType, /) -> MutableBits:
@@ -1816,9 +1826,9 @@ class MutableBits(_BaseBits):
         """
         if count == 0:
             return self
-        old = create_bitrust_from_any(old)
-        new = create_bitrust_from_any(new)
-        if len(old) == 0:
+        old_bitrust = create_bitrust_from_any(old)
+        new_bitrust = create_bitrust_from_any(new)
+        if len(old_bitrust) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = self._validate_slice(start, end)
         if byte_aligned is None:
@@ -1827,12 +1837,11 @@ class MutableBits(_BaseBits):
         starting_points: list[int] = []
         if byte_aligned:
             start += (8 - start % 8) % 8
-        bits_copy = self[start:end].to_bits()
-        for x in bits_copy._find_all(old, None, byte_aligned=byte_aligned):
+        for x in self[start:end].to_bits().find_all(old, byte_aligned=byte_aligned):
             x += start
             if not starting_points:
                 starting_points.append(x)
-            elif x >= starting_points[-1] + len(old):
+            elif x >= starting_points[-1] + len(old_bitrust):
                 # Can only replace here if it hasn't already been replaced!
                 starting_points.append(x)
             if count != 0 and len(starting_points) == count:
@@ -1842,11 +1851,11 @@ class MutableBits(_BaseBits):
         original = self._bitstore.clone_as_immutable()
         replacement_list = [original.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
-            replacement_list.append(new)
-            replacement_list.append(original.getslice(starting_points[i] + len(old), starting_points[i + 1]))
+            replacement_list.append(new_bitrust)
+            replacement_list.append(original.getslice(starting_points[i] + len(old_bitrust), starting_points[i + 1]))
         # Final replacement
-        replacement_list.append(new)
-        replacement_list.append(original.getslice(starting_points[-1] + len(old), None))
+        replacement_list.append(new_bitrust)
+        replacement_list.append(original.getslice(starting_points[-1] + len(old_bitrust), None))
         self._bitstore = MutableBitRust.join(replacement_list)
         return self
 
