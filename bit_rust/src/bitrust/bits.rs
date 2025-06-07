@@ -207,12 +207,11 @@ pub struct PyBitRustFindAllIterator {
     pub needle: Py<BitRust>,
     pub current_pos: usize,
     pub byte_aligned: bool,
-    pub step: usize, // Pre-calculated step (1 or 8)
+    pub step: usize,
 }
 
 #[pymethods]
 impl PyBitRustFindAllIterator {
-    // Note: No #[new] as it's constructed by BitRust.findall
 
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
@@ -241,26 +240,19 @@ impl PyBitRustFindAllIterator {
             }
 
             let haystack_len = haystack_rs.len();
-
-            // Check if further search is possible using the local `current_pos`.
             if current_pos >= haystack_len || haystack_len.saturating_sub(current_pos) < needle_len {
                 return Ok(None); // No space left for the needle or already past the end
             }
-
-            // Use the existing BitRust::find method with local variables.
             haystack_rs.find(&needle_rs, current_pos, byte_aligned)
-        }; // `haystack_rs` and `needle_rs` are dropped here.
+        };
 
         // Now, `slf` can be mutably accessed without conflicting with the previous borrows.
         match find_result {
             Some(pos) => {
-                // `pos` is the absolute position found.
-                // Advance current_pos for the next search.
                 slf.current_pos = pos + step;
                 Ok(Some(pos))
             }
             None => {
-                // No more occurrences found from current_pos onwards.
                 Ok(None)
             }
         }
@@ -285,9 +277,9 @@ impl BitRust {
     }
 
     fn __eq__(&self, _other: PyRef<Self>) -> PyResult<bool> {
-        return Err(PyNotImplementedError::new_err(
+        Err(PyNotImplementedError::new_err(
             "Use the equals_bitrust or equals_mutable_bitrust methods for equality checks.",
-        ));
+        ))
     }
 
     // Used for a quick, explicit check, rather than using == which needs to deal with more types.
@@ -319,7 +311,7 @@ impl BitRust {
         assert!(self.data.len() <= 64, "BitRust too long for i64");
         self.data.load_be::<i64>()
     }
-    
+
     #[pyo3(signature = (needle_obj, byte_aligned=false))]
     pub fn findall(slf: PyRef<'_, Self>, needle_obj: Py<BitRust>, byte_aligned: bool) -> PyResult<Py<PyBitRustFindAllIterator>> {
         let py = slf.py();

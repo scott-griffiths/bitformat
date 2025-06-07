@@ -6,5 +6,5 @@ mod mutable_test;
 
 pub use bits::{BitRust, PyBitRustFindAllIterator};
 pub use mutable::MutableBitRust;
-pub use iterator::{BitRustIterator, BitRustBoolIterator};
+pub use iterator::BitRustBoolIterator;
 

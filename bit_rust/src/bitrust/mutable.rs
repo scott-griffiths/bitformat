@@ -4,7 +4,6 @@ use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
 use bits::BitCollection;
-use pyo3::prelude::*;
 
 #[pyclass]
 pub struct MutableBitRust {
@@ -96,7 +95,7 @@ impl MutableBitRust {
         new_data.extend(&value.data);
         new_data.extend(end_slice);
 
-        self.inner.data = new_data.into();
+        self.inner.data = new_data;
         Ok(())
     }
 
@@ -281,11 +280,11 @@ impl MutableBitRust {
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.find(&b, start, bytealigned)
+        self.inner.find(b, start, bytealigned)
     }
 
     pub fn rfind(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.rfind(&b, start, bytealigned)
+        self.inner.rfind(b, start, bytealigned)
     }
 
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
