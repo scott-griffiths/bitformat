@@ -288,28 +288,6 @@ impl MutableBitRust {
         self.inner.rfind(&b, start, bytealigned)
     }
 
-    #[pyo3(signature = (needle_obj, byte_aligned = false))]
-    pub fn findall(slf: PyRef<'_, Self>, needle_obj: Py<BitRust>, byte_aligned: bool) -> PyResult<Py<bits::PyBitRustFindAllIterator>> {
-        let py = slf.py();
-
-        // slf.inner is BitRust. PyBitRustFindAllIterator expects Py<BitRust> for the haystack.
-        // We clone self.inner (e.g., using clone_as_immutable or if BitRust derives Clone)
-        // and then create a new Python object Py<BitRust> from it.
-        let haystack_cloned: BitRust = slf.inner.clone_as_immutable();
-        let haystack_py_obj: Py<BitRust> = Py::new(py, haystack_cloned)?;
-
-        let step = if byte_aligned { 8 } else { 1 };
-
-        let iter_obj = bits::PyBitRustFindAllIterator {
-            haystack: haystack_py_obj,
-            needle: needle_obj, // needle_obj is already Py<BitRust>
-            current_pos: 0,
-            byte_aligned,
-            step,
-        };
-        Py::new(py, iter_obj)
-    }
-
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
         for pos in pos_list {
             let pos: usize = helpers::validate_index(pos, self.len())?;

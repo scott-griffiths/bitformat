@@ -289,31 +289,6 @@ class _BaseBits:
         p = self._bitstore.find(bs, 0, ba)
         return None if p == -1 else p
 
-    def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
-        """Find all occurrences of bs. Return generator of bit positions.
-
-        :param bs: The Bits to find.
-        :param count: The maximum number of occurrences to find.
-        :param byte_aligned: If True, the Bits will only be found on byte boundaries.
-        :return: A generator yielding bit positions.
-
-        Raises ValueError if bs is empty, if start < 0, if end > len(self) or
-        if end < start.
-
-        Note that all occurrences of bs are found, even if they overlap.
-
-        .. code-block:: pycon
-
-            >>> list(Bits('0b10111011').find_all('0b11'))
-            [2, 3, 6]
-
-        """
-        if count is not None and count < 0:
-            raise ValueError("In find_all, count must be >= 0.")
-        bs = create_bitrust_from_any(bs)
-        ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        return self._find_all(bs, count, ba)
-
     def info(self) -> str:
         """Return a descriptive string with information about the Bits.
 
@@ -1231,6 +1206,35 @@ class Bits(_BaseBits):
         x._bitstore = create_bitrust_from_any(any_)
         return x
 
+    def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
+        """Find all occurrences of bs. Return generator of bit positions.
+
+        :param bs: The Bits to find.
+        :param count: The maximum number of occurrences to find.
+        :param byte_aligned: If True, the Bits will only be found on byte boundaries.
+        :return: A generator yielding bit positions.
+
+        Raises ValueError if bs is empty, if start < 0, if end > len(self) or
+        if end < start.
+
+        All occurrences of bs are found, even if they overlap.
+
+        Note that this method is not available for :class:`MutableBits` as its value could change while the
+        generator is still active. For that case you should convert to a :class:`Bits` first with :meth:`MutableBits.to_bits`.
+
+        .. code-block:: pycon
+
+            >>> list(Bits('0b10111011').find_all('0b11'))
+            [2, 3, 6]
+
+        """
+        if count is not None and count < 0:
+            raise ValueError("In find_all, count must be >= 0.")
+        bs = create_bitrust_from_any(bs)
+        ba = Options().byte_aligned if byte_aligned is None else byte_aligned
+        return self._find_all(bs, count, ba)
+
+
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
@@ -1820,7 +1824,8 @@ class MutableBits(_BaseBits):
         starting_points: list[int] = []
         if byte_aligned:
             start += (8 - start % 8) % 8
-        for x in self[start:end]._find_all(old, None, byte_aligned=byte_aligned):
+        bits_copy = self[start:end].to_bits()
+        for x in bits_copy._find_all(old, None, byte_aligned=byte_aligned):
             x += start
             if not starting_points:
                 starting_points.append(x)
