@@ -872,7 +872,7 @@ class Register:
         setattr(bitformat.Bits, kind.value, property(fget=definition.get_fn,
                                                      doc=f"The Bits as {definition.description}. Read only."))
         setattr(bitformat.MutableBits, kind.value, property(fget=definition.get_fn,
-                                                     doc=f"The Bits as {definition.description}. Read only."))
+                                                     doc=f"The MutableBits as {definition.description}. Read only."))
         if definition.endianness_variants:
 
             def fget_be(b):
@@ -880,19 +880,29 @@ class Register:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
                 return definition.get_fn(b)
 
-            def fget_le(b):
+            def fget_le_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                # TODO: This isn't pleasant!
                 return definition.get_fn(b.to_mutable_bits().byte_swap().to_bits())
 
-            fget_ne = fget_le if byteorder == "little" else fget_be
+            def fget_le_mutable_bits(b):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                return definition.get_fn(b.__copy__().byte_swap().to_bits())
 
-            for modifier, fget, desc in [("_le", fget_le, "little-endian"),
+            fget_ne_bits = fget_le_bits if byteorder == "little" else fget_be
+            fget_ne_mutable_bits = fget_le_mutable_bits if byteorder == "little" else fget_be
+
+            for modifier, fget, desc in [("_le", fget_le_bits, "little-endian"),
                                          ("_be", fget_be, "big-endian"),
-                                         ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
+                                         ("_ne", fget_ne_bits, f"native-endian (i.e. {byteorder}-endian)")]:
                 doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
                 setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))
+
+            for modifier, fget, desc in [("_le", fget_le_mutable_bits, "little-endian"),
+                                         ("_be", fget_be, "big-endian"),
+                                         ("_ne", fget_ne_mutable_bits, f"native-endian (i.e. {byteorder}-endian)")]:
+                doc = f"The MutableBits as {definition.description} in {desc} byte order. Read only."
                 setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, doc=doc))
 
     @classmethod

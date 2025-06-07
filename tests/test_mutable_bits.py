@@ -273,3 +273,28 @@ def test_xor():
     e = a ^ d
     assert e == '0b1010'
 
+def test_constructors():
+    a = MutableBits.from_dtype('f32', 0.5)
+    b = MutableBits.from_dtype('bytes', b'123')
+    c = MutableBits.from_dtype('bin', '100')
+    d = MutableBits.from_dtype('oct', '7654')
+
+    c.append(d)
+    assert c == '0o47654'
+    d.append(d)
+    assert d == '0o76547654'
+
+def test_invert():
+    a = MutableBits('0b1110')
+    b = ~a
+    assert b == '0b0001'
+    assert a == '0b1110'
+
+def test_properties():
+    a = MutableBits('0x0000')
+    assert a.u == a.u_be == a.u_le == a.u_ne == 0
+    assert a.i == a.i_be == a.i_le == a.i_ne == 0
+    assert a.f == a.f_be == a.f_le == a.f_ne == 0.0
+    a = MutableBits('0x0001')
+    assert a.u_le == 256
+    assert a.u_le == 256
