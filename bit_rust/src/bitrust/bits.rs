@@ -6,7 +6,7 @@ use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
-use crate::bitrust::{BitRustIterator, BitRustBoolIterator};
+use crate::bitrust::BitRustBoolIterator;
 
 pub trait BitCollection: Sized{
     fn len(&self) -> usize;
@@ -198,26 +198,74 @@ impl BitRust {
 
         BitRust::new(new_data)
     }
-
-    // This works as a Rust version. Not sure how to make a proper Python interface.
-    fn find_all_rust<'a>(&'a self, b: &'a BitRust, bytealigned: bool) -> impl Iterator<Item = usize> + 'a {
-        // Use the find fn to find all instances of b in self and return as an iterator
-        let mut start: usize = 0;
-        let step = if bytealigned { 8 } else { 1 };
-        std::iter::from_fn(move || {
-            let found = self.find(b, start, bytealigned);
-
-            match found {
-                Some(x) => {
-                    start = x + step;
-                    Some(x)
-                }
-                None => None,
-            }
-        })
-    }
 }
 
+
+#[pyclass(name = "BitRustFindAllIterator")]
+pub struct PyBitRustFindAllIterator {
+    pub haystack: Py<BitRust>, // Py<T> keeps the Python object alive
+    pub needle: Py<BitRust>,
+    pub current_pos: usize,
+    pub byte_aligned: bool,
+    pub step: usize, // Pre-calculated step (1 or 8)
+}
+
+#[pymethods]
+impl PyBitRustFindAllIterator {
+    // Note: No #[new] as it's constructed by BitRust.findall
+
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<usize>> {
+        let py = slf.py();
+
+        // Read values from slf that are needed for the find logic
+        // or for updating state *after* the find.
+        let current_pos = slf.current_pos;
+        let byte_aligned = slf.byte_aligned;
+        let step = slf.step; // Needed to update slf.current_pos later
+
+        // This block limits the scope of haystack_rs and needle_rs.
+        // The immutable borrows of slf (to access slf.haystack and slf.needle)
+        // will end when this block finishes.
+        let find_result = {
+            let haystack_rs = slf.haystack.borrow(py);
+            let needle_rs = slf.needle.borrow(py);
+
+            let needle_len = needle_rs.len();
+            if needle_len == 0 {
+                // If needle is empty, stop iteration.
+                return Ok(None);
+            }
+
+            let haystack_len = haystack_rs.len();
+
+            // Check if further search is possible using the local `current_pos`.
+            if current_pos >= haystack_len || haystack_len.saturating_sub(current_pos) < needle_len {
+                return Ok(None); // No space left for the needle or already past the end
+            }
+
+            // Use the existing BitRust::find method with local variables.
+            haystack_rs.find(&needle_rs, current_pos, byte_aligned)
+        }; // `haystack_rs` and `needle_rs` are dropped here.
+
+        // Now, `slf` can be mutably accessed without conflicting with the previous borrows.
+        match find_result {
+            Some(pos) => {
+                // `pos` is the absolute position found.
+                // Advance current_pos for the next search.
+                slf.current_pos = pos + step;
+                Ok(Some(pos))
+            }
+            None => {
+                // No more occurrences found from current_pos onwards.
+                Ok(None)
+            }
+        }
+    }
+}
 
 
 /// Public Python-facing methods.
@@ -271,14 +319,22 @@ impl BitRust {
         assert!(self.data.len() <= 64, "BitRust too long for i64");
         self.data.load_be::<i64>()
     }
+    
+    #[pyo3(signature = (needle_obj, byte_aligned=false))]
+    pub fn findall(slf: PyRef<'_, Self>, needle_obj: Py<BitRust>, byte_aligned: bool) -> PyResult<Py<PyBitRustFindAllIterator>> {
+        let py = slf.py();
+        let haystack_obj: Py<BitRust> = slf.into(); // Get a Py<BitRust> for the haystack (self)
 
-    #[pyo3(signature = (bs, byte_aligned=false))]
-    pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
-        // TODO: Cheating here by making the whole list first, then making an iterator from it.
-        Ok(BitRustIterator {
-            positions: self.find_all_rust(bs, byte_aligned).collect(),
-            index: 0,
-        })
+        let step = if byte_aligned { 8 } else { 1 };
+
+        let iter_obj = PyBitRustFindAllIterator {
+            haystack: haystack_obj,
+            needle: needle_obj,
+            current_pos: 0,
+            byte_aligned,
+            step,
+        };
+        Py::new(py, iter_obj)
     }
 
     pub fn __len__(&self) -> usize {
@@ -764,19 +820,6 @@ mod tests {
         assert_eq!(a3, b);
         let a4 = a1.slice(4, 12).__and__(&a2.slice(4, 12)).unwrap();
         assert_eq!(a4, BitRust::from_hex("03").unwrap());
-    }
-
-    #[test]
-    fn test_findall() {
-        let b = BitRust::from_hex("00ff0ff0").unwrap();
-        let a = BitRust::from_hex("ff").unwrap();
-        let q: Vec<usize> = b.find_all_rust(&a, false).collect();
-        assert_eq!(q, vec![8, 20]);
-
-        let a = BitRust::from_hex("fffff4512345ff1234ff12ff").unwrap();
-        let b = BitRust::from_hex("ff").unwrap();
-        let q: Vec<usize> = a.find_all_rust(&b, true).collect();
-        assert_eq!(q, vec![0, 8, 6 * 8, 9 * 8, 11 * 8]);
     }
 
     #[test]

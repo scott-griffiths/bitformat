@@ -2,9 +2,9 @@ use crate::bitrust::{bits, helpers};
 use crate::bitrust::BitRust;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
-use crate::bitrust::BitRustIterator;
 use std::ops::Not;
 use bits::BitCollection;
+use pyo3::prelude::*;
 
 #[pyclass]
 pub struct MutableBitRust {
@@ -288,9 +288,26 @@ impl MutableBitRust {
         self.inner.rfind(&b, start, bytealigned)
     }
 
-    #[pyo3(signature = (bs, byte_aligned=false))]
-    pub fn findall(&self, bs: &BitRust, byte_aligned: bool) -> PyResult<BitRustIterator> {
-        self.inner.findall(&bs, byte_aligned)
+    #[pyo3(signature = (needle_obj, byte_aligned = false))]
+    pub fn findall(slf: PyRef<'_, Self>, needle_obj: Py<BitRust>, byte_aligned: bool) -> PyResult<Py<bits::PyBitRustFindAllIterator>> {
+        let py = slf.py();
+
+        // slf.inner is BitRust. PyBitRustFindAllIterator expects Py<BitRust> for the haystack.
+        // We clone self.inner (e.g., using clone_as_immutable or if BitRust derives Clone)
+        // and then create a new Python object Py<BitRust> from it.
+        let haystack_cloned: BitRust = slf.inner.clone_as_immutable();
+        let haystack_py_obj: Py<BitRust> = Py::new(py, haystack_cloned)?;
+
+        let step = if byte_aligned { 8 } else { 1 };
+
+        let iter_obj = bits::PyBitRustFindAllIterator {
+            haystack: haystack_py_obj,
+            needle: needle_obj, // needle_obj is already Py<BitRust>
+            current_pos: 0,
+            byte_aligned,
+            step,
+        };
+        Py::new(py, iter_obj)
     }
 
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {

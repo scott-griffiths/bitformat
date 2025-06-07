@@ -5,5 +5,6 @@ use pyo3::prelude::*;
 fn bit_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<bitrust::BitRust>()?;
     m.add_class::<bitrust::MutableBitRust>()?;
+    m.add_class::<bitrust::PyBitRustFindAllIterator>()?;
     Ok(())
 }
