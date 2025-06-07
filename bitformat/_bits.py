@@ -1000,10 +1000,6 @@ class _BaseBits:
         found = _BaseBits.find(self, bs, byte_aligned=False)
         return False if found is None else True
 
-    def __iter__(self) -> Iterable[bool]:
-        """Iterate over the bits."""
-        return iter(self._bitstore)
-
     def __len__(self) -> int:
         """Return the length of the Bits in bits."""
         return len(self._bitstore)
@@ -1234,6 +1230,9 @@ class Bits(_BaseBits):
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         return self._find_all(bs, count, ba)
 
+    def __iter__(self) -> Iterable[bool]:
+        """Iterate over the bits."""
+        return iter(self._bitstore)
 
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
@@ -1488,6 +1487,10 @@ class MutableBits(_BaseBits):
         x._bitstore = MutableBitRust.from_zeros(n)
         return x
 
+    def __iter__(self):
+        """Iterating over the bits is not supported for this mutable type."""
+        raise TypeError("MutableBits objects are not iterable. "
+                        "You can use .to_bits() to convert to a Bits object that does support iteration.")
 
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
