@@ -214,20 +214,8 @@ class _BaseBits:
         count = self._bitstore.count()
         return count if value else len(self) - count
 
-    def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
-        """
-        Return Bits generator by cutting into bits sized chunks.
-
-        :param chunk_size: The size in bits of the chunks to generate.
-        :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
-        :return: A generator yielding Bits chunks.
-
-        .. code-block:: pycon
-
-            >>> list(Bits('0b110011').chunks(2))
-            [Bits('0b11'), Bits('0b00'), Bits('0b11')]
-
-        """
+    def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
+        """Internal version of chunks so that it can be used on MutableBits."""
         if count is not None and count < 0:
             raise ValueError("Cannot cut - count must be >= 0.")
         if chunk_size <= 0:
@@ -627,9 +615,9 @@ class _BaseBits:
             if any(x is n for x in [DtypeKind.BIN, DtypeKind.OCT, DtypeKind.HEX, DtypeKind.BITS, DtypeKind.BYTES]):
                 align = "<"
             if dtype.kind is DtypeKind.BITS:
-                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
             else:
-                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits.chunks(bits_per_group))
+                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
 
             chars_used = len(x)
             padding_spaces = 0 if width is None else max(width - len(x), 0)
@@ -701,7 +689,7 @@ class _BaseBits:
 
         bitpos = 0
         first_fb_width = second_fb_width = None
-        for bits in self.chunks(max_bits_per_line):
+        for bits in self._chunks(max_bits_per_line):
             offset_str = ""
             if show_offset:
                 offset = bitpos // offset_factor
@@ -1193,6 +1181,22 @@ class Bits(_BaseBits):
         x._bitstore = create_bitrust_from_any(any_)
         return x
 
+    def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
+        """
+        Return Bits generator by cutting into bits sized chunks.
+
+        :param chunk_size: The size in bits of the chunks to generate.
+        :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
+        :return: A generator yielding Bits chunks.
+
+        .. code-block:: pycon
+
+            >>> list(Bits('0b110011').chunks(2))
+            [Bits('0b11'), Bits('0b00'), Bits('0b11')]
+
+        """
+        return self._chunks(chunk_size, count)
+
     def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
@@ -1389,7 +1393,7 @@ class MutableBits(_BaseBits):
 
         :param dtype: The data type to pack.
         :param value: A value appropriate for the data type.
-        :returns: A newly constructed ``MutableBits`.
+        :returns: A newly constructed ``MutableBits``.
 
         .. code-block:: python
 
@@ -1415,7 +1419,7 @@ class MutableBits(_BaseBits):
 
         :param n: The number of bits. Must be positive.
         :param seed: An optional seed.
-        :return: A newly constructed ``MutableBits` with randomly data.
+        :return: A newly constructed ``MutableBits`` with randomly data.
 
         Note that this uses Python's pseudo-random number generator and so is
         not suitable for cryptographic or other more serious purposes.
@@ -1444,7 +1448,7 @@ class MutableBits(_BaseBits):
         This method initializes a new instance of :class:`MutableBits` using a formatted string.
 
         :param s: The formatted string to convert.
-        :return: A newly constructed ``MutableBits`.
+        :return: A newly constructed ``MutableBits``.
 
         .. code-block:: python
 
