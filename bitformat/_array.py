@@ -22,10 +22,10 @@ class Array:
     """
     An Array whose elements are all a single data type.
 
-    The ``Array`` data is stored compactly as a ``MutableBits`` object and the ``Array`` behaves very like
+    The ``Array`` data is stored compactly as a :class:`MutableBits` object and the ``Array`` behaves very like
     a list of items of the given format.
 
-    If the data length is not a multiple of the dtype length then the ``Array`` will have ``trailing_bits``
+    If the data length is not a multiple of the dtype length then the ``Array`` will have :attr:`~Array.trailing_bits`
     which will prevent some methods from appending to the ``Array``.
 
     To construct, use a builder 'from' method:
@@ -136,10 +136,10 @@ class Array:
 
     @property
     def bits(self) -> MutableBits:
-        """Property that provides access to the ``Array`` data as a ``MutableBits``.
+        """Property that provides access to the ``Array`` data as a :class:`MutableBits`.
 
         Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
-        Use the ``to_bits()`` method if you need a copy of the data instead.
+        Use the :meth:`~Array.to_bits()` method if you need a copy of the data instead.
         """
         x = MutableBits()
         x._bitstore = self._bitstore
@@ -295,14 +295,14 @@ class Array:
         """
         Creates and returns a new ``Array`` instance with a specified data type, initialized with the current Array's elements.
 
-        This method allows for the conversion of the Array's elements to a different data type, specified by the `dtype` parameter.
+        This method allows for the conversion of the Array's elements to a different data type, specified by the ``dtype`` parameter.
         The conversion process respects the original values of the elements, adapting them to the new data type format.
         This can be useful for changing the representation of data within the Array, for example, from integers to floating-point numbers or vice versa.
 
         :param dtype: The target data type for the new Array.
-        :returns: A new `Array` instance with the specified `dtype`, containing the elements of the current Array converted to the new data type.
+        :returns: A new ``Array`` instance with the specified ``dtype``, containing the elements of the current Array converted to the new data type.
 
-        :raises ValueError: If the specified `dtype` is not supported or cannot be applied to the elements of the current Array.
+        :raises ValueError: If the specified ``dtype`` is not supported or cannot be applied to the elements of the current Array.
 
         .. code-block:: pycon
 
@@ -424,9 +424,9 @@ class Array:
         """
         Change the endianness in-place of all items in the Array.
 
-        If the Array format is not a whole number of bytes a ValueError will be raised.
-
         :return: The modified Array.
+
+        :raises ValueError: If the Array format is not a whole number of bytes.
         """
         if self._item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
@@ -440,7 +440,7 @@ class Array:
     def count(self, value: ElementType, /) -> int:
         """Return count of Array items that equal value.
 
-        value -- The quantity to compare each Array element to. Type should be appropriate for the Array format.
+        :param value: The quantity to compare each Array element to. Type should be appropriate for the Array format.
 
         For floating point types using a value of ``float('nan')`` will count the number of elements that are NaN.
 
@@ -465,8 +465,7 @@ class Array:
         return x
 
     def reverse(self) -> Array:
-        """
-        Reverse the order of all items in the Array in place.
+        """Reverse the order of all items in the Array in place.
 
         :raises ValueError: If the Array's data length is not a multiple of the item size in bits.
         :return: The Array object with its items reversed.

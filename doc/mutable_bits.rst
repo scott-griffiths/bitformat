@@ -21,6 +21,10 @@ The new methods are:
 * :meth:`~MutableBits.ror`
 * :meth:`~MutableBits.set`
 
+Some methods from :class:`Bits` that return a generator are not allowed as the underlying binary value could change
+while the generator is still live. For example the :meth:`Bits.find_all` method is not available on ``MutableBits``, but you can use
+``.to_bits().find_all()`` instead.
+
 You can switch between :class:`MutableBits` and :class:`Bits` using the :meth:`MutableBits.to_bits` and :meth:`Bits.to_mutable_bits` methods.
 
 ----
