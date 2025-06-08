@@ -77,15 +77,19 @@ impl MutableBitRust {
     pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
         self.inner.data == other.inner.data
     }
+    
+    pub fn overwrite(&mut self, start: usize, value: &BitRust) -> PyResult<()> {
+        if start + value.len() > self.len() {
+            return Err(PyIndexError::new_err("Slice out of bounds"));
+        }
+        self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
+        Ok(())
+    }
 
     pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
         if end - start == value.len() {
             // This is an overwrite, so no need to move data around.
-            if start + value.len() > self.len() {
-                return Err(PyIndexError::new_err("Slice out of bounds"));
-            }
-            self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
-            return Ok(());
+            return self.overwrite(start, value);
         }
         let data = std::mem::take(&mut self.inner.data);
         let start_slice = data[..start].to_bitvec();
