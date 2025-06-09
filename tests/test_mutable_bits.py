@@ -298,3 +298,522 @@ def test_properties():
     a = MutableBits('0x0001')
     assert a.u_le == 256
     assert a.u_le == 256
+
+def test_insert_basic():
+    # Basic insert functionality
+    a = MutableBits('0b1010')
+    a.insert(2, '0b11')
+    assert a == '0b101110'
+
+def test_insert_beginning():
+    # Insert at beginning
+    a = MutableBits('0b1010')
+    a.insert(0, '0b11')
+    assert a == '0b111010'
+
+def test_insert_end():
+    # Insert at end
+    a = MutableBits('0b1010')
+    a.insert(4, '0b11')
+    assert a == '0b101011'
+
+def test_insert_empty():
+    # Insert empty bits
+    a = MutableBits('0b1010')
+    a.insert(2, '')
+    assert a == '0b1010'
+
+def test_insert_from_bits():
+    # Insert with Bits object
+    a = MutableBits('0b1010')
+    a.insert(2, Bits('0b11'))
+    assert a == '0b101110'
+
+def test_insert_from_mutable_bits():
+    # Insert with MutableBits object
+    a = MutableBits('0b1010')
+    a.insert(2, MutableBits('0b11'))
+    assert a == '0b101110'
+
+def test_insert_chaining():
+    # Method chaining
+    a = MutableBits('0b10')
+    result = a.insert(1, '0b1').insert(2, '0b0')
+    assert a == '0b1100'
+    assert result is a
+
+def test_insert_beyond_length():
+    # Position beyond length
+    a = MutableBits('0b1010')
+    a.insert(5, '0b11')  # Position beyond length
+    assert a == '0b101011'  # Just appends - standard Python behaviour
+
+def test_set_single_bit_to_one():
+    # Basic set functionality - setting a single bit to 1
+    a = MutableBits('0b0000')
+    a.set(1, 2)
+    assert a == '0b0010'
+
+def test_set_single_bit_to_zero():
+    # Setting a single bit to 0
+    a = MutableBits('0b1111')
+    a.set(0, 2)
+    assert a == '0b1101'
+
+def test_set_with_boolean_values():
+    # Setting with boolean values
+    a = MutableBits('0b0000')
+    a.set(True, 1)
+    assert a == '0b0100'
+    a.set(False, 1)
+    assert a == '0b0000'
+
+def test_set_with_negative_index():
+    # Setting with negative index
+    a = MutableBits('0b0010')
+    a.set(1, -1)
+    assert a == '0b0011'
+    a.set(0, -2)
+    assert a == '0b0001'
+
+def test_set_multiple_positions():
+    # Setting multiple positions
+    a = MutableBits('0b0000')
+    a.set(1, [0, 2])
+    assert a == '0b1010'
+
+def test_set_mixed_indices():
+    # Setting with mixed positive and negative indices
+    a = MutableBits('0b0000')
+    a.set(1, [1, -1])
+    assert a == '0b0101'
+
+def test_set_with_range():
+    # Setting with range
+    a = MutableBits('0b0000')
+    a.set(1, range(4))
+    assert a == '0b1111'
+
+def test_set_with_empty_sequence():
+    # Setting with an empty sequence
+    a = MutableBits('0b1010')
+    a.set(0, [])
+    assert a == '0b1010'  # Should remain unchanged
+
+def test_set_method_chaining():
+    # Method chaining
+    a = MutableBits('0b0000')
+    result = a.set(1, 0).set(1, 2)
+    assert a == '0b1010'
+    assert result is a
+
+def test_set_with_non_boolean_values():
+    # Testing non-boolean values
+    a = MutableBits('0b0000')
+    a.set("string", 1)  # Any non-empty string evaluates to True
+    assert a == '0b0100'
+    a.set(0, 1)  # 0 evaluates to False
+    assert a == '0b0000'
+
+def test_set_index_out_of_range():
+    # Error cases
+    with pytest.raises(IndexError):
+        a = MutableBits('0b1010')
+        a.set(1, 4)  # Index out of range
+
+def test_set_negative_index_out_of_range():
+    with pytest.raises(IndexError):
+        a = MutableBits('0b1010')
+        a.set(0, -5)  # Negative index out of range
+
+def test_invert_all():
+    # Test invert method with no argument (inverts all bits)
+    a = MutableBits('0b1010')
+    a.invert()
+    assert a == '0b0101'
+
+def test_invert_single_bit():
+    # Test inverting single bit
+    a = MutableBits('0b1010')
+    a.invert(1)
+    assert a == '0b1110'
+
+def test_invert_with_negative_index():
+    # Test with negative index
+    a = MutableBits('0b1010')
+    a.invert(-1)
+    assert a == '0b1011'
+
+def test_invert_multiple_positions():
+    # Test with list of positions
+    a = MutableBits('0b1010')
+    a.invert([0, 2])
+    assert a == '0b0000'
+
+def test_invert_mixed_indices():
+    # Test with mixed positive and negative indices
+    a = MutableBits('0b1010')
+    a.invert([0, -2])
+    assert a == '0b0000'
+
+def test_invert_with_range():
+    # Test with range
+    a = MutableBits('0b1010')
+    a.invert(range(2))
+    assert a == '0b0110'
+
+def test_invert_chaining():
+    # Method chaining
+    a = MutableBits('0b1010')
+    result = a.invert(1).invert(2)
+    assert a == '0b1100'
+    assert result is a
+
+def test_invert_index_out_of_range():
+    # Error cases
+    with pytest.raises(IndexError):
+        a = MutableBits('0b1010')
+        a.invert(4)  # Index out of range
+
+def test_invert_negative_index_out_of_range():
+    with pytest.raises(IndexError):
+        a = MutableBits('0b1010')
+        a.invert(-5)  # Negative index out of range
+
+def test_invert_empty_bits():
+    # Empty MutableBits
+    a = MutableBits()
+    a.invert()  # Inverting empty bits should do nothing
+    assert a == ''
+
+def test_replace_basic():
+    # Basic replace functionality
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b111')
+    assert a == '0b111111111111'
+
+def test_replace_same_length():
+    # Replace with same length pattern
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b00')
+    assert a == '0b00000000'
+
+def test_replace_with_empty():
+    # Replace with empty bits (should effectively delete)
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '')
+    assert a == ''
+
+def test_replace_with_count():
+    # Replace only first occurrences with count parameter
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b00', count=2)
+    assert a == '0b00001010'
+
+def test_replace_with_start():
+    # Replace with start parameter
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b11', start=2)
+    assert a == '0b10111111'
+
+def test_replace_with_end():
+    # Replace with end parameter
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b11', end=4)
+    assert a == '0b11111010'
+
+def test_replace_with_start_end():
+    # Replace with both start and end parameters
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b11', start=2, end=6)
+    assert a == '0b10111110'
+
+def test_replace_byte_aligned():
+    # Replace with byte_aligned=True
+    a = MutableBits('0b10101010')
+    a.replace('0b1010', '0b1111', byte_aligned=True)
+    assert a == '0b11111010'
+
+def test_replace_method_chaining():
+    # Method chaining
+    a = MutableBits('0b10101010')
+    result = a.replace('0b10', '0b11').replace('0b11', '0b00')
+    assert a == '0b00000000'
+    assert result is a
+
+def test_replace_different_types():
+    # Replace with different types
+    a = MutableBits('0b10101010')
+    a.replace(Bits('0b10'), MutableBits('0b11'))
+    assert a == '0b11111111'
+
+def test_replace_empty_pattern():
+    # Empty pattern (should raise error)
+    with pytest.raises(ValueError):
+        a = MutableBits('0b1010')
+        a.replace('', '0b11')
+
+def test_replace_pattern_not_found():
+    # Pattern not found
+    a = MutableBits('0b1010')
+    a.replace('0b11', '0b00')
+    assert a == '0b1010'  # Should remain unchanged
+
+def test_replace_with_count_zero():
+    # Count=0 (should not replace anything)
+    a = MutableBits('0b10101010')
+    a.replace('0b10', '0b11', count=0)
+    assert a == '0b10101010'
+
+def test_reverse_basic():
+    # Basic reverse functionality
+    a = MutableBits('0b1010')
+    a.reverse()
+    assert a == '0b0101'
+
+def test_reverse_palindrome():
+    # Palindrome should remain the same when reversed
+    a = MutableBits('0b1001')
+    a.reverse()
+    assert a == '0b1001'
+
+def test_reverse_empty():
+    # Reverse empty MutableBits
+    a = MutableBits()
+    a.reverse()
+    assert a == ''
+
+def test_reverse_single_bit():
+    # Reverse single bit
+    a = MutableBits('0b1')
+    a.reverse()
+    assert a == '0b1'
+
+def test_reverse_hex():
+    # Reverse with hex representation
+    a = MutableBits('0xAB')
+    a.reverse()
+    assert a == '0xd5'  # 0xAB = 10101011 -> 11010101 = 0xd5
+
+def test_reverse_method_chaining():
+    # Method chaining
+    a = MutableBits('0b1100')
+    result = a.reverse()
+    assert a == '0b0011'
+    assert result is a
+
+def test_reverse_idempotence():
+    # Reverse twice should give original
+    a = MutableBits('0b10110')
+    a.reverse().reverse()
+    assert a == '0b10110'
+
+def test_rol_basic():
+    # Basic rotate left functionality
+    a = MutableBits('0b1010')
+    a.rol(1)
+    assert a == '0b0101'
+
+def test_rol_full_rotation():
+    # Rotating by the full length should return the original
+    a = MutableBits('0b1010')
+    a.rol(4)
+    assert a == '0b1010'
+
+def test_rol_wraparound():
+    # Rotating by more than length should wrap around
+    a = MutableBits('0b1010')
+    a.rol(5)
+    assert a == '0b0101'  # Same as rol(1)
+
+def test_rol_with_start_end():
+    # Rotating with start and end parameters
+    a = MutableBits('0b10101100')
+    a.rol(2, start=2, end=6)
+    assert a == '0b10111000'
+
+def test_rol_method_chaining():
+    # Method chaining
+    a = MutableBits('0b1010')
+    result = a.rol(1)
+    assert a == '0b0101'
+    assert result is a
+
+def test_rol_negative_amount():
+    # Error cases - negative rotation
+    with pytest.raises(ValueError):
+        a = MutableBits('0b1010')
+        a.rol(-1)  # Negative rotation amount
+
+def test_rol_empty_bits():
+    # Error cases - empty bits
+    with pytest.raises(ValueError):
+        a = MutableBits()
+        a.rol(1)  # Empty MutableBits
+
+def test_rol_zero_rotation():
+    # Zero rotation should not change anything
+    a = MutableBits('0b1010')
+    a.rol(0)
+    assert a == '0b1010'
+
+def test_rol_large_rotation():
+    # Large rotation value
+    a = MutableBits('0b1010')
+    a.rol(1000000)  # Should be equivalent to rol(0) since 1000000 % 4 = 0
+    assert a == '0b1010'
+
+def test_ror_basic():
+    # Basic rotate right functionality
+    a = MutableBits('0b1010')
+    a.ror(1)
+    assert a == '0b0101'
+
+def test_ror_full_rotation():
+    # Rotating by the full length should return the original
+    a = MutableBits('0b1010')
+    a.ror(4)
+    assert a == '0b1010'
+
+def test_ror_wraparound():
+    # Rotating by more than length should wrap around
+    a = MutableBits('0b1010')
+    a.ror(5)
+    assert a == '0b0101'  # Same as ror(1)
+
+def test_ror_with_start_end():
+    # Rotating with start and end parameters
+    a = MutableBits('0b10101100')
+    a.ror(2, start=2, end=6)
+    assert a == '0b10111000'
+
+def test_ror_method_chaining():
+    # Method chaining
+    a = MutableBits('0b1010')
+    result = a.ror(1)
+    assert a == '0b0101'
+    assert result is a
+
+def test_rol_ror_cancelation():
+    # Rotating left then right should cancel out
+    a = MutableBits('0b10110')
+    a.rol(2).ror(2)
+    assert a == '0b10110'
+
+def test_ror_negative_amount():
+    # Error cases - negative rotation
+    with pytest.raises(ValueError):
+        a = MutableBits('0b1010')
+        a.ror(-1)  # Negative rotation amount
+
+def test_ror_empty_bits():
+    # Error cases - empty bits
+    with pytest.raises(ValueError):
+        a = MutableBits()
+        a.ror(1)  # Empty MutableBits
+
+def test_ror_zero_rotation():
+    # Zero rotation should not change anything
+    a = MutableBits('0b1010')
+    a.ror(0)
+    assert a == '0b1010'
+
+def test_ror_large_rotation():
+    # Large rotation value
+    a = MutableBits('0b1010')
+    a.ror(1000000)  # Should be equivalent to ror(0) since 1000000 % 4 = 0
+    assert a == '0b1010'
+
+def test_byte_swap_basic():
+    # Basic byte_swap functionality with default parameters
+    a = MutableBits('0x1234')
+    a.byte_swap()
+    assert a == '0x3412'
+
+def test_byte_swap_with_length():
+    # Byte swap with specific byte_length parameter
+    a = MutableBits('0x12345678')
+    a.byte_swap(2)
+    assert a == '0x34127856'
+
+def test_byte_swap_single_byte():
+    # Byte swap single byte (no change)
+    a = MutableBits('0x12')
+    a.byte_swap(1)
+    assert a == '0x12'
+
+def test_byte_swap_method_chaining():
+    # Method chaining
+    a = MutableBits('0x1234')
+    result = a.byte_swap()
+    assert a == '0x3412'
+    assert result is a
+
+def test_byte_swap_idempotence():
+    # Byte swap twice should return to original
+    a = MutableBits('0x12345678')
+    a.byte_swap(2).byte_swap(2)
+    assert a == '0x12345678'
+
+def test_byte_swap_non_multiple_of_8():
+    # Non-multiple of 8 bits
+    with pytest.raises(ValueError):
+        a = MutableBits('0b10101')
+        a.byte_swap()
+
+def test_byte_swap_empty():
+    # Empty MutableBits
+    a = MutableBits()
+    result = a.byte_swap()
+    assert a == ''
+    assert result == MutableBits()
+
+def test_byte_swap_negative_length():
+    # Negative byte length
+    with pytest.raises(ValueError):
+        a = MutableBits('0x1234')
+        a.byte_swap(-1)
+
+def test_byte_swap_zero_length():
+    # Zero byte length
+    with pytest.raises(ValueError):
+        a = MutableBits('0x1234')
+        a.byte_swap(0)
+
+def test_byte_swap_not_multiple_of_byte_length():
+    # Not a multiple of byte_length
+    with pytest.raises(ValueError):
+        a = MutableBits('0x123456')  # 3 bytes
+        a.byte_swap(2)  # Not a multiple of 2 bytes
+
+def test_to_bits_basic():
+    # Basic conversion
+    a = MutableBits('0b1010')
+    b = a.to_bits()
+    assert isinstance(b, Bits)
+    assert b == '0b1010'
+
+def test_to_bits_immutable_copy_operations():
+    # Original shouldn't change when immutable copy is modified
+    a = MutableBits('0b1010')
+    b = a.to_bits()
+    c = ~b
+    assert a == '0b1010'  # Original remains unchanged
+    assert b == '0b1010'  # Original immutable copy unchanged
+    assert c == '0b0101'  # New inverted copy
+
+def test_to_bits_original_modifications():
+    # Changes to original shouldn't affect the immutable copy
+    a = MutableBits('0b1010')
+    b = a.to_bits()
+    a.invert()
+    assert a == '0b0101'  # Original changed
+    assert b == '0b1010'  # Immutable copy remains unchanged
+
+def test_to_bits_empty():
+    # Empty MutableBits conversion
+    a = MutableBits()
+    b = a.to_bits()
+    assert isinstance(b, Bits)
+    assert b == ''
+    assert len(b) == 0

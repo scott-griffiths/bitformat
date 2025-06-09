@@ -585,9 +585,7 @@ class _BaseBits:
         start = 0 if start is None else (start + len(self) if start < 0 else start)
         end = len(self) if end is None else (end + len(self) if end < 0 else end)
         if not 0 <= start <= end <= len(self):
-            raise ValueError(
-                f"Invalid slice positions for Bits length {len(self)}: start={start}, end={end}."
-            )
+            raise ValueError(f"Invalid slice positions for Bits length {len(self)}: start={start}, end={end}.")
         return start, end
 
     def _simple_str(self) -> str:
@@ -1639,7 +1637,7 @@ class MutableBits(_BaseBits):
         The whole of the MutableBits will be byte-swapped. It must be a multiple
         of byte_length long.
 
-        :param byte_length: An int giving the number of bytes to swap.
+        :param byte_length: An int giving the number of bytes in each swap.
         :return: The MutableBits object with byte-swapped data.
 
         .. code-block:: pycon
@@ -1653,11 +1651,11 @@ class MutableBits(_BaseBits):
             raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
                              "This error can also be caused by using an endianness modifier on non-whole byte data.")
         if byte_length is None:
+            if len(self) == 0:
+                return MutableBits()
             byte_length = len(self) // 8
-        if byte_length == 0:
-            return MutableBits()
-        if byte_length < 0:
-            raise ValueError(f"Negative byte length given: {byte_length}.")
+        if byte_length <= 0:
+            raise ValueError(f"Need a positive definite byte length for byte_swap. Received '{byte_length}'.")
         if len(self) % (byte_length * 8) != 0:
             raise ValueError(
                 f"The MutableBits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {byte_length} bytes."

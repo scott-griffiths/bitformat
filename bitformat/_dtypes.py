@@ -75,11 +75,13 @@ class DtypeTransformer(Transformer):
     def field_dtype_tuple(items) -> DtypeTuple:
         return DtypeTuple.from_params(items)
 
-    def single_value(self, items) -> str:
+    @staticmethod
+    def single_value(items) -> str:
         assert len(items) == 1
         return str(items[0])
 
-    def list_of_values(self, items):
+    @staticmethod
+    def list_of_values(items):
         return items
 
 
