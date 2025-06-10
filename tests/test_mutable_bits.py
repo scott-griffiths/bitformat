@@ -817,3 +817,149 @@ def test_to_bits_empty():
     assert isinstance(b, Bits)
     assert b == ''
     assert len(b) == 0
+
+def test_mutable_bits_from_bits():
+    # Test creating MutableBits from Bits object
+    b = Bits('0b1010')
+    a = b.to_mutable_bits()
+    assert a == '0b1010'
+    assert isinstance(a, MutableBits)
+
+    # Modification should not affect original
+    a.invert()
+    assert a == '0b0101'
+    assert b == '0b1010'
+
+def test_setitem_with_bits_object():
+    # Test setting slices using Bits objects
+    a = MutableBits('0b1010')
+    b = Bits('0b11')
+    a[1:3] = b
+    assert a == '0b1110'
+
+def test_iadd_with_bits():
+    # Test in-place add with Bits objects
+    a = MutableBits('0x12')
+    b = Bits('0x34')
+    a += b
+    assert a == '0x1234'
+
+def test_iadd_multiple_types():
+    # Test in-place add with various types
+    a = MutableBits('0b1010')
+    a += '0b11'  # String
+    a += Bits('0b00')  # Bits object
+    a += MutableBits('0b111')  # Another MutableBits
+    assert a == '0b10101100111'
+
+def test_imul_repeats():
+    # Test in-place multiply
+    a = MutableBits('0b101')
+    a *= 3
+    assert a == '0b101101101'
+
+    # Test with zero
+    b = MutableBits('0b111')
+    b *= 0
+    assert b == ''
+
+def test_delitem_sequence():
+    # Test deleting multiple items in sequence
+    a = MutableBits('0b10101010')
+    del a[0]
+    assert a == '0b0101010'
+    del a[2]
+    assert a == '0b011010'
+    del a[-1]
+    assert a == '0b01101'
+
+def test_setitem_complex_cases():
+    # Test setting a slice with different-length content
+    a = MutableBits('0b1010')
+    a[1:3] = '0b111'  # Replace 2 bits with 3 bits
+    assert a == '0b11110'
+
+    # Replace with empty content (effectively deleting)
+    a[2:4] = ''
+    assert a == '0b110'
+
+    # Replace everything with shorter content
+    a[:] = '0b1'
+    assert a == '0b1'
+
+def test_bit_operations_with_bits():
+    # Testing bitwise AND with Bits
+    a = MutableBits('0b1100')
+    b = Bits('0b1010')
+    a &= b
+    assert a == '0b1000'
+
+    # Testing bitwise OR with Bits
+    a = MutableBits('0b1100')
+    b = Bits('0b0011')
+    a |= b
+    assert a == '0b1111'
+
+    # Testing bitwise XOR with Bits
+    a = MutableBits('0b1100')
+    b = Bits('0b1010')
+    a ^= b
+    assert a == '0b0110'
+
+def test_equality_with_bits():
+    # Test equality comparison with Bits
+    a = MutableBits('0b1010')
+    b = Bits('0b1010')
+    assert a == b
+
+    # Test after modification
+    a[0] = 0
+    assert a != b
+    assert a == '0b0010'
+
+def test_interleaved_operations():
+    # Test a sequence of interleaved operations
+    a = MutableBits('0b1010')
+    a[1:3] = '0b00'
+    a += '0b11'
+    a.invert(0)
+    del a[-1]
+    assert a == '0b00001'
+
+    # Chain multiple operations
+    a = MutableBits('0b101')
+    result = a.append('0b010').invert().reverse()
+    assert result == a  # Verify chaining returns self
+    assert a == '0b101010'  # 101 + 010 -> 101010 -> 010101 (invert) -> 010010 (reverse)
+
+def test_mutable_bits_conversion_roundtrip():
+    # Test round-trip conversion between Bits and MutableBits
+    orig = Bits('0b10101100')
+    mutable = orig.to_mutable_bits()
+    mutable.invert(range(4))  # Modify some bits
+    back_to_bits = mutable.to_bits()
+
+    assert isinstance(back_to_bits, Bits)
+    assert back_to_bits == '0b01011100'
+    assert orig == '0b10101100'  # Original should be unchanged
+
+def test_inserting_bits_objects():
+    # Test inserting Bits objects at specific positions
+    a = MutableBits('0b1010')
+    b = Bits('0b11')
+    a.insert(2, b)
+    assert a == '0b101110'
+
+    # Insert at beginning
+    c = Bits('0b00')
+    a.insert(0, c)
+    assert a == '0b00101110'
+
+def test_mixed_representation_operations():
+    # Test operations with mixed representations (binary, hex)
+    a = MutableBits('0b1010')
+    a += '0x3A'
+    assert a == '0b1010_0011_1010'
+
+    a[4:8] = '0o7'
+    assert a == '0b1010_111_1010'

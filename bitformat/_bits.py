@@ -992,6 +992,20 @@ class Bits(_BaseBits):
         if s is None:
             x._bitstore = BitRust.from_zeros(0)
         else:
+            if not isinstance(s, str):
+                err = f"Expected a str for Bits constructor, but received a {type(s)}. "
+                if isinstance(s, MutableBits):
+                    err += "You can use the 'to_bits()' method on the `MutableBits` instance instead."
+                elif isinstance(s, (bytes, bytearray, memoryview)):
+                    err += "You can use 'Bits.from_bytes()' instead."
+                elif isinstance(s, int):
+                    err += "Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?"
+                elif isinstance(s, (tuple, list)):
+                    err += "Perhaps you want to use 'Bits.from_joined()' instead?"
+                else:
+                    err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
+                           "from_ones(), from_zeros(), from_dtype() or from_random()."
+                raise TypeError(err)
             x._bitstore = str_to_bitstore_cached(s)
         return x
 
@@ -1310,6 +1324,20 @@ class MutableBits(_BaseBits):
         if s is None:
             x._bitstore = MutableBitRust.from_zeros(0)
         else:
+            if not isinstance(s, str):
+                err = f"Expected a str for MutableBits constructor, but received a {type(s)}. "
+                if isinstance(s, Bits):
+                    err += "You can use the 'to_mutable_bits()' method on the `Bits` instance instead."
+                elif isinstance(s, (bytes, bytearray, memoryview)):
+                    err += "You can use 'MutableBits.from_bytes()' instead."
+                elif isinstance(s, int):
+                    err += "Perhaps you want to use 'MutableBits.from_zeros()', 'MutableBits.from_ones()' or 'MutableBits.from_random()'?"
+                elif isinstance(s, (tuple, list)):
+                    err += "Perhaps you want to use 'MutableBits.from_joined()' instead?"
+                else:
+                    err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
+                           "from_ones(), from_zeros(), from_dtype() or from_random()."
+                raise TypeError(err)
             x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
@@ -1601,7 +1629,7 @@ class MutableBits(_BaseBits):
         """Append bits to the end of the current MutableBits in-place.
 
         :param bs: The bits to append.
-        :return: Self with appended bits.
+        :return: self
 
         .. code-block:: pycon
 
@@ -1618,7 +1646,7 @@ class MutableBits(_BaseBits):
         """Prepend bits to the beginning of the current MutableBits in-place.
 
         :param bs: The bits to prepend.
-        :return: Self with prepended bits.
+        :return: self
 
         .. code-block:: pycon
 
@@ -1638,7 +1666,7 @@ class MutableBits(_BaseBits):
         of byte_length long.
 
         :param byte_length: An int giving the number of bytes in each swap.
-        :return: The MutableBits object with byte-swapped data.
+        :return: self
 
         .. code-block:: pycon
 
@@ -1657,9 +1685,8 @@ class MutableBits(_BaseBits):
         if byte_length <= 0:
             raise ValueError(f"Need a positive definite byte length for byte_swap. Received '{byte_length}'.")
         if len(self) % (byte_length * 8) != 0:
-            raise ValueError(
-                f"The MutableBits to byte_swap is {len(self) // 8} bytes long, but it needs to be a multiple of {byte_length} bytes."
-            )
+            raise ValueError(f"The MutableBits to byte_swap is {len(self) // 8} bytes long, "
+                             f"but it needs to be a multiple of {byte_length} bytes.")
         chunks = []
         for startbit in range(0, len(self), byte_length * 8):
             x = self._slice(startbit, startbit + byte_length * 8).to_bytes()
@@ -1673,7 +1700,7 @@ class MutableBits(_BaseBits):
 
         :param pos: The bit position to insert at.
         :param bs: The Bits to insert.
-        :return: MutableBits object with the inserted bits.
+        :return: self
 
         Raises ValueError if pos < 0 or pos > len(self).
 
@@ -1691,7 +1718,7 @@ class MutableBits(_BaseBits):
         """Return the MutableBits with one or many bits inverted between 0 and 1.
 
         :param pos: Either a single bit position or an iterable of bit positions.
-        :return: The MutableBits object with the inverted bits.
+        :return: self
 
         Raises IndexError if pos < -len(self) or pos >= len(self).
 
@@ -1720,7 +1747,7 @@ class MutableBits(_BaseBits):
         :param n: The number of bits to rotate by.
         :param start: Start of slice to rotate. Defaults to 0.
         :param end: End of slice to rotate. Defaults to len(self).
-        :return: A new Bits object with the rotated bits.
+        :return: self
 
         Raises ValueError if bits < 0.
 
@@ -1751,7 +1778,7 @@ class MutableBits(_BaseBits):
         :param n: The number of bits to rotate by.
         :param start: Start of slice to rotate. Defaults to 0.
         :param end: End of slice to rotate. Defaults to len(self).
-        :return: A new Bits object with the rotated bits.
+        :return: self
 
         Raises ValueError if bits < 0.
 
@@ -1783,7 +1810,7 @@ class MutableBits(_BaseBits):
         :param pos: Either a single bit position or an iterable of bit positions.
         :return: self
 
-        Raises IndexError if pos < -len(self) or pos >= len(self).
+        :raises IndexError: if pos < -len(self) or pos >= len(self).
 
         .. code-block:: pycon
 
@@ -1815,9 +1842,9 @@ class MutableBits(_BaseBits):
         :param end: Any occurrences that finish after this will not be replaced.
         :param count: The maximum number of replacements to make. Defaults to all.
         :param byte_aligned: If True, replacements will only be made on byte boundaries.
-        :return: A new Bits object with the replaced bits.
+        :return: self
 
-        Raises ValueError if old is empty or if start or end are out of range.
+        :raises ValueError: if old is empty or if start or end are out of range.
 
         .. code-block:: pycon
 
