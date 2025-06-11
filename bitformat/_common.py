@@ -344,6 +344,14 @@ class Endianness(Enum):
     NATIVE = "ne"  # doc: Native byte order.
     UNSPECIFIED = ""  # doc: Unspecified byte order.
 
+    def __str__(self) -> str:
+        return {
+            Endianness.BIG: "big-endian",
+            Endianness.LITTLE: "little-endian",
+            Endianness.NATIVE: "native-endian",
+            Endianness.UNSPECIFIED: "",
+        }[self]
+
 def validate_name(name: str) -> str:
     """As names can be used as part of evaluated Expressions we restrict them for safety reasons."""
     if name != "":

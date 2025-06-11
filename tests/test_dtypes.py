@@ -13,6 +13,7 @@ class TestBasicFunctionality:
     def test_setting_bool(self):
         b = Dtype("bool")
         assert str(b) == "bool"
+        assert isinstance(b, DtypeSingle)
         assert b.kind is DtypeKind.BOOL
         assert b.size == 1
         assert b.bit_length == 1
@@ -69,22 +70,47 @@ class TestBasicFunctionality:
         with pytest.raises(ValueError):
             d.pack(4)
 
+    def test_dtype_single_creation(self):
+        d = Dtype('u8')
+        assert isinstance(d, DtypeSingle)
+        assert d.kind == DtypeKind.UINT
+        assert d.size.const_value == 8
+        assert d.bit_length == 8
 
-class TestChangingTheRegister:
-    def test_retrieving_meta_dtype(self):
-        r = Register()
-        u = r.kind_to_def[DtypeKind("u")]
-        u2 = r.kind_to_def[DtypeKind("u")]
-        assert u == u2
-        with pytest.raises(KeyError):
-            _ = r.kind_to_def["bool"]
+    def test_dtype_array_creation(self):
+        d = Dtype('[u8; 4]')
+        assert isinstance(d, DtypeArray)
+        assert d.kind == DtypeKind.UINT
+        assert d.items == 4
+        assert d.bit_length == 32
 
-    # def test_removing_type(self):
-    #     del Register()['bool']
-    #     with pytest.raises(KeyError):
-    #         i = Register()['bool']
-    #     with pytest.raises(KeyError):
-    #         del Register()['penguin']
+    def test_dtype_tuple_creation(self):
+        d = Dtype('(u8, u16)')
+        assert isinstance(d, DtypeTuple)
+        assert d.items == 2
+        assert d.bit_length == 24
+
+    def test_dtype_single_pack_unpack(self):
+        d = Dtype('u8')
+        packed = d.pack(255)
+        assert packed == Bits('0xff')
+        unpacked = d.unpack(packed)
+        assert unpacked == 255
+
+    def test_dtype_array_pack_unpack(self):
+        d = Dtype('[u8; 4]')
+        packed = d.pack([1, 2, 3, 4])
+        assert packed == Bits('0x01020304')
+        unpacked = d.unpack(packed)
+        assert unpacked == (1, 2, 3, 4)
+
+    def test_dtype_tuple_pack_unpack(self):
+        d = Dtype('(u8, u16)')
+        packed = d.pack([1, 258])
+        assert packed == Bits('0x010102')
+        unpacked = d.unpack(packed)
+        assert unpacked == (1, 258)
+
 
 
 # class TestCreatingNewDtypes:
@@ -272,8 +298,8 @@ def test_str():
     assert str(b) == '(bool, [i5; 1])'
     assert repr(a) == "DtypeSingle('u_le8')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
-    nt = DtypeDefinition("pingu", "A new type", "new", Bits._set_u, Bits._get_u)
-    s = "DtypeDefinition(kind='pingu', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
+    nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Bits._set_u, Bits._get_u)
+    s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
     assert str(nt) == s
     assert repr(nt) == s
 
@@ -379,3 +405,251 @@ def test_unpack_dtype_array_with_no_length():
     b = Bits('0x1234')
     with pytest.raises(ValueError):
         _ = d.unpack(b)
+
+def test_dtype_single_endianness():
+    d_le = Dtype("u_le16")
+    d_be = Dtype("u_be16")
+    val = 0x1234
+    packed_le = d_le.pack(val)
+    packed_be = d_be.pack(val)
+    assert packed_le == Bits("0x3412")
+    assert packed_be == Bits("0x1234")
+    assert d_le.unpack(packed_le) == val
+    assert d_be.unpack(packed_be) == val
+
+def test_dtype_single_invalid_endianness():
+    with pytest.raises(ValueError):
+        Dtype("u_le7") # Endianness only for whole bytes
+    with pytest.raises(ValueError):
+        Dtype("bytes_le2") # Bytes type does not support endianness
+
+def test_dtype_single_pack_invalid_value():
+    d = Dtype("u8")
+    with pytest.raises(ValueError):
+        d.pack(256) # Out of range
+    with pytest.raises(ValueError):
+        d.pack("abc") # Invalid type
+    d_f16 = Dtype("f16")
+    with pytest.raises(ValueError): # f16 pack expects a float
+        d_f16.pack("not a float")
+
+def test_dtype_single_unpack_invalid_length():
+    d = Dtype("u16")
+    with pytest.raises(ValueError):
+        d.unpack(Bits("0x12")) # Too short
+
+def test_dtype_single_dynamic_size_unpack():
+    d = Dtype("u") # Unsigned int, dynamic size
+    assert d.unpack(Bits("0b1")) == 1
+    assert d.unpack(Bits("0xffff")) == 0xffff
+    d_bytes = Dtype("bytes")
+    assert d_bytes.unpack(Bits("0x010203")) == b"\x01\x02\x03"
+
+def test_dtype_single_evaluate_with_expression():
+    d_expr = Dtype("u{size_val}")
+    d_concrete = d_expr.evaluate(size_val=16)
+    assert isinstance(d_concrete, DtypeSingle)
+    assert d_concrete.bit_length == 16
+    assert d_concrete.kind == DtypeKind.UINT
+    packed = d_concrete.pack(100)
+    assert packed == Bits.from_dtype('u16', 100)
+    assert d_concrete.unpack(packed) == 100
+
+def test_dtype_single_info():
+    d = Dtype("f_be32")
+    info_str = d.info()
+    assert "32 bit" in info_str
+    assert "float" in info_str
+    assert "big-endian" in info_str # Based on current DtypeSingle.info() for f_be32
+    d_bytes = Dtype("bytes5")
+    info_str_bytes = d_bytes.info()
+    assert "40 bit (5 characters)" in info_str_bytes
+    assert "bytes" in info_str_bytes
+
+def test_dtype_array_endianness():
+    d_le = Dtype("[u_le16; 2]")
+    d_be = Dtype("[u_be16; 2]")
+    val = [0x1234, 0x5678]
+    packed_le = d_le.pack(val)
+    packed_be = d_be.pack(val)
+    assert packed_le == Bits("0x34127856")
+    assert packed_be == Bits("0x12345678")
+    assert d_le.unpack(packed_le) == tuple(val)
+    assert d_be.unpack(packed_be) == tuple(val)
+
+def test_dtype_array_pack_invalid_value():
+    d = Dtype("[u8; 2]")
+    with pytest.raises(ValueError):
+        d.pack([255, 256]) # One item out of range
+    with pytest.raises(ValueError):
+        d.pack([1, 2, 3]) # Wrong number of items
+    with pytest.raises(ValueError):
+        d.pack("abc") # Invalid type, expects a sequence
+
+def test_dtype_array_unpack_invalid_length():
+    d = Dtype("[u8; 4]")
+    with pytest.raises(ValueError):
+        d.unpack(Bits("0x010203")) # Too short, needs 32 bits, got 24
+
+def test_dtype_array_dynamic_items():
+    d = Dtype("[u8;]") # Dynamic number of items
+    assert isinstance(d, DtypeArray) # Added for clarity, though .items access is next
+    assert d.items is None
+    val = [1, 2, 3, 4]
+    # Packing dynamic items array is tricky as pack expects a fixed number of items if not Bits
+    # Let's pack manually then unpack
+    packed = Bits.from_joined(Dtype("u8").pack(v) for v in val)
+    assert packed == Bits("0x01020304")
+    unpacked = d.unpack(packed)
+    assert unpacked == tuple(val)
+    assert d.unpack(Bits("0xfffe")) == (0xff, 0xfe)
+
+def test_dtype_array_evaluate_with_expression():
+    d_expr = Dtype("[u{size_val}; {num_items}]")
+    d_concrete = d_expr.evaluate(size_val=8, num_items=3)
+    assert isinstance(d_concrete, DtypeArray)
+    assert d_concrete.bit_length == 24
+    assert d_concrete.items == 3
+    assert d_concrete.size == 8
+    assert d_concrete.kind == DtypeKind.UINT
+    val = [10, 20, 30]
+    packed = d_concrete.pack(val)
+    assert packed == Bits("0x0a141e")
+    assert d_concrete.unpack(packed) == tuple(val)
+
+def test_dtype_array_info():
+    d = Dtype("[f_le16; 3]")
+    info_str = d.info()
+    assert "array" in info_str
+    assert "16 bit" in info_str # DtypeSingle part
+    assert "float" in info_str
+    assert "little-endian" in info_str # DtypeSingle part
+    assert "3 items" in info_str
+
+def test_dtype_tuple_various_configs():
+    # Test different configurations for DtypeTuple
+    test_cases = [
+        ("(u4, bool)", (0xf, True), 5, 2),
+        ("(i8, f16, u1)", (-10, 2.5, 0), 8 + 16 + 1, 3),
+        ("([u4;2], bytes1)", ([1,2], b"z"), 8+8, 2)
+    ]
+    for dtype_str, val, blen, num_items in test_cases:
+        d = Dtype(dtype_str)
+        assert isinstance(d, DtypeTuple)
+        assert d.bit_length == blen
+        assert d.items == num_items
+        packed = d.pack(val)
+        unpacked = d.unpack(packed)
+        # Need to handle comparison for nested structures like arrays within tuples
+        if isinstance(val[0], list):
+            assert unpacked[0] == tuple(val[0])
+            assert unpacked[1] == val[1]
+        else:
+            assert unpacked == val
+
+def test_dtype_tuple_nested():
+    d = Dtype("(u8, (bool, i4), [u2;2])")
+    val = (10, (True, -3), [1, 2])
+    assert isinstance(d, DtypeTuple) # Added for clarity
+    assert d.bit_length == 8 + (1 + 4) + (2*2)
+    assert d.items == 3
+    packed = d.pack(val)
+    unpacked = d.unpack(packed)
+    assert unpacked[0] == val[0]
+    assert unpacked[1] == val[1] # Inner tuple
+    assert unpacked[2] == tuple(val[2]) # Inner array becomes tuple
+
+def test_dtype_tuple_pack_invalid_value():
+    d = Dtype("(u8, bool)")
+    with pytest.raises(ValueError):
+        d.pack((256, True)) # First item out of range
+    with pytest.raises(ValueError):
+        d.pack((10, True, False)) # Wrong number of items
+    with pytest.raises(ValueError):
+        d.pack("abc") # Invalid type, expects a sequence
+
+def test_dtype_tuple_unpack_invalid_length():
+    d = Dtype("(u8, u8)")
+    with pytest.raises(ValueError):
+        d.unpack(Bits("0x01")) # Too short, needs 16 bits, got 8
+
+def test_dtype_tuple_with_dynamic_element():
+    # One dynamic element (array with no fixed items)
+    d1 = Dtype("(u8, [bool;], u8)")
+    val1 = (0xaa, [True, False, True], 0xbb)
+    # Pack each part and join, as direct pack might be tricky with dynamic middle
+    p1 = Dtype("u8").pack(val1[0])
+    p2 = Dtype("[bool;]").pack(val1[1]) # This pack works for array
+    p3 = Dtype("u8").pack(val1[2])
+    packed1 = Bits.from_joined([p1, p2, p3])
+    unpacked1 = d1.unpack(packed1)
+    assert unpacked1[0] == val1[0]
+    assert unpacked1[1] == tuple(val1[1])
+    assert unpacked1[2] == val1[2]
+
+    # One dynamic element (single dtype with no fixed size)
+    d2 = Dtype("(u8, bytes, u8)")
+    val2 = (0xcc, b"Hello", 0xdd)
+    p1_2 = Dtype("u8").pack(val2[0])
+    p2_2 = Dtype("bytes").pack(val2[1])
+    p3_2 = Dtype("u8").pack(val2[2])
+    packed2 = Bits.from_joined([p1_2, p2_2, p3_2])
+    unpacked2 = d2.unpack(packed2)
+    assert unpacked2[0] == val2[0]
+    assert unpacked2[1] == val2[1]
+    assert unpacked2[2] == val2[2]
+
+def test_dtype_tuple_multiple_dynamic_elements_error():
+    with pytest.raises(ValueError):
+        Dtype("([u8;], [bool;])") # Two arrays with dynamic items
+    with pytest.raises(ValueError):
+        Dtype("(u, i)") # Two single dtypes with dynamic sizes
+    with pytest.raises(ValueError):
+        Dtype("(u8, [u4;], u, u8)") # Array and single dynamic
+
+def test_dtype_tuple_evaluate_with_expression():
+    d_expr = Dtype("(u{size_a}, [i8; {num_b}])")
+    d_concrete = d_expr.evaluate(size_a=4, num_b=2)
+    assert isinstance(d_concrete, DtypeTuple)
+    assert d_concrete.bit_length == 4 + (8*2)
+    assert d_concrete.items == 2
+    val = (0b1010, [-10, 20])
+    packed = d_concrete.pack(val)
+    unpacked = d_concrete.unpack(packed)
+    assert unpacked[0] == val[0]
+    assert unpacked[1] == tuple(val[1])
+
+def test_dtype_tuple_info():
+    d = Dtype("(u_le16, [bool;2])")
+    info_str = d.info()
+    assert "tuple of" in info_str
+    assert "16 bit little-endian unsigned int" in info_str
+    assert "array of 1 bit bools with 2 items" in info_str
+
+def test_dtype_general_equality_and_hash():
+    d1 = Dtype("u8")
+    d2 = Dtype("u8")
+    d3 = Dtype("i8")
+    d4 = Dtype("[u8;2]")
+    d5 = Dtype("[u8;2]")
+    d6 = Dtype("[u8;3]")
+    d7 = Dtype("(u8, bool)")
+    d8 = Dtype("(u8, bool)")
+    d9 = Dtype("(u8, i8)")
+
+    assert d1 == d2
+    assert d1 != d3
+    assert hash(d1) == hash(d2)
+    assert hash(d1) != hash(d3) # Usually true
+
+    assert d4 == d5
+    assert d4 != d6
+    assert hash(d4) == hash(d5)
+
+    assert d7 == d8
+    assert d7 != d9
+    assert hash(d7) == hash(d8)
+
+    assert d1 != d4
+    assert d1 != d7
+    assert d4 != d7

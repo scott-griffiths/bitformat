@@ -8,7 +8,7 @@ import io
 import functools
 from ast import literal_eval
 from collections import abc
-from typing import Union, Iterable, Any, TextIO, overload, Iterator, Type
+from typing import Union, Iterable, Any, TextIO, overload, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
@@ -18,8 +18,8 @@ from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
 
-# Things that can be converted to Bits when a Bits type is needed
-BitsType = Union["Bits", str, bytearray, bytes, memoryview]
+# Things that can be converted to Bits or MutableBits.
+BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
