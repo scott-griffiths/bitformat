@@ -200,12 +200,16 @@ class Dtype(abc.ABC):
         """
         ...
 
+    # TODO: Should this be called 'has_known_size'?
     @abc.abstractmethod
     def has_fixed_size(self) -> bool:
         """Return whether the size of the dtype is fully known.
 
         This will be True if the dtype has a known length that doesn't
         depend on any parameters or available data, otherwise it will be False.
+
+        This will return ``False`` for data types with dynamic sizes, and for those
+        whose size depends on an expression without a known value.
 
         .. code-block:: pycon
 
@@ -224,6 +228,9 @@ class Dtype(abc.ABC):
     @abc.abstractmethod
     def has_dynamic_size(self) -> bool:
         """Return whether the dtype can stretch to fit the available data.
+
+        Dynamically sized data types can be used to consume all available data. They can only be used as the
+        final part of compound data types or field types.
 
         .. code-block:: pycon
 

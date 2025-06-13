@@ -9,15 +9,15 @@ The :class:`Dtype` class is an abstract base class, but its constructor can be u
 
 The concrete data-type classes are:
 
-* :class:`DtypeSingle` which is used for a data type representing a single value a kind of interpretation, such as a 32-bit float, or a 10 bit integer.
-* :class:`DtypeArray` which adds an item count to represent an array of values of the same type, such as 1000 ``u8`` or 5 ``bool`` flags.
-* :class:`DtypeTuple` is a sequence of data types that can be of different value types.
+* :class:`DtypeSingle`: An interpretation of a single value, such as a 32-bit float, or a 10 bit integer.
+* :class:`DtypeArray`: Adds an item count to represent an array of values of the same type, such as 1000 ``u8`` or 5 ``bool`` flags.
+* :class:`DtypeTuple`: An arbitrary sequence of other data types.
 
 These classes all have a ``from_params`` method to create them, but also have a particular formatting that can be used in the base :class:`Dtype` ``from_string`` method which will delegate to the correct sub-class.
 
 It's usually best to create them via a call to ``Dtype('some_formatted_string')``.
 
-In places where a ``Dtype`` is expected as a parameter you can just supply the string format and it find the correct type automatically.
+In places where a ``Dtype`` is expected as a parameter you can just supply the string format and it will find the correct type automatically.
 
 Some examples of equivalent types, going from most verbose to least::
 

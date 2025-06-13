@@ -817,16 +817,15 @@ class TestManyDifferentThings:
         assert a[:-24] == "0x0011223344"
         assert a[-1000:-24] == "0x0011223344"
 
-    # TODO: Reinstate this test. It's correct, but perhaps a bit _too_ interesting.
-    # def test_interesting_slice_step(self):
-    #     a = Bits("0b0011000111")
-    #     assert a[7:3:-1] == "0b1000"
-    #     assert a[9:2:-1] == "0b1110001"
-    #     assert a[8:2:-2] == "0b100"
-    #     assert a[100:-20:-3] == "0b1010"
-    #     assert a[100:-20:-1] == "0b1110001100"
-    #     assert a[10:2:-1] == "0b1110001"
-    #     assert a[100:2:-1] == "0b1110001"
+    def test_interesting_slice_step(self):
+        a = Bits("0b0011000111")
+        assert a[7:3:-1] == "0b1000"
+        assert a[9:2:-1] == "0b1110001"
+        assert a[8:2:-2] == "0b100"
+        assert a[100:-20:-3] == "0b1010"
+        assert a[100:-20:-1] == "0b1110001100"
+        assert a[10:2:-1] == "0b1110001"
+        assert a[100:2:-1] == "0b1110001"
 
     def test_reverse_with_slice(self):
         a = Bits("0x0012ff")
