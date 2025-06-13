@@ -790,3 +790,7 @@ def test_conversion_to_long_ints():
         ones = Bits.from_ones(l)
         assert ones.u == (1 << l) - 1
         assert ones.i == -1
+
+def test_bits_from_bytes_string():
+    a = Bits("b'ABC'")
+    assert a.to_bytes() == b'ABC'

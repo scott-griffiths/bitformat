@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import numbers
 import random
 import sys
@@ -96,8 +97,11 @@ def token_to_bitstore_cached(token: str) -> BitRust:
             return BitRust.from_oct(token)
         else:
             raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
-    dtype_str, value_str = token.split("=", 1)
+    if token.startswith(("b'", 'b"')):
+        # A bytes literal?
+        return BitRust.from_bytes(ast.literal_eval(token))
     try:
+        dtype_str, value_str = token.split("=", 1)
         dtype = Dtype.from_string(dtype_str)
     except ValueError:
         raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
