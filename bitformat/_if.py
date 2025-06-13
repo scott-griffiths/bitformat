@@ -147,7 +147,6 @@ class If(FieldType):
             s += indent("else:\n")
             with indent:
                 s += self.else_._str(indent, use_colour)
-        s += "\n"
         return s
 
     @override

@@ -9,13 +9,13 @@ def test_creation():
     assert v == 2
     assert i.value == 3
 
-    assert str(i) == "if {1 > 0}:\n    u2 = 3\nelse:\n    i2\n"
+    assert str(i) == "if {1 > 0}:\n    u2 = 3\nelse:\n    i2"
 
 
 def test_from_string():
     i = If.from_string("if {1 > 0}: u2 else: i2")
     assert i.bit_length == 2
-    assert str(i) == "if {1 > 0}:\n    u2\nelse:\n    i2\n"
+    assert str(i) == "if {1 > 0}:\n    u2\nelse:\n    i2"
 
     j = If("if {x < 5}: bool")
     with pytest.raises(ValueError):
@@ -42,6 +42,20 @@ def test_explicit_pass():
     assert f.value is True
     f.parse(x=4)
     assert f.bit_length == 0
+
+def test_if_str():
+    f = Format("(if {x}: bool else: if {y}: bool else: if {z}: bool)")
+    s = str(f)
+    assert s == """(
+    if {x}:
+        bool
+    else:
+        if {y}:
+            bool
+        else:
+            if {z}:
+                bool
+)"""
 
 def test_slightly_more_complex_things():
     f = Format("""my_format: (
