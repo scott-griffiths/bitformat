@@ -866,3 +866,12 @@ def test_format_with_nested_repeat():
     # Should be [2, [3, [1, 2, 3], 2, [4, 5]]]
     expected = Bits.from_string("0x0203010203020405")
     assert fmt.to_bits() == expected
+
+def test_let():
+    f = FieldType.from_string('let x = {2}')
+    assert str(f) == 'let x = {2}'
+    f = Format("(let x = {5}, u{x+y})")
+    f.pack([22], y=3)
+    assert f.to_bits() == 'u8=22'
+    f.pack([1], y=1000)
+    assert f.to_bits() == 'u1005=1'

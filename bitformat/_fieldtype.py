@@ -48,6 +48,10 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['Pass'].from_params()
 
     @staticmethod
+    def let(items) -> 'Let':
+        return fieldtype_classes['Let'].from_params(items[0], items[1])
+
+    @staticmethod
     def if_(items) -> 'If':
         assert len(items) == 3
         expr = items[0]

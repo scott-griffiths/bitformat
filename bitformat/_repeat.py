@@ -19,6 +19,7 @@ class Repeat(FieldType):
         return cls.from_string(s)
 
     @classmethod
+    @override
     def from_params(cls, count: int | str | Expression, fieldtype: FieldType | str) -> Repeat:
         """
         Create a Repeat instance.
