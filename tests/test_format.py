@@ -602,7 +602,8 @@ def test_wrong_arguments():
     f.clear()
     with pytest.raises(TypeError):
         f.pack(1)
-    f.pack([1])
+    with pytest.raises(ValueError):
+        f.pack([1])
 
 def test_slicing_fields():
     f = Format.from_string("x: (u8, u7, u6, u5, u4, u3, u2, u1)")
@@ -679,7 +680,7 @@ def test_open_ended_array():
 
 def test_expressions_more():
     f = Format("(a: u8, u{a}, u{a})")
-    f.pack([3])
+    f['a'].value = 3
     assert f.value[0] == 3
 
 # def test_packing_format_with_const_field():

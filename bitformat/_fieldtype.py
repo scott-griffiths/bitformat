@@ -94,16 +94,19 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
-    def pack(self, values: Sequence[Any] | Any, /, **kwargs) -> None:
+    def pack(self, values: Sequence[Any] | Any, /, **kwargs) -> Bits:
         """
         Pack with values for each non-const field.
 
         :param values: The values to pack.
         :param kwargs: Additional keyword arguments.
+
+        :return: The packed data as a :class:`Bits`.
         """
         if kwargs is None:
             kwargs = {}
         self._pack(values, kwargs)
+        return self.to_bits()
 
     @final
     def unpack(self, b: BitsType | None = None) -> Any | list[Any]:
