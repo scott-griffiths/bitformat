@@ -12,9 +12,9 @@ class Let(FieldType):
     """
     A :class:`FieldType` that assigns expression results to variables.
 
-    .. code-block:: python
+    This is only useful within a :class:`Format` where other fields can refer to the variable.
 
-        increment_x = Let.from_params('x', '{x + 1}')
+
 
     """
 
@@ -34,6 +34,11 @@ class Let(FieldType):
         :param name: The variable name to assign to.
         :param expr: The Expression to evaluate.
         :return: The Let instance.
+
+        .. code-block:: python
+
+            increment_x = Let.from_params('x', '{x + 1}')
+
         """
         x = super().__new__(cls)
         x._name = name

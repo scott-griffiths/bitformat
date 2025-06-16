@@ -14,6 +14,7 @@ The concrete field-type classes are:
 * :class:`Format`: A sequence of :class:`FieldType` objects, such as :class:`Field` or other :class:`Format` instances.
 * :class:`If`: Uses a condition to choose between a pair of :class:`FieldType` objects.
 * :class:`Repeat`: Used to repeat another :class:`FieldType` a number of times.
+* :class:`Let`: Creates or modifies a variable.
 * :class:`Pass`: An empty :class:`FieldType` object, used as a placeholder.
 
 
@@ -65,6 +66,16 @@ The concrete field-type classes are:
 .. _repeat:
 
 .. autoclass:: bitformat.Repeat
+   :members:
+   :undoc-members:
+   :member-order: groupwise
+   :show-inheritance:
+
+----
+
+.. _let:
+
+.. autoclass:: bitformat.Let
    :members:
    :undoc-members:
    :member-order: groupwise

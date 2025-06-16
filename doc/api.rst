@@ -122,6 +122,7 @@ These classes build upon those above to provide richer and more complex data str
 * :ref:`Field <field>` -- A well-defined amount of binary data with a single data type, and optionally a name.
 * :ref:`If <if>` -- A pair of :class:`FieldType` obejcts, one of which is selected based on a condition.
 * :ref:`Repeat <repeat>` -- Used to repeat another :class:`FieldType` a number of times.
+* :ref:`Let <let>` - Creates or modifies a variable using an :class:`Expression`.
 * :ref:`Pass <pass>` -- An empty :class:`FieldType` used as a placeholder.
 
 
