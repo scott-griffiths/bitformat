@@ -109,6 +109,7 @@ class Format(FieldType):
             if fieldtype.is_const():
                 fieldtype._pack(None, kwargs)
                 continue
+            fieldtype.clear()
             if isinstance(fieldtype, Repeat) and fieldtype.field.is_const():
                 fieldtype._pack([], kwargs)
                 continue

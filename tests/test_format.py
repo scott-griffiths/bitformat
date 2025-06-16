@@ -55,7 +55,6 @@ class TestCreation:
         b = Bits.from_string("0xabc")
         field = Field.from_bits(b)
         f = Format.from_params([field])
-        f.pack([])
         x = f.to_bits()
         assert f.name == ""
         assert x == "0xabc"
@@ -63,7 +62,6 @@ class TestCreation:
 
     def test_create_from_bits_with_name(self):
         f = Format.from_params([Field.from_bits("0xabc", "some_bits")])
-        f.pack([])
         assert f.to_bits() == "0xabc"
 
     def test_create_from_list(self):
