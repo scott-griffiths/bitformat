@@ -65,7 +65,7 @@ class Pass(FieldType):
 
     @override
     def _get_value(self) -> Any:
-        raise ValueError("A Pass field has no value to get.")
+        raise AttributeError("A Pass field does not have a value.")
 
     @override
     def _set_value_with_kwargs(self, val: Any, kwargs: dict[str, Any]) -> None:

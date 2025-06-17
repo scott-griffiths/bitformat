@@ -8,7 +8,7 @@ def test_pass_creation():
     p.clear()
     assert p.to_bits() == Bits()
     assert p.to_bytes() == b""
-    with pytest.raises(ValueError):
+    with pytest.raises(AttributeError):
         _ = p.value
 
 

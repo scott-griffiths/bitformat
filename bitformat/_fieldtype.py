@@ -43,6 +43,10 @@ class FieldTypeTransformer(DtypeTransformer):
         return fieldtype_classes['Repeat'].from_params(items[0], items[1])
 
     @staticmethod
+    def while_(items) -> 'While':
+        return fieldtype_classes['While'].from_params(items[0], items[1])
+
+    @staticmethod
     def pass_(items) -> 'Pass':
         assert len(items) == 0
         return fieldtype_classes['Pass'].from_params()
@@ -109,7 +113,7 @@ class FieldType(abc.ABC):
         return self.to_bits()
 
     @final
-    def unpack(self, b: BitsType | None = None) -> Any | list[Any]:
+    def unpack(self, b: BitsType | None = None, **kwargs) -> Any | list[Any]:
         """
         Unpack the field type from bits.
 
@@ -117,7 +121,7 @@ class FieldType(abc.ABC):
         :return: The unpacked value.
         """
         if b is not None:
-            self.parse(b)
+            self.parse(b, **kwargs)
         v = self.value
         if v is None:
             raise ValueError("Cannot unpack field as it has no value.")

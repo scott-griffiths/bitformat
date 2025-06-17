@@ -123,7 +123,7 @@ class Format(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
-        self.vars = copy.deepcopy(vars_)
+        self.vars = vars_
         pos = startbit
         for fieldtype in self._fields:
             pos += fieldtype._parse(b, pos, self.vars)
@@ -163,8 +163,11 @@ class Format(FieldType):
     def _get_value(self) -> list[Any]:
         values = []
         for field in self._fields:
-            value = field._get_value()
-            values.append(value)
+            try:
+                value = field._get_value()
+                values.append(value)
+            except AttributeError:
+                pass  # This field type doesn't have values, but that's fine in this context.
         return values
 
     @override

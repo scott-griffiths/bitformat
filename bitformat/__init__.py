@@ -41,6 +41,7 @@ from ._if import If
 from ._pass import Pass
 from ._let import Let
 from ._repeat import Repeat
+from ._while import While
 from ._options import Options
 from ._common import Expression, Endianness, byteorder, DtypeKind
 from ._reader import Reader
@@ -126,7 +127,7 @@ for dt in dtype_definitions:
 
 
 __all__ = ["Bits", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
-           "Options", "Repeat", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind", "MutableBits"]
+           "Options", "Repeat", "While", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind", "MutableBits"]
 
 # Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
 for name in __all__:

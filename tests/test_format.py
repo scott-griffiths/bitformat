@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind, Expression
+from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind, Expression, While
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
@@ -874,3 +874,12 @@ def test_let():
     assert f.to_bits() == 'u8=22'
     f.pack([1], y=1000)
     assert f.to_bits() == 'u1005=1'
+
+def test_while():
+    f = While("while {x > 0}: (bool, let x = {x - 1})")
+    b = f.pack([[1], [0], [1]], x=3)
+    assert b == '0b101'
+
+    f.clear()
+    x = f.unpack('0x0f01', x=8)
+    assert x == [[False], [False], [False], [False], [True], [True], [True], [True]]

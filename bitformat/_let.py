@@ -63,6 +63,11 @@ class Let(FieldType):
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+        try:
+            x = self._expr.evaluate(**vars_)
+        except ExpressionError as e:
+            raise ValueError(f"Cannot evaluate expression: {e}")
+        vars_[self._name] = x
         return 0
 
     @override
@@ -80,7 +85,7 @@ class Let(FieldType):
 
     @override
     def _get_value(self) -> Any:
-        raise ValueError("A Pass field has no value to get.")
+        raise AttributeError("A Let field does not have a value.")
 
     @override
     def _set_value_with_kwargs(self, val: Any, kwargs: dict[str, Any]) -> None:
