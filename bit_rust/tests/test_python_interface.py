@@ -22,7 +22,7 @@ def test_creation_from_bytes():
 def test_join():
     a = BitRust.from_zeros(4)
     b = BitRust.from_ones(4)
-    c = BitRust.join([a, b])
+    c = BitRust.from_joined([a, b])
     assert c.to_bin() == '00001111'
     c = c.clone_as_mutable()
     c.reverse()

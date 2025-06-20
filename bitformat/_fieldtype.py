@@ -251,9 +251,6 @@ class FieldType(abc.ABC):
     @abc.abstractmethod
     def _set_value_with_kwargs(self, value: Any, kwargs: dict[str, Any]) -> None: ...
 
-    def _set_value(self, value: Any):
-        self._set_value_with_kwargs(value, {})
-
     @abc.abstractmethod
     def _get_bit_length(self) -> int:
         """

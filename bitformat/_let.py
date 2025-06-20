@@ -98,7 +98,7 @@ class Let(FieldType):
 
     @override
     def _repr(self) -> str:
-        return f"Let({self._name}, {self._expr})"
+        return f"Let({self._name!r}, {self._expr!r})"
 
     @override
     def to_bits(self) -> Bits:

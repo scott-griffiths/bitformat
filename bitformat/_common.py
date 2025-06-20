@@ -354,6 +354,8 @@ class Endianness(Enum):
 
 def validate_name(name: str) -> str:
     """As names can be used as part of evaluated Expressions we restrict them for safety reasons."""
+    if not isinstance(name, str):
+        raise TypeError(f"FieldType name must be a string, not a '{type(name).__name__}'.")
     if name != "":
         if not name.isidentifier():
             raise ValueError(f"The FieldType name '{name}' is not permitted as it is not a valid Python identifier.")

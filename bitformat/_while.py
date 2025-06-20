@@ -76,7 +76,8 @@ class While(FieldType):
     def _str(self, indent: Indenter, use_colour: bool) -> str:
         count_str = "{" + self._expr.code_str + "}"
         s = indent(f"while {count_str}:")
-        s += " TODO"
+        with indent:
+            s += '\n' + self.field._str(indent, use_colour)
         return s
 
     @override
@@ -94,7 +95,7 @@ class While(FieldType):
         while self._expr.evaluate(**kwargs):
             pos += self.field._parse(b, pos, kwargs)
             self._bits_list.append(self.field.to_bits())
-            self._values_list.append(self.field.value)
+            self._values_list.extend(self.field.value)
         return pos - startbit
 
     @override
@@ -106,7 +107,7 @@ class While(FieldType):
             value = next(value_iter)
             self.field._pack(value, kwargs)
             self._bits_list.append(self.field.to_bits())
-            self._values_list.append(value)
+            self._values_list.extend(value)
 
     @override
     def _copy(self) -> While:
@@ -135,7 +136,6 @@ class While(FieldType):
         if not self._bits_list:
             return None
         return self._values_list
-        # return [self.field.unpack(bits) for bits in self._bits_list]
 
     @override
     def _set_value_with_kwargs(self, val: list[Any], kwargs: dict[str, Any]) -> None:

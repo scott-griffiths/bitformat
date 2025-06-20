@@ -117,6 +117,7 @@ class Format(FieldType):
                 next_value = next(value_iter)
             except StopIteration:
                 # No more values left to pack, but there may still be some constant fields
+                fieldtype._pack([], kwargs)
                 continue
             else:
                 fieldtype._pack(next_value, kwargs)
