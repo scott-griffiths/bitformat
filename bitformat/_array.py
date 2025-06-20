@@ -212,7 +212,7 @@ class Array:
                 for s in range(start * self._item_size, stop * self._item_size, step * self._item_size):
                     d.append(self._bitstore.getslice(s, s + self._item_size).clone_as_immutable())
                 a = self.__class__(self._dtype)
-                a._bitstore = MutableBitRust.join(d)
+                a._bitstore = MutableBitRust.from_joined(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
@@ -237,7 +237,7 @@ class Array:
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = BitRust.join([self._create_element(x) for x in value])
+                new_data = BitRust.from_joined([self._create_element(x) for x in value])
                 self._bitstore.set_slice(start * self._item_size, stop * self._item_size, new_data)
                 return
             items_in_slice = len(range(start, stop, step))
@@ -263,7 +263,7 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start * self._item_size).clone_as_immutable(),
+                self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start * self._item_size).clone_as_immutable(),
                                                self._bitstore.getslice(stop * self._item_size, None).clone_as_immutable()])
                 return
             # We need to delete from the end or the earlier positions will change
@@ -273,7 +273,7 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, s * self._item_size).clone_as_immutable(),
+                self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, s * self._item_size).clone_as_immutable(),
                                                self._bitstore.getslice((s + 1) * self._item_size, None).clone_as_immutable()])
         else:
             if key < 0:
@@ -281,7 +281,7 @@ class Array:
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self._item_size * key
-            self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, start).clone_as_immutable(),
+            self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start).clone_as_immutable(),
                                            self._bitstore.getslice(start + self._item_size, None).clone_as_immutable()])
 
     def __repr__(self) -> str:
@@ -385,7 +385,7 @@ class Array:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._create_element(item) for item in iterable]
-            self._bitstore.append(BitRust.join(to_join))
+            self._bitstore.append(BitRust.from_joined(to_join))
         return self
 
     def insert(self, pos: int, x: ElementType, /) -> Array:
@@ -400,7 +400,7 @@ class Array:
             pos += len(self)
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = MutableBitRust.join([self._bitstore.getslice(0, pos * self._item_size).clone_as_immutable(),
+        self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, pos * self._item_size).clone_as_immutable(),
                                        v,
                                        self._bitstore.getslice(pos * self._item_size, None).clone_as_immutable()])
         return self

@@ -138,12 +138,12 @@ def split_into_tokens(s: str) -> list[str]:
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore_cached(s: str) -> BitRust:
     tokens = split_into_tokens(s)
-    return BitRust.join([token_to_bitstore_cached(t) for t in tokens if t])
+    return BitRust.from_joined([token_to_bitstore_cached(t) for t in tokens if t])
 
 
 def str_to_mutable_bitstore(s: str) -> MutableBitRust:
     tokens = split_into_tokens(s)
-    return MutableBitRust.join([token_to_bitstore_cached(t) for t in tokens if t])
+    return MutableBitRust.from_joined([token_to_bitstore_cached(t) for t in tokens if t])
 
 
 class _BaseBits:
@@ -567,8 +567,6 @@ class _BaseBits:
 
     def _get_oct(self) -> str:
         """Return interpretation as an octal string."""
-        if len(self) % 3 != 0:
-            raise ValueError(f"Cannot interpret '{self}' as octal - length of {len(self)} is not a multiple of 3 bits.")
         return self._bitstore.to_oct()
 
     def _set_hex(self, hexstring: str, _length: None = None) -> None:
@@ -577,8 +575,6 @@ class _BaseBits:
 
     def _get_hex(self) -> str:
         """Return the hexadecimal representation as a string."""
-        if len(self) % 4 != 0:
-            raise ValueError(f"Cannot interpret '{self}' as hex - length of {len(self)} is not a multiple of 4 bits.")
         return self._bitstore.to_hex()
 
     def _get_bits(self: Bits):
@@ -1060,7 +1056,7 @@ class Bits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = BitRust.join([create_bitrust_from_any(item) for item in sequence])
+        x._bitstore = BitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
         return x
 
     @classmethod
@@ -1392,7 +1388,7 @@ class MutableBits(_BaseBits):
 
         """
         x = super().__new__(cls)
-        x._bitstore = MutableBitRust.join([create_bitrust_from_any(item) for item in sequence])
+        x._bitstore = MutableBitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
         return x
 
     @classmethod
@@ -1769,7 +1765,7 @@ class MutableBits(_BaseBits):
         start, end = self._validate_slice(start, end)
         n %= end - start
         bs = self._bitstore.as_immutable()
-        new_bs = MutableBitRust.join([bs.getslice(0, start),
+        new_bs = MutableBitRust.from_joined([bs.getslice(0, start),
                                       bs.getslice(start + n, end),
                                       bs.getslice(start, start + n),
                                       bs.getslice(end, len(bs))])
@@ -1800,7 +1796,7 @@ class MutableBits(_BaseBits):
         start, end = self._validate_slice(start, end)
         n %= end - start
         bs = self._bitstore.as_immutable()
-        new_bs = MutableBitRust.join([bs.getslice(0, start),
+        new_bs = MutableBitRust.from_joined([bs.getslice(0, start),
                                       bs.getslice(end - n, end),
                                       bs.getslice(start, end - n),
                                       bs.getslice(end, len(bs))])
@@ -1889,7 +1885,7 @@ class MutableBits(_BaseBits):
         # Final replacement
         replacement_list.append(new_bitrust)
         replacement_list.append(original.getslice(starting_points[-1] + len(old_bitrust), None))
-        self._bitstore = MutableBitRust.join(replacement_list)
+        self._bitstore = MutableBitRust.from_joined(replacement_list)
         return self
 
     def reverse(self) -> MutableBits:
