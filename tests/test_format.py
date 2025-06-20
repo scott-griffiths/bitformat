@@ -600,7 +600,7 @@ def test_wrong_arguments():
     f.clear()
     with pytest.raises(TypeError):
         f.pack(1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         f.pack([1])
 
 def test_slicing_fields():
@@ -661,7 +661,7 @@ def test_bad_names():
         f.name = 'if'
     with pytest.raises(ValueError):
         f.name = '__with_double_underscore'
-    with pytest.raises(AttributeError):
+    with pytest.raises(TypeError):
         f.name = 5
 
 def test_const_tuple():
@@ -882,4 +882,20 @@ def test_while():
 
     f.clear()
     x = f.unpack('0x0f01', x=8)
-    assert x == [[False], [False], [False], [False], [True], [True], [True], [True]]
+    assert x == [False, False, False, False, True, True, True, True]
+
+def test_more_while():
+    f = Format("(let y = {x}, while {x}: (byte: u8, if {byte < 12}: let x = {x-1}))")
+    b = '0x01ff02ff03ff04ff'
+    v = f.unpack(b, x=1)
+    assert v[0] == [1]
+    v = f.unpack(b, x=2)
+    assert v[0] == [1, 255, 2]
+
+def test_pack_with_kwargs():
+    f = Format("(x: u8, y: u8, z: u8)")
+    f.pack([1, 2, 3])
+    assert f.value == [1, 2, 3]
+    f.clear()
+    f.pack([], x=4, y=5, z=6)
+    assert f.value == [4, 5, 6]
