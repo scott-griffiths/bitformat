@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Write;
 use crate::bitrust::helpers;
 use bitvec::prelude::*;
 use bytemuck::cast_slice;
@@ -29,6 +30,44 @@ pub trait BitCollection: Sized{
 pub struct BitRust {
     pub(crate) data: helpers::BV,
 }
+
+impl fmt::LowerHex for BitRust {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.len() % 4 != 0 {
+            return Err(std::fmt::Error);
+        }
+        for chunk in self.data.chunks(4) {
+            let nibble = chunk.load_be::<u8>();
+            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
+            f.write_char(hex_char)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Octal for BitRust {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.len() % 3 != 0 {
+            return Err(std::fmt::Error);
+        }
+        for chunk in self.data.chunks(3) {
+            let tribble = chunk.load_be::<u8>();
+            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
+            f.write_char(oct_char)?;
+        }
+        Ok(())
+    }
+}
+
+impl fmt::Binary for BitRust {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for bit in self.data.iter() {
+            f.write_char(if *bit { '1' } else { '0' })?;
+        }
+        Ok(())
+    }
+}
+
 
 impl BitCollection for BitRust {
     fn len(&self) -> usize {
@@ -392,7 +431,7 @@ impl BitRust {
     }
 
     #[staticmethod]
-    pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
+    pub fn from_joined(bits_vec: Vec<PyRef<BitRust>>) -> Self {
         let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
         for bits_ref in bits_vec.iter() {
@@ -407,92 +446,43 @@ impl BitRust {
         helpers::convert_bitrust_to_bytes(self)
     }
 
-    // Return bytes that can easily be converted to an int in Python
+    /// Return bytes that can easily be converted to an int in Python
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
-        // If empty, return empty vector
         if self.len() == 0 {
             return Vec::new();
         }
 
-        // Calculate padding needed to make the length a multiple of 8
-        let padding_bits = (8 - self.len() % 8) % 8;
-        let total_bytes = (self.len() + padding_bits) / 8;
+        // TODO: Is this next line right?
+        let needed_bits = (self.len() + 7) & !7;
+        let mut bv = helpers::BV::with_capacity(needed_bits);
 
-        // Create result vector with exact capacity needed
-        let mut result = Vec::with_capacity(total_bytes);
+        let sign_bit = signed && self.data[0];
+        let padding = needed_bits - self.len();
 
-        // Handle sign extension for signed numbers
-        let pad_with_ones = signed && self.data[0];
-
-        // Process a byte at a time
-        let mut current_byte: u8 = 0;
-        let mut bits_in_byte: usize = 0;
-
-        // Add padding bits first (if needed)
-        for _ in 0..padding_bits {
-            current_byte = (current_byte << 1) | (pad_with_ones as u8);
-            bits_in_byte += 1;
+        for _ in 0..padding {
+            bv.push(sign_bit);
         }
+        bv.extend_from_bitslice(&self.data);
 
-        // Process actual bits from the view
-        for i in 0..self.len() {
-            if bits_in_byte == 8 {
-                result.push(current_byte);
-                current_byte = 0;
-                bits_in_byte = 0;
-            }
-            current_byte = (current_byte << 1) | (self.data[i] as u8);
-            bits_in_byte += 1;
-        }
-
-        // Push final byte if there are any remaining bits
-        if bits_in_byte > 0 {
-            result.push(current_byte);
-        }
-
-        debug_assert_eq!(result.len(), total_bytes);
-        debug_assert_eq!(result.len(), (self.len() + 7) / 8);
-
-        result
+        bv.into_vec()
     }
 
     pub fn to_hex(&self) -> PyResult<String> {
         if self.len() % 4 != 0 {
-            return Err(PyValueError::new_err("Not a multiple of 4 bits long."));
+            return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", self.len())));
         }
-        let bytes = self.to_bytes();
-        let hex_string = bytes
-            .iter()
-            .map(|byte| format!("{:02x}", byte))
-            .collect::<String>();
-        if self.len() % 8 == 0 {
-            return Ok(hex_string);
-        }
-        // If the length is not a multiple of 8, we need to trim the padding bits
-        Ok(hex_string[0..hex_string.len() - 1].to_string())
+        Ok(format!("{:x}", self))
     }
 
     pub fn to_bin(&self) -> String {
-        let mut result = String::with_capacity(self.len());
-        for bit in self.data.iter() {
-            result.push(if *bit { '1' } else { '0' });
-        }
-        result
+        format!("{:b}", self)
     }
 
     pub fn to_oct(&self) -> PyResult<String> {
         if self.len() % 3 != 0 {
-            return Err(PyValueError::new_err("Not a multiple of 3 bits long."));
+            return Err(PyValueError::new_err(format!("Cannot interpret to octal - length of {} is not a multiple of 3 bits.", self.len())));
         }
-        let bin_str = self.to_bin();
-        let mut oct_str: String = String::new();
-
-        for chunk in bin_str.as_bytes().chunks(3) {
-            let binary_chunk = std::str::from_utf8(chunk).unwrap();
-            let value = u8::from_str_radix(binary_chunk, 2).unwrap();
-            oct_str.push(std::char::from_digit(value as u32, 8).unwrap());
-        }
-        Ok(oct_str)
+        Ok(format!("{:o}", self))
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {

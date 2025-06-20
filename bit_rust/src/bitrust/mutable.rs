@@ -217,7 +217,7 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn join(bits_vec: Vec<PyRef<BitRust>>) -> Self {
+    pub fn from_joined(bits_vec: Vec<PyRef<BitRust>>) -> Self {
         let bitrust_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
         let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
@@ -367,7 +367,7 @@ impl MutableBitRust {
         MutableBitRust::new(self.inner.data.clone())
     }
 
-    // Convert to immutable BitRust - cloning the data.
+    /// Convert to immutable BitRust - cloning the data.
     pub fn clone_as_immutable(&self) -> BitRust {
         BitRust::new(self.inner.data.clone())
     }
