@@ -894,8 +894,6 @@ class _BaseBits:
             x._bitstore = x._bitstore.as_immutable()
         return x
 
-    # TODO: __ilshift__ and __irshift__ for MutableBits
-
     def __lshift__(self: Bits, n: int, /) -> Bits:
         """Return new Bits shifted by n to the left.
 
@@ -1526,6 +1524,45 @@ class MutableBits(_BaseBits):
         bs = create_bitrust_from_any(bs)
         self._bitstore.append(bs)
         return self
+
+    def __ilshift__(self, n: int, /) -> MutableBits:
+        """Shift bits to the left in-place.
+
+        :param n: The number of bits to shift. Must be >= 0.
+        :return: self
+
+        Raises ValueError if n < 0.
+
+        .. code-block:: pycon
+
+            >>> b = MutableBits('0b001100')
+            >>> b <<= 2
+            >>> b.bin
+            '110000'
+
+        """
+        self._bitstore.lshift_inplace(n)
+        return self
+
+    def __irshift__(self, n: int, /) -> MutableBits:
+        """Shift bits to the right in-place.
+
+        :param n: The number of bits to shift. Must be >= 0.
+        :return: self
+
+        Raises ValueError if n < 0.
+
+        .. code-block:: pycon
+
+            >>> b = MutableBits('0b001100')
+            >>> b >>= 2
+            >>> b.bin
+            '000011'
+
+        """
+        self._bitstore.rshift_inplace(n)
+        return self
+
 
     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
         """Set a bit or a slice of bits.

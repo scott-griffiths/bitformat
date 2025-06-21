@@ -963,3 +963,15 @@ def test_mixed_representation_operations():
 
     a[4:8] = '0o7'
     assert a == '0b1010_111_1010'
+
+def test_shifting_inplace():
+    # Test in-place shifting operations
+    a = MutableBits('0b001010')
+    a <<= 2
+    assert a == '0b101000'
+    a >>= 3
+    assert a == '0b000101'
+    with pytest.raises(ValueError):
+        a <<= -1
+    with pytest.raises(ValueError):
+        a >>= -1

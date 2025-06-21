@@ -632,7 +632,7 @@ impl BitRust {
         Ok(self.data[index])
     }
 
-    fn validate_shift(&self, n: i64) -> PyResult<usize> {
+    pub(crate) fn validate_shift(&self, n: i64) -> PyResult<usize> {
         if self.len() == 0 {
             return Err(PyValueError::new_err("Cannot shift an empty Bits."));
         }

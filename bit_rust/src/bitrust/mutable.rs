@@ -396,4 +396,19 @@ impl MutableBitRust {
         self.inner.data = new_data;
     }
 
+    /// In-place left shift
+    pub fn lshift_inplace(&mut self, n: i64) -> PyResult<()> {
+        let shift = self.inner.validate_shift(n)?;
+        self.inner.data.shift_left(shift);
+        Ok(())
+    }
+
+    /// In-place right shift
+    pub fn rshift_inplace(&mut self, n: i64) -> PyResult<()> {
+        let shift = self.inner.validate_shift(n)?;
+        self.inner.data.shift_right(shift);
+        Ok(())
+    }
+
+
 }
