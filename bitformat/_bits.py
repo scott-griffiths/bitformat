@@ -894,18 +894,17 @@ class _BaseBits:
             x._bitstore = x._bitstore.as_immutable()
         return x
 
+    # TODO: __ilshift__ and __irshift__ for MutableBits
+
     def __lshift__(self: Bits, n: int, /) -> Bits:
-        """Return Bits shifted by n to the left.
+        """Return new Bits shifted by n to the left.
 
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        if n < 0:
-            raise ValueError("Cannot shift by a negative amount.")
-        if len(self) == 0:
-            raise ValueError("Cannot shift an empty Bits.")
-        n = min(n, len(self))
-        return self.__class__.from_joined([self._slice(n, len(self)), Bits.from_zeros(n)])
+        x = self.__class__()
+        x._bitstore = self._bitstore.lshift(n)
+        return x
 
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
@@ -952,19 +951,14 @@ class _BaseBits:
         return self.__mul__(n)
 
     def __rshift__(self: Bits, n: int, /) -> Bits:
-        """Return Bits shifted by n to the right.
+        """Return new Bits shifted by n to the right.
 
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        if n < 0:
-            raise ValueError("Cannot shift by a negative amount.")
-        if len(self) == 0:
-            raise ValueError("Cannot shift an empty Bits.")
-        if n == 0:
-            return self
-        n = min(n, len(self))
-        return self.__class__.from_joined([Bits.from_zeros(n), self._slice(0, len(self) - n)])
+        x = self.__class__()
+        x._bitstore = self._bitstore.rshift(n)
+        return x
 
     # ----- Other
 

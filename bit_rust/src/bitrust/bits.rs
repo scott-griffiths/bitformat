@@ -631,6 +631,46 @@ impl BitRust {
         let index = helpers::validate_index(bit_index, self.len())?;
         Ok(self.data[index])
     }
+
+    fn validate_shift(&self, n: i64) -> PyResult<usize> {
+        if self.len() == 0 {
+            return Err(PyValueError::new_err("Cannot shift an empty Bits."));
+        }
+        if n < 0 {
+            return Err(PyValueError::new_err("Cannot shift by a negative amount."));
+        }
+        Ok(n as usize)
+    }
+
+    pub fn lshift(&self, n: i64) -> PyResult<Self> {
+        let shift = self.validate_shift(n)?;
+        if shift == 0 {
+            return Ok(self.clone_as_immutable());
+        }
+        let len = self.len();
+        if shift >= len {
+            return Ok(Self::from_zeros(len));
+        }
+        let mut result_data = helpers::BV::with_capacity(len);
+        result_data.extend_from_bitslice(&self.data[shift..]);
+        result_data.resize(len, false);
+        Ok(Self::new(result_data))
+    }
+
+    pub fn rshift(&self, n: i64) -> PyResult<Self> {
+        let shift = self.validate_shift(n)?;
+        if shift == 0 {
+            return Ok(self.clone_as_immutable());
+        }
+        let len = self.len();
+        if shift >= len {
+            return Ok(Self::from_zeros(len));
+        }
+        let mut result_data = helpers::BV::repeat(false, shift);
+        result_data.extend_from_bitslice(&self.data[.. len - shift]);
+        Ok(Self::new(result_data))
+    }
+
 }
 
 
