@@ -567,10 +567,11 @@ class Array:
 
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
+        get_fn = self._dtype._get_fn
         for _ in range(len(self)):
             b = MutableBits()
             b._bitstore = self._bitstore.getslice(start, start + self._item_size)
-            yield self._dtype.unpack(b)
+            yield get_fn(b)
             start += self._item_size
 
     def __copy__(self) -> Array:
