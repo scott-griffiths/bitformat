@@ -243,8 +243,8 @@ impl MutableBitRust {
         self.inner.to_u64(start, length)
     }
 
-    pub fn to_i64(&self) -> i64 {
-        self.inner.to_i64()
+    pub fn to_i64(&self, start: usize, length: usize) -> i64 {
+        self.inner.to_i64(start, length)
     }
 
     pub fn __len__(&self) -> usize {

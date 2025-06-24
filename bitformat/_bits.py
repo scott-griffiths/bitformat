@@ -45,6 +45,25 @@ def _get_u_bitstore(bs: BitRust, start: int | None = None, length: int | None = 
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
+def _get_i_bitstore(bs: BitRust, start: int | None = None, length: int | None = None) -> int:
+    """Return data as a signed int from a slice of the bitstore."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    if length == 0:
+        raise ValueError("Cannot interpret empty Bits as an integer.")
+    if length <= 64:
+        return bs.to_i64(start, length)
+    else:
+        # Longer store are unlikely in practice - this method is slower.
+        bs = bs.getslice(start, start + length)
+        return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
+
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
@@ -523,15 +542,6 @@ class _BaseBits:
             raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
         i = int(i)
         self._bitstore = _create_i_bitstore(i, length)
-
-    def _get_i(self) -> int:
-        """Return data as a two's complement signed int."""
-        if len(self) == 0:
-            raise ValueError("Cannot interpret empty Bits as an integer.")
-        if len(self) <= 64:
-            return self._bitstore.to_i64()
-        else:
-            return int.from_bytes(self._bitstore.to_int_byte_data(True), byteorder="big", signed=True)
 
     def _set_f(self, f: float | str, length: int | None) -> None:
         if length is None:

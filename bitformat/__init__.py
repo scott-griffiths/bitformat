@@ -85,7 +85,7 @@ dtype_definitions = [
                     Bits._set_u, None, None, _bits._get_u_bitstore, int,
                     False, uint_bits2chars, endianness_variants=True),
     DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed int",
-                    Bits._set_i, Bits._get_i, None, None, int,
+                    Bits._set_i, None, None, _bits._get_i_bitstore, int,
                     True, int_bits2chars, endianness_variants=True),
 
     # Literal types

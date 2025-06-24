@@ -345,9 +345,8 @@ impl BitRust {
         self.data[start .. start + length].load_be::<u64>()
     }
 
-    pub fn to_i64(&self) -> i64 {
-        assert!(self.data.len() <= 64, "BitRust too long for i64");
-        self.data.load_be::<i64>()
+    pub fn to_i64(&self, start:usize, length: usize) -> i64 {
+        self.data[start .. start + length].load_be::<i64>()
     }
 
     #[pyo3(signature = (needle_obj, byte_aligned=false))]
