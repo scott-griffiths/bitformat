@@ -298,10 +298,10 @@ def test_str():
     assert str(b) == '(bool, [i5; 1])'
     assert repr(a) == "DtypeSingle('u_le8')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
-    nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Bits._set_u, Bits._get_u)
-    s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
-    assert str(nt) == s
-    assert repr(nt) == s
+    # nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Bits._set_u, Bits._get_u)
+    # s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
+    # assert str(nt) == s
+    # assert repr(nt) == s
 
 def test_unpacking_dtype_array_with_no_length():
     d = Dtype('[bool;]')

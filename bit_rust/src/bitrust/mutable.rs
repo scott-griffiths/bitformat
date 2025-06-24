@@ -239,12 +239,8 @@ impl MutableBitRust {
         MutableBitRust::new(bv)
     }
 
-    pub fn to_u64(&self) -> u64 {
-        self.inner.to_u64()
-    }
-
-    pub fn to_u64_test(&self, start: usize, length: usize) -> u64 {
-        self.inner.to_u64_test(start, length)
+    pub fn to_u64(&self, start: usize, length: usize) -> u64 {
+        self.inner.to_u64(start, length)
     }
 
     pub fn to_i64(&self) -> i64 {

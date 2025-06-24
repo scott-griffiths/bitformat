@@ -341,12 +341,7 @@ impl BitRust {
         BitCollection::from_i64(value, length)
     }
 
-    pub fn to_u64(&self) -> u64 {
-        assert!(self.data.len() <= 64, "BitRust too long for u64");
-        self.data.load_be::<u64>()
-    }
-
-    pub fn to_u64_test(&self, start: usize, length: usize) -> u64 {
+    pub fn to_u64(&self, start: usize, length: usize) -> u64 {
         self.data[start .. start + length].load_be::<u64>()
     }
 

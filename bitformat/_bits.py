@@ -39,7 +39,7 @@ def _get_u_bitstore(bs: BitRust, start: int | None = None, length: int | None = 
     if length == 0:
         raise ValueError("Cannot interpret empty Bits as an integer.")
     if length <= 64:
-        return bs.to_u64_test(start, length)
+        return bs.to_u64(start, length)
     else:
         # Longer store are unlikely in practice - this method is slower.
         bs = bs.getslice(start, start + length)
@@ -516,17 +516,6 @@ class _BaseBits:
         if u < 0:
             raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
         self._bitstore = _create_u_bitstore(u, length)
-
-    def _get_u(self) -> int:
-        """Return data as an unsigned int."""
-        raise NotImplementedError
-        if len(self) == 0:
-            raise ValueError("Cannot interpret empty Bits as an integer.")
-        if len(self) <= 64:
-            return self._bitstore.to_u64()
-        else:
-            # Longer store are unlikely in practice - this method is slower but not bad.
-            return int.from_bytes(self._bitstore.to_int_byte_data(False), byteorder="big", signed=False)
 
     def _set_i(self, i: int | str, length: int | None = None) -> None:
         """Reset the Bits to have given signed int interpretation."""
