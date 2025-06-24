@@ -26,6 +26,26 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 CACHE_SIZE = 256
 
 
+def _get_u_bitstore(bs: BitRust, start: int | None = None, length: int | None = None) -> int:
+    """Return data as an unsigned int from a slice of the bitstore."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    if length == 0:
+        raise ValueError("Cannot interpret empty Bits as an integer.")
+    if length <= 64:
+        return bs.to_u64_test(start, length)
+    else:
+        # Longer store are unlikely in practice - this method is slower.
+        bs = bs.getslice(start, start + length)
+        return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
+
+
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
     if u >= (1 << length):
@@ -499,6 +519,7 @@ class _BaseBits:
 
     def _get_u(self) -> int:
         """Return data as an unsigned int."""
+        raise NotImplementedError
         if len(self) == 0:
             raise ValueError("Cannot interpret empty Bits as an integer.")
         if len(self) <= 64:

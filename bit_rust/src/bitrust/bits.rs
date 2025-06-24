@@ -346,6 +346,10 @@ impl BitRust {
         self.data.load_be::<u64>()
     }
 
+    pub fn to_u64_test(&self, start: usize, length: usize) -> u64 {
+        self.data[start .. start + length].load_be::<u64>()
+    }
+
     pub fn to_i64(&self) -> i64 {
         assert!(self.data.len() <= 64, "BitRust too long for i64");
         self.data.load_be::<i64>()

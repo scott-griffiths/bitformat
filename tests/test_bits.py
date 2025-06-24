@@ -785,8 +785,8 @@ def test_info():
 def test_conversion_to_long_ints():
     for l in [400, 64, 128, 1000]:
         zeros = Bits.from_zeros(l)
-        assert zeros.u == 0
         assert zeros.i == 0
+        assert zeros.u == 0
         ones = Bits.from_ones(l)
         assert ones.u == (1 << l) - 1
         assert ones.i == -1

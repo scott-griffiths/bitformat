@@ -162,6 +162,10 @@ class TestArrayMethods:
         assert a.count(-1) == 0
         assert a.count(2) == 5
 
+    def test_count_large_ints(self):
+        a = Array('u1000', [0, 1000, 10])
+        assert a.count(0) == 1
+
     # def test_count_nan(self):
     #     a = Array('uint8', [0, 10, 128, 128, 4, 2, 1])
     #     a.dtype = 'p3binary'

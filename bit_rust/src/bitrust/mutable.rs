@@ -5,6 +5,7 @@ use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
 use bits::BitCollection;
 
+
 #[pyclass]
 pub struct MutableBitRust {
     pub(crate) inner: BitRust,
@@ -76,6 +77,17 @@ impl MutableBitRust {
 
     pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
         self.inner.data == other.inner.data
+    }
+
+    pub fn byte_swap(&mut self) -> PyResult<()> {
+        if self.inner.data.len() % 8 != 0 {
+            return Err(PyValueError::new_err(format!("Cannot use byte_swap as not a whole number of bytes ({} bits long).", self.inner.data.len())));
+        }
+        let data = std::mem::take(&mut self.inner.data);
+        let mut bytes = data.into_vec();
+        bytes.reverse();
+        self.inner.data = helpers::BV::from_vec(bytes);
+        Ok(())
     }
     
     pub fn overwrite(&mut self, start: usize, value: &BitRust) -> PyResult<()> {
@@ -229,6 +241,10 @@ impl MutableBitRust {
 
     pub fn to_u64(&self) -> u64 {
         self.inner.to_u64()
+    }
+
+    pub fn to_u64_test(&self, start: usize, length: usize) -> u64 {
+        self.inner.to_u64_test(start, length)
     }
 
     pub fn to_i64(&self) -> i64 {

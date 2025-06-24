@@ -311,7 +311,7 @@ class DtypeSingle(Dtype):
         return self._endianness
 
     @classmethod
-    # @functools.lru_cache(CACHE_SIZE)
+    @functools.lru_cache(CACHE_SIZE)
     def _create(cls, definition: DtypeDefinition, size: Expression,
                 endianness: Endianness = Endianness.UNSPECIFIED) -> Self:
         x = DtypeSingle.__new__(DtypeSingle)
@@ -334,6 +334,30 @@ class DtypeSingle(Dtype):
             if little_endian
             else definition.get_fn
         )
+
+        if definition.get_fn_bitstore is not None:
+            if little_endian:
+                def get_fn_bitstore_le(b_rust, start, length):
+                    # TODO: Should take slice here
+                    mutable_b = b_rust.clone_as_mutable()
+                    mutable_b.byte_swap()
+                    return definition.get_fn_bitstore(mutable_b.clone_as_immutable(), start, length)
+                x._get_fn_bitstore = get_fn_bitstore_le
+            else:
+                x._get_fn_bitstore = definition.get_fn_bitstore
+
+            def get_fn_from_bitstore(b: bitformat.Bits):
+                return x._get_fn_bitstore(b._bitstore, 0, len(b))
+            x._get_fn = get_fn_from_bitstore
+        else:
+            x._get_fn_bitstore = None
+            x._get_fn = (
+                (lambda b: definition.get_fn(b.to_mutable_bits().byte_swap().to_bits()))
+                if little_endian
+                else definition.get_fn
+            )
+
+        x._set_fn_bitstore = definition.set_fn_bitstore
         if "length" in inspect.signature(definition.set_fn).parameters:
             set_fn = functools.partial(definition.set_fn, length=x._bit_length)
         else:
@@ -386,13 +410,19 @@ class DtypeSingle(Dtype):
         b = bitformat.Bits._from_any(b)
         if self._size.is_none():
             # Try to unpack everything
-            return self._get_fn(b)
+            if self._get_fn_bitstore is not None:
+                return self._get_fn_bitstore(b._bitstore, 0, len(b))
+            else:
+                return self._get_fn(b)
         if self._bit_length is None:
             raise ExpressionError(f"Cannot unpack a dtype with an unknown size. Got '{self}'")
         if self._bit_length > len(b):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         else:
-            return self._get_fn(b[: self._bit_length])
+            if self._get_fn_bitstore is not None:
+                return self._get_fn_bitstore(b._bitstore, 0, self._bit_length)
+            else:
+                return self._get_fn(b[: self._bit_length])
 
     @override
     @final
@@ -775,6 +805,7 @@ class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
     def __init__(self, kind: DtypeKind, description: str, short_description: str, set_fn: Callable, get_fn: Callable,
+                 set_fn_bitstore: Callable = None, get_fn_bitstore: Callable = None,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
                  endianness_variants: bool = False):
@@ -787,6 +818,8 @@ class DtypeDefinition:
         self.bits_per_character = bits_per_character
         self.set_fn = set_fn
         self.endianness_variants = endianness_variants
+        self.get_fn_bitstore = get_fn_bitstore
+        self.set_fn_bitstore = set_fn_bitstore
 
         if self.allowed_sizes.values:
 
@@ -881,26 +914,69 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         kind = definition.kind
         cls.kind_to_def[kind] = definition
-        setattr(bitformat.Bits, kind.value, property(fget=definition.get_fn,
-                                                     doc=f"The Bits as {definition.description}. Read only."))
-        setattr(bitformat.MutableBits, kind.value, property(fget=definition.get_fn,
-                                                     doc=f"The MutableBits as {definition.description}. Read only."))
+        if definition.get_fn_bitstore is not None:
+            def fget(obj):
+                return definition.get_fn_bitstore(obj._bitstore, 0, len(obj))
+            setattr(bitformat.Bits, kind.value, property(fget=fget,
+                                                         doc=f"The Bits as {definition.description}. Read only."))
+            setattr(bitformat.MutableBits, kind.value, property(fget=fget,
+                                                         doc=f"The MutableBits as {definition.description}. Read only."))
+        else:
+            setattr(bitformat.Bits, kind.value, property(fget=definition.get_fn,
+                                                         doc=f"The Bits as {definition.description}. Read only."))
+            setattr(bitformat.MutableBits, kind.value, property(fget=definition.get_fn,
+                                                         doc=f"The MutableBits as {definition.description}. Read only."))
         if definition.endianness_variants:
+            if definition.get_fn_bitstore is not None:
+                def fget(b):
+                    return definition.get_fn_bitstore(b._bitstore, 0, len(b))
 
-            def fget_be(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                return definition.get_fn(b)
+                def fget_le(b):
+                    mutable_b = b._bitstore.clone_as_mutable()
+                    mutable_b.byte_swap()
+                    return definition.get_fn_bitstore(mutable_b.clone_as_immutable())
 
-            def fget_le_bits(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                return definition.get_fn(b.to_mutable_bits().byte_swap().to_bits())
+                def fget_le_mutable(b):
+                    c = b._bitstore.clone_as_mutable()
+                    c.byte_swap()
+                    return definition.get_fn_bitstore(c.as_immutable())
 
-            def fget_le_mutable_bits(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                return definition.get_fn(b.__copy__().byte_swap().to_bits())
+                def fget_be(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    return definition.get_fn_bitstore(b._bitstore, 0, len(b))
+
+                def fget_le_bits(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    mutable_b = b._bitstore.clone_as_mutable()
+                    mutable_b.byte_swap()
+                    return definition.get_fn_bitstore(mutable_b.clone_as_immutable(), 0, len(b))
+
+                def fget_le_mutable_bits(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    c = b._bitstore.clone_as_mutable()
+                    c.byte_swap()
+                    return definition.get_fn_bitstore(c.as_immutable(), 0, len(b))
+            else:
+                def fget_be(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(
+                            f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    return definition.get_fn(b)
+
+                def fget_le_bits(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(
+                            f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    return definition.get_fn(b.to_mutable_bits().byte_swap().to_bits())
+
+                def fget_le_mutable_bits(b):
+                    if len(b) % 8 != 0:
+                        raise ValueError(
+                            f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                    return definition.get_fn(b.__copy__().byte_swap().to_bits())
 
             fget_ne_bits = fget_le_bits if byteorder == "little" else fget_be
             fget_ne_mutable_bits = fget_le_mutable_bits if byteorder == "little" else fget_be
@@ -918,7 +994,7 @@ class Register:
                 setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, doc=doc))
 
     @classmethod
-    # @functools.lru_cache(CACHE_SIZE)
+    @functools.lru_cache(CACHE_SIZE)
     def get_single_dtype(cls, kind: DtypeKind, size: Expression | int | None,
                          endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeSingle:
         definition = cls.kind_to_def[kind]
@@ -929,7 +1005,7 @@ class Register:
         return definition.get_single_dtype(size, endianness)
 
     @classmethod
-    # @functools.lru_cache(CACHE_SIZE)
+    @functools.lru_cache(CACHE_SIZE)
     def get_array_dtype(cls, kind: DtypeKind, size: Expression | int | None, items: Expression | int | None,
                         endianness: Endianness = Endianness.UNSPECIFIED) -> DtypeArray:
         definition = cls.kind_to_def[kind]
