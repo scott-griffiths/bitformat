@@ -7,6 +7,7 @@ import sys
 import struct
 import io
 import functools
+import itertools
 from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator
@@ -255,19 +256,15 @@ class _BaseBits:
             raise ValueError("Cannot cut - count must be >= 0.")
         if chunk_size <= 0:
             raise ValueError("Cannot cut - bits must be >= 0.")
-        c = 0
-        start = 0
-        end = len(self)
-        while count is None or c < count:
-            c += 1
-            nextchunk = self._slice(start, min(start + chunk_size, end))
-            if len(nextchunk) == 0:
-                return
-            yield nextchunk
-            if len(nextchunk) != chunk_size:
-                return
-            start += chunk_size
-        return
+
+        length = len(self)
+        it = range(0, length, chunk_size)
+        if count is not None:
+            it = itertools.islice(it, count)
+
+        for start in it:
+            end = min(start + chunk_size, length)
+            yield self._slice(start, end)
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
@@ -901,7 +898,7 @@ class _BaseBits:
         """
         if len(self) == 0:
             raise ValueError("Cannot invert empty Bits.")
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.invert_all()
         if isinstance(self, Bits):
@@ -914,7 +911,7 @@ class _BaseBits:
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         x._bitstore = self._bitstore.lshift(n)
         return x
 
@@ -927,7 +924,7 @@ class _BaseBits:
         """
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         mutable = MutableBitRust.from_zeros(0)
 
         if isinstance(self._bitstore, BitRust):
@@ -946,7 +943,7 @@ class _BaseBits:
         """Concatenate Bits and return a new Bits."""
         bs = create_mutable_bitrust_from_any(bs)
         bs.append(self._bitstore)
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         if isinstance(self, Bits):
             x._bitstore = bs.as_immutable()
         else:
@@ -968,7 +965,7 @@ class _BaseBits:
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         x._bitstore = self._bitstore.rshift(n)
         return x
 
@@ -990,6 +987,8 @@ class _BaseBits:
 
 
 class Bits(_BaseBits):
+
+    __slots__ = ()
 
     # ----- Class Methods -----
 
@@ -1256,7 +1255,7 @@ class Bits(_BaseBits):
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.append(bs)
         x._bitstore = x._bitstore.as_immutable()
@@ -1309,8 +1308,8 @@ class Bits(_BaseBits):
         return self
 
     def _slice(self: Bits, start: int, end: int) -> Bits:
-        """Used internally to get a slice, without error checking. No copy of data is made - it's just a view."""
-        bs = self.__class__()
+        """Used internally to get a slice, without error checking."""
+        bs = object.__new__(self.__class__)
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
@@ -1322,6 +1321,8 @@ class Bits(_BaseBits):
 
 
 class MutableBits(_BaseBits):
+
+    __slots__ = ()
 
     # ----- Class Methods -----
 
@@ -1528,7 +1529,7 @@ class MutableBits(_BaseBits):
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
-        x = self.__class__()
+        x = object.__new__(self.__class__)
         x._bitstore = self._bitstore.clone_as_mutable()
         x._bitstore.append(bs)
         return x
@@ -1666,7 +1667,7 @@ class MutableBits(_BaseBits):
 
     def _slice(self: MutableBits, start: int, end: int) -> MutableBits:
         """Used internally to get a slice, without error checking. A copy of the data is made."""
-        bs = self.__class__()
+        bs = object.__new__(self.__class__)
         bs._bitstore = self._bitstore.getslice(start, end)
         return bs
 
