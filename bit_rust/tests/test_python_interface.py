@@ -44,5 +44,5 @@ def test_from_oct():
 def test_to_bytes():
     a = BitRust.from_ones(16)
     assert a.to_bytes() == b"\xff\xff"
-    b = a.getslice(7, None)
+    b = a.getslice(7, len(a))
     assert b.to_bytes() == b"\xff\x80"

@@ -261,7 +261,7 @@ impl MutableBitRust {
         self.inner.getindex(bit_index)
     }
 
-    pub fn getslice(&self, start_bit: usize, end_bit: Option<usize>) -> PyResult<MutableBitRust> {
+    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<MutableBitRust> {
         self.inner.getslice(start_bit, end_bit).map(|bits| MutableBitRust { inner: bits })
     }
 

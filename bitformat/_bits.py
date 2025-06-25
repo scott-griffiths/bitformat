@@ -258,13 +258,24 @@ class _BaseBits:
             raise ValueError("Cannot cut - bits must be >= 0.")
 
         length = len(self)
-        it = range(0, length, chunk_size)
-        if count is not None:
-            it = itertools.islice(it, count)
+        num_full_chunks = length // chunk_size
 
-        for start in it:
-            end = min(start + chunk_size, length)
-            yield self._slice(start, end)
+        # Determine the number of full chunks to yield
+        full_chunks_to_yield = num_full_chunks
+        if count is not None:
+            full_chunks_to_yield = min(num_full_chunks, count)
+
+        # Yield all the full chunks in a tight loop
+        start = 0
+        for _ in range(full_chunks_to_yield):
+            yield self._slice(start, start + chunk_size)
+            start += chunk_size
+
+        # Now, determine if there's one more chunk to yield.
+        # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
+        chunks_yielded = full_chunks_to_yield
+        if (count is None or chunks_yielded < count) and start < length:
+            yield self._slice(start, length)
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
@@ -837,8 +848,10 @@ class _BaseBits:
         True
 
         """
-        if isinstance(bs, _BaseBits):
+        try:
             return self._bitstore.equals(bs._bitstore)
+        except AttributeError:
+            pass
         try:
             other = create_bitrust_from_any(bs)
         except TypeError:
@@ -1930,7 +1943,7 @@ class MutableBits(_BaseBits):
             replacement_list.append(original.getslice(starting_points[i] + len(old_bitrust), starting_points[i + 1]))
         # Final replacement
         replacement_list.append(new_bitrust)
-        replacement_list.append(original.getslice(starting_points[-1] + len(old_bitrust), None))
+        replacement_list.append(original.getslice(starting_points[-1] + len(old_bitrust), len(original)))
         self._bitstore = MutableBitRust.from_joined(replacement_list)
         return self
 

@@ -321,17 +321,15 @@ impl BitRust {
         ))
     }
 
-    pub fn equals(&self, other: PyObject) -> bool {
-        Python::with_gil(|py| {
-            let other_any = other.bind(py);
-            if let Ok(other_bitrust) = other_any.extract::<PyRef<BitRust>>() {
-                return self.data == other_bitrust.data;
-            }
-            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBitRust>>() {
-                return self.data == other_mutable_bitrust.inner.data;
-            }
-            false
-        })
+    pub fn equals(&self, other: PyObject, py: Python) -> bool {
+        let other_any = other.bind(py);
+        if let Ok(other_bitrust) = other_any.extract::<PyRef<BitRust>>() {
+            return self.data == other_bitrust.data;
+        }
+        if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBitRust>>() {
+            return self.data == other_mutable_bitrust.inner.data;
+        }
+        false
     }
 
     #[staticmethod]
@@ -542,9 +540,7 @@ impl BitRust {
     }
 
     /// Return a slice of the current BitRust.
-    #[pyo3(signature = (start_bit, end_bit=None))]
-    pub fn getslice(&self, start_bit: usize, end_bit: Option<usize>) -> PyResult<Self> {
-        let end_bit = end_bit.unwrap_or(self.len());
+    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         if start_bit >= end_bit {
             return Ok(BitRust::from_zeros(0));
         }
@@ -760,7 +756,7 @@ mod tests {
     #[test]
     fn hex_edge_cases() {
         let b1 = BitRust::from_hex("0123456789abcdef").unwrap();
-        let b2 = b1.getslice(12, Some(b1.len())).unwrap();
+        let b2 = b1.getslice(12, b1.len()).unwrap();
         assert_eq!(b2.to_hex().unwrap(), "3456789abcdef");
         assert_eq!(b2.len(), 52);
         let t = BitRust::from_hex("123").unwrap();
@@ -857,7 +853,7 @@ mod tests {
     fn test_get_mutable_slice() {
         let a = BitRust::from_hex("01ffff").unwrap();
         assert_eq!(a.len(), 24);
-        let b = a.getslice(1, None).unwrap();
+        let b = a.getslice(1, a.len()).unwrap();
         assert_eq!(b.len(), 23);
         let c = b.clone_as_mutable();
         assert_eq!(c.len(), 23);
@@ -866,8 +862,8 @@ mod tests {
     #[test]
     fn test_getslice() {
         let a = BitRust::from_bin("00010001").unwrap();
-        assert_eq!(a.getslice(0, Some(4)).unwrap().to_bin(), "0001");
-        assert_eq!(a.getslice(4, Some(8)).unwrap().to_bin(), "0001");
+        assert_eq!(a.getslice(0, 4).unwrap().to_bin(), "0001");
+        assert_eq!(a.getslice(4, 8).unwrap().to_bin(), "0001");
     }
 
     #[test]
@@ -893,7 +889,7 @@ mod tests {
     fn test_to_bytes_from_slice() {
         let a = BitRust::from_ones(16);
         assert_eq!(a.to_bytes(), vec![255, 255]);
-        let b = a.getslice(7, None).unwrap();
+        let b = a.getslice(7, a.len()).unwrap();
         assert_eq!(b.to_bin(), "111111111");
         assert_eq!(b.to_bytes(), vec![255, 128]);
     }
@@ -1134,7 +1130,7 @@ mod tests {
     fn mutable_getslice() {
         let m = MutableBitRust::from_bin_checked("11001010").unwrap();
 
-        let slice1 = m.getslice(2, Some(6)).unwrap();
+        let slice1 = m.getslice(2, 6).unwrap();
         assert_eq!(slice1.to_bin(), "0010");
 
         let slice2 = m.getslice_with_step(0, 8, 2).unwrap();
@@ -1293,13 +1289,13 @@ mod tests {
     fn mutable_getslice_edge_cases() {
         let m = MutableBitRust::from_bin_checked("11001010").unwrap();
 
-        let empty = m.getslice(4, Some(4)).unwrap();
+        let empty = m.getslice(4, 4).unwrap();
         assert_eq!(empty.to_bin(), "");
 
-        let full = m.getslice(0, None).unwrap();
+        let full = m.getslice(0, m.len()).unwrap();
         assert_eq!(full.to_bin(), "11001010");
 
-        assert!(m.getslice(9, Some(10)).is_err());
+        assert!(m.getslice(9, 10).is_err());
     }
 
 

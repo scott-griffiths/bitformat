@@ -264,7 +264,7 @@ class Array:
             start, stop, step = key.indices(len(self))
             if step == 1:
                 self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start * self._item_size).clone_as_immutable(),
-                                               self._bitstore.getslice(stop * self._item_size, None).clone_as_immutable()])
+                                               self._bitstore.getslice(stop * self._item_size, len(self._bitstore)).clone_as_immutable()])
                 return
             # We need to delete from the end or the earlier positions will change
             r = (
@@ -274,7 +274,7 @@ class Array:
             )
             for s in r:
                 self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, s * self._item_size).clone_as_immutable(),
-                                               self._bitstore.getslice((s + 1) * self._item_size, None).clone_as_immutable()])
+                                               self._bitstore.getslice((s + 1) * self._item_size, len(self._bitstore)).clone_as_immutable()])
         else:
             if key < 0:
                 key += len(self)
@@ -282,7 +282,7 @@ class Array:
                 raise IndexError
             start = self._item_size * key
             self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start).clone_as_immutable(),
-                                           self._bitstore.getslice(start + self._item_size, None).clone_as_immutable()])
+                                           self._bitstore.getslice(start + self._item_size, len(self._bitstore)).clone_as_immutable()])
 
     def __repr__(self) -> str:
         bitstore_length = len(self._bitstore)
@@ -402,7 +402,7 @@ class Array:
         v = self._create_element(x)
         self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, pos * self._item_size).clone_as_immutable(),
                                        v,
-                                       self._bitstore.getslice(pos * self._item_size, None).clone_as_immutable()])
+                                       self._bitstore.getslice(pos * self._item_size, len(self._bitstore)).clone_as_immutable()])
         return self
 
     def pop(self, pos: int = -1, /) -> ElementType:
