@@ -72,14 +72,6 @@ impl MutableBitRust {
 #[pymethods]
 impl MutableBitRust {
 
-    pub fn equals_bitrust(&self, other: &BitRust) -> bool {
-        self.inner.data == other.data
-    }
-
-    pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
-        self.inner.data == other.inner.data
-    }
-
     pub fn equals(&self, other: PyObject) -> bool {
         Python::with_gil(|py| {
             let other_any = other.bind(py);

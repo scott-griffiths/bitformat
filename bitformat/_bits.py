@@ -286,7 +286,7 @@ class _BaseBits:
         """
         suffix = create_bitrust_from_any(suffix)
         if len(suffix) <= len(self):
-            return self._bitstore.getslice(len(self) - len(suffix), len(self)).equals_bitrust(suffix)
+            return self._bitstore.getslice(len(self) - len(suffix), len(self)).equals(suffix)
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -448,7 +448,7 @@ class _BaseBits:
         """
         prefix = create_bitrust_from_any(prefix)
         if len(prefix) <= len(self):
-            return self._bitstore.getslice(0, len(prefix)).equals_bitrust(prefix)
+            return self._bitstore.getslice(0, len(prefix)).equals(prefix)
         return False
 
     def to_bytes(self) -> bytes:
@@ -846,7 +846,7 @@ class _BaseBits:
             other = create_bitrust_from_any(bs)
         except TypeError:
             return False
-        return self._bitstore.equals_bitrust(other)
+        return self._bitstore.equals(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.

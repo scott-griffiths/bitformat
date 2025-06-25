@@ -317,18 +317,8 @@ impl BitRust {
 
     fn __eq__(&self, _other: PyRef<Self>) -> PyResult<bool> {
         Err(PyNotImplementedError::new_err(
-            "Use the equals_bitrust or equals_mutable_bitrust methods for equality checks.",
+            "Use the equals() method for equality checks.",
         ))
-    }
-
-    // Used for a quick, explicit check, rather than using == which needs to deal with more types.
-    pub fn equals_bitrust(&self, other: &BitRust) -> bool {
-        self.data == other.data
-    }
-
-    // Used for a quick, explicit check, rather than using == which needs to deal with more types.
-    pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
-        self.data == other.inner.data
     }
 
     pub fn equals(&self, other: PyObject) -> bool {
