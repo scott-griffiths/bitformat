@@ -331,6 +331,19 @@ impl BitRust {
         self.data == other.inner.data
     }
 
+    pub fn equals(&self, other: PyObject) -> bool {
+        Python::with_gil(|py| {
+            let other_any = other.bind(py);
+            if let Ok(other_bitrust) = other_any.extract::<PyRef<BitRust>>() {
+                return self.data == other_bitrust.data;
+            }
+            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBitRust>>() {
+                return self.data == other_mutable_bitrust.inner.data;
+            }
+            false
+        })
+    }
+
     #[staticmethod]
     pub fn from_u64(value: u64, length: usize) -> Self {
         BitCollection::from_u64(value, length)

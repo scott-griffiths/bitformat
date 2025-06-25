@@ -10,7 +10,7 @@ path = "bit_rust/src/lib.rs"
 
 [dependencies]
 hex = "0.4.3"
-pyo3 = "0.25.0"
+pyo3 = "0.25.1"
 bitvec = "1.0.1"
 hamming = "0.1.3"
 bytemuck = "1.23.0"

@@ -71,11 +71,7 @@ def _create_u_bitstore(u: int, length: int) -> BitRust:
         raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
                          f"The allowed range is[0, {(1 << length) - 1}].")
     if length <= 64:
-        # Faster method for shorter lengths.
-        try:
-            return BitRust.from_u64(u, length)
-        except OverflowError: # From Rust code
-            raise ValueError(f"Can't store integer value {u} in a bit length of {length}.")
+        return BitRust.from_u64(u, length)
     else:
         b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
         offset = 8 - (length % 8)
@@ -91,10 +87,7 @@ def _create_i_bitstore(i: int, length: int) -> BitRust:
                          f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
     if length < 64:
         # Faster method for shorter lengths.
-        try:
-            return BitRust.from_i64(i, length)
-        except OverflowError: # From Rust code
-            raise ValueError(f"Can't store integer value {i} in a bit length of {length}.")
+        return BitRust.from_i64(i, length)
     else:
         b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
         offset = 8 - (length % 8)
@@ -102,7 +95,6 @@ def _create_i_bitstore(i: int, length: int) -> BitRust:
             return BitRust.from_bytes(b)
         else:
             return BitRust.from_bytes_with_offset(b, offset=offset)
-
 
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
@@ -848,6 +840,8 @@ class _BaseBits:
         True
 
         """
+        if isinstance(bs, _BaseBits):
+            return self._bitstore.equals(bs._bitstore)
         try:
             other = create_bitrust_from_any(bs)
         except TypeError:

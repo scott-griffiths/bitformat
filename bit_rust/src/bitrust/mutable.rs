@@ -3,6 +3,7 @@ use crate::bitrust::BitRust;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
+use pyo3::prelude::PyAnyMethods;
 use bits::BitCollection;
 
 
@@ -77,6 +78,19 @@ impl MutableBitRust {
 
     pub fn equals_mutable_bitrust(&self, other: &MutableBitRust) -> bool {
         self.inner.data == other.inner.data
+    }
+
+    pub fn equals(&self, other: PyObject) -> bool {
+        Python::with_gil(|py| {
+            let other_any = other.bind(py);
+            if let Ok(other_bitrust) = other_any.extract::<PyRef<BitRust>>() {
+                return self.inner.data == other_bitrust.data;
+            }
+            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBitRust>>() {
+                return self.inner.data == other_mutable_bitrust.inner.data;
+            }
+            false
+        })
     }
 
     pub fn byte_swap(&mut self) -> PyResult<()> {
