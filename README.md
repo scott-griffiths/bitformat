@@ -10,7 +10,7 @@ A Python library for creating and parsing binary formats.
 <!--
 [![Dependents (via libraries.io)](https://img.shields.io/librariesio/dependents/pypi/bitformat?logo=libraries.io&logoColor=white)](https://libraries.io/pypi/bitformat)
 &nbsp; &nbsp;
-[![Pepy Total Downlods](https://img.shields.io/pepy/dt/bitformat?logo=python&logoColor=white&labelColor=blue&color=blue)](https://www.pepy.tech/projects/bitformat)
+[![Pepy Total Downloads](https://img.shields.io/pepy/dt/bitformat?logo=python&logoColor=white&labelColor=blue&color=blue)](https://www.pepy.tech/projects/bitformat)
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/bitformat?label=%40&labelColor=blue&color=blue)](https://pypistats.org/packages/bitformat)
 -->
 ---------
@@ -23,7 +23,7 @@ It is from the author of the widely used [**bitstring**](https://github.com/scot
 ----
 ## TLDR;
 
-A few code snippets to whet the appetite. If anything here looks useful to you then bitformat might be what you need.
+Here are a few code snippets to whet the appetite. If anything here looks useful to you then bitformat might be what you need.
 
 Creating and manipulating bits:
 ```python
@@ -77,12 +77,12 @@ Format creation and parsing:
 ## Features
 * The `Bits` and `MutableBits` classes represent sequences of binary data of arbitrary length. They provide methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
-* A wide array of data types is supported with no arbitrary restrictions on length.
+* A wide array of data types is supported, with no arbitrary restrictions on length.
 * Data is always stored as a contiguous array of bits.
-* The core is written is Rust for efficiency.
+* The core is written in Rust for efficiency.
 
 > [!NOTE]
-> To see what been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
+> To see what has been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
 
 ## Installation
 
@@ -233,7 +233,7 @@ The (unordered) :todo: list includes:
 * **~~Field expressions~~.**  :sparkles: Done in v0.3 :sparkles:  Rather than hard-coding everything in a field, some parts will be calculated during the parsing process. For example in the format `'(w: u16, h: u16, [u8; {w * h}])'` the size of the `'u8'` array would depend on the values parsed just before it.
 * **~~New field types~~.** :sparkles: Done in v0.3 :sparkles:  Fields like `Repeat` and `If` are planned which will allow more flexible formats to be written.
 * **Exotic floating point types.** In `bitstring` there are a number of extra floating point types such as `bfloat` and the MXFP 8, 6 and 4-bit variants. These will be ported over to `bitformat`.
-* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Version 0.5 received some significant speed boosts and is now competetive for _most_ use cases.
-* **LSB0.** Currenlty all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
+* **Performance improvements.** A primary focus on the design of `bitformat` is that it should be fast. Version 0.5 received some significant speed boosts and is now competitive for _most_ use cases.
+* **LSB0.** Currently all bit positions are done with the most significant bit being bit zero (MSB0). I plan to add support for least significant bit zero (LSB0) bit numbering as well.
 
 <sub>Copyright (c) 2024-2025 Scott Griffiths</sub>
