@@ -52,7 +52,7 @@ class Array:
     - ``reverse()``: Reverse the order of all items.
     - ``to_bits()``: Return a copy of the Array data as an immutable ``Bits``.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
-    - ``unpack()``: Return Array items as a list of values.
+    - ``to_list()``: Return Array items as a list of values.
 
     **Special methods:**
 
@@ -288,7 +288,7 @@ class Array:
     def __repr__(self) -> str:
         bitstore_length = len(self._bitstore)
         if bitstore_length % self._item_size == 0:
-            list_str = f"{self.unpack()}"
+            list_str = f"{self.to_list()}"
             return f"Array('{self._dtype}', {list_str})"
         return f"Array.from_bits('{self._dtype}', {self.to_bits()!r})"
 
@@ -313,20 +313,20 @@ class Array:
             Array('f16', [1.0, 2.0, 3.0])
 
         """
-        new_array = self.__class__(dtype, self.unpack())
+        new_array = self.__class__(dtype, self.to_list())
         return new_array
 
-    def unpack(self, dtype: str | Dtype | None = None) -> list[ElementType]:
+    def to_list(self, dtype: str | Dtype | None = None) -> list[ElementType]:
         """Interpret the Array as a list of elements of a given dtype, defaulting to the Array's current dtype.
 
         .. code-block:: pycon
 
             >>> a = Array('i3', [2, 1, -2, 0])
-            >>> a.unpack()
+            >>> a.to_list()
             [2, 1, -2, 0]
-            >>> a.unpack('bin3')
+            >>> a.to_list('bin3')
             ['010', '001', '110', '000']
-            >>> a.unpack('u5, bool')
+            >>> a.to_list('u5, bool')
             [(8, True), (24, False)]
 
         """

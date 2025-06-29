@@ -169,7 +169,7 @@ This is similar to the `array` type in the standard module of the same name, but
 ```python
 >>> r = Array('i5', [4, -3, 0, 1, -5, 15])  # An array of 5 bit signed ints
 >>> r -= 2  # Operates on each element
->>> r.unpack()
+>>> r.to_list()
 [2, -5, -2, -1, -7, 13]
 >>> r.dtype = 'u6'  # You can freely change the data type
 >>> r

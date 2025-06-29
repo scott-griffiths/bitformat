@@ -89,7 +89,7 @@ class TestCreation:
         assert len(a) == 803 // 16
         b = Array("f32", [0])
         b.dtype = "i3"
-        assert b.unpack() == [0] * 10
+        assert b.to_list() == [0] * 10
 
     def test_creation_with_trailing_bits(self):
         a = Array.from_bits('bool', Bits('0xf'))
@@ -113,7 +113,7 @@ class TestCreation:
 
         c = Array.from_bits("f16", Bits("0x0000, 0b1"))
         assert c[0] == 0.0
-        assert c.unpack() == [0.0]
+        assert c.to_list() == [0.0]
 
     def test_creation_from_bytes(self):
         a = Array.from_bytes("u8", b"ABC")
@@ -131,12 +131,12 @@ class TestCreation:
         m = memoryview(x[2:5])
         assert m == b"345"
         a = Array("u8", m)
-        assert a.unpack() == [ord("3"), ord("4"), ord("5")]
+        assert a.to_list() == [ord("3"), ord("4"), ord("5")]
 
     def test_creation_from_bits(self):
         a = Bits.from_joined([Bits.from_dtype("i19", x) for x in range(-10, 10)])
         b = Array.from_bits("i19", a)
-        assert b.unpack() == list(range(-10, 10))
+        assert b.to_list() == list(range(-10, 10))
 
     def test_format_changes(self):
         a = Array("u8", [5, 4, 3])
@@ -144,7 +144,7 @@ class TestCreation:
             a.dtype = "ue3"
         b = a[:]
         b.dtype = "i8"
-        assert a.unpack() == b.unpack()
+        assert a.to_list() == b.to_list()
         assert not a.equals(b)
         with pytest.raises(ValueError):
             b.dtype = "hello_everyone"
@@ -214,10 +214,10 @@ class TestArrayMethods:
     def test_equals_with_trailing_bits(self):
         a = Array("hex1", ["a", "b", "c", "d", "e", "f"])
         c = Array.from_bits("hex1", Bits.from_string("0xabcdef, 0b11"))
-        assert a.unpack() == c.unpack()
+        assert a.to_list() == c.to_list()
         assert a != c
         a = Array.from_bits(a.dtype, a.bits + "0b11")
-        assert a.unpack() == c.unpack()
+        assert a.to_list() == c.to_list()
         assert a.equals(c)
 
     def test_setting(self):
@@ -232,7 +232,7 @@ class TestArrayMethods:
         with pytest.raises(ValueError):
             b.extend(["3456"])
         b.extend(["345"])
-        assert b.unpack() == ["123", "345"]
+        assert b.to_list() == ["123", "345"]
         with pytest.raises(ValueError):
             b[0] = "abcd"
         with pytest.raises(TypeError):
@@ -246,19 +246,19 @@ class TestArrayMethods:
         a = Array("u99", range(100))
         x = itertools.chain([1, 2, 3], [4, 5])
         a[10:15] = x
-        assert a[10:15].unpack() == list(range(1, 6))
+        assert a[10:15].to_list() == list(range(1, 6))
         x = itertools.chain([1, 2, 3], [4, 5])
         a[50:60:2] = x
-        assert a[50:60:2].unpack() == list(range(1, 6))
+        assert a[50:60:2].to_list() == list(range(1, 6))
 
     def test_extend(self):
         a = Array("u3", (1, 2, 3))
         a.extend([4, 5, 6])
-        assert a.unpack() == [1, 2, 3, 4, 5, 6]
+        assert a.to_list() == [1, 2, 3, 4, 5, 6]
         a.extend([])
-        assert a.unpack() == [1, 2, 3, 4, 5, 6]
+        assert a.to_list() == [1, 2, 3, 4, 5, 6]
         a.extend(a)
-        assert a.unpack() == [1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6]
+        assert a.to_list() == [1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6]
         b = Array("i3", [0])
         with pytest.raises(TypeError):
             a.extend(b)
@@ -276,13 +276,13 @@ class TestArrayMethods:
         bp = array.array("B", b[:])
         a.extend(b)
         bp.extend(ap)
-        assert a.unpack() == [1, 2, 3, 4, 5, 6]
+        assert a.to_list() == [1, 2, 3, 4, 5, 6]
         assert bp.tolist() == [4, 5, 6, 1, 2, 3]
 
         a.dtype = "i8"
-        ap = Array("u8", a.unpack())
+        ap = Array("u8", a.to_list())
         assert not a.equals(ap)
-        assert a.unpack() == ap.unpack()
+        assert a.to_list() == ap.to_list()
 
     def test_insert(self):
         a = Array("hex3", ["abc", "def"])
@@ -295,7 +295,7 @@ class TestArrayMethods:
         a = Array.from_bits(a.dtype, a.bits + "0b1")
         assert a[-1] == "def"
         a.insert(1, "111")
-        assert a.unpack() == ["000", "111", "abc", "111", "def"]
+        assert a.to_list() == ["000", "111", "abc", "111", "def"]
 
         with pytest.raises(ValueError):
             a.insert(2, "hello")
@@ -324,21 +324,21 @@ class TestArrayMethods:
     def test_reverse(self):
         a = Array("i30", [])
         a.reverse()
-        assert a.unpack() == []
+        assert a.to_list() == []
         a.append(2)
         a.reverse()
-        assert a.unpack() == [2]
+        assert a.to_list() == [2]
         a.append(3)
         a.reverse()
-        assert a.unpack() == [3, 2]
+        assert a.to_list() == [3, 2]
         a = Array(a.dtype)
         a.extend(list(range(1000)))
         a.reverse()
-        assert a.unpack() == list(range(999, -1, -1))
+        assert a.to_list() == list(range(999, -1, -1))
         x = a.pop(0)
         assert x == 999
         a.reverse()
-        assert a.unpack() == list(range(0, 999))
+        assert a.to_list() == list(range(0, 999))
         a = Array.from_bits(a.dtype, a.bits + "0b1")
         with pytest.raises(ValueError):
             a.reverse()
@@ -352,15 +352,15 @@ class TestArrayMethods:
     def test_byte_swap(self):
         a = Array("u16")
         a.byte_swap()
-        assert a.unpack() == []
+        assert a.to_list() == []
         b = Array("u17")
         with pytest.raises(ValueError):
             b.byte_swap()
         a.extend([1, 0, 256])
         a.byte_swap()
-        assert a.unpack() == [256, 0, 1]
+        assert a.to_list() == [256, 0, 1]
         a.byte_swap()
-        assert a.unpack() == [1, 0, 256]
+        assert a.to_list() == [1, 0, 256]
 
     def test_getting(self):
         a = Array("i17")
@@ -379,14 +379,14 @@ class TestArrayMethods:
         a[0] = -1
         assert a[0] == -1
         a[0:3] = [0, 0]
-        assert a.unpack() == [0, 0, 0, 0, -1, 0]
-        b = Array("i20", a.unpack())
+        assert a.to_list() == [0, 0, 0, 0, -1, 0]
+        b = Array("i20", a.to_list())
         with pytest.raises(TypeError):
             b[::2] = 9
         b[::2] = [9] * 3
-        assert b.unpack() == [9, 0, 9, 0, 9, 0]
+        assert b.to_list() == [9, 0, 9, 0, 9, 0]
         b[1:4] = a[-2:]
-        assert b.unpack() == [9, -1, 0, 9, 0]
+        assert b.to_list() == [9, -1, 0, 9, 0]
 
     def test_deleting(self):
         a = Array("u99", list(range(100)))
@@ -394,7 +394,7 @@ class TestArrayMethods:
         assert len(a) == 50
         del a[-10:]
         assert len(a) == 40
-        assert a[:10].unpack() == [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+        assert a[:10].to_list() == [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
         with pytest.raises(IndexError):
             del a[len(a)]
         with pytest.raises(IndexError):
@@ -403,7 +403,7 @@ class TestArrayMethods:
     def test_deleting_more_ranges(self):
         a = Array("u18", [1, 2, 3, 4, 5, 6])
         del a[3:1:-1]
-        assert a.unpack() == [1, 2, 5, 6]
+        assert a.to_list() == [1, 2, 5, 6]
 
     def test_repr(self):
         a = Array("i5")
@@ -456,10 +456,10 @@ class TestArrayMethods:
     def test__iadd__(self):
         a = Array("u999")
         a.extend([4])
-        assert a.unpack() == [4]
+        assert a.to_list() == [4]
         a += 5
         a.extend(a)
-        assert a.unpack() == [9, 9]
+        assert a.to_list() == [9, 9]
 
     # def test_float8_bug(self):
     #     a = Array('p3binary', [0.0, 1.5])
@@ -545,7 +545,7 @@ class TestArrayOperations:
     def test_in_place_add(self):
         a = Array("i7", [-9, 4, 0])
         a += 9
-        assert a.unpack() == [0, 13, 9]
+        assert a.to_list() == [0, 13, 9]
         assert len(a.bits) == 21
 
     def test_add(self):
@@ -565,29 +565,29 @@ class TestArrayOperations:
     def test_in_place_sub(self):
         a = Array("f16", [-9, -10.5])
         a -= -1.5
-        assert a.unpack() == [-7.5, -9.0]
+        assert a.to_list() == [-7.5, -9.0]
 
     def test_mul(self):
         a = Array("i21", [-5, -4, 0, 2, 100])
         b = a * 2
-        assert b.unpack() == [-10, -8, 0, 4, 200]
+        assert b.to_list() == [-10, -8, 0, 4, 200]
         a = Array("i9", [-1, 0, 3])
         b = a * 2
-        assert a.unpack() == [-1, 0, 3]
-        assert b.unpack() == [-2, 0, 6]
+        assert a.to_list() == [-1, 0, 3]
+        assert b.to_list() == [-2, 0, 6]
         c = a * 2.5
-        assert c.unpack() == [-2, 0, 7]
+        assert c.to_list() == [-2, 0, 7]
 
     def test_in_place_mul(self):
         a = Array("i21", [-5, -4, 0, 2, 100])
         a *= 0.5
-        assert a.unpack() == [-2, -2, 0, 1, 50]
+        assert a.to_list() == [-2, -2, 0, 1, 50]
 
     def test_div(self):
         a = Array("i32", [-2, -1, 0, 1, 2])
         b = a // 2
-        assert a.unpack() == [-2, -1, 0, 1, 2]
-        assert b.unpack() == [-1, -1, 0, 0, 1]
+        assert a.to_list() == [-2, -1, 0, 1, 2]
+        assert b.to_list() == [-1, -1, 0, 0, 1]
 
     def test_in_place_div(self):
         a = Array("i10", [-4, -3, -2, -1, 0, 1, 2])
@@ -610,20 +610,20 @@ class TestArrayOperations:
         with pytest.raises(TypeError):
             _ = a & 0
         b = a & "0x0001"
-        assert b.unpack() == [1, 0, 1]
+        assert b.to_list() == [1, 0, 1]
         b = a & "0xffff"
         assert b.dtype == Dtype.from_string("i16")
-        assert b.unpack() == [-1, 100, 9]
+        assert b.to_list() == [-1, 100, 9]
 
     def test_in_place_and(self):
         a = Array("bool", [True, False, True])
         with pytest.raises(TypeError):
             a &= 0b1
-        a = Array("u10", a.unpack())
+        a = Array("u10", a.to_list())
         a <<= 3
-        assert a.unpack() == [8, 0, 8]
+        assert a.to_list() == [8, 0, 8]
         a += 1
-        assert a.unpack() == [9, 1, 9]
+        assert a.to_list() == [9, 1, 9]
         with pytest.raises(ValueError):
             a &= "0b111"
         a &= "0b0000000111"
@@ -640,15 +640,15 @@ class TestArrayOperations:
         a.append("f0f")
         a.extend(["000", "111"])
         a |= "0x00f"
-        assert a.unpack() == ["f0f", "00f", "11f"]
+        assert a.to_list() == ["f0f", "00f", "11f"]
         with pytest.raises(TypeError):
             a |= 12
 
     def test_xor(self):
         a = Array("hex2", ["00", "ff", "aa"])
         b = a ^ "0xff"
-        assert a.unpack() == ["00", "ff", "aa"]
-        assert b.unpack() == ["ff", "00", "55"]
+        assert a.to_list() == ["00", "ff", "aa"]
+        assert b.to_list() == ["ff", "00", "55"]
 
     def test_in_place_xor(self):
         a = Array("u10", [0, 0xF, 0x1F])
@@ -657,23 +657,23 @@ class TestArrayOperations:
     def test_rshift(self):
         a = Array.from_bits("u8", Bits("0x00010206"))
         b = a >> 1
-        assert a.unpack() == [0, 1, 2, 6]
-        assert b.unpack() == [0, 0, 1, 3]
+        assert a.to_list() == [0, 1, 2, 6]
+        assert b.to_list() == [0, 0, 1, 3]
 
         a = Array("i10", [-1, 0, -20, 10])
         b = a >> 1
-        assert b.unpack() == [-1, 0, -10, 5]
+        assert b.to_list() == [-1, 0, -10, 5]
         c = a >> 0
-        assert c.unpack() == [-1, 0, -20, 10]
+        assert c.to_list() == [-1, 0, -20, 10]
         with pytest.raises(ValueError):
             _ = a >> -1
 
     def test_in_place_rshift(self):
         a = Array("i8", [-8, -1, 0, 1, 100])
         a >>= 1
-        assert a.unpack() == [-4, -1, 0, 0, 50]
+        assert a.to_list() == [-4, -1, 0, 0, 50]
         a >>= 100000
-        assert a.unpack() == [-1, -1, 0, 0, 0]
+        assert a.to_list() == [-1, -1, 0, 0, 0]
 
     def test_lshift(self):
         a = Array("f16", [0.3, 1.2])
@@ -681,24 +681,24 @@ class TestArrayOperations:
             _ = a << 3
         a = Array("i16", [-2, -1, 0, 128])
         b = a << 4
-        assert a.unpack() == [-2, -1, 0, 128]
-        assert b.unpack() == [-32, -16, 0, 2048]
+        assert a.to_list() == [-2, -1, 0, 128]
+        assert b.to_list() == [-32, -16, 0, 2048]
         with pytest.raises(ValueError):
             _ = a << 1000
 
     def test_in_place_lshift(self):
         a = Array("u11", [0, 5, 10, 1, 2, 3])
         a <<= 2
-        assert a.unpack() == [0, 20, 40, 4, 8, 12]
+        assert a.to_list() == [0, 20, 40, 4, 8, 12]
         a <<= 0
-        assert a.unpack() == [0, 20, 40, 4, 8, 12]
+        assert a.to_list() == [0, 20, 40, 4, 8, 12]
         with pytest.raises(ValueError):
             a <<= -1
 
     def test_neg(self):
         a = Array("i92", [-1, 1, 0, 100, -100])
         b = -a
-        assert b.unpack() == [1, -1, 0, -100, 100]
+        assert b.to_list() == [1, -1, 0, -100, 100]
         assert str(b.dtype) == "i92"
 
     def test_abs(self):
@@ -726,21 +726,21 @@ class TestSameSizeArrayOperations:
         a = Array("u8", [1, 2, 3, 4])
         b = Array("u8", [5, 5, 5, 4])
         c = a + b
-        assert c.unpack() == [6, 7, 8, 8]
+        assert c.to_list() == [6, 7, 8, 8]
         assert c.dtype == Dtype.from_string("u8")
 
     def test_adding_different_types(self):
         a = Array("u8", [1, 2, 3, 4])
         b = Array("i6", [5, 5, 5, 4])
         c = a + b
-        assert c.unpack() == [6, 7, 8, 8]
+        assert c.to_list() == [6, 7, 8, 8]
         assert c.dtype == Dtype.from_string("i6")
         d = Array("f16", [-10, 0, 5, 2])
         e = d + a
-        assert e.unpack() == [-9.0, 2.0, 8.0, 6.0]
+        assert e.to_list() == [-9.0, 2.0, 8.0, 6.0]
         assert e.dtype == Dtype.from_string("f16")
         e = a + d
-        assert e.unpack() == [-9.0, 2.0, 8.0, 6.0]
+        assert e.to_list() == [-9.0, 2.0, 8.0, 6.0]
         assert e.dtype == Dtype.from_string("f16")
         x1 = a[:]
         x2 = a[:]
@@ -756,7 +756,7 @@ class TestSameSizeArrayOperations:
             _ = a + b
         b.append(0)
         c = a + b
-        assert c.unpack() == [9, 102, 1000]
+        assert c.to_list() == [9, 102, 1000]
         a.dtype = "hex4"
         with pytest.raises(ValueError):
             _ = a + b
@@ -766,14 +766,14 @@ class TestComparisonOperators:
     def test_less_than_with_scalar(self):
         a = Array("u16", [14, 16, 100, 2, 100])
         b = a < 80
-        assert b.unpack() == [True, True, False, True, False]
+        assert b.to_list() == [True, True, False, True, False]
         assert b.dtype == Dtype("bool")
 
     def test_less_than_with_array(self):
         a = Array("u16", [14, 16, 100, 2, 100])
         b = Array("f16", [1000, -54, 0.2, 55, 9])
         c = a < b
-        assert c.unpack() == [True, False, False, True, False]
+        assert c.to_list() == [True, False, False, True, False]
         assert c.dtype == Dtype("bool")
 
     def test_array_equals(self):
@@ -796,13 +796,13 @@ class TestAsType:
     def test_switching_int_types(self):
         a = Array("u8", [15, 42, 1])
         b = a.as_type("i8")
-        assert a.unpack() == b.unpack()
+        assert a.to_list() == b.to_list()
         assert b.dtype == Dtype.from_string("i8")
 
     def test_switching_float_types(self):
         a = Array("f64", [-990, 34, 1, 0.25])
         b = a.as_type("f16")
-        assert a.unpack() == b.unpack()
+        assert a.to_list() == b.to_list()
         assert b.dtype == Dtype.from_string("f16")
 
 
@@ -840,17 +840,17 @@ class TestReverseMethods:
     def test_rand(self):
         a = Array("u8", [255, 8, 4, 2, 1, 0])
         b = "0x0f" & a
-        assert b.unpack() == [15, 8, 4, 2, 1, 0]
+        assert b.to_list() == [15, 8, 4, 2, 1, 0]
 
     def test_ror(self):
         a = Array("u8", [255, 8, 4, 2, 1, 0])
         b = "0x0f" | a
-        assert b.unpack() == [255, 15, 15, 15, 15, 15]
+        assert b.to_list() == [255, 15, 15, 15, 15, 15]
 
     def test_rxor(self):
         a = Array("u8", [255, 8, 4, 2, 1, 0])
         b = "0x01" ^ a
-        assert b.unpack() == [254, 9, 5, 3, 0, 1]
+        assert b.to_list() == [254, 9, 5, 3, 0, 1]
 
 
 class TestMisc:
@@ -889,7 +889,7 @@ class TestMisc:
         x = Array("i4", [1, 2, 3, 4])
         y = Array("f16", [100, 2.0, 0.0, 4])
         x = x + (y == 0.0)
-        assert x.unpack() == [1, 2, 4, 4]
+        assert x.to_list() == [1, 2, 4, 4]
 
 
 def test_mutability():
@@ -920,9 +920,9 @@ class TestDelegation:
         d = a.bits
         assert d._bitstore is a._bitstore
         d[-4:] = "0xf"
-        assert a.unpack() == [1, 2, 5, -1]
+        assert a.to_list() == [1, 2, 5, -1]
         a.bits[:4] = '0b0000'
-        assert a.unpack() == [0, 2, 5, -1]
+        assert a.to_list() == [0, 2, 5, -1]
         assert d._bitstore is a._bitstore
 
     def test_mutability(self):
@@ -980,7 +980,7 @@ def test_rgb_array():
     assert len(a) == 8
     assert a[0] == (0, 0, 0)
     assert a[1] == (0, 0, 0)
-    assert a.unpack() == [(0, 0, 0)] * 8
+    assert a.to_list() == [(0, 0, 0)] * 8
     a[5] = (5, 4, 3)
     assert a[5] == (5, 4, 3)
 
@@ -1030,13 +1030,13 @@ def test_create_from_bytes():
 
 def test_more_unpacking_to_dtypes():
     a = Array('i3', [2, 1, -2, 0])
-    assert a.unpack('bin') == ['010', '001', '110', '000']
-    assert a.unpack('[i3; 2]') == [(2, 1), (-2, 0)]
+    assert a.to_list('bin') == ['010', '001', '110', '000']
+    assert a.to_list('[i3; 2]') == [(2, 1), (-2, 0)]
     with pytest.raises(ValueError):
-        a.unpack('[i3;]')
+        a.to_list('[i3;]')
     with pytest.raises(ValueError):
-        a.unpack('i, bool')
-    assert a.unpack('(u8,)') == [(71,)]
+        a.to_list('i, bool')
+    assert a.to_list('(u8,)') == [(71,)]
 
 def test_array_from_bits():
     b = Bits('0xff')
@@ -1045,7 +1045,7 @@ def test_array_from_bits():
     with pytest.raises(TypeError):
         _ = Array('u8', b'123')
     a = Array.from_iterable('u8', b)
-    assert a.unpack() == [1, 1, 1, 1, 1, 1, 1, 1]
+    assert a.to_list() == [1, 1, 1, 1, 1, 1, 1, 1]
 
 def test_is_things():
     a = Array('f32', [1, 2, 0.3])
@@ -1066,4 +1066,4 @@ def test_info():
 
 def test_chaining():
     a = Array('u8').append(4).extend([3, 2]).insert(0, 100).reverse()
-    assert a.unpack() == [2, 3, 4, 100]
+    assert a.to_list() == [2, 3, 4, 100]
