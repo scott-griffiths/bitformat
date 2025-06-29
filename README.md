@@ -32,34 +32,35 @@ Creating and manipulating bits:
     >>> b += '0b110'
     >>> b.replace('0b11', '0xf')
     MutableBits('0b0001001000111111110')
-    >>> list(b.find_all('0b10'))
+    >>> b.unpack('(u15, [bool;])')
+    (2335, (True, True, True, False))
+    >>> list(b.to_bits().find_all('0b10'))
     [3, 6, 17]
 ```
 
 Arrays of bits of a single data type:
 
 ```python
-    >>> a = Array.from_bits('i5', b[:15])
+    >>> a = Array.from_bits('i5', '0xfeed5')
     >>> a
-    Array('i5', [2, 8, -1])
-    >>> a += 1
+    Array('i5', [-1, -5, -10, -11])
+    >>> a + 10
+    Array('i5', [9, 5, 0, -1])
+    >>> a.dtype = 'bin4'
     >>> a
-    Array('i5', [3, 9, 0])
-    >>> a.dtype = '(u4, bool)'
-    >>> a
-    Array('(u4, bool)', [(1, True), (4, True), (0, False)])
+    Array('bin4', ['1111', '1110', '1110', '1101', '0101'])
 ```
 
 Format creation and parsing:
 
 ```python
-    >>> f = Format("a_format: (x: u3, an_array: [i4; {x}], tuple(f16, f32), repeat {x + 1}: bool)")
+    >>> f = Format("fmt: (x: u3, arr: [i4; {x}], tuple(f16, f32), repeat {x + 1}: bool)")
     >>> f.parse(b'some_byte_data')
     67
     >>> f.pp()
-    a_format: (
+    fmt: (
         x: u3 = 3,
-        an_array: [i4; {x}] = (-7, -5, 7),
+        arr: [i4; {x}] = (-7, -5, 7),
         tuple(f16, f32) = (-0.41845703125, -3.2239261260613716e-10),
         repeat{x + 1}:
             bool = False
@@ -67,7 +68,7 @@ Format creation and parsing:
             bool = True
             bool = True
     )
-    >>> f['an_array'].value = (1, 2, 3)
+    >>> f['arr'].value = (1, 2, 3)
     >>> f.to_bytes()
     b'bGme_byt`'
 ```
