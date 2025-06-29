@@ -511,17 +511,16 @@ class TestArrayMethods:
 ]\n"""
         )
 
-    #     def test_pp_two_formats(self):
-    #         a = Array('float16', bytearray(20))
-    #         s = io.StringIO()
-    #         a.pp(stream=s, fmt='p3binary, bin', show_offset=False)
-    #         assert remove_unprintable(s.getvalue()) == """<Array fmt='p3binary, bin', length=20, item_size=8 bits, total data size=20 bytes> [
-    #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
-    #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
-    #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
-    #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
-    #                 0.0                 0.0                 0.0                 0.0 : 00000000 00000000 00000000 00000000
-    # ]\n"""
+    def test_pp_two_formats(self):
+        a = Array.from_bytes('f16', bytearray(20))
+        s = io.StringIO()
+        a.pp(stream=s, dtype1='u8', dtype2='bin8', show_offset=False)
+        assert remove_unprintable(s.getvalue()) == """<Array dtype1='u8', dtype2='bin8', length=20, item_size=8 bits, total data size=20 bytes> [
+  0   0   0   0   0   0 : 00000000 00000000 00000000 00000000 00000000 00000000
+  0   0   0   0   0   0 : 00000000 00000000 00000000 00000000 00000000 00000000
+  0   0   0   0   0   0 : 00000000 00000000 00000000 00000000 00000000 00000000
+  0   0                 : 00000000 00000000                                    
+]\n"""
 
     def test_pp_two_formats_no_length(self):
         a = Array.from_bytes("f16", bytearray(range(50, 56)))
@@ -533,6 +532,13 @@ class TestArrayMethods:
  0: 12851 13365 13879 : 0011001000110011 0011010000110101 0011011000110111
 ]\n"""
         )
+
+    def test_pp_trailing_bits(self):
+        a = Array.from_bits('u8', '0b1')
+        s = io.StringIO()
+        a.pp(stream=s)
+        assert remove_unprintable(s.getvalue()) == """<Array dtype1='u8', length=0, item_size=8 bits, total data size=1 bytes> [
+] + trailing_bits = 0b1\n"""
 
 
 class TestArrayOperations:

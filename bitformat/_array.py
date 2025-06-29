@@ -101,10 +101,11 @@ class Array:
         return x
 
     @classmethod
-    def from_bits(cls, dtype: str | Dtype, bits: Bits) -> Array:
+    def from_bits(cls, dtype: str | Dtype, bits: BitsType) -> Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
+        bits = Bits._from_any(bits)
         # We may change the internal BitRust, so need to make a copy here.
         x._bitstore = bits._bitstore.clone_as_mutable()
         return x
@@ -149,7 +150,7 @@ class Array:
     def bits(self, value: BitsType) -> None:
         self._bitstore = create_mutable_bitrust_from_any(value)
 
-    def _get_bit_slice(self, start: int, stop: int | None) -> MutableBits:
+    def _get_bit_slice(self, start: int, stop: int) -> MutableBits:
         x = MutableBits()
         x._bitstore = self._bitstore.getslice(start, stop)
         return x
@@ -543,7 +544,7 @@ class Array:
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._bitstore) - trailing_bit_length, None).unpack("bin"))
+            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._bitstore) - trailing_bit_length, len(self._bitstore)).unpack("bin"))
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:
