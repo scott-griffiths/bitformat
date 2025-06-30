@@ -2,7 +2,7 @@ use std::fmt;
 use std::fmt::Write;
 use crate::bitrust::helpers;
 use bitvec::prelude::*;
-use bytemuck::cast_slice;
+use bytemuck;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
@@ -232,10 +232,7 @@ impl BitRust {
         debug_assert!(start_bit <= end_bit);
         debug_assert!(end_bit <= self.len());
 
-        let mut new_data = BitVec::with_capacity(end_bit - start_bit);
-        new_data.extend_from_bitslice(&self.data[start_bit..end_bit]);
-
-        BitRust::new(new_data)
+        BitRust::new(BitVec::from_bitslice(&self.data[start_bit..end_bit]))
     }
 }
 
@@ -440,9 +437,18 @@ impl BitRust {
     }
 
 
+
     /// Convert to bytes, padding with zero bits if needed.
     pub fn to_bytes(&self) -> Vec<u8> {
-        helpers::convert_bitrust_to_bytes(self)
+        if self.data.is_empty() {
+            return Vec::new();
+        }
+
+        let mut bv = BitVec::<u8, Msb0>::with_capacity(self.len());
+        bv.extend_from_bitslice(&self.data);
+        let new_len = (bv.len() + 7) & !7;
+        bv.resize(new_len, false);
+        bv.into_vec()
     }
 
     /// Return bytes that can easily be converted to an int in Python
@@ -535,7 +541,7 @@ impl BitRust {
         // Note that using hamming::weight is about twice as fast as:
         // self.data.count_ones()
         // which is the way that bitvec suggests.
-        let bytes: &[u8] = cast_slice(self.data.as_raw_slice());
+        let bytes: &[u8] = bytemuck::cast_slice(self.data.as_raw_slice());
         hamming::weight(bytes) as usize
     }
 

@@ -1,7 +1,6 @@
 /// Helper functions.
 use super::*;
 use bitvec::prelude::*;
-use bytemuck::cast_slice;
 use pyo3::exceptions::PyIndexError;
 use pyo3::PyResult;
 use bits::BitCollection;
@@ -105,17 +104,6 @@ pub fn find_bitvec_bytealigned(
         }
     }
     None
-}
-
-pub fn convert_bitrust_to_bytes(bits: &BitRust) -> Vec<u8> {
-    // This only works because BV = BitVec<u8, Msb0>. If we use a wider base this needs a fix.
-    let mut bytes = cast_slice(bits.data.as_raw_slice()).to_vec();
-    let byte_len = bytes.len();
-    if bits.len() % 8 != 0 {
-        let mask = 0xff << (8 - (bits.len() % 8));
-        bytes[byte_len- 1] &= mask;
-    }
-    bytes
 }
 
 pub fn validate_index(index: i64, length: usize) -> PyResult<usize> {
