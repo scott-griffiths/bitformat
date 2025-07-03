@@ -191,14 +191,14 @@ impl fmt::Debug for BitRust {
         if self.len() > 100 {
             return f
                 .debug_struct("Bits")
-                .field("hex", &self.slice(0, 100).to_hex().unwrap())
+                .field("hex", &self.slice(0, 100).slice_to_hex(0, self.len()).unwrap())
                 .field("length", &self.len())
                 .finish();
         }
         if self.len() % 4 == 0 {
             return f
                 .debug_struct("Bits")
-                .field("hex", &self.to_hex().unwrap())
+                .field("hex", &self.slice_to_hex(0, self.len()).unwrap())
                 .field("length", &self.len())
                 .finish();
         }
@@ -234,6 +234,18 @@ impl BitRust {
 
         BitRust::new(BitVec::from_bitslice(&self.data[start_bit..end_bit]))
     }
+
+    pub(crate) fn to_bin(&self) -> String {
+        format!("{:b}", self)
+    }
+
+    pub(crate) fn to_hex(&self) -> String {
+        if self.len() % 4 != 0 {
+            panic!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", self.len());
+        }
+        format!("{:x}", self)
+    }
+
 }
 
 
@@ -472,22 +484,22 @@ impl BitRust {
         bv.into_vec()
     }
 
-    pub fn to_hex(&self) -> PyResult<String> {
-        if self.len() % 4 != 0 {
+    pub fn slice_to_bin(&self, start: usize, end: usize) -> String {
+        format!("{:b}", self.slice(start, end))
+    }
+
+    pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
+        if (end - start) % 3 != 0 {
+            return Err(PyValueError::new_err(format!("Cannot interpret as octal - length of {} is not a multiple of 3 bits.", self.len())));
+        }
+        Ok(format!("{:o}", self.slice(start, end)))
+    }
+
+    pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
+        if (end - start) % 4 != 0 {
             return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", self.len())));
         }
         Ok(format!("{:x}", self))
-    }
-
-    pub fn to_bin(&self) -> String {
-        format!("{:b}", self)
-    }
-
-    pub fn to_oct(&self) -> PyResult<String> {
-        if self.len() % 3 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret to octal - length of {} is not a multiple of 3 bits.", self.len())));
-        }
-        Ok(format!("{:o}", self))
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {
@@ -722,7 +734,7 @@ mod tests {
         let bits = BitRust::from_zeros(8);
         assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
-        assert_eq!(bits.to_hex().unwrap(), "00");
+        assert_eq!(bits.to_hex(), "00");
         let bits = BitRust::from_zeros(9);
         assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
@@ -735,10 +747,9 @@ mod tests {
         let bits = BitRust::from_ones(8);
         assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
-        assert_eq!(bits.to_hex().unwrap(), "ff");
+        assert_eq!(bits.to_hex(), "ff");
         let bits = BitRust::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
-        assert!(bits.to_hex().is_err());
         assert_eq!((*bits.to_bytes())[0], 0xff);
         assert_eq!((*bits.to_bytes())[1] & 0x80, 0x80);
         assert_eq!(bits.len(), 9);
@@ -763,10 +774,10 @@ mod tests {
     fn hex_edge_cases() {
         let b1 = BitRust::from_hex("0123456789abcdef").unwrap();
         let b2 = b1.getslice(12, b1.len()).unwrap();
-        assert_eq!(b2.to_hex().unwrap(), "3456789abcdef");
+        assert_eq!(b2.to_hex(), "3456789abcdef");
         assert_eq!(b2.len(), 52);
         let t = BitRust::from_hex("123").unwrap();
-        assert_eq!(t.to_hex().unwrap(), "123");
+        assert_eq!(t.to_hex(), "123");
     }
 
     #[test]
@@ -852,7 +863,7 @@ mod tests {
         let mut a = MutableBitRust::from_hex_checked("0011223344").unwrap();
         let b = BitRust::from_hex("ff").unwrap();
         a.set_slice(8, 16, &b).unwrap();
-        assert_eq!(a.to_hex().unwrap(), "00ff223344");
+        assert_eq!(a.to_hex(), "00ff223344");
     }
 
     #[test]
@@ -935,11 +946,11 @@ mod tests {
     #[test]
     fn test_to_oct() {
         let bits = BitRust::from_bin("001010011").unwrap();
-        assert_eq!(bits.to_oct().unwrap(), "123");
+        assert_eq!(bits.slice_to_oct(0, bits.len()).unwrap(), "123");
         let bits = BitRust::from_bin("111").unwrap();
-        assert_eq!(bits.to_oct().unwrap(), "7");
+        assert_eq!(bits.slice_to_oct(0, 3).unwrap(), "7");
         let bits = BitRust::from_bin("000").unwrap();
-        assert_eq!(bits.to_oct().unwrap(), "0");
+        assert_eq!(bits.slice_to_oct(0, 3).unwrap(), "0");
     }
 
     #[test]

@@ -7,7 +7,6 @@ import sys
 import struct
 import io
 import functools
-import itertools
 from ast import literal_eval
 from collections import abc
 from typing import Union, Iterable, Any, TextIO, overload, Iterator
@@ -64,6 +63,42 @@ def _get_i_bitstore(bs: BitRust, start: int | None = None, length: int | None = 
         # Longer store are unlikely in practice - this method is slower.
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
+
+def _get_bin_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+    """Return interpretation as a binary string."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    return bs.slice_to_bin(start, start + length)
+
+def _get_oct_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+    """Return interpretation as an octal string."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    return bs.slice_to_oct(start, start + length)
+
+def _get_hex_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+    """Return interpretation as a hexadecimal string."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    return bs.slice_to_hex(start, start + length)
 
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
@@ -577,25 +612,13 @@ class _BaseBits:
         """Reset the Bits to the value given in binstring."""
         self._bitstore = BitRust.from_bin(binstring)
 
-    def _get_bin(self) -> str:
-        """Return interpretation as a binary string."""
-        return self._bitstore.to_bin()
-
     def _set_oct(self, octstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in octstring."""
         self._bitstore = BitRust.from_oct(octstring)
 
-    def _get_oct(self) -> str:
-        """Return interpretation as an octal string."""
-        return self._bitstore.to_oct()
-
     def _set_hex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         self._bitstore = BitRust.from_hex(hexstring)
-
-    def _get_hex(self) -> str:
-        """Return the hexadecimal representation as a string."""
-        return self._bitstore.to_hex()
 
     def _get_bits(self: Bits):
         return self

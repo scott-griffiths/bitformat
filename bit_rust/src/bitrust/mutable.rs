@@ -69,6 +69,15 @@ impl MutableBitRust {
     }
 }
 
+impl MutableBitRust {
+    pub fn to_bin(&self) -> String {
+        self.inner.to_bin()
+    }
+    pub fn to_hex(&self) -> String {
+        self.inner.to_hex()
+    }
+}
+
 #[pymethods]
 impl MutableBitRust {
 
@@ -273,16 +282,14 @@ impl MutableBitRust {
         self.inner.to_bytes()
     }
 
-    pub fn to_hex(&self) -> PyResult<String> {
-        self.inner.to_hex()
+    pub fn slice_to_bin(&self, start: usize, end: usize) -> String { self.inner.slice_to_bin(start, end)}
+
+    pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
+        self.inner.slice_to_oct(start, end)
     }
 
-    pub fn to_bin(&self) -> String {
-        self.inner.to_bin()
-    }
-
-    pub fn to_oct(&self) -> PyResult<String> {
-        self.inner.to_oct()
+    pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
+        self.inner.slice_to_hex(start, end)
     }
 
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
