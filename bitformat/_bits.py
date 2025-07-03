@@ -100,6 +100,18 @@ def _get_hex_bitstore(bs: BitRust, start: int | None, length: int | None = None)
     assert length >= 0
     return bs.slice_to_hex(start, start + length)
 
+def _get_bytes_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> bytes:
+    """Return interpretation as bytes."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    return bs.slice_to_bytes(start, start + length)
+
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
@@ -546,18 +558,12 @@ class _BaseBits:
         """Set the data from a bytes or bytearray object."""
         self._bitstore = BitRust.from_bytes(bytes(data))
 
-    def _get_bytes(self) -> bytes:
-        """Return the data as an ordinary bytes object."""
-        if len(self) % 8:
-            raise ValueError(f"Cannot interpret as bytes - length of {len(self)} is not a multiple of 8 bits.")
-        return self._bitstore.to_bytes()
-
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 
     def _get_bytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
-        bytes_ = self._get_bytes()
+        bytes_ = _get_bytes_bitstore(self._bitstore, 0, len(self))
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string

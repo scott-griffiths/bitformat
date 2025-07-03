@@ -448,21 +448,6 @@ impl BitRust {
         BitRust::new(bv)
     }
 
-
-
-    /// Convert to bytes, padding with zero bits if needed.
-    pub fn to_bytes(&self) -> Vec<u8> {
-        if self.data.is_empty() {
-            return Vec::new();
-        }
-
-        let mut bv = BitVec::<u8, Msb0>::with_capacity(self.len());
-        bv.extend_from_bitslice(&self.data);
-        let new_len = (bv.len() + 7) & !7;
-        bv.resize(new_len, false);
-        bv.into_vec()
-    }
-
     /// Return bytes that can easily be converted to an int in Python
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
         if self.len() == 0 {
@@ -484,20 +469,48 @@ impl BitRust {
         bv.into_vec()
     }
 
+    /// Convert to bytes, padding with zero bits if needed.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        if self.data.is_empty() {
+            return Vec::new();
+        }
+
+        let mut bv = BitVec::<u8, Msb0>::with_capacity(self.len());
+        bv.extend_from_bitslice(&self.data);
+        let new_len = (bv.len() + 7) & !7;
+        bv.resize(new_len, false);
+        bv.into_vec()
+    }
+
+    pub fn slice_to_bytes(&self, start: usize, end: usize) -> PyResult<Vec<u8>> {
+        let length = end - start;
+        if length % 8 != 0 {
+            return Err(PyValueError::new_err(format!("Cannot interpret as bytes - length of {} is not a multiple of 8 bits.", length)));
+        }
+        if start == end {
+            return Ok(Vec::new());
+        }
+        let mut bv = BitVec::<u8, Msb0>::with_capacity(length);
+        bv.extend_from_bitslice(&self.data[start .. end]);
+        Ok(bv.into_vec())
+    }
+
     pub fn slice_to_bin(&self, start: usize, end: usize) -> String {
         format!("{:b}", self.slice(start, end))
     }
 
     pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
-        if (end - start) % 3 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret as octal - length of {} is not a multiple of 3 bits.", self.len())));
+        let length = end - start;
+        if length % 3 != 0 {
+            return Err(PyValueError::new_err(format!("Cannot interpret as octal - length of {} is not a multiple of 3 bits.", length)));
         }
         Ok(format!("{:o}", self.slice(start, end)))
     }
 
     pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
-        if (end - start) % 4 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", self.len())));
+        let length = end - start;
+        if length % 4 != 0 {
+            return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", length)));
         }
         Ok(format!("{:x}", self))
     }

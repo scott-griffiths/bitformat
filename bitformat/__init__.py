@@ -99,7 +99,7 @@ dtype_definitions = [
                     Bits._set_hex, None, None, _bits._get_hex_bitstore, str,
                     False, bits_per_character=4),
     DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
-                    Bits._set_bytes, Bits._get_bytes, None, None, bytes,
+                    Bits._set_bytes, None, None, _bits._get_bytes_bitstore, bytes,
                     False, bits_per_character=8),
 
     # Float types
