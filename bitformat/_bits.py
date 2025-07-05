@@ -56,35 +56,32 @@ def _get_bin(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as a binary string."""
     assert start >= 0
     assert length >= 0
-    return bs.slice_to_bin(start, start + length)
+    return bs.slice_to_bin(start, length)
 
 def _get_oct(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
     assert start >= 0
     assert length >= 0
-    return bs.slice_to_oct(start, start + length)
+    return bs.slice_to_oct(start, length)
 
 def _get_hex(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as a hexadecimal string."""
     assert start >= 0
     assert length >= 0
-    return bs.slice_to_hex(start, start + length)
+    return bs.slice_to_hex(start, length)
 
 def _get_bytes(bs: BitRust, start: int, length: int) -> bytes:
     """Return interpretation as bytes."""
     assert start >= 0
     assert length >= 0
-    return bs.slice_to_bytes(start, start + length)
+    return bs.slice_to_bytes(start, length)
 
 def _get_f(bs: BitRust, start: int, length: int) -> float:
     """Interpret as a big-endian float."""
     assert start >= 0
     assert length >= 0
-    try:
-        fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-    except KeyError:
-        raise ValueError  # TODO
-    return struct.unpack(fmt, _get_bytes(bs, start, start + length))[0]
+    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
+    return struct.unpack(fmt, _get_bytes(bs, start, length))[0]
 
 def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
     """Just return as a Bits."""
@@ -94,13 +91,13 @@ def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
     x._bitstore = bs
     return x
 
-def _get_bool(bs: BitRust, start: int, length: int) -> bool:
+def _get_bool(bs: BitRust, start: int, _length: int) -> bool:
     """Interpret as a bool"""
     assert start >= 0
-    assert length == 1
+    assert _length == 1
     return bs.getindex(start)
 
-def _get_pad(bs: BitRust, start: int, length: int) -> None:
+def _get_pad(_bs: BitRust, _start: int, _length: int) -> None:
     return None
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:

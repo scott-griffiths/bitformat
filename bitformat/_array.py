@@ -568,8 +568,7 @@ class Array:
 
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
-        # This is faster. Once all types have this method we can retire the other branch.
-        get_fn = self._dtype._get_fn_bitstore
+        get_fn = self._dtype._get_fn
         length = self._item_size
         for _ in range(len(self)):
             yield get_fn(self._bitstore, start, length)

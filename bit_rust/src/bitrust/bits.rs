@@ -228,11 +228,8 @@ impl BitRust {
     }
 
     /// Slice used internally without bounds checking.
-    fn slice(&self, start_bit: usize, end_bit: usize) -> Self {
-        debug_assert!(start_bit <= end_bit);
-        debug_assert!(end_bit <= self.len());
-
-        BitRust::new(BitVec::from_bitslice(&self.data[start_bit..end_bit]))
+    fn slice(&self, start_bit: usize, length: usize) -> Self {
+        BitRust::new(BitVec::from_bitslice(&self.data[start_bit..start_bit + length]))
     }
 
     pub(crate) fn to_bin(&self) -> String {
@@ -482,37 +479,34 @@ impl BitRust {
         bv.into_vec()
     }
 
-    pub fn slice_to_bytes(&self, start: usize, end: usize) -> PyResult<Vec<u8>> {
-        let length = end - start;
+    pub fn slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
         if length % 8 != 0 {
             return Err(PyValueError::new_err(format!("Cannot interpret as bytes - length of {} is not a multiple of 8 bits.", length)));
         }
-        if start == end {
+        if length == 0 {
             return Ok(Vec::new());
         }
         let mut bv = BitVec::<u8, Msb0>::with_capacity(length);
-        bv.extend_from_bitslice(&self.data[start .. end]);
+        bv.extend_from_bitslice(&self.data[start .. start + length]);
         Ok(bv.into_vec())
     }
 
-    pub fn slice_to_bin(&self, start: usize, end: usize) -> String {
-        format!("{:b}", self.slice(start, end))
+    pub fn slice_to_bin(&self, start: usize, length: usize) -> String {
+        format!("{:b}", self.slice(start, length))
     }
 
-    pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
-        let length = end - start;
+    pub fn slice_to_oct(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 3 != 0 {
             return Err(PyValueError::new_err(format!("Cannot interpret as octal - length of {} is not a multiple of 3 bits.", length)));
         }
-        Ok(format!("{:o}", self.slice(start, end)))
+        Ok(format!("{:o}", self.slice(start, length)))
     }
 
-    pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
-        let length = end - start;
+    pub fn slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 4 != 0 {
             return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", length)));
         }
-        Ok(format!("{:x}", self))
+        Ok(format!("{:x}", self.slice(start, length)))
     }
 
     pub fn __and__(&self, other: &BitRust) -> PyResult<Self> {
@@ -554,7 +548,7 @@ impl BitRust {
             pos = pos / 8 * 8;
         }
         while pos >= start + step {
-            if self.slice(pos, pos + b.len()) == *b {
+            if self.slice(pos,  b.len()) == *b {
                 return Some(pos - start);
             }
             pos -= step;
@@ -579,7 +573,7 @@ impl BitRust {
         if end_bit > self.len() {
             return Err(PyValueError::new_err("end bit goes past the end"));
         }
-        Ok(self.slice(start_bit, end_bit))
+        Ok(self.slice(start_bit, end_bit - start_bit))
     }
 
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
@@ -868,7 +862,7 @@ mod tests {
         let a3 = a1.__and__(&a2).unwrap();
         let b = BitRust::from_hex("103").unwrap();
         assert_eq!(a3, b);
-        let a4 = a1.slice(4, 12).__and__(&a2.slice(4, 12)).unwrap();
+        let a4 = a1.slice(4, 8).__and__(&a2.slice(4, 8)).unwrap();
         assert_eq!(a4, BitRust::from_hex("03").unwrap());
     }
 
@@ -932,7 +926,7 @@ mod tests {
         assert_eq!(b, vec![1, 255]);
         let c = a.to_int_byte_data(true);
         assert_eq!(c, vec![255, 255]);
-        let s = a.slice(5, 8);
+        let s = a.slice(5, 3);
         assert_eq!(s.to_int_byte_data(false), vec![7]);
         assert_eq!(s.to_int_byte_data(true), vec![255]);
     }
