@@ -109,15 +109,15 @@ dtype_definitions = [
 
     # Other known length types
     DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
-                    Bits._set_bits, Bits._get_bits, None, None, Bits,
+                    Bits._set_bits, None, None, _bits._get_bits_bytestore, Bits,
                     False, bits_bits2chars),
     DtypeDefinition(DtypeKind.BOOL, "a bool (True or False)", "bool",
-                    Bits._set_bool, Bits._get_bool, None, None, bool,
+                    Bits._set_bool, None, None, _bits._get_bool_bytestore, bool,
                     False, bool_bits2chars, allowed_sizes=(1,)),
 
     # Special case pad type
     DtypeDefinition(DtypeKind.PAD, "a skipped section of padding", "padding",
-                    Bits._set_pad, Bits._get_pad, None, None, None,
+                    Bits._set_pad, None, None, _bits._get_pad_bitstore, None,
                     False, None),
 ]
 

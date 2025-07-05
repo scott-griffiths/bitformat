@@ -156,21 +156,21 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn __or__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+    pub fn __or__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         Ok(MutableBitRust::logical_or(self, other))
     }
 
-    pub fn __and__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+    pub fn __and__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         Ok(MutableBitRust::logical_and(self, other))
     }
 
-    pub fn __xor__(&self, other: &BitRust) -> PyResult<MutableBitRust> {
+    pub fn __xor__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -269,11 +269,11 @@ impl MutableBitRust {
         self.inner.getindex(bit_index)
     }
 
-    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<MutableBitRust> {
+    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         self.inner.getslice(start_bit, end_bit).map(|bits| MutableBitRust { inner: bits })
     }
 
-    pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<MutableBitRust> {
+    pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBitRust { inner: bits })
     }
 
@@ -391,7 +391,7 @@ impl MutableBitRust {
     }
 
     /// Return a copy with a real copy of the data.
-    pub fn clone_as_mutable(&self) -> MutableBitRust {
+    pub fn clone_as_mutable(&self) -> Self {
         MutableBitRust::new(self.inner.data.clone())
     }
 

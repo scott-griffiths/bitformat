@@ -128,6 +128,34 @@ def _get_f_bitstore(bs: BitRust, start: int | None, length: int | None = None) -
         raise ValueError  # TODO
     return struct.unpack(fmt, _get_bytes_bitstore(bs, start, start + length))[0]
 
+def _get_bits_bytestore(bs: BitRust, start: int | None, length: int | None = None) -> Bits:
+    """Just return as a Bits."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    x = object.__new__(Bits)
+    x._bitstore = bs
+    return x
+
+def _get_bool_bytestore(bs: BitRust, start: int | None, length: int | None = None) -> bool:
+    """Interpret as a bool"""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length == 1
+    return bs.getindex(start)
+
+def _get_pad_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> None:
+    return None
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
@@ -616,12 +644,6 @@ class _BaseBits:
         self._bitstore = BitRust.from_bools([bool(value)])
         return
 
-    def _get_bool(self) -> bool:
-        return self[0]
-
-    def _get_pad(self) -> None:
-        return None
-
     def _set_pad(self, value: None, length: int) -> None:
         raise ValueError("It's not possible to set a 'pad' value.")
 
@@ -636,9 +658,6 @@ class _BaseBits:
     def _set_hex(self, hexstring: str, _length: None = None) -> None:
         """Reset the Bits to have the value given in hexstring."""
         self._bitstore = BitRust.from_hex(hexstring)
-
-    def _get_bits(self: Bits):
-        return self
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""

@@ -439,7 +439,7 @@ impl BitRust {
     }
 
     #[staticmethod]
-    pub fn from_joined(bits_vec: Vec<PyRef<BitRust>>) -> Self {
+    pub fn from_joined(bits_vec: Vec<PyRef<Self>>) -> Self {
         let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
         for bits_ref in bits_vec.iter() {
@@ -515,21 +515,21 @@ impl BitRust {
         Ok(format!("{:x}", self))
     }
 
-    pub fn __and__(&self, other: &BitRust) -> PyResult<BitRust> {
+    pub fn __and__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         Ok(BitRust::logical_and(self, other))
     }
 
-    pub fn __or__(&self, other: &BitRust) -> PyResult<BitRust> {
+    pub fn __or__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
         Ok(BitRust::logical_or(self, other))
     }
 
-    pub fn __xor__(&self, other: &BitRust) -> PyResult<BitRust> {
+    pub fn __xor__(&self, other: &BitRust) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -647,7 +647,7 @@ impl BitRust {
         }
     }
 
-    pub fn clone_as_immutable(&self) -> BitRust {
+    pub fn clone_as_immutable(&self) -> Self {
         // TODO? We don't need to clone the data, just return the same BitRust instance.
         BitRust {
             data: self.data.clone(),
@@ -670,6 +670,7 @@ impl BitRust {
         Ok(n as usize)
     }
 
+    // TODO: These should move to work on MutableBits in-place instead.
     pub fn lshift(&self, n: i64) -> PyResult<Self> {
         let shift = self.validate_shift(n)?;
         if shift == 0 {
