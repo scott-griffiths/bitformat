@@ -329,33 +329,19 @@ class DtypeSingle(Dtype):
         little_endian = (endianness is Endianness.LITTLE or
                      (endianness is Endianness.NATIVE and bitformat.byteorder == "little"))
         x._endianness = endianness
-        x._get_fn = (
-            (lambda b: definition.get_fn(b.to_mutable_bits().byte_swap().to_bits()))
-            if little_endian
-            else definition.get_fn
-        )
 
-        if definition.get_fn_bitstore is not None:
-            if little_endian:
-                def get_fn_bitstore_le(b_rust, start, length):
-                    # TODO: Should take slice here
-                    mutable_b = b_rust.clone_as_mutable()
-                    mutable_b.byte_swap()
-                    return definition.get_fn_bitstore(mutable_b.clone_as_immutable(), start, length)
-                x._get_fn_bitstore = get_fn_bitstore_le
-            else:
-                x._get_fn_bitstore = definition.get_fn_bitstore
-
-            def get_fn_from_bitstore(b: bitformat.Bits):
-                return x._get_fn_bitstore(b._bitstore, 0, len(b))
-            x._get_fn = get_fn_from_bitstore
+        if little_endian:
+            def get_fn_bitstore_le(b_rust, start, length):
+                # TODO: Should take slice here
+                mutable_b = b_rust.clone_as_mutable()
+                mutable_b.byte_swap()
+                return definition.get_fn_bitstore(mutable_b.clone_as_immutable(), start, length)
+            x._get_fn_bitstore = get_fn_bitstore_le
         else:
-            x._get_fn_bitstore = None
-            x._get_fn = (
-                (lambda b: definition.get_fn(b.to_mutable_bits().byte_swap().to_bits()))
-                if little_endian
-                else definition.get_fn
-            )
+            x._get_fn_bitstore = definition.get_fn_bitstore
+
+        def get_fn_from_bitstore(b: bitformat.Bits):
+            return x._get_fn_bitstore(b._bitstore, 0, len(b))
 
         x._set_fn_bitstore = definition.set_fn_bitstore
         if "length" in inspect.signature(definition.set_fn).parameters:
@@ -410,19 +396,13 @@ class DtypeSingle(Dtype):
         b = bitformat.Bits._from_any(b)
         if self._size.is_none():
             # Try to unpack everything
-            if self._get_fn_bitstore is not None:
-                return self._get_fn_bitstore(b._bitstore, 0, len(b))
-            else:
-                return self._get_fn(b)
+            return self._get_fn_bitstore(b._bitstore, 0, len(b))
         if self._bit_length is None:
             raise ExpressionError(f"Cannot unpack a dtype with an unknown size. Got '{self}'")
         if self._bit_length > len(b):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         else:
-            if self._get_fn_bitstore is not None:
-                return self._get_fn_bitstore(b._bitstore, 0, self._bit_length)
-            else:
-                return self._get_fn(b[: self._bit_length])
+            return self._get_fn_bitstore(b._bitstore, 0, self._bit_length)
 
     @override
     @final
@@ -804,7 +784,7 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(self, kind: DtypeKind, description: str, short_description: str, set_fn: Callable, get_fn: Callable,
+    def __init__(self, kind: DtypeKind, description: str, short_description: str, set_fn: Callable,
                  set_fn_bitstore: Callable = None, get_fn_bitstore: Callable = None,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
@@ -821,19 +801,20 @@ class DtypeDefinition:
         self.get_fn_bitstore = get_fn_bitstore
         self.set_fn_bitstore = set_fn_bitstore
 
-        if self.allowed_sizes.values:
-
-            def allowed_size_checked_get_fn(bs):
-                if len(bs) not in self.allowed_sizes:
-                    if self.allowed_sizes.only_one_value():
-                        raise ValueError(f"'{self.kind}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {len(bs)}.")
-                    else:
-                        raise ValueError(f"'{self.kind}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
-                return get_fn(bs)
-
-            self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
-        else:
-            self.get_fn = get_fn  # Interpret everything
+        # TODO: Use this logic for new get fns.
+        # if self.allowed_sizes.values:
+        #
+        #     def allowed_size_checked_get_fn(bs):
+        #         if len(bs) not in self.allowed_sizes:
+        #             if self.allowed_sizes.only_one_value():
+        #                 raise ValueError(f"'{self.kind}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {len(bs)}.")
+        #             else:
+        #                 raise ValueError(f"'{self.kind}' dtypes must have a size in {self.allowed_sizes}, but received a size of {len(bs)}.")
+        #         return get_fn(bs)
+        #
+        #     self.get_fn = allowed_size_checked_get_fn  # Interpret everything and check the size
+        # else:
+        #     self.get_fn = None  # Interpret everything
         if bits_per_character is not None:
             if bitlength2chars_fn is not None:
                 raise ValueError("You shouldn't specify both a bits_per_character and a bitlength2chars_fn.")

@@ -568,20 +568,12 @@ class Array:
 
     def __iter__(self) -> Iterable[ElementType]:
         start = 0
-        if self._dtype._get_fn_bitstore is not None:
-            # This is faster. Once all types have this method we can retire the other branch.
-            get_fn = self._dtype._get_fn_bitstore
-            length = self._item_size
-            for _ in range(len(self)):
-                yield get_fn(self._bitstore, start, length)
-                start += length
-        else:
-            get_fn = self._dtype._get_fn
-            for _ in range(len(self)):
-                b = MutableBits()
-                b._bitstore = self._bitstore.getslice(start, start + self._item_size)
-                yield get_fn(b)
-                start += self._item_size
+        # This is faster. Once all types have this method we can retire the other branch.
+        get_fn = self._dtype._get_fn_bitstore
+        length = self._item_size
+        for _ in range(len(self)):
+            yield get_fn(self._bitstore, start, length)
+            start += length
 
     def __copy__(self) -> Array:
         a_copy = self.__class__.from_bits(self._dtype, self.to_bits())

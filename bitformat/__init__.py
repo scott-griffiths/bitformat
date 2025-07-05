@@ -82,42 +82,42 @@ def bool_bits2chars(_: Literal[1]):
 dtype_definitions = [
     # Integer types
     DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "unsigned int",
-                    Bits._set_u, None, None, _bits._get_u_bitstore, int,
+                    Bits._set_u, None, _bits._get_u, int,
                     False, uint_bits2chars, endianness_variants=True),
     DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed int",
-                    Bits._set_i, None, None, _bits._get_i_bitstore, int,
+                    Bits._set_i, None, _bits._get_i, int,
                     True, int_bits2chars, endianness_variants=True),
 
     # Literal types
     DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
-                    Bits._set_bin_safe, None, None, _bits._get_bin_bitstore, str,
+                    Bits._set_bin_safe, None, _bits._get_bin, str,
                     False, bits_per_character=1),
     DtypeDefinition(DtypeKind.OCT, "an octal string", "octal string",
-                    Bits._set_oct, None, None, _bits._get_oct_bitstore, str,
+                    Bits._set_oct, None, _bits._get_oct, str,
                     False, bits_per_character=3),
     DtypeDefinition(DtypeKind.HEX, "a hexadecimal string", "hex string",
-                    Bits._set_hex, None, None, _bits._get_hex_bitstore, str,
+                    Bits._set_hex, None, _bits._get_hex, str,
                     False, bits_per_character=4),
     DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
-                    Bits._set_bytes, None, None, _bits._get_bytes_bitstore, bytes,
+                    Bits._set_bytes, None, _bits._get_bytes, bytes,
                     False, bits_per_character=8),
 
     # Float types
     DtypeDefinition(DtypeKind.FLOAT, "an IEEE floating point number", "float",
-                    Bits._set_f, None, None, _bits._get_f_bitstore, float,
+                    Bits._set_f, None, _bits._get_f, float,
                     True, float_bits2chars, endianness_variants=True, allowed_sizes=(16, 32, 64)),
 
     # Other known length types
     DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
-                    Bits._set_bits, None, None, _bits._get_bits_bytestore, Bits,
+                    Bits._set_bits, None, _bits._get_bits, Bits,
                     False, bits_bits2chars),
     DtypeDefinition(DtypeKind.BOOL, "a bool (True or False)", "bool",
-                    Bits._set_bool, None, None, _bits._get_bool_bytestore, bool,
+                    Bits._set_bool, None, _bits._get_bool, bool,
                     False, bool_bits2chars, allowed_sizes=(1,)),
 
     # Special case pad type
     DtypeDefinition(DtypeKind.PAD, "a skipped section of padding", "padding",
-                    Bits._set_pad, None, None, _bits._get_pad_bitstore, None,
+                    Bits._set_pad, None, _bits._get_pad, None,
                     False, None),
 ]
 

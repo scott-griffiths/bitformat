@@ -26,14 +26,8 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 CACHE_SIZE = 256
 
 
-def _get_u_bitstore(bs: BitRust, start: int | None = None, length: int | None = None) -> int:
+def _get_u(bs: BitRust, start: int, length: int) -> int:
     """Return data as an unsigned int from a slice of the bitstore."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     if length == 0:
@@ -45,14 +39,8 @@ def _get_u_bitstore(bs: BitRust, start: int | None = None, length: int | None = 
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
-def _get_i_bitstore(bs: BitRust, start: int | None = None, length: int | None = None) -> int:
+def _get_i(bs: BitRust, start: int, length: int) -> int:
     """Return data as a signed int from a slice of the bitstore."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     if length == 0:
@@ -64,97 +52,55 @@ def _get_i_bitstore(bs: BitRust, start: int | None = None, length: int | None = 
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
 
-def _get_bin_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+def _get_bin(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as a binary string."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     return bs.slice_to_bin(start, start + length)
 
-def _get_oct_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+def _get_oct(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     return bs.slice_to_oct(start, start + length)
 
-def _get_hex_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> str:
+def _get_hex(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as a hexadecimal string."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     return bs.slice_to_hex(start, start + length)
 
-def _get_bytes_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> bytes:
+def _get_bytes(bs: BitRust, start: int, length: int) -> bytes:
     """Return interpretation as bytes."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     return bs.slice_to_bytes(start, start + length)
 
-def _get_f_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> float:
+def _get_f(bs: BitRust, start: int, length: int) -> float:
     """Interpret as a big-endian float."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     try:
         fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
     except KeyError:
         raise ValueError  # TODO
-    return struct.unpack(fmt, _get_bytes_bitstore(bs, start, start + length))[0]
+    return struct.unpack(fmt, _get_bytes(bs, start, start + length))[0]
 
-def _get_bits_bytestore(bs: BitRust, start: int | None, length: int | None = None) -> Bits:
+def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
     """Just return as a Bits."""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length >= 0
     x = object.__new__(Bits)
     x._bitstore = bs
     return x
 
-def _get_bool_bytestore(bs: BitRust, start: int | None, length: int | None = None) -> bool:
+def _get_bool(bs: BitRust, start: int, length: int) -> bool:
     """Interpret as a bool"""
-    if start is None:
-        assert length is None
-        start = 0
-        length = len(bs)
-    if length is None:
-        assert False
     assert start >= 0
     assert length == 1
     return bs.getindex(start)
 
-def _get_pad_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> None:
+def _get_pad(bs: BitRust, start: int, length: int) -> None:
     return None
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
@@ -607,7 +553,7 @@ class _BaseBits:
 
     def _get_bytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
-        bytes_ = _get_bytes_bitstore(self._bitstore, 0, len(self))
+        bytes_ = _get_bytes(self._bitstore, 0, len(self))
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
