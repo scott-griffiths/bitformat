@@ -884,7 +884,7 @@ class DtypeDefinition:
              f"short_description='{self.short_description}'",
              f"return_type={self.return_type.__name__}",
              f"is_signed={self.is_signed}",
-             f"allowed_lengths={self.allowed_sizes!s}",
+             f"allowed_sizes={self.allowed_sizes!s}",
              f"bits_per_character={self.bits_per_character})"]
         return ", ".join(s)
 
@@ -928,18 +928,18 @@ class Register:
                                                          doc=f"The MutableBits as {definition.description}. Read only."))
         if definition.endianness_variants:
             if definition.get_fn_bitstore is not None:
-                def fget(b):
-                    return definition.get_fn_bitstore(b._bitstore, 0, len(b))
-
-                def fget_le(b):
-                    mutable_b = b._bitstore.clone_as_mutable()
-                    mutable_b.byte_swap()
-                    return definition.get_fn_bitstore(mutable_b.clone_as_immutable())
-
-                def fget_le_mutable(b):
-                    c = b._bitstore.clone_as_mutable()
-                    c.byte_swap()
-                    return definition.get_fn_bitstore(c.as_immutable())
+                # def fget(b):
+                #     return definition.get_fn_bitstore(b._bitstore, 0, len(b))
+                #
+                # def fget_le(b):
+                #     mutable_b = b._bitstore.clone_as_mutable()
+                #     mutable_b.byte_swap()
+                #     return definition.get_fn_bitstore(mutable_b.clone_as_immutable())
+                #
+                # def fget_le_mutable(b):
+                #     c = b._bitstore.clone_as_mutable()
+                #     c.byte_swap()
+                #     return definition.get_fn_bitstore(c.as_immutable())
 
                 def fget_be(b):
                     if len(b) % 8 != 0:
@@ -1021,7 +1021,7 @@ class Register:
 
     def __repr__(self) -> str:
         s = [
-            f"{'key':<12}:{'kind':^12}{'signed':^8}{'allowed_lengths':^16}{'bits_per_character':^12}{'return_type':<13}"
+            f"{'key':<12}:{'kind':^12}{'signed':^8}{'allowed_sizes':^16}{'bits_per_character':^12}{'return_type':<13}"
         ]
         s.append("-" * 72)
         for key in self.kind_to_def:

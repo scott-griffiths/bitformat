@@ -104,7 +104,7 @@ dtype_definitions = [
 
     # Float types
     DtypeDefinition(DtypeKind.FLOAT, "an IEEE floating point number", "float",
-                    Bits._set_f, Bits._get_f, None, None, float,
+                    Bits._set_f, None, None, _bits._get_f_bitstore, float,
                     True, float_bits2chars, endianness_variants=True, allowed_sizes=(16, 32, 64)),
 
     # Other known length types

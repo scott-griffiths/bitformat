@@ -112,6 +112,22 @@ def _get_bytes_bitstore(bs: BitRust, start: int | None, length: int | None = Non
     assert length >= 0
     return bs.slice_to_bytes(start, start + length)
 
+def _get_f_bitstore(bs: BitRust, start: int | None, length: int | None = None) -> float:
+    """Interpret as a big-endian float."""
+    if start is None:
+        assert length is None
+        start = 0
+        length = len(bs)
+    if length is None:
+        assert False
+    assert start >= 0
+    assert length >= 0
+    try:
+        fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
+    except KeyError:
+        raise ValueError  # TODO
+    return struct.unpack(fmt, _get_bytes_bitstore(bs, start, start + length))[0]
+
 
 def _create_u_bitstore(u: int, length: int) -> BitRust:
     assert u >= 0
@@ -595,11 +611,6 @@ class _BaseBits:
             # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
             b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
         self._bitstore = BitRust.from_bytes(b)
-
-    def _get_f(self) -> float:
-        """Interpret the whole Bits as a big-endian float."""
-        fmt = {16: ">e", 32: ">f", 64: ">d"}[len(self)]
-        return struct.unpack(fmt, self._bitstore.to_bytes())[0]
 
     def _set_bool(self, value: bool) -> None:
         self._bitstore = BitRust.from_bools([bool(value)])

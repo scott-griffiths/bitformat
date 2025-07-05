@@ -98,8 +98,7 @@ impl MutableBitRust {
         if self.inner.data.len() % 8 != 0 {
             return Err(PyValueError::new_err(format!("Cannot use byte_swap as not a whole number of bytes ({} bits long).", self.inner.data.len())));
         }
-        let data = std::mem::take(&mut self.inner.data);
-        let mut bytes = data.into_vec();
+        let mut bytes = self.inner.slice_to_bytes(0, self.len())?;
         bytes.reverse();
         self.inner.data = helpers::BV::from_vec(bytes);
         Ok(())
@@ -290,6 +289,10 @@ impl MutableBitRust {
 
     pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
         self.inner.slice_to_hex(start, end)
+    }
+
+    pub fn slice_to_bytes(&self, start: usize, end: usize) -> PyResult<Vec<u8>> {
+        self.inner.slice_to_bytes(start, end)
     }
 
     pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
