@@ -72,6 +72,18 @@ def _get_bin(bs: BitRust, start: int, length: int) -> str:
     assert length >= 0
     return bs.slice_to_bin(start, length)
 
+def _set_bin_safe_bitstore(binstring: str, length: None = None) -> BitRust:
+    """Create from the value given in binstring."""
+    return BitRust.from_bin(binstring)
+
+def _set_oct_bitstore(octstring: str, length: None = None) -> BitRust:
+    """Create from the value given in octstring."""
+    return BitRust.from_oct(octstring)
+
+def _set_hex_bitstore(hexstring: str, length: None = None) -> BitRust:
+    """Create from the value given in hexstring."""
+    return BitRust.from_hex(hexstring)
+
 def _get_oct(bs: BitRust, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
     assert start >= 0
@@ -587,18 +599,6 @@ class _BaseBits:
 
     def _set_pad(self, value: None, length: int) -> None:
         raise ValueError("It's not possible to set a 'pad' value.")
-
-    def _set_bin_safe(self, binstring: str, _length: None = None) -> None:
-        """Reset the Bits to the value given in binstring."""
-        self._bitstore = BitRust.from_bin(binstring)
-
-    def _set_oct(self, octstring: str, _length: None = None) -> None:
-        """Reset the Bits to have the value given in octstring."""
-        self._bitstore = BitRust.from_oct(octstring)
-
-    def _set_hex(self, hexstring: str, _length: None = None) -> None:
-        """Reset the Bits to have the value given in hexstring."""
-        self._bitstore = BitRust.from_hex(hexstring)
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""

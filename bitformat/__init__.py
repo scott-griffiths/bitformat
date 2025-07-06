@@ -90,13 +90,13 @@ dtype_definitions = [
 
     # Literal types
     DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
-                    Bits._set_bin_safe, None, _bits._get_bin, str,
+                    None, _bits._set_bin_safe_bitstore, _bits._get_bin, str,
                     False, bits_per_character=1),
     DtypeDefinition(DtypeKind.OCT, "an octal string", "octal string",
-                    Bits._set_oct, None, _bits._get_oct, str,
+                    None, _bits._set_oct_bitstore, _bits._get_oct, str,
                     False, bits_per_character=3),
     DtypeDefinition(DtypeKind.HEX, "a hexadecimal string", "hex string",
-                    Bits._set_hex, None, _bits._get_hex, str,
+                    None, _bits._set_hex_bitstore, _bits._get_hex, str,
                     False, bits_per_character=4),
     DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
                     Bits._set_bytes, None, _bits._get_bytes, bytes,
