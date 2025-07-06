@@ -39,7 +39,7 @@ def _get_u(bs: BitRust, start: int, length: int) -> int:
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
-def _set_u_bitstore(u: int, length: int) -> BitRust:
+def _set_u(u: int, length: int) -> BitRust:
     if length is None or length == 0:
         raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
     u = int(u)
@@ -47,7 +47,7 @@ def _set_u_bitstore(u: int, length: int) -> BitRust:
         raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
     return _create_u_bitstore(u, length)
 
-def _set_i_bitstore(i: int, length: int) -> BitRust:
+def _set_i(i: int, length: int) -> BitRust:
     if length is None or length == 0:
         raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
     i = int(i)
@@ -72,15 +72,15 @@ def _get_bin(bs: BitRust, start: int, length: int) -> str:
     assert length >= 0
     return bs.slice_to_bin(start, length)
 
-def _set_bin_safe_bitstore(binstring: str, length: None = None) -> BitRust:
+def _set_bin(binstring: str, length: None = None) -> BitRust:
     """Create from the value given in binstring."""
     return BitRust.from_bin(binstring)
 
-def _set_oct_bitstore(octstring: str, length: None = None) -> BitRust:
+def _set_oct(octstring: str, length: None = None) -> BitRust:
     """Create from the value given in octstring."""
     return BitRust.from_oct(octstring)
 
-def _set_hex_bitstore(hexstring: str, length: None = None) -> BitRust:
+def _set_hex(hexstring: str, length: None = None) -> BitRust:
     """Create from the value given in hexstring."""
     return BitRust.from_hex(hexstring)
 
@@ -101,6 +101,10 @@ def _get_bytes(bs: BitRust, start: int, length: int) -> bytes:
     assert start >= 0
     assert length >= 0
     return bs.slice_to_bytes(start, length)
+
+def _set_bytes(data: bytearray | bytes | list, length: None = None) -> BitRust:
+    """Create from a bytes or bytearray object."""
+    return BitRust.from_bytes(bytes(data))
 
 def _get_f(bs: BitRust, start: int, length: int) -> float:
     """Interpret as a big-endian float."""
@@ -566,10 +570,6 @@ class _BaseBits:
 
     def _set_bits(self, bs: BitsType, _length: None = None) -> None:
         self._bitstore = create_bitrust_from_any(bs)
-
-    def _set_bytes(self, data: bytearray | bytes | list, _length: None = None) -> None:
-        """Set the data from a bytes or bytearray object."""
-        self._bitstore = BitRust.from_bytes(bytes(data))
 
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII

@@ -82,24 +82,24 @@ def bool_bits2chars(_: Literal[1]):
 dtype_definitions = [
     # Integer types
     DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "unsigned int",
-                    None, _bits._set_u_bitstore, _bits._get_u, int,
+                    None, _bits._set_u, _bits._get_u, int,
                     False, uint_bits2chars, endianness_variants=True),
     DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed int",
-                    None, _bits._set_i_bitstore, _bits._get_i, int,
+                    None, _bits._set_i, _bits._get_i, int,
                     True, int_bits2chars, endianness_variants=True),
 
     # Literal types
     DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
-                    None, _bits._set_bin_safe_bitstore, _bits._get_bin, str,
+                    None, _bits._set_bin, _bits._get_bin, str,
                     False, bits_per_character=1),
     DtypeDefinition(DtypeKind.OCT, "an octal string", "octal string",
-                    None, _bits._set_oct_bitstore, _bits._get_oct, str,
+                    None, _bits._set_oct, _bits._get_oct, str,
                     False, bits_per_character=3),
     DtypeDefinition(DtypeKind.HEX, "a hexadecimal string", "hex string",
-                    None, _bits._set_hex_bitstore, _bits._get_hex, str,
+                    None, _bits._set_hex, _bits._get_hex, str,
                     False, bits_per_character=4),
     DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
-                    Bits._set_bytes, None, _bits._get_bytes, bytes,
+                    None, _bits._set_bytes, _bits._get_bytes, bytes,
                     False, bits_per_character=8),
 
     # Float types
