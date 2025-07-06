@@ -45,7 +45,7 @@ class Field(FieldType):
                 raise ValueError(f"Can't convert the string '{dtype}' to a Dtype: {str(e)}")
         else:
             x._dtype = dtype
-        x._concrete_dtype = x._dtype if x._dtype.has_fixed_size() else None
+        x._concrete_dtype = x._dtype if x._dtype.has_known_size() else None
 
         x.name = name
         if x._const is True and value is None:

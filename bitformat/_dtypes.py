@@ -200,9 +200,8 @@ class Dtype(abc.ABC):
         """
         ...
 
-    # TODO: Should this be called 'has_known_size'?
     @abc.abstractmethod
-    def has_fixed_size(self) -> bool:
+    def has_known_size(self) -> bool:
         """Return whether the size of the dtype is fully known.
 
         This will be True if the dtype has a known length that doesn't
@@ -213,13 +212,13 @@ class Dtype(abc.ABC):
 
         .. code-block:: pycon
 
-            >>> Dtype('u32').has_fixed_size()
+            >>> Dtype('u32').has_known_size()
             True
-            >>> Dtype('[f16; 4]').has_fixed_size()
+            >>> Dtype('[f16; 4]').has_known_size()
             True
-            >>> Dtype('[u32;]').has_fixed_size()
+            >>> Dtype('[u32;]').has_known_size()
             False
-            >>> Dtype('u{x}').has_fixed_size()
+            >>> Dtype('u{x}').has_known_size()
             False
 
         """
@@ -402,7 +401,7 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def has_fixed_size(self) -> bool:
+    def has_known_size(self) -> bool:
         return self._size.has_const_value and self._size.const_value is not None
 
     @override
@@ -566,8 +565,8 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def has_fixed_size(self) -> bool:
-        return self._dtype_single.has_fixed_size() and self._items.has_const_value and self._items.const_value is not None
+    def has_known_size(self) -> bool:
+        return self._dtype_single.has_known_size() and self._items.has_const_value and self._items.const_value is not None
 
     @override
     @final
@@ -704,8 +703,8 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def has_fixed_size(self) -> bool:
-        return all(dtype.has_fixed_size() for dtype in self._dtypes)
+    def has_known_size(self) -> bool:
+        return all(dtype.has_known_size() for dtype in self._dtypes)
 
     @override
     @final
@@ -715,7 +714,7 @@ class DtypeTuple(Dtype):
     @override
     @final
     def evaluate(self, **kwargs) -> Self:
-        if all(dtype.has_fixed_size() for dtype in self._dtypes):
+        if all(dtype.has_known_size() for dtype in self._dtypes):
             return self
         dtypes = [dtype.evaluate(**kwargs) for dtype in self._dtypes]
         return DtypeTuple.from_params(dtypes)

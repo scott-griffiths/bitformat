@@ -46,7 +46,7 @@ def from_u(u: int, length: int) -> BitRust:
         else:
             return BitRust.from_bytes_with_offset(b, offset=offset)
 
-def u_bits2chars(bit_length: int):
+def u_bits2chars(bit_length: int) -> int:
     # How many characters is largest possible int of this length?
     return len(str((1 << bit_length) - 1))
 
@@ -84,7 +84,7 @@ def from_i(i: int, length: int) -> BitRust:
         else:
             return BitRust.from_bytes_with_offset(b, offset=offset)
 
-def i_bits2chars(bit_length: int):
+def i_bits2chars(bit_length: int) -> int:
     # How many characters is largest negative int of this length? (To include minus sign).
     return len(str((-1 << (bit_length - 1))))
 
@@ -161,7 +161,7 @@ def from_f(f: float | str, length: int | None) -> BitRust:
         b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
     return BitRust.from_bytes(b)
 
-def f_bits2chars(bit_length: Literal[16, 32, 64]):
+def f_bits2chars(bit_length: Literal[16, 32, 64]) -> int:
     # These bit lengths were found by looking at lots of possible values
     if bit_length in [16, 32]:
         return 23  # Empirical value
@@ -187,7 +187,7 @@ def to_bits(bs: BitRust, start: int, length: int) -> Bits:
 def from_bits(bs: BitsType, length: None = None) -> BitRust:
     return create_bitrust_from_any(bs)
 
-def bits_bits2chars(bit_length: int):
+def bits_bits2chars(bit_length: int) -> int:
     # For bits type we can see how long it needs to be printed by trying any value
     temp = Bits.from_zeros(bit_length)
     return len(temp._simple_str())
@@ -206,7 +206,7 @@ def to_bool(bs: BitRust, start: int, _length: int) -> bool:
 def from_bool(value: bool, length: None = None) -> BitRust:
     return BitRust.from_bools([bool(value)])
 
-def bool_bits2chars(_: Literal[1]):
+def bool_bits2chars(_: Literal[1]) -> int:
     # Bools are printed as 1 or 0, not True or False, so are one character each
     return 1
 
