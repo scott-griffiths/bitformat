@@ -341,38 +341,18 @@ class DtypeSingle(Dtype):
         else:
             x._get_fn = definition.get_fn
 
-        x._set_fn_bitstore = definition.set_fn_bitstore
+        x._set_fn = definition.set_fn
 
-        if definition.set_fn_bitstore is None:
-            if "length" in inspect.signature(definition.set_fn).parameters:
-                set_fn = functools.partial(definition.set_fn, length=x._bit_length)
-            else:
-                set_fn = definition.set_fn
+        def create_bitstore(v):
+            return x._set_fn(v, length=x._bit_length)
 
-            def create_bits(v):
-                b = bitformat.Bits()
-                # The set_fn will do the length check for big endian too.
-                set_fn(b, v)
-                return b
-
-            def create_bits_le(v):
-                b = bitformat.MutableBits()
-                set_fn(b, v)
-                return b.byte_swap().to_bits()
-
-            x._create_fn = create_bits_le if little_endian else create_bits
-            x._create_fn_bitstore = None
-        else:
-            def create_bitstore(v):
-                return x._set_fn_bitstore(v, length=x._bit_length)
-
-            def create_bitstore_le(v):
-                bs = x._set_fn_bitstore(v, length=x._bit_length)
-                mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
-                mutable.byte_swap()
-                return mutable.as_immutable()
-            x._create_fn = None
-            x._create_fn_bitstore = create_bitstore_le if little_endian else create_bitstore
+        def create_bitstore_le(v):
+            bs = x._set_fn(v, length=x._bit_length)
+            mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
+            mutable.byte_swap()
+            return mutable.as_immutable()
+        x._create_fn = None
+        x._create_fn_bitstore = create_bitstore_le if little_endian else create_bitstore
         return x
 
     @classmethod
@@ -533,13 +513,10 @@ class DtypeArray(Dtype):
         if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         # TODO: Simplify again after converting to bitstore creation
-        if self._dtype_single._definition.set_fn_bitstore is not None:
-            bitstore = BitRust.from_joined([self._dtype_single._create_fn_bitstore(v) for v in value])
-            x = object.__new__(bitformat.Bits)
-            x._bitstore = bitstore
-            return x
-        else:
-            return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
+        bitstore = BitRust.from_joined([self._dtype_single._create_fn_bitstore(v) for v in value])
+        x = object.__new__(bitformat.Bits)
+        x._bitstore = bitstore
+        return x
 
     @override
     @final
@@ -807,8 +784,8 @@ class AllowedSizes:
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
-    def __init__(self, kind: DtypeKind, description: str, short_description: str, set_fn: Callable,
-                 set_fn_bitstore: Callable = None, get_fn: Callable = None,
+    def __init__(self, kind: DtypeKind, description: str, short_description: str,
+                 set_fn: Callable = None, get_fn: Callable = None,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
                  allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
                  endianness_variants: bool = False):
@@ -819,9 +796,8 @@ class DtypeDefinition:
         self.is_signed = is_signed
         self.allowed_sizes = AllowedSizes(allowed_sizes)
         self.bits_per_character = bits_per_character
-        self.set_fn = set_fn
         self.endianness_variants = endianness_variants
-        self.set_fn_bitstore = set_fn_bitstore
+        self.set_fn = set_fn
 
         if self.allowed_sizes.values:
 
