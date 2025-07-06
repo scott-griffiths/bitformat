@@ -40,18 +40,41 @@ def _get_u(bs: BitRust, start: int, length: int) -> int:
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
 def _set_u(u: int, length: int) -> BitRust:
-    if length is None or length == 0:
+    if length == 0:
         raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
     u = int(u)
     if u < 0:
         raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
-    return _create_u_bitstore(u, length)
+    if u >= (1 << length):
+        raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
+                         f"The allowed range is[0, {(1 << length) - 1}].")
+    if length <= 64:
+        return BitRust.from_u64(u, length)
+    else:
+        b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
+        offset = 8 - (length % 8)
+        if offset == 8:
+            return BitRust.from_bytes(b)
+        else:
+            return BitRust.from_bytes_with_offset(b, offset=offset)
 
 def _set_i(i: int, length: int) -> BitRust:
-    if length is None or length == 0:
+    if length == 0:
         raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
     i = int(i)
-    return _create_i_bitstore(i, length)
+    if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
+        raise ValueError(f"{i} is too large a signed integer for a bit length of {length}. "
+                         f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
+    if length < 64:
+        # Faster method for shorter lengths.
+        return BitRust.from_i64(i, length)
+    else:
+        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
+        offset = 8 - (length % 8)
+        if offset == 8:
+            return BitRust.from_bytes(b)
+        else:
+            return BitRust.from_bytes_with_offset(b, offset=offset)
 
 def _get_i(bs: BitRust, start: int, length: int) -> int:
     """Return data as a signed int from a slice of the bitstore."""
@@ -150,38 +173,6 @@ def _get_bool(bs: BitRust, start: int, _length: int) -> bool:
 
 def _get_pad(_bs: BitRust, _start: int, _length: int) -> None:
     return None
-
-def _create_u_bitstore(u: int, length: int) -> BitRust:
-    assert u >= 0
-    if u >= (1 << length):
-        raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
-                         f"The allowed range is[0, {(1 << length) - 1}].")
-    if length <= 64:
-        return BitRust.from_u64(u, length)
-    else:
-        b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return BitRust.from_bytes(b)
-        else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
-
-
-def _create_i_bitstore(i: int, length: int) -> BitRust:
-    if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-        raise ValueError(f"{i} is too large a signed integer for a bit length of {length}. "
-                         f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
-    if length < 64:
-        # Faster method for shorter lengths.
-        return BitRust.from_i64(i, length)
-    else:
-        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return BitRust.from_bytes(b)
-        else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
-
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
@@ -1145,8 +1136,7 @@ class Bits(_BaseBits):
             random.seed(seed)
         value = random.getrandbits(n)
         x = super().__new__(cls)
-        bs = _create_u_bitstore(value, n)
-        x._bitstore = bs
+        x._bitstore = _set_u(value, n)
         return x
 
     @classmethod
@@ -1480,7 +1470,7 @@ class MutableBits(_BaseBits):
             random.seed(seed)
         value = random.getrandbits(n)
         x = super().__new__(cls)
-        bs = _create_u_bitstore(value, n)
+        bs = _set_u(value, n)
         # TODO: clone here shouldn't be needed.
         x._bitstore = bs.clone_as_mutable()
         return x
