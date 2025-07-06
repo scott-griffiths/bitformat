@@ -5,7 +5,7 @@ import re
 from hypothesis import given
 import hypothesis.strategies as st
 import bitformat
-from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple, DtypeSingle, DtypeArray, DtypeKind
+from bitformat import Dtype, Bits, Field, Endianness, DtypeTuple, DtypeSingle, DtypeArray, DtypeKind, MutableBits
 from typing import Iterable, Sequence
 
 def test_build():
@@ -720,6 +720,8 @@ def test_from_random():
     a = Bits.from_random(10000, 12)
     b = Bits.from_random(10000, 12)
     assert a == b
+    c = MutableBits.from_random(10000, 12)
+    assert a == c
 
 def test_unpacking_array_dtype_with_no_length():
     a = Bits.from_dtype('[u8; 10]', range(10))

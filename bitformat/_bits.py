@@ -4,7 +4,6 @@ import ast
 import numbers
 import random
 import sys
-import struct
 import io
 import functools
 from ast import literal_eval
@@ -16,7 +15,6 @@ from bitformat._options import Options
 from bitformat.bit_rust import BitRust, MutableBitRust
 from collections.abc import Sequence
 
-
 __all__ = ["Bits", "MutableBits", "BitsType"]
 
 # Things that can be converted to Bits or MutableBits.
@@ -25,154 +23,6 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
-
-def _get_u(bs: BitRust, start: int, length: int) -> int:
-    """Return data as an unsigned int from a slice of the bitstore."""
-    assert start >= 0
-    assert length >= 0
-    if length == 0:
-        raise ValueError("Cannot interpret empty Bits as an integer.")
-    if length <= 64:
-        return bs.to_u64(start, length)
-    else:
-        # Longer store are unlikely in practice - this method is slower.
-        bs = bs.getslice(start, start + length)
-        return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
-
-def _set_u(u: int, length: int) -> BitRust:
-    if length == 0:
-        raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
-    u = int(u)
-    if u < 0:
-        raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
-    if u >= (1 << length):
-        raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
-                         f"The allowed range is[0, {(1 << length) - 1}].")
-    if length <= 64:
-        return BitRust.from_u64(u, length)
-    else:
-        b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return BitRust.from_bytes(b)
-        else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
-
-def _set_i(i: int, length: int) -> BitRust:
-    if length == 0:
-        raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
-    i = int(i)
-    if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
-        raise ValueError(f"{i} is too large a signed integer for a bit length of {length}. "
-                         f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
-    if length < 64:
-        # Faster method for shorter lengths.
-        return BitRust.from_i64(i, length)
-    else:
-        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return BitRust.from_bytes(b)
-        else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
-
-def _get_i(bs: BitRust, start: int, length: int) -> int:
-    """Return data as a signed int from a slice of the bitstore."""
-    assert start >= 0
-    assert length >= 0
-    if length == 0:
-        raise ValueError("Cannot interpret empty Bits as an integer.")
-    if length <= 64:
-        return bs.to_i64(start, length)
-    else:
-        # Longer store are unlikely in practice - this method is slower.
-        bs = bs.getslice(start, start + length)
-        return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
-
-def _get_bin(bs: BitRust, start: int, length: int) -> str:
-    """Return interpretation as a binary string."""
-    assert start >= 0
-    assert length >= 0
-    return bs.slice_to_bin(start, length)
-
-def _set_bin(binstring: str, length: None = None) -> BitRust:
-    """Create from the value given in binstring."""
-    return BitRust.from_bin(binstring)
-
-def _set_oct(octstring: str, length: None = None) -> BitRust:
-    """Create from the value given in octstring."""
-    return BitRust.from_oct(octstring)
-
-def _set_hex(hexstring: str, length: None = None) -> BitRust:
-    """Create from the value given in hexstring."""
-    return BitRust.from_hex(hexstring)
-
-def _get_oct(bs: BitRust, start: int, length: int) -> str:
-    """Return interpretation as an octal string."""
-    assert start >= 0
-    assert length >= 0
-    return bs.slice_to_oct(start, length)
-
-def _get_hex(bs: BitRust, start: int, length: int) -> str:
-    """Return interpretation as a hexadecimal string."""
-    assert start >= 0
-    assert length >= 0
-    return bs.slice_to_hex(start, length)
-
-def _get_bytes(bs: BitRust, start: int, length: int) -> bytes:
-    """Return interpretation as bytes."""
-    assert start >= 0
-    assert length >= 0
-    return bs.slice_to_bytes(start, length)
-
-def _set_bytes(data: bytearray | bytes | list, length: None = None) -> BitRust:
-    """Create from a bytes or bytearray object."""
-    return BitRust.from_bytes(bytes(data))
-
-def _get_f(bs: BitRust, start: int, length: int) -> float:
-    """Interpret as a big-endian float."""
-    assert start >= 0
-    assert length >= 0
-    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-    return struct.unpack(fmt, _get_bytes(bs, start, length))[0]
-
-def _set_f(f: float | str, length: int | None) -> BitRust:
-    if length is None:
-        raise ValueError("No length can be inferred for the float initialiser.")
-    f = float(f)
-    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-    try:
-        b = struct.pack(fmt, f)
-    except OverflowError:
-        # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-        b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-    return BitRust.from_bytes(b)
-
-def _set_bool(value: bool, length: None = None) -> BitRust:
-    return BitRust.from_bools([bool(value)])
-
-def _set_pad(value: None, length: int) -> None:
-    raise ValueError("It's not possible to set a 'pad' value.")
-
-def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
-    """Just return as a Bits."""
-    assert start >= 0
-    assert length >= 0
-    x = object.__new__(Bits)
-    x._bitstore = bs
-    return x
-
-def _set_bits(bs: BitsType, length: None = None) -> BitRust:
-    return create_bitrust_from_any(bs)
-
-def _get_bool(bs: BitRust, start: int, _length: int) -> bool:
-    """Interpret as a bool"""
-    assert start >= 0
-    assert _length == 1
-    return bs.getindex(start)
-
-def _get_pad(_bs: BitRust, _start: int, _length: int) -> None:
-    return None
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
@@ -585,7 +435,7 @@ class _BaseBits:
 
     def _get_bytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
-        bytes_ = _get_bytes(self._bitstore, 0, len(self))
+        bytes_ = self.unpack('bytes')
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
@@ -1135,9 +985,7 @@ class Bits(_BaseBits):
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
-        x = super().__new__(cls)
-        x._bitstore = _set_u(value, n)
-        return x
+        return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
     @classmethod
     def from_string(cls, s: str, /) -> Bits:
@@ -1447,6 +1295,7 @@ class MutableBits(_BaseBits):
         x._bitstore = xt._bitstore.clone_as_mutable()
         return x
 
+    # TODO: The two from_random methods can probably live in the base class again now?
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
         """
@@ -1469,11 +1318,7 @@ class MutableBits(_BaseBits):
         if seed is not None:
             random.seed(seed)
         value = random.getrandbits(n)
-        x = super().__new__(cls)
-        bs = _set_u(value, n)
-        # TODO: clone here shouldn't be needed.
-        x._bitstore = bs.clone_as_mutable()
-        return x
+        return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
     @classmethod
     def from_string(cls, s: str, /) -> MutableBits:
