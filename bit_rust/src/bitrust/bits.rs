@@ -576,6 +576,10 @@ impl BitRust {
         Ok(self.slice(start_bit, end_bit - start_bit))
     }
 
+    pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
+        self.slice(start_bit, length)
+    }
+
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         if step == 0 {
             return Err(PyValueError::new_err("Step cannot be zero."));

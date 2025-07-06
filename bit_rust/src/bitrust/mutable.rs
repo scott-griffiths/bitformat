@@ -273,6 +273,12 @@ impl MutableBitRust {
         self.inner.getslice(start_bit, end_bit).map(|bits| MutableBitRust { inner: bits })
     }
 
+    pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
+        MutableBitRust {
+            inner: self.inner.get_slice_unchecked(start_bit, length)
+        }
+    }
+
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBitRust { inner: bits })
     }

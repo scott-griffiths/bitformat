@@ -1160,7 +1160,7 @@ class Bits(_BaseBits):
     def _slice(self: Bits, start: int, end: int) -> Bits:
         """Used internally to get a slice, without error checking."""
         bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.getslice(start, end)
+        bs._bitstore = self._bitstore.get_slice_unchecked(start, end - start)
         return bs
 
     def to_mutable_bits(self) -> MutableBits:
@@ -1515,7 +1515,7 @@ class MutableBits(_BaseBits):
     def _slice(self: MutableBits, start: int, end: int) -> MutableBits:
         """Used internally to get a slice, without error checking. A copy of the data is made."""
         bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.getslice(start, end)
+        bs._bitstore = self._bitstore.get_slice_unchecked(start, end - start)
         return bs
 
     def append(self, bs: BitsType, /) -> MutableBits:
