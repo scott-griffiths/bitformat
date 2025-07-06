@@ -39,6 +39,20 @@ def _get_u(bs: BitRust, start: int, length: int) -> int:
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
+def _set_u_bitstore(u: int, length: int) -> BitRust:
+    if length is None or length == 0:
+        raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
+    u = int(u)
+    if u < 0:
+        raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
+    return _create_u_bitstore(u, length)
+
+def _set_i_bitstore(i: int, length: int) -> BitRust:
+    if length is None or length == 0:
+        raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
+    i = int(i)
+    return _create_i_bitstore(i, length)
+
 def _get_i(bs: BitRust, start: int, length: int) -> int:
     """Return data as a signed int from a slice of the bitstore."""
     assert start >= 0
@@ -554,22 +568,6 @@ class _BaseBits:
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
-
-    def _set_u(self, u: int | str, length: int | None = None) -> None:
-        """Reset the Bits to have given unsigned int interpretation."""
-        if length is None or length == 0:
-            raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
-        u = int(u)
-        if u < 0:
-            raise ValueError(f"Unsigned integers cannot be initialised with the negative number {u}.")
-        self._bitstore = _create_u_bitstore(u, length)
-
-    def _set_i(self, i: int | str, length: int | None = None) -> None:
-        """Reset the Bits to have given signed int interpretation."""
-        if length is None or length == 0:
-            raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
-        i = int(i)
-        self._bitstore = _create_i_bitstore(i, length)
 
     def _set_f(self, f: float | str, length: int | None) -> None:
         if length is None:

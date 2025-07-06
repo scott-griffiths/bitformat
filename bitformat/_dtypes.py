@@ -8,7 +8,7 @@ import bitformat
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
-
+from bitformat.bit_rust import BitRust
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
@@ -282,6 +282,7 @@ class DtypeSingle(Dtype):
     _definition: DtypeDefinition
     _endianness: Endianness
     _create_fn: Callable[[Any], bitformat.Bits]
+    _create_fn_bitstore: Callable[[Any], BitRust]
     _get_fn: Callable[[bitformat.Bits], Any]
 
     @override
@@ -340,27 +341,38 @@ class DtypeSingle(Dtype):
         else:
             x._get_fn = definition.get_fn
 
-        def get_fn_from_bitstore(b: bitformat.Bits):
-            return x._get_fn(b._bitstore, 0, len(b))
-
         x._set_fn_bitstore = definition.set_fn_bitstore
-        if "length" in inspect.signature(definition.set_fn).parameters:
-            set_fn = functools.partial(definition.set_fn, length=x._bit_length)
+
+        if definition.set_fn_bitstore is None:
+            if "length" in inspect.signature(definition.set_fn).parameters:
+                set_fn = functools.partial(definition.set_fn, length=x._bit_length)
+            else:
+                set_fn = definition.set_fn
+
+            def create_bits(v):
+                b = bitformat.Bits()
+                # The set_fn will do the length check for big endian too.
+                set_fn(b, v)
+                return b
+
+            def create_bits_le(v):
+                b = bitformat.MutableBits()
+                set_fn(b, v)
+                return b.byte_swap().to_bits()
+
+            x._create_fn = create_bits_le if little_endian else create_bits
+            x._create_fn_bitstore = None
         else:
-            set_fn = definition.set_fn
+            def create_bitstore(v):
+                return x._set_fn_bitstore(v, length=x._bit_length)
 
-        def create_bits(v):
-            b = bitformat.Bits()
-            # The set_fn will do the length check for big endian too.
-            set_fn(b, v)
-            return b
-
-        def create_bits_le(v):
-            b = bitformat.MutableBits()
-            set_fn(b, v)
-            return b.byte_swap().to_bits()
-
-        x._create_fn = create_bits_le if little_endian else create_bits
+            def create_bitstore_le(v):
+                bs = x._set_fn_bitstore(v, length=x._bit_length)
+                mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
+                mutable.byte_swap()
+                return mutable.as_immutable()
+            x._create_fn = None
+            x._create_fn_bitstore = create_bitstore_le if little_endian else create_bitstore
         return x
 
     @classmethod
@@ -385,7 +397,11 @@ class DtypeSingle(Dtype):
     @final
     def pack(self, value: Any, /) -> bitformat.Bits:
         # Single item to pack
-        b = self._create_fn(value)
+        if self._create_fn_bitstore is not None:
+            b = object.__new__(bitformat.Bits)
+            b._bitstore = self._create_fn_bitstore(value)
+        else:
+            b = self._create_fn(value)
         if self._bit_length is not None and len(b) != self._bit_length:
             raise ValueError(f"Dtype '{self}' has a bit_length of {self._bit_length} bits, but value '{value}' has {len(b)} bits.")
         return b
@@ -516,7 +532,14 @@ class DtypeArray(Dtype):
             return value
         if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
+        # TODO: Simplify again after converting to bitstore creation
+        if self._dtype_single._definition.set_fn_bitstore is not None:
+            bitstore = BitRust.from_joined([self._dtype_single._create_fn_bitstore(v) for v in value])
+            x = object.__new__(bitformat.Bits)
+            x._bitstore = bitstore
+            return x
+        else:
+            return bitformat.Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
 
     @override
     @final

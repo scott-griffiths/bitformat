@@ -82,10 +82,10 @@ def bool_bits2chars(_: Literal[1]):
 dtype_definitions = [
     # Integer types
     DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "unsigned int",
-                    Bits._set_u, None, _bits._get_u, int,
+                    None, _bits._set_u_bitstore, _bits._get_u, int,
                     False, uint_bits2chars, endianness_variants=True),
     DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed int",
-                    Bits._set_i, None, _bits._get_i, int,
+                    None, _bits._set_i_bitstore, _bits._get_i, int,
                     True, int_bits2chars, endianness_variants=True),
 
     # Literal types
