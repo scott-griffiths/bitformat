@@ -113,6 +113,24 @@ def _get_f(bs: BitRust, start: int, length: int) -> float:
     fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
     return struct.unpack(fmt, _get_bytes(bs, start, length))[0]
 
+def _set_f(f: float | str, length: int | None) -> BitRust:
+    if length is None:
+        raise ValueError("No length can be inferred for the float initialiser.")
+    f = float(f)
+    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
+    try:
+        b = struct.pack(fmt, f)
+    except OverflowError:
+        # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
+        b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
+    return BitRust.from_bytes(b)
+
+def _set_bool(value: bool, length: None = None) -> BitRust:
+    return BitRust.from_bools([bool(value)])
+
+def _set_pad(value: None, length: int) -> None:
+    raise ValueError("It's not possible to set a 'pad' value.")
+
 def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
     """Just return as a Bits."""
     assert start >= 0
@@ -120,6 +138,9 @@ def _get_bits(bs: BitRust, start: int, length: int) -> Bits:
     x = object.__new__(Bits)
     x._bitstore = bs
     return x
+
+def _set_bits(bs: BitsType, length: None = None) -> BitRust:
+    return create_bitrust_from_any(bs)
 
 def _get_bool(bs: BitRust, start: int, _length: int) -> bool:
     """Interpret as a bool"""
@@ -568,9 +589,6 @@ class _BaseBits:
 
     # ----- Private Methods -----
 
-    def _set_bits(self, bs: BitsType, _length: None = None) -> None:
-        self._bitstore = create_bitrust_from_any(bs)
-
     _unprintable = list(range(0x00, 0x20))  # ASCII control characters
     _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 
@@ -580,25 +598,6 @@ class _BaseBits:
         # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
         string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
         return string
-
-    def _set_f(self, f: float | str, length: int | None) -> None:
-        if length is None:
-            raise ValueError("No length can be inferred for the float initialiser.")
-        f = float(f)
-        fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-        try:
-            b = struct.pack(fmt, f)
-        except OverflowError:
-            # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-            b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-        self._bitstore = BitRust.from_bytes(b)
-
-    def _set_bool(self, value: bool) -> None:
-        self._bitstore = BitRust.from_bools([bool(value)])
-        return
-
-    def _set_pad(self, value: None, length: int) -> None:
-        raise ValueError("It's not possible to set a 'pad' value.")
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""

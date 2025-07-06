@@ -104,20 +104,20 @@ dtype_definitions = [
 
     # Float types
     DtypeDefinition(DtypeKind.FLOAT, "an IEEE floating point number", "float",
-                    Bits._set_f, None, _bits._get_f, float,
+                    None, _bits._set_f, _bits._get_f, float,
                     True, float_bits2chars, endianness_variants=True, allowed_sizes=(16, 32, 64)),
 
     # Other known length types
     DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
-                    Bits._set_bits, None, _bits._get_bits, Bits,
+                    None, _bits._set_bits, _bits._get_bits, Bits,
                     False, bits_bits2chars),
     DtypeDefinition(DtypeKind.BOOL, "a bool (True or False)", "bool",
-                    Bits._set_bool, None, _bits._get_bool, bool,
+                    None, _bits._set_bool, _bits._get_bool, bool,
                     False, bool_bits2chars, allowed_sizes=(1,)),
 
     # Special case pad type
     DtypeDefinition(DtypeKind.PAD, "a skipped section of padding", "padding",
-                    Bits._set_pad, None, _bits._get_pad, None,
+                    None, _bits._set_pad, _bits._get_pad, None,
                     False, None),
 ]
 
