@@ -280,8 +280,7 @@ class DtypeSingle(Dtype):
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
-    _create_fn: Callable[[Any], bitformat.Bits]
-    _create_fn_bitstore: Callable[[Any], BitRust]
+    _create_fn: Callable[[Any], BitRust]
     _get_fn: Callable[[bitformat.Bits], Any]
 
     @override
@@ -350,8 +349,7 @@ class DtypeSingle(Dtype):
             mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
             mutable.byte_swap()
             return mutable.as_immutable()
-        x._create_fn = None
-        x._create_fn_bitstore = create_bitstore_le if little_endian else create_bitstore
+        x._create_fn = create_bitstore_le if little_endian else create_bitstore
         return x
 
     @classmethod
@@ -376,11 +374,8 @@ class DtypeSingle(Dtype):
     @final
     def pack(self, value: Any, /) -> bitformat.Bits:
         # Single item to pack
-        if self._create_fn_bitstore is not None:
-            b = object.__new__(bitformat.Bits)
-            b._bitstore = self._create_fn_bitstore(value)
-        else:
-            b = self._create_fn(value)
+        b = object.__new__(bitformat.Bits)
+        b._bitstore = self._create_fn(value)
         if self._bit_length is not None and len(b) != self._bit_length:
             raise ValueError(f"Dtype '{self}' has a bit_length of {self._bit_length} bits, but value '{value}' has {len(b)} bits.")
         return b
@@ -512,7 +507,7 @@ class DtypeArray(Dtype):
         if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
         # TODO: Simplify again after converting to bitstore creation
-        bitstore = BitRust.from_joined([self._dtype_single._create_fn_bitstore(v) for v in value])
+        bitstore = BitRust.from_joined([self._dtype_single._create_fn(v) for v in value])
         x = object.__new__(bitformat.Bits)
         x._bitstore = bitstore
         return x
