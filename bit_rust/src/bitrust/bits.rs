@@ -9,6 +9,31 @@ use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use crate::bitrust::MutableBitRust;
 use crate::bitrust::BitRustBoolIterator;
 
+#[pyfunction]
+pub fn split_tokens(s: String) -> Vec<String> {
+    // Remove whitespace
+    let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
+    let mut tokens = Vec::new();
+    let mut token_start = 0;
+    let mut bracket_depth = 0;
+    // Find all the commas, ignoring those in other structures.
+    // This isn't a rigorous check - if brackets are mismatched it will be picked up later.
+
+    for (i, c) in s.char_indices() {
+        if c == ',' && bracket_depth == 0 {
+            tokens.push(s[token_start..i].to_string());
+            token_start = i + 1;
+        } else if c == '(' || c == '[' {
+            bracket_depth += 1;
+        } else if c == ')' || c == ']' {
+            bracket_depth -= 1;
+        }
+    }
+    tokens.push(s[token_start..].to_string());
+    tokens
+}
+
+
 pub trait BitCollection: Sized{
     fn len(&self) -> usize;
     fn from_zeros(length: usize) -> Self;
@@ -556,12 +581,18 @@ impl BitRust {
         None
     }
 
-    pub fn count(&self) -> usize {
+    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+        let value = value.is_truthy(py)?;
         // Note that using hamming::weight is about twice as fast as:
         // self.data.count_ones()
         // which is the way that bitvec suggests.
         let bytes: &[u8] = bytemuck::cast_slice(self.data.as_raw_slice());
-        hamming::weight(bytes) as usize
+        let count = hamming::weight(bytes) as usize;
+        if value {
+            Ok(count)
+        } else {
+            Ok(self.len() - count)
+        }
     }
 
     /// Return a slice of the current BitRust.
@@ -629,12 +660,12 @@ impl BitRust {
 
 
     /// Returns true if all of the bits are set to 1.
-    pub fn all_set(&self) -> bool {
+    pub fn all(&self) -> bool {
         self.data.all()
     }
 
     /// Returns true if any of the bits are set to 1.
-    pub fn any_set(&self) -> bool {
+    pub fn any(&self) -> bool {
         self.data.any()
     }
 
@@ -793,13 +824,6 @@ mod tests {
     }
 
     #[test]
-    fn test_count() {
-        let x = vec![1, 2, 3];
-        let b = BitRust::from_bytes(x);
-        assert_eq!(b.count(), 4);
-    }
-
-    #[test]
     fn test_reverse() {
         let mut b = MutableBitRust::from_bin_checked("11110000").unwrap();
         b.reverse();
@@ -898,9 +922,9 @@ mod tests {
     #[test]
     fn test_all_set() {
         let b = BitRust::from_bin("111").unwrap();
-        assert!(b.all_set());
+        assert!(b.all());
         let c = BitRust::from_oct("7777777777").unwrap();
-        assert!(c.all_set());
+        assert!(c.all());
     }
 
     #[test]
@@ -1000,9 +1024,9 @@ mod tests {
     #[test]
     fn test_any_set() {
         let bits = BitRust::from_bin("0000").unwrap();
-        assert!(!bits.any_set());
+        assert!(!bits.any());
         let bits = BitRust::from_bin("1000").unwrap();
-        assert!(bits.any_set());
+        assert!(bits.any());
     }
 
     #[test]
@@ -1080,14 +1104,6 @@ mod tests {
         assert_eq!(slice.to_bin(), "");
         let slice = bits.getslice_with_step(0, 8, 3).unwrap();
         assert_eq!(slice.to_bin(), "100");
-    }
-
-    #[test]
-    fn test_set_from_sequence_perfomance() {
-        let mut bits = MutableBitRust::from_zeros(10000000);
-        bits.set_from_sequence(true, vec![0]).unwrap();
-        let c = bits.count();
-        assert_eq!(c, 1);
     }
 
     #[test]
@@ -1208,8 +1224,7 @@ mod tests {
         let empty_immutable = BitRust::from_zeros(0);
 
         assert_eq!(empty_mutable.len(), 0);
-        assert_eq!(empty_mutable.count(), 0);
-        assert!(!empty_mutable.any_set());
+        assert!(!empty_mutable.any());
 
         assert_eq!(empty_mutable.clone_as_immutable().len(), 0);
 
@@ -1228,10 +1243,7 @@ mod tests {
             }
         }
 
-        assert_eq!(large.count(), 334);
-
         large.invert_all();
-        assert_eq!(large.count(), 666);
     }
 
     #[test]

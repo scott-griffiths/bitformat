@@ -305,16 +305,16 @@ impl MutableBitRust {
         self.inner.to_int_byte_data(signed)
     }
 
-    pub fn count(&self) -> usize {
-        self.inner.count()
+    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+        self.inner.count(value, py)
     }
 
-    pub fn all_set(&self) -> bool {
-        self.inner.all_set()
+    pub fn all(&self) -> bool {
+        self.inner.all()
     }
 
-    pub fn any_set(&self) -> bool {
-        self.inner.any_set()
+    pub fn any(&self) -> bool {
+        self.inner.any()
     }
 
     pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {

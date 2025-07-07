@@ -12,7 +12,7 @@ from typing import Union, Iterable, Any, TextIO, overload, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import BitRust, MutableBitRust
+from bitformat.bit_rust import BitRust, MutableBitRust, split_tokens
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -45,7 +45,7 @@ def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
 
 
 @functools.lru_cache(CACHE_SIZE)
-def token_to_bitstore_cached(token: str) -> BitRust:
+def token_to_bitstore(token: str) -> BitRust:
     if token and token[0] == '0':
         if token.startswith("0x"):
             return BitRust.from_hex(token)
@@ -73,35 +73,16 @@ def token_to_bitstore_cached(token: str) -> BitRust:
     return dtype.pack(value)._bitstore
 
 
-def split_into_tokens(s: str) -> list[str]:
-    s = "".join(s.split())  # Remove whitespace
-    # Find all the commas, ignoring those in other structures.
-    # This isn't a rigorous check - if brackets are mismatched it will be picked up later.
-    tokens = []
-    token_start = 0
-    bracket_depth = 0
-    for i, c in enumerate(s):
-        if c == "," and bracket_depth == 0:
-            tokens.append(s[token_start:i])
-            token_start = i + 1
-        elif c in "([":
-            bracket_depth += 1
-        elif c in ")]":
-            bracket_depth -= 1
-    tokens.append(s[token_start:])
-    return tokens
-
-
 # When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bitstore_cached(s: str) -> BitRust:
-    tokens = split_into_tokens(s)
-    return BitRust.from_joined([token_to_bitstore_cached(t) for t in tokens if t])
+    tokens = split_tokens(s)
+    return BitRust.from_joined([token_to_bitstore(t) for t in tokens if t])
 
 
 def str_to_mutable_bitstore(s: str) -> MutableBitRust:
-    tokens = split_into_tokens(s)
-    return MutableBitRust.from_joined([token_to_bitstore_cached(t) for t in tokens if t])
+    tokens = split_tokens(s)
+    return MutableBitRust.from_joined([token_to_bitstore(t) for t in tokens if t])
 
 
 class _BaseBits:
@@ -141,7 +122,7 @@ class _BaseBits:
             False
 
         """
-        return self._bitstore.all_set()
+        return self._bitstore.all()
 
     def any(self) -> bool:
         """
@@ -157,7 +138,7 @@ class _BaseBits:
             True
 
         """
-        return self._bitstore.any_set()
+        return self._bitstore.any()
 
     def count(self, value: Any, /) -> int:
         """
@@ -172,9 +153,7 @@ class _BaseBits:
             7
 
         """
-        # count the number of 1s (from which it's easy to work out the 0s).
-        count = self._bitstore.count()
-        return count if value else len(self) - count
+        return self._bitstore.count(value)
 
     def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """Internal version of chunks so that it can be used on MutableBits."""
