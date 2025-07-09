@@ -12,7 +12,7 @@ from typing import Union, Iterable, Any, TextIO, overload, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import BitRust, MutableBitRust, split_tokens
+from bitformat.bit_rust import BitRust, MutableBitRust, split_tokens, string_literal_to_bitrust
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -46,15 +46,10 @@ def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
 
 @functools.lru_cache(CACHE_SIZE)
 def token_to_bitstore(token: str) -> BitRust:
+
     if token and token[0] == '0':
-        if token.startswith("0x"):
-            return BitRust.from_hex(token)
-        elif token.startswith("0b"):
-            return BitRust.from_bin(token)
-        elif token.startswith("0o"):
-            return BitRust.from_oct(token)
-        else:
-            raise ValueError(f"Can't parse token '{token}'. Did you mean to prefix with '0x', '0b' or '0o'?")
+        return string_literal_to_bitrust(token)
+
     if token.startswith(("b'", 'b"')):
         # A bytes literal?
         return BitRust.from_bytes(ast.literal_eval(token))
@@ -693,15 +688,6 @@ class _BaseBits:
         # Bits can't really be ordered.
         return NotImplemented
 
-    def __ne__(self, bs: Any, /) -> bool:
-        """Return False if two Bits have the same binary representation.
-
-        >>> Bits('0b111') != '0x7'
-        False
-
-        """
-        return not self.__eq__(bs)
-
     # ----- Operators
 
     @overload
@@ -744,7 +730,7 @@ class _BaseBits:
 
         """
         x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore.lshift(n)
+        x._bitstore = self._bitstore << n
         return x
 
     def __mul__(self: Bits, n: int, /) -> Bits:
@@ -798,7 +784,7 @@ class _BaseBits:
 
         """
         x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore.rshift(n)
+        x._bitstore = self._bitstore >> n
         return x
 
     # ----- Other

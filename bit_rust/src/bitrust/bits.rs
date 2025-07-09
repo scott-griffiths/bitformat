@@ -33,6 +33,21 @@ pub fn split_tokens(s: String) -> Vec<String> {
     tokens
 }
 
+#[pyfunction]
+pub fn string_literal_to_bitrust(s: String) -> PyResult<BitRust> {
+
+    if s.starts_with("0x") {
+        return BitRust::from_hex(&s);
+    } else if s.starts_with("0o") {
+        return BitRust::from_oct(&s);
+    } else if s.starts_with("0b") {
+        return BitRust::from_bin(&s);
+    }
+    
+    Err(PyValueError::new_err(format!("Can't parse token '{}'. Did you mean to prefix with '0x', '0b' or '0o'?", s)))
+}
+
+
 
 pub trait BitCollection: Sized{
     fn len(&self) -> usize;
@@ -700,7 +715,7 @@ impl BitRust {
     }
 
     // TODO: These should move to work on MutableBits in-place instead.
-    pub fn lshift(&self, n: i64) -> PyResult<Self> {
+    pub fn __lshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self.validate_shift(n)?;
         if shift == 0 {
             return Ok(self.clone_as_immutable());
@@ -715,7 +730,7 @@ impl BitRust {
         Ok(Self::new(result_data))
     }
 
-    pub fn rshift(&self, n: i64) -> PyResult<Self> {
+    pub fn __rshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self.validate_shift(n)?;
         if shift == 0 {
             return Ok(self.clone_as_immutable());
