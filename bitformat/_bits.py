@@ -23,6 +23,86 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
+def format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_start: str,
+                colour_end: str, width: int | None = None) -> tuple[str, int]:
+    get_fn = dtype.unpack
+    chars_per_group = chars_per_dtype(dtype, bits_per_group)
+    if isinstance(dtype, (DtypeSingle, DtypeArray)):
+        n = dtype.kind
+        if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
+            get_fn = Bits._get_bytes_printable
+        elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
+            get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
+        align = ">"
+        if any(x is n for x in [DtypeKind.BIN, DtypeKind.OCT, DtypeKind.HEX, DtypeKind.BITS, DtypeKind.BYTES]):
+            align = "<"
+        if dtype.kind is DtypeKind.BITS:
+            x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
+        else:
+            x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
+
+        chars_used = len(x)
+        padding_spaces = 0 if width is None else max(width - len(x), 0)
+        x = colour_start + x + colour_end
+        # Pad final line with spaces to align it
+        x += " " * padding_spaces
+        return x, chars_used
+    else:  # DtypeTuple
+        assert isinstance(dtype, DtypeTuple)
+        align = ">"
+        s = []
+        for b in bits.chunks(bits_per_group):
+            chars_per_dtype_list = [chars_per_dtype(d, d.bit_length) for d in dtype]
+            values = get_fn(b)
+            strings = [f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype_list)]
+            s.append(f"[{', '.join(strings)}]")
+        x = sep.join(s)
+        chars_used = len(x)
+        padding_spaces = 0 if width is None else max(width - len(x), 0)
+        x = colour_start + x + colour_end
+        # Pad final line with spaces to align it
+        x += " " * padding_spaces
+        return x, chars_used
+
+
+def chars_per_dtype(dtype: Dtype, bits_per_group: int) -> int:
+    """How many characters are needed to represent a number of bits with a given Dtype."""
+    if isinstance(dtype, (DtypeSingle, DtypeArray)):
+        # TODO: Not sure this is right for DtypeArray. Maybe needs a refactor?
+        return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
+    assert isinstance(dtype, DtypeTuple)
+    # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
+    chars = sum(chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
+    return chars
+
+
+def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
+    has_length_in_fmt = True
+    bits_per_group: int = 0 if dtype1.bit_length is None else dtype1.bit_length
+
+    if dtype2 is not None:
+        if None not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:
+            raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
+                             f"bit lengths of {dtype1.bit_length} and {dtype2.bit_length} respectively.")
+        if bits_per_group == 0:
+            bits_per_group = 0 if dtype2.bit_length is None else dtype2.bit_length
+
+    if bits_per_group == 0:
+        has_length_in_fmt = False
+        if dtype2 is None:
+            bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.kind.value, 0)
+            if bits_per_group == 0:
+                raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
+        else:
+            try:
+                bits_per_group = 2 * dtype1._definition.bits_per_character * dtype2._definition.bits_per_character
+            except ValueError:
+                raise ValueError(f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
+            if bits_per_group >= 24:
+                bits_per_group //= 2
+    return bits_per_group, has_length_in_fmt
+
+
 
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
@@ -293,7 +373,7 @@ class _BaseBits:
         if isinstance(dtype2, str):
             dtype2 = Dtype.from_string(dtype2)
 
-        bits_per_group, has_length_in_fmt = Bits._process_pp_tokens(dtype1, dtype2)
+        bits_per_group, has_length_in_fmt = process_pp_tokens(dtype1, dtype2)
         trailing_bit_length = len(self) % bits_per_group if has_length_in_fmt and bits_per_group else 0
         data = self if trailing_bit_length == 0 else self[0:-trailing_bit_length]
         sep = " "  # String to insert between groups
@@ -432,58 +512,6 @@ class _BaseBits:
             s = "0b" + self.unpack("bin")
         return s
 
-    @staticmethod
-    def _format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_start: str,
-                     colour_end: str,  width: int | None = None) -> tuple[str, int]:
-        get_fn = dtype.unpack
-        chars_per_group = Bits._chars_per_dtype(dtype, bits_per_group)
-        if isinstance(dtype, (DtypeSingle, DtypeArray)):
-            n = dtype.kind
-            if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
-                get_fn = Bits._get_bytes_printable
-            elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
-                get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
-            align = ">"
-            if any(x is n for x in [DtypeKind.BIN, DtypeKind.OCT, DtypeKind.HEX, DtypeKind.BITS, DtypeKind.BYTES]):
-                align = "<"
-            if dtype.kind is DtypeKind.BITS:
-                x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
-            else:
-                x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
-
-            chars_used = len(x)
-            padding_spaces = 0 if width is None else max(width - len(x), 0)
-            x = colour_start + x + colour_end
-            # Pad final line with spaces to align it
-            x += " " * padding_spaces
-            return x, chars_used
-        else:  # DtypeTuple
-            assert isinstance(dtype, DtypeTuple)
-            align = ">"
-            s = []
-            for b in bits.chunks(bits_per_group):
-                chars_per_dtype = [Bits._chars_per_dtype(d, d.bit_length) for d in dtype]
-                values = get_fn(b)
-                strings = [f"{str(v): {align}{c}}" for v, c in zip(values, chars_per_dtype)]
-                s.append(f"[{', '.join(strings)}]")
-            x = sep.join(s)
-            chars_used = len(x)
-            padding_spaces = 0 if width is None else max(width - len(x), 0)
-            x = colour_start + x + colour_end
-            # Pad final line with spaces to align it
-            x += " " * padding_spaces
-            return x, chars_used
-
-    @staticmethod
-    def _chars_per_dtype(dtype: Dtype, bits_per_group: int):
-        """How many characters are needed to represent a number of bits with a given Dtype."""
-        if isinstance(dtype, (DtypeSingle, DtypeArray)):
-            # TODO: Not sure this is right for DtypeArray. Maybe needs a refactor?
-            return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
-        assert isinstance(dtype, DtypeTuple)
-        # Start with '[' then add the number of characters for each element and add ', ' for each element, ending with a ']'.
-        chars = sum(Bits._chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
-        return chars
 
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int,
             width: int, sep: str, format_sep: str, show_offset: bool, stream: TextIO, offset_factor: int,
@@ -506,8 +534,8 @@ class _BaseBits:
         if show_offset:
             # This could be 1 too large in some circumstances. Slightly recurrent logic needed to fix it...
             offset_width = len(str(len(self))) + len(offset_sep)
-        group_chars1 = Bits._chars_per_dtype(dtype1, bits_per_group)
-        group_chars2 = 0 if dtype2 is None else Bits._chars_per_dtype(dtype2, bits_per_group)
+        group_chars1 = chars_per_dtype(dtype1, bits_per_group)
+        group_chars2 = 0 if dtype2 is None else chars_per_dtype(dtype2, bits_per_group)
         if groups is None:
             # The number of characters that get added when we add an extra group (after the first one)
             total_group_chars = group_chars1 + group_chars2 + len(sep) + len(sep) * bool(group_chars2)
@@ -527,12 +555,12 @@ class _BaseBits:
                 offset = bitpos // offset_factor
                 bitpos += len(bits)
                 offset_str = colour.green + f"{offset: >{offset_width - len(offset_sep)}}" + offset_sep + colour.off
-            fb1, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype1, colour.magenta, colour.off, first_fb_width)
+            fb1, chars_used = format_bits(bits, bits_per_group, sep, dtype1, colour.magenta, colour.off, first_fb_width)
             if first_fb_width is None:
                 first_fb_width = chars_used
             fb2 = ""
             if dtype2 is not None:
-                fb2, chars_used = Bits._format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
+                fb2, chars_used = format_bits(bits, bits_per_group, sep, dtype2, colour.blue, colour.off, second_fb_width)
                 if second_fb_width is None:
                     second_fb_width = chars_used
                 fb2 = format_sep + fb2
@@ -540,33 +568,6 @@ class _BaseBits:
             line_fmt = offset_str + fb1 + fb2 + "\n"
             stream.write(line_fmt)
         return
-
-    @staticmethod
-    def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
-        has_length_in_fmt = True
-        bits_per_group: int = 0 if dtype1.bit_length is None else dtype1.bit_length
-
-        if dtype2 is not None:
-            if None not in {dtype1.bit_length, dtype2.bit_length} and dtype1.bit_length != dtype2.bit_length:
-                raise ValueError(f"The Dtypes '{dtype1}' and '{dtype2}' can't be used together as they have differing "
-                                 f"bit lengths of {dtype1.bit_length} and {dtype2.bit_length} respectively.")
-            if bits_per_group == 0:
-                bits_per_group = 0 if dtype2.bit_length is None else dtype2.bit_length
-
-        if bits_per_group == 0:
-            has_length_in_fmt = False
-            if dtype2 is None:
-                bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.kind.value, 0)
-                if bits_per_group == 0:
-                    raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
-            else:
-                try:
-                    bits_per_group = 2 * dtype1._definition.bits_per_character * dtype2._definition.bits_per_character
-                except ValueError:
-                    raise ValueError(f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
-                if bits_per_group >= 24:
-                    bits_per_group //= 2
-        return bits_per_group, has_length_in_fmt
 
     # ----- Special Methods -----
 
