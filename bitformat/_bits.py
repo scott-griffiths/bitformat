@@ -168,14 +168,14 @@ class _BaseBits:
         # Yield all the full chunks in a tight loop
         start = 0
         for _ in range(full_chunks_to_yield):
-            yield self._slice(start, start + chunk_size)
+            yield self._slice(start, chunk_size)
             start += chunk_size
 
         # Now, determine if there's one more chunk to yield.
         # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
         chunks_yielded = full_chunks_to_yield
         if (count is None or chunks_yielded < count) and start < length:
-            yield self._slice(start, length)
+            yield self._slice(start, length - start)
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
@@ -1089,7 +1089,7 @@ class Bits(_BaseBits):
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
             start = self._slice(0, 800)
-            end = self._slice(length - 800, length)
+            end = self._slice(length - 800, 800)
             return hash(((start + end).to_bytes(), length))
 
     def __setitem__(self, key, value):
@@ -1122,10 +1122,10 @@ class Bits(_BaseBits):
         """
         return self
 
-    def _slice(self: Bits, start: int, end: int) -> Bits:
+    def _slice(self: Bits, start: int, length: int) -> Bits:
         """Used internally to get a slice, without error checking."""
         bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.get_slice_unchecked(start, end - start)
+        bs._bitstore = self._bitstore.get_slice_unchecked(start, length)
         return bs
 
     def to_mutable_bits(self) -> MutableBits:
@@ -1477,10 +1477,10 @@ class MutableBits(_BaseBits):
         x._bitstore = self._bitstore.clone_as_mutable()
         return x
 
-    def _slice(self: MutableBits, start: int, end: int) -> MutableBits:
+    def _slice(self: MutableBits, start: int, length: int) -> MutableBits:
         """Used internally to get a slice, without error checking. A copy of the data is made."""
         bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.get_slice_unchecked(start, end - start)
+        bs._bitstore = self._bitstore.get_slice_unchecked(start, length)
         return bs
 
     def append(self, bs: BitsType, /) -> MutableBits:
@@ -1547,7 +1547,7 @@ class MutableBits(_BaseBits):
                              f"but it needs to be a multiple of {byte_length} bytes.")
         chunks = []
         for startbit in range(0, len(self), byte_length * 8):
-            x = self._slice(startbit, startbit + byte_length * 8).to_bytes()
+            x = self._slice(startbit, byte_length * 8).to_bytes()
             chunks.append(MutableBits.from_bytes(x[::-1]))
         x = MutableBits.from_joined(chunks)
         self._bitstore = x._bitstore
