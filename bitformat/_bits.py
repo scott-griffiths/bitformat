@@ -790,7 +790,7 @@ this is a step to using the Rust classes as the base classes."""
 
 
 
-class Bits:
+class BitsOld:
     """
     An immutable container of binary data.
 
@@ -811,7 +811,7 @@ class Bits:
     # ----- Class Methods -----
 
     def __new__(cls, s: str | None = None, /) -> Bits:
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         if s is None:
             x._bitstore = BitRust.from_zeros(0)
         else:
@@ -843,7 +843,7 @@ class Bits:
             a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = BitRust.from_bytes(b)
         return x
 
@@ -859,7 +859,7 @@ class Bits:
             a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = BitRust.from_bools([bool(x) for x in i])
         return x
 
@@ -878,7 +878,7 @@ class Bits:
             b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = BitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
         return x
 
@@ -899,7 +899,7 @@ class Bits:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = BitRust.from_ones(n)
         return x
 
@@ -924,7 +924,7 @@ class Bits:
             xt = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = xt._bitstore
         return x
 
@@ -975,7 +975,7 @@ class Bits:
             a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = str_to_bitstore_cached(s)
         return x
 
@@ -996,7 +996,7 @@ class Bits:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = BitRust.from_zeros(n)
         return x
 
@@ -1135,7 +1135,7 @@ class Bits:
         return x
 
 
-class MutableBits:
+class MutableBitsOld:
     """
     A mutable container of binary data.
 
@@ -1158,7 +1158,7 @@ class MutableBits:
     # ----- Class Methods -----
 
     def __new__(cls, s: str | None = None, /) -> MutableBits:
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         if s is None:
             x._bitstore = MutableBitRust.from_zeros(0)
         else:
@@ -1190,7 +1190,7 @@ class MutableBits:
             a = MutableBits.from_bytes(b"some_bytes_maybe_from_a_file")
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = MutableBitRust.from_bytes(b)
         return x
 
@@ -1206,7 +1206,7 @@ class MutableBits:
             a = MutableBits.from_bools([False, 0, 1, "Steven"])  # binary 0011
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = MutableBitRust.from_bools([bool(x) for x in i])
         return x
 
@@ -1225,7 +1225,7 @@ class MutableBits:
             b = MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = MutableBitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
         return x
 
@@ -1246,7 +1246,7 @@ class MutableBits:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = MutableBitRust.from_ones(n)
         return x
 
@@ -1271,7 +1271,7 @@ class MutableBits:
             xt = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         # TODO: clone here shouldn't be needed.
         x._bitstore = xt._bitstore.clone_as_mutable()
         return x
@@ -1324,7 +1324,7 @@ class MutableBits:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
         return x
 
@@ -1345,7 +1345,7 @@ class MutableBits:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = super().__new__(cls)
+        x = object.__new__(cls)
         x._bitstore = MutableBitRust.from_zeros(n)
         return x
 
@@ -1777,16 +1777,32 @@ class MutableBits:
         self._bitstore.reverse()
         return self
 
+class Bits:
+    pass
+
+class MutableBits:
+    pass
 
 # Patching on the methods to Bits and MutableBits to avoid inheritance.
 def _patch_classes():
-    x = _BaseBits.__dict__.items()
     for name, method in _BaseBits.__dict__.items():
         if isinstance(method, classmethod):
             setattr(Bits, name, classmethod(method.__func__))
             setattr(MutableBits, name, classmethod(method.__func__))
         elif callable(method):
             setattr(Bits, name, method)
+            setattr(MutableBits, name, method)
+
+    for name, method in BitsOld.__dict__.items():
+        if isinstance(method, classmethod):
+            setattr(Bits, name, classmethod(method.__func__))
+        elif callable(method):
+            setattr(Bits, name, method)
+
+    for name, method in MutableBitsOld.__dict__.items():
+        if isinstance(method, classmethod):
+            setattr(MutableBits, name, classmethod(method.__func__))
+        elif callable(method):
             setattr(MutableBits, name, method)
 
 
