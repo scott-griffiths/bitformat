@@ -674,8 +674,17 @@ impl Bits {
     }
 
 
-    /// Returns true if all of the bits are set to 1.
-    pub fn _all(&self) -> bool {
+    /// Return True if all bits are equal to 1, otherwise return False.
+    /// 
+    /// :return: ``True`` if all bits are 1, otherwise ``False``.
+    /// 
+    /// .. code-block:: pycon
+    /// 
+    /// >>> Bits('0b1111').all()
+    /// True
+    /// >>> Bits('0b1011').all()
+    /// False
+    pub fn all(&self) -> bool {
         self.data.all()
     }
 

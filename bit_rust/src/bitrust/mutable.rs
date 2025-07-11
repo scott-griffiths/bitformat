@@ -309,8 +309,18 @@ impl MutableBits {
         self.inner._count(value, py)
     }
 
+    /// Return True if all bits are equal to 1, otherwise return False.
+    ///
+    /// :return: ``True`` if all bits are 1, otherwise ``False``.
+    ///
+    /// .. code-block:: pycon
+    ///
+    /// >>> MutableBits('0b1111').all()
+    /// True
+    /// >>> MutableBits('0b1011').all()
+    /// False
     pub fn _all(&self) -> bool {
-        self.inner._all()
+        self.inner.all()
     }
 
     pub fn _any(&self) -> bool {
