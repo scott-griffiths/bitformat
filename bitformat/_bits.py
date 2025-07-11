@@ -27,6 +27,12 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
+def convert_bytes_to_printable(b: bytes) -> str:
+    # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
+    string = "".join(chr(0x100 + x) if x in _unprintable else chr(x) for x in b)
+    return string
+
+
 def format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_start: str,
                 colour_end: str, width: int | None = None) -> tuple[str, int]:
     get_fn = dtype.unpack
@@ -34,7 +40,7 @@ def format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_
     if isinstance(dtype, (DtypeSingle, DtypeArray)):
         n = dtype.kind
         if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
-            get_fn = Bits._get_bytes_printable
+            get_fn = lambda b: convert_bytes_to_printable(b.to_bytes())
         elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
             get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
         align = ">"
@@ -167,26 +173,9 @@ def str_to_mutable_bitstore(s: str) -> MutableBitRust:
 
 
 class _BaseBits:
-    """
-    An immutable container of binary data.
-
-    To construct, use a builder 'from' method:
-
-    * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
-    * ``Bits.from_string(s)`` - Use a formatted string.
-    * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
-    * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
-    * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
-    * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
-    * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
-    * ``Bits.from_joined(iterable)`` - Concatenate an iterable of ``Bits`` objects.
-
-    Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
-
-    """
-
-    __slots__ = ("_bitstore",)
-
+    """Not a real class! This contains the common methods for Bits and MutableBits, and they
+are monkey-patched into those classes later. Yes, it would be more normal to use inheritance, but
+this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
     def all(self) -> bool:
@@ -489,14 +478,6 @@ class _BaseBits:
         return fmt.unpack(self)
 
     # ----- Private Methods -----
-
-
-    def _get_bytes_printable(self) -> str:
-        """Return an approximation of the data as a string of printable characters."""
-        bytes_ = self.unpack('bytes')
-        # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
-        string = "".join(chr(0x100 + x) if x in Bits._unprintable else chr(x) for x in bytes_)
-        return string
 
     def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
         """Validate start and end and return them as positive bit positions."""
@@ -810,7 +791,23 @@ class _BaseBits:
 
 
 class Bits:
+    """
+    An immutable container of binary data.
 
+    To construct, use a builder 'from' method:
+
+    * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
+    * ``Bits.from_string(s)`` - Use a formatted string.
+    * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
+    * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
+    * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
+    * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+    * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
+    * ``Bits.from_joined(iterable)`` - Concatenate an iterable of objects.
+
+    Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
+
+    """
     # ----- Class Methods -----
 
     def __new__(cls, s: str | None = None, /) -> Bits:
@@ -1139,7 +1136,23 @@ class Bits:
 
 
 class MutableBits:
+    """
+    A mutable container of binary data.
 
+    To construct, use a builder 'from' method:
+
+    * ``MutableBits.from_bytes(b)`` - Create directly from a ``bytes`` object.
+    * ``MutableBits.from_string(s)`` - Use a formatted string.
+    * ``MutableBits.from_bools(i)`` - Convert each element in ``i`` to a bool.
+    * ``MutableBits.from_zeros(n)`` - Initialise with ``n`` zero bits.
+    * ``MutableBits.from_ones(n)`` - Initialise with ``n`` one bits.
+    * ``MutableBits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+    * ``MutableBits.from_dtype(dtype, value)`` - Combine a data type with a value.
+    * ``MutableBits.from_joined(iterable)`` - Concatenate an iterable of objects.
+
+    Using the constructor ``MutableBits(s)`` is an alias for ``MutableBits.from_string(s)``.
+
+    """
     __slots__ = ("_bitstore",)
 
     # ----- Class Methods -----
