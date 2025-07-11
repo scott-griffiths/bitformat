@@ -34,7 +34,7 @@ pub fn split_tokens(s: String) -> Vec<String> {
 }
 
 #[pyfunction]
-pub fn string_literal_to_bitrust(s: String) -> PyResult<Bits> {
+pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
 
     if s.starts_with("0x") {
         return Bits::_from_hex(&s);

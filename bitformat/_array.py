@@ -4,7 +4,7 @@ import math
 from collections.abc import Sized, Sequence
 from typing import Union, Iterable, Any, overload, TextIO
 
-from bitformat._bits import Bits, BitsType, MutableBits, create_mutable_bitrust_from_any
+from bitformat._bits import Bits, BitsType, MutableBits, create_mutablebits_from_any
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
@@ -145,7 +145,7 @@ class Array:
 
     @bits.setter
     def bits(self, value: BitsType) -> None:
-        self._bitstore = create_mutable_bitrust_from_any(value)
+        self._bitstore = create_mutablebits_from_any(value)
 
     def _get_bit_slice(self, start: int, stop: int) -> MutableBits:
         return self._bitstore.getslice(start, stop)
@@ -633,19 +633,19 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = create_mutable_bitrust_from_any(value)
+        value = create_mutablebits_from_any(value)
         if len(value) != self._item_size:
             raise ValueError(f"Bitwise op {op} needs a Bits of length {self._item_size} to match "
                              f"format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self._item_size, self._item_size):
-            mutablebitrust_slice = self._bitstore.getslice(start, start + self._item_size)
+            mutablebits_slice = self._bitstore.getslice(start, start + self._item_size)
             if op == operator.ixor:
-                mutablebitrust_slice.ixor(value)
+                mutablebits_slice.ixor(value)
             elif op == operator.iand:
-                mutablebitrust_slice.iand(value)
+                mutablebits_slice.iand(value)
             elif op == operator.ior:
-                mutablebitrust_slice.ior(value)
-            self._bitstore.set_slice(start, start + self._item_size, mutablebitrust_slice.as_immutable())
+                mutablebits_slice.ior(value)
+            self._bitstore.set_slice(start, start + self._item_size, mutablebits_slice.as_immutable())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:

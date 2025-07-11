@@ -330,9 +330,9 @@ class DtypeSingle(Dtype):
         x._endianness = endianness
 
         if little_endian:
-            def get_fn_le(b_rust, start, length):
+            def get_fn_le(bits, start, length):
                 # TODO: Should take slice here
-                mutable_b = b_rust.clone_as_mutable()
+                mutable_b = bits.clone_as_mutable()
                 mutable_b.byte_swap()
                 return definition.get_fn(mutable_b.clone_as_immutable(), start, length)
             x._get_fn = get_fn_le
