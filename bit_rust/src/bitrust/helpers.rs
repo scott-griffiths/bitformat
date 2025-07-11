@@ -34,7 +34,7 @@ fn compute_lps(pattern: &BS) -> Vec<usize> {
     lps
 }
 
-pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option<usize> {
+pub fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
@@ -67,8 +67,8 @@ pub fn find_bitvec(haystack: &BitRust, needle: &BitRust, start: usize) -> Option
 
 // The same as find_bitvec but only returns matches that are a multiple of 8.
 pub fn find_bitvec_bytealigned(
-    haystack: &BitRust,
-    needle: &BitRust,
+    haystack: &Bits,
+    needle: &Bits,
     start: usize,
 ) -> Option<usize> {
     // Early return if needle is empty or longer than haystack

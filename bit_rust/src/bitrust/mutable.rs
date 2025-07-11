@@ -1,5 +1,5 @@
 use crate::bitrust::{bits, helpers};
-use crate::bitrust::BitRust;
+use crate::bitrust::Bits;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
@@ -8,68 +8,68 @@ use bits::BitCollection;
 
 
 #[pyclass]
-pub struct MutableBitRust {
-    pub(crate) inner: BitRust,
+pub struct MutableBits {
+    pub(crate) inner: Bits,
 }
 
-impl BitCollection for MutableBitRust {
+impl BitCollection for MutableBits {
     fn len(&self) -> usize {
         self.inner.len()
     }
     fn from_zeros(length: usize) -> Self {
-        Self { inner: <BitRust as BitCollection>::from_zeros(length) }
+        Self { inner: <Bits as BitCollection>::from_zeros(length) }
     }
     fn from_ones(length: usize) -> Self {
-        Self { inner: <BitRust as BitCollection>::from_ones(length) }
+        Self { inner: <Bits as BitCollection>::from_ones(length) }
     }
     fn from_bytes(data: Vec<u8>) -> Self {
-        Self { inner: <BitRust as BitCollection>::from_bytes(data) }
+        Self { inner: <Bits as BitCollection>::from_bytes(data) }
     }
     fn from_bin(binary_string: &str) -> Result<Self, String> {
-        Ok(Self { inner: <BitRust as BitCollection>::from_bin(binary_string)? })
+        Ok(Self { inner: <Bits as BitCollection>::from_bin(binary_string)? })
     }
     fn from_oct(oct: &str) -> Result<Self, String> {
-        Ok(Self { inner: <BitRust as BitCollection>::from_oct(oct)? })
+        Ok(Self { inner: <Bits as BitCollection>::from_oct(oct)? })
     }
     fn from_hex(hex: &str) -> Result<Self, String> {
-        Ok(Self { inner: <BitRust as BitCollection>::from_hex(hex)? })
+        Ok(Self { inner: <Bits as BitCollection>::from_hex(hex)? })
     }
     fn from_u64(value: u64, length: usize) -> Self {
-        Self { inner: <BitRust as BitCollection>::from_u64(value, length) }
+        Self { inner: <Bits as BitCollection>::from_u64(value, length) }
     }
     fn from_i64(value: i64, length: usize) -> Self {
-        Self { inner: <BitRust as BitCollection>::from_i64(value, length) }
+        Self { inner: <Bits as BitCollection>::from_i64(value, length) }
     }
-    fn logical_or(&self, other: &BitRust) -> Self {
+    fn logical_or(&self, other: &Bits) -> Self {
         Self { inner: self.inner.logical_or(other) }
     }
-    fn logical_and(&self, other: &BitRust) -> Self {
+    fn logical_and(&self, other: &Bits) -> Self {
         Self { inner: self.inner.logical_and(other) }
     }
-    fn logical_xor(&self, other: &BitRust) -> Self {
+    fn logical_xor(&self, other: &Bits) -> Self {
         Self { inner: self.inner.logical_xor(other) }
     }
 }
 
-impl PartialEq for MutableBitRust {
+impl PartialEq for MutableBits {
     fn eq(&self, other: &Self) -> bool {
         self.inner.data == other.inner.data
     }
 }
 
-impl PartialEq<BitRust> for MutableBitRust {
-    fn eq(&self, other: &BitRust) -> bool {
+impl PartialEq<Bits> for MutableBits {
+    fn eq(&self, other: &Bits) -> bool {
         self.inner.data == other.data
     }
 }
 
-impl MutableBitRust {
+impl MutableBits {
     pub fn new(bv: helpers::BV) -> Self {
-        Self { inner: BitRust::new(bv) }
+        Self { inner: Bits::new(bv) }
     }
 }
 
-impl MutableBitRust {
+impl MutableBits {
     pub fn to_bin(&self) -> String {
         self.inner.to_bin()
     }
@@ -79,22 +79,22 @@ impl MutableBitRust {
 }
 
 #[pymethods]
-impl MutableBitRust {
+impl MutableBits {
 
     pub fn equals(&self, other: PyObject) -> bool {
         Python::with_gil(|py| {
             let other_any = other.bind(py);
-            if let Ok(other_bitrust) = other_any.extract::<PyRef<BitRust>>() {
+            if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
                 return self.inner.data == other_bitrust.data;
             }
-            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBitRust>>() {
+            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
                 return self.inner.data == other_mutable_bitrust.inner.data;
             }
             false
         })
     }
 
-    pub fn byte_swap(&mut self) -> PyResult<()> {
+    pub fn _byte_swap(&mut self) -> PyResult<()> {
         if self.inner.data.len() % 8 != 0 {
             return Err(PyValueError::new_err(format!("Cannot use byte_swap as not a whole number of bytes ({} bits long).", self.inner.data.len())));
         }
@@ -104,7 +104,7 @@ impl MutableBitRust {
         Ok(())
     }
     
-    pub fn overwrite(&mut self, start: usize, value: &BitRust) -> PyResult<()> {
+    pub fn _overwrite(&mut self, start: usize, value: &Bits) -> PyResult<()> {
         if start + value.len() > self.len() {
             return Err(PyIndexError::new_err("Slice out of bounds"));
         }
@@ -112,10 +112,10 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn set_slice(&mut self, start: usize, end: usize, value: &BitRust) -> PyResult<()> {
+    pub fn set_slice(&mut self, start: usize, end: usize, value: &Bits) -> PyResult<()> {
         if end - start == value.len() {
             // This is an overwrite, so no need to move data around.
-            return self.overwrite(start, value);
+            return self._overwrite(start, value);
         }
         let data = std::mem::take(&mut self.inner.data);
         let start_slice = data[..start].to_bitvec();
@@ -129,7 +129,7 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn ixor(&mut self, other: &MutableBitRust) -> PyResult<()> {
+    pub fn ixor(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -138,7 +138,7 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn ior(&mut self, other: &MutableBitRust) -> PyResult<()> {
+    pub fn ior(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -147,7 +147,7 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn iand(&mut self, other: &MutableBitRust) -> PyResult<()> {
+    pub fn iand(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -156,25 +156,25 @@ impl MutableBitRust {
         Ok(())
     }
 
-    pub fn __or__(&self, other: &BitRust) -> PyResult<Self> {
+    pub fn _or(&self, other: &Bits) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(MutableBitRust::logical_or(self, other))
+        Ok(MutableBits::logical_or(self, other))
     }
 
-    pub fn __and__(&self, other: &BitRust) -> PyResult<Self> {
+    pub fn _and(&self, other: &Bits) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(MutableBitRust::logical_and(self, other))
+        Ok(MutableBits::logical_and(self, other))
     }
 
-    pub fn __xor__(&self, other: &BitRust) -> PyResult<Self> {
+    pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(MutableBitRust::logical_xor(self, other))
+        Ok(MutableBits::logical_xor(self, other))
     }
 
     #[staticmethod]
@@ -188,34 +188,34 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_zeros(length: usize) -> Self {
+    pub fn _from_zeros(length: usize) -> Self {
         BitCollection::from_zeros(length)
     }
 
     #[staticmethod]
-    pub fn from_ones(length: usize) -> Self {
+    pub fn _from_ones(length: usize) -> Self {
         BitCollection::from_ones(length)
     }
 
     #[staticmethod]
-    pub fn from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
+    pub fn _from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
         let mut bv = helpers::BV::with_capacity(values.len());
 
         for value in values {
             let b: bool = value.extract(py)?;
             bv.push(b);
         }
-        Ok(Self { inner: BitRust::new(bv)})
+        Ok(Self { inner: Bits::new(bv)})
     }
 
     #[staticmethod]
-    pub fn from_bytes(data: Vec<u8>) -> Self {
+    pub fn _from_bytes(data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
-        Self { inner: BitRust::from_bytes_with_offset(data, offset) }
+        Self { inner: Bits::from_bytes_with_offset(data, offset) }
     }
 
     #[staticmethod]
@@ -243,14 +243,14 @@ impl MutableBitRust {
     }
 
     #[staticmethod]
-    pub fn from_joined(bits_vec: Vec<PyRef<BitRust>>) -> Self {
-        let bitrust_vec: Vec<&BitRust> = bits_vec.iter().map(|x| &**x).collect();
+    pub fn _from_joined(bits_vec: Vec<PyRef<Bits>>) -> Self {
+        let bitrust_vec: Vec<&Bits> = bits_vec.iter().map(|x| &**x).collect();
         let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
         for bits in bitrust_vec {
             bv.extend_from_bitslice(&bits.data);
         }
-        MutableBitRust::new(bv)
+        MutableBits::new(bv)
     }
 
     pub fn to_u64(&self, start: usize, length: usize) -> u64 {
@@ -270,21 +270,21 @@ impl MutableBitRust {
     }
 
     pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
-        self.inner.getslice(start_bit, end_bit).map(|bits| MutableBitRust { inner: bits })
+        self.inner.getslice(start_bit, end_bit).map(|bits| MutableBits { inner: bits })
     }
 
     pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
-        MutableBitRust {
+        MutableBits {
             inner: self.inner.get_slice_unchecked(start_bit, length)
         }
     }
 
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
-        self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBitRust { inner: bits })
+        self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBits { inner: bits })
     }
 
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.inner.to_bytes()
+    pub fn _to_bytes(&self) -> Vec<u8> {
+        self.inner._to_bytes()
     }
 
     pub fn slice_to_bin(&self, start: usize, end: usize) -> String { self.inner.slice_to_bin(start, end)}
@@ -305,24 +305,24 @@ impl MutableBitRust {
         self.inner.to_int_byte_data(signed)
     }
 
-    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
-        self.inner.count(value, py)
+    pub fn _count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+        self.inner._count(value, py)
     }
 
-    pub fn all(&self) -> bool {
-        self.inner.all()
+    pub fn _all(&self) -> bool {
+        self.inner._all()
     }
 
-    pub fn any(&self) -> bool {
-        self.inner.any()
+    pub fn _any(&self) -> bool {
+        self.inner._any()
     }
 
-    pub fn find(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.find(b, start, bytealigned)
+    pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
+        self.inner._find(b, start, bytealigned)
     }
 
-    pub fn rfind(&self, b: &BitRust, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner.rfind(b, start, bytealigned)
+    pub fn _rfind(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
+        self.inner._rfind(b, start, bytealigned)
     }
 
     pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
@@ -398,32 +398,32 @@ impl MutableBitRust {
 
     /// Return a copy with a real copy of the data.
     pub fn clone_as_mutable(&self) -> Self {
-        MutableBitRust::new(self.inner.data.clone())
+        MutableBits::new(self.inner.data.clone())
     }
 
     /// Convert to immutable BitRust - cloning the data.
-    pub fn clone_as_immutable(&self) -> BitRust {
-        BitRust::new(self.inner.data.clone())
+    pub fn clone_as_immutable(&self) -> Bits {
+        Bits::new(self.inner.data.clone())
     }
     
     /// Convert to immutable BitRust - without cloning the data.
-    pub fn as_immutable(&mut self) -> BitRust {
+    pub fn as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
-        BitRust::new(data)
+        Bits::new(data)
     }
 
     /// Reverses all bits in place.
-    pub fn reverse(&mut self) {
+    pub fn _reverse(&mut self) {
         self.inner.data.reverse();
     }
 
     /// Append in-place
-    pub fn append(&mut self, other: &BitRust) {
+    pub fn _append(&mut self, other: &Bits) {
         self.inner.data.extend(&other.data);
     }
 
     /// Prepend in-place
-    pub fn prepend(&mut self, other: &BitRust) {
+    pub fn _prepend(&mut self, other: &Bits) {
         let self_data = std::mem::take(&mut self.inner.data);
         let mut new_data = other.data.to_bitvec();
         new_data.extend(self_data);

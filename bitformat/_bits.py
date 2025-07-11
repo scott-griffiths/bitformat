@@ -12,7 +12,8 @@ from typing import Union, Iterable, Any, TextIO, overload, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import BitRust, MutableBitRust, split_tokens, string_literal_to_bitrust
+from bitformat.bit_rust import split_tokens, string_literal_to_bitrust
+from bitformat.bit_rust import Bits, MutableBits
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -114,37 +115,37 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
 
 
 
-def create_bitrust_from_any(any_: BitsType) -> BitRust:
+def create_bitrust_from_any(any_: BitsType) -> Bits:
     if isinstance(any_, str):
         return str_to_bitstore_cached(any_)
     if isinstance(any_,  (Bits, MutableBits)):
-        return any_._bitstore.clone_as_immutable()
-    if isinstance(any_,  (BitRust, MutableBitRust)):
+        return any_.clone_as_immutable()
+    if isinstance(any_,  MutableBits):
         return any_.clone_as_immutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
-        return BitRust.from_bytes(any_)
-    raise TypeError(f"Cannot convert object of type {type(any_)} to a BitRust object.")
+        return Bits.from_bytes(any_)
+    raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 
-def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
+def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBits:
     if isinstance(any_, str):
         return str_to_mutable_bitstore(any_)
     if isinstance(any_, (Bits, MutableBits)):
-        return any_._bitstore.clone_as_mutable()
+        return any_.clone_as_mutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
-        return MutableBitRust.from_bytes(any_)
-    raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBitRust object.")
+        return MutableBits.from_bytes(any_)
+    raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
 
 
 @functools.lru_cache(CACHE_SIZE)
-def token_to_bitstore(token: str) -> BitRust:
+def token_to_bitstore(token: str) -> Bits:
 
     if token and token[0] == '0':
         return string_literal_to_bitrust(token)
 
     if token.startswith(("b'", 'b"')):
         # A bytes literal?
-        return BitRust.from_bytes(ast.literal_eval(token))
+        return Bits._from_bytes(ast.literal_eval(token))
     try:
         dtype_str, value_str = token.split("=", 1)
         dtype = Dtype.from_string(dtype_str)
@@ -152,24 +153,24 @@ def token_to_bitstore(token: str) -> BitRust:
         raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
                          "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
     if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
-        return dtype.pack(value_str)._bitstore
+        return dtype.pack(value_str)
     try:
         value = literal_eval(value_str)
     except ValueError:
         raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
-    return dtype.pack(value)._bitstore
+    return dtype.pack(value)
 
 
 # When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
 @functools.lru_cache(CACHE_SIZE)
-def str_to_bitstore_cached(s: str) -> BitRust:
+def str_to_bitstore_cached(s: str) -> Bits:
     tokens = split_tokens(s)
-    return BitRust.from_joined([token_to_bitstore(t) for t in tokens if t])
+    return Bits._from_joined([token_to_bitstore(t) for t in tokens if t])
 
 
-def str_to_mutable_bitstore(s: str) -> MutableBitRust:
+def str_to_mutable_bitstore(s: str) -> MutableBits:
     tokens = split_tokens(s)
-    return MutableBitRust.from_joined([token_to_bitstore(t) for t in tokens if t])
+    return MutableBits.from_joined([token_to_bitstore(t) for t in tokens if t])
 
 
 class _BaseBits:
@@ -192,7 +193,7 @@ this is a step to using the Rust classes as the base classes."""
             False
 
         """
-        return self._bitstore.all()
+        return self._all()
 
     def any(self) -> bool:
         """
@@ -208,7 +209,7 @@ this is a step to using the Rust classes as the base classes."""
             True
 
         """
-        return self._bitstore.any()
+        return self._any()
 
     def count(self, value: Any, /) -> int:
         """
@@ -223,7 +224,7 @@ this is a step to using the Rust classes as the base classes."""
             7
 
         """
-        return self._bitstore.count(value)
+        return self._count(value)
 
     def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """Internal version of chunks so that it can be used on MutableBits."""
@@ -269,7 +270,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         suffix = create_bitrust_from_any(suffix)
         if len(suffix) <= len(self):
-            return self._bitstore.getslice(len(self) - len(suffix), len(self)).equals(suffix)
+            return self.getslice(len(self) - len(suffix), len(self)).equals(suffix)
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -292,7 +293,7 @@ this is a step to using the Rust classes as the base classes."""
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        p = self._bitstore.find(bs, 0, ba)
+        p = self._find(bs, 0, ba)
         return None if p == -1 else p
 
     def info(self) -> str:
@@ -412,7 +413,7 @@ this is a step to using the Rust classes as the base classes."""
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._bitstore.rfind(bs, 0, ba)
+        p = self._rfind(bs, 0, ba)
         return None if p == -1 else p
 
     def starts_with(self, prefix: BitsType) -> bool:
@@ -431,7 +432,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         prefix = create_bitrust_from_any(prefix)
         if len(prefix) <= len(self):
-            return self._bitstore.getslice(0, len(prefix)).equals(prefix)
+            return self.getslice(0, len(prefix)).equals(prefix)
         return False
 
     def to_bytes(self) -> bytes:
@@ -442,7 +443,7 @@ this is a step to using the Rust classes as the base classes."""
         :return: The Bits as bytes.
 
         """
-        return self._bitstore.to_bytes()
+        return self._to_bytes()
 
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
         """
@@ -566,8 +567,7 @@ this is a step to using the Rust classes as the base classes."""
         if bs is self:
             return self
         bs = create_bitrust_from_any(bs)
-        s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore & bs
+        s = self._and(bs)
         return s
 
     def __or__(self, bs: BitsType, /) -> Bits | MutableBits:
@@ -579,8 +579,7 @@ this is a step to using the Rust classes as the base classes."""
         if bs is self:
             return self
         bs = create_bitrust_from_any(bs)
-        s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore | bs
+        s = self._or(bs)
         return s
 
     def __xor__(self, bs: BitsType, /) -> Bits | MutableBits:
@@ -590,8 +589,7 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         bs = create_bitrust_from_any(bs)
-        s = object.__new__(self.__class__)
-        s._bitstore = self._bitstore ^ bs
+        s = self._xor(bs)
         return s
 
     def __rand__(self, bs: BitsType, /) -> Bits | MutableBits:
@@ -649,14 +647,10 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         try:
-            return self._bitstore.equals(bs._bitstore)
-        except AttributeError:
-            pass
-        try:
             other = create_bitrust_from_any(bs)
         except TypeError:
             return False
-        return self._bitstore.equals(other)
+        return self.equals(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.
@@ -685,14 +679,12 @@ this is a step to using the Rust classes as the base classes."""
     def __getitem__(self, key: slice | int, /) -> Bits | MutableBits | bool:
         """Return a new Bits representing a slice of the current Bits."""
         if isinstance(key, numbers.Integral):
-            return bool(self._bitstore.getindex(key))
-        bs = object.__new__(self.__class__)
+            return bool(self.getindex(key))
         start, stop, step = key.indices(len(self))
         if step == 1:
-            bs._bitstore = self._bitstore.getslice(start, stop)
+            return self.getslice(start, stop)
         else:
-            bs._bitstore = self._bitstore.getslice_with_step(start, stop, step)
-        return bs
+            return self.getslice_with_step(start, stop, step)
 
     def __invert__(self) -> Bits | MutableBits:
         """Return the instance with every bit inverted.
@@ -702,11 +694,10 @@ this is a step to using the Rust classes as the base classes."""
         """
         if len(self) == 0:
             raise ValueError("Cannot invert empty Bits.")
-        x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore.clone_as_mutable()
-        x._bitstore.invert_all()
+        x = self.clone_as_mutable()
+        x.invert_all()
         if isinstance(self, Bits):
-            x._bitstore = x._bitstore.as_immutable()
+            x = x.as_immutable()
         return x
 
     def __lshift__(self: Bits, n: int, /) -> Bits:
@@ -715,8 +706,7 @@ this is a step to using the Rust classes as the base classes."""
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore << n
+        x = self._lshift(n)
         return x
 
     def __mul__(self: Bits, n: int, /) -> Bits:
@@ -728,30 +718,26 @@ this is a step to using the Rust classes as the base classes."""
         """
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
-        x = object.__new__(self.__class__)
-        mutable = MutableBitRust.from_zeros(0)
+        mutable = MutableBits.from_zeros(0)
 
-        if isinstance(self._bitstore, BitRust):
-            b = self._bitstore
+        if isinstance(self, Bits):
             for _ in range(n):
-                mutable.append(b)
-            x._bitstore = mutable.as_immutable()
+                mutable.append(self)
+            return mutable.as_immutable()
         else:
-            b = self._bitstore.clone_as_immutable()
+            b = self.clone_as_immutable()
             for _ in range(n):
                 mutable.append(b)
-            x._bitstore = mutable
-        return x
+            return mutable
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = create_mutable_bitrust_from_any(bs)
-        bs.append(self._bitstore)
-        x = object.__new__(self.__class__)
+        bs.append(self)
         if isinstance(self, Bits):
-            x._bitstore = bs.as_immutable()
+            x = bs.as_immutable()
         else:
-            x._bitstore = bs
+            x = bs
         return x
 
     def __rmul__(self: Bits, n: int, /) -> Bits:
@@ -769,8 +755,7 @@ this is a step to using the Rust classes as the base classes."""
         n -- the number of bits to shift. Must be >= 0.
 
         """
-        x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore >> n
+        x = self._rshift(n)
         return x
 
     # ----- Other
@@ -783,10 +768,6 @@ this is a step to using the Rust classes as the base classes."""
         """
         found = _BaseBits.find(self, bs, byte_aligned=False)
         return False if found is None else True
-
-    def __len__(self) -> int:
-        """Return the length of the Bits in bits."""
-        return len(self._bitstore)
 
 
 
@@ -811,9 +792,8 @@ class BitsOld:
     # ----- Class Methods -----
 
     def __new__(cls, s: str | None = None, /) -> Bits:
-        x = object.__new__(cls)
         if s is None:
-            x._bitstore = BitRust.from_zeros(0)
+            return Bits._from_zeros(0)
         else:
             if not isinstance(s, str):
                 err = f"Expected a str for Bits constructor, but received a {type(s)}. "
@@ -829,8 +809,7 @@ class BitsOld:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            x._bitstore = str_to_bitstore_cached(s)
-        return x
+            return str_to_bitstore_cached(s)
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -843,9 +822,7 @@ class BitsOld:
             a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
 
         """
-        x = object.__new__(cls)
-        x._bitstore = BitRust.from_bytes(b)
-        return x
+        return Bits._from_bytes(b)
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> Bits:
@@ -859,9 +836,7 @@ class BitsOld:
             a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
 
         """
-        x = object.__new__(cls)
-        x._bitstore = BitRust.from_bools([bool(x) for x in i])
-        return x
+        return Bits._from_bools([bool(x) for x in i])
 
     @classmethod
     def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits:
@@ -878,9 +853,7 @@ class BitsOld:
             b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        x = object.__new__(cls)
-        x._bitstore = BitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
-        return x
+        return Bits._from_joined([create_bitrust_from_any(item) for item in sequence])
 
     @classmethod
     def from_ones(cls, n: int, /) -> Bits:
@@ -899,9 +872,7 @@ class BitsOld:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = object.__new__(cls)
-        x._bitstore = BitRust.from_ones(n)
-        return x
+        return Bits._from_ones(n)
 
     @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits :
@@ -924,9 +895,7 @@ class BitsOld:
             xt = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        x = object.__new__(cls)
-        x._bitstore = xt._bitstore
-        return x
+        return xt
 
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> Bits:
@@ -975,9 +944,7 @@ class BitsOld:
             a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
 
         """
-        x = object.__new__(cls)
-        x._bitstore = str_to_bitstore_cached(s)
-        return x
+        return str_to_bitstore_cached(s)
 
     @classmethod
     def from_zeros(cls, n: int, /) -> Bits:
@@ -996,9 +963,7 @@ class BitsOld:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = object.__new__(cls)
-        x._bitstore = BitRust.from_zeros(n)
-        return x
+        return Bits._from_zeros(n)
 
     @classmethod
     def _from_any(cls, any_: BitsType, /) -> Bits:
@@ -1009,9 +974,7 @@ class BitsOld:
 
         Used internally only.
         """
-        x = cls()
-        x._bitstore = create_bitrust_from_any(any_)
-        return x
+        return create_bitrust_from_any(any_)
 
     def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """
@@ -1056,24 +1019,19 @@ class BitsOld:
         bs = create_bitrust_from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         c = 0
-        for i in self._bitstore.findall(bs, ba):
+        for i in self.findall(bs, ba):
             if count is not None and c >= count:
                 return
             c += 1
             yield i
         return
 
-    def __iter__(self) -> Iterable[bool]:
-        """Iterate over the bits."""
-        return iter(self._bitstore)
-
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
-        x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore.clone_as_mutable()
-        x._bitstore.append(bs)
-        x._bitstore = x._bitstore.as_immutable()
+        x = self.clone_as_mutable()
+        x.append(bs)
+        x = x.as_immutable()
         return x
 
     def __hash__(self) -> int:
@@ -1124,15 +1082,11 @@ class BitsOld:
 
     def _slice(self: Bits, start: int, length: int) -> Bits:
         """Used internally to get a slice, without error checking."""
-        bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.get_slice_unchecked(start, length)
-        return bs
+        return self.get_slice_unchecked(start, length)
 
     def to_mutable_bits(self) -> MutableBits:
         """Create and return a mutable copy of the Bits as a MutableBits instance."""
-        x = MutableBits()
-        x._bitstore = self._bitstore.clone_as_mutable()
-        return x
+        return self.clone_as_mutable()
 
 
 class MutableBitsOld:
@@ -1153,14 +1107,12 @@ class MutableBitsOld:
     Using the constructor ``MutableBits(s)`` is an alias for ``MutableBits.from_string(s)``.
 
     """
-    __slots__ = ("_bitstore",)
 
     # ----- Class Methods -----
 
     def __new__(cls, s: str | None = None, /) -> MutableBits:
-        x = object.__new__(cls)
         if s is None:
-            x._bitstore = MutableBitRust.from_zeros(0)
+            return MutableBits._from_zeros(0)
         else:
             if not isinstance(s, str):
                 err = f"Expected a str for MutableBits constructor, but received a {type(s)}. "
@@ -1176,8 +1128,7 @@ class MutableBitsOld:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
-        return x
+            return str_to_bitstore_cached(s).clone_as_mutable()
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> MutableBits:
@@ -1190,9 +1141,7 @@ class MutableBitsOld:
             a = MutableBits.from_bytes(b"some_bytes_maybe_from_a_file")
 
         """
-        x = object.__new__(cls)
-        x._bitstore = MutableBitRust.from_bytes(b)
-        return x
+        return MutableBits._from_bytes(b)
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
@@ -1206,9 +1155,7 @@ class MutableBitsOld:
             a = MutableBits.from_bools([False, 0, 1, "Steven"])  # binary 0011
 
         """
-        x = object.__new__(cls)
-        x._bitstore = MutableBitRust.from_bools([bool(x) for x in i])
-        return x
+        return MutableBits._from_bools([bool(x) for x in i])
 
     @classmethod
     def from_joined(cls, sequence: Iterable[BitsType], /) -> MutableBits:
@@ -1225,9 +1172,7 @@ class MutableBitsOld:
             b = MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        x = object.__new__(cls)
-        x._bitstore = MutableBitRust.from_joined([create_bitrust_from_any(item) for item in sequence])
-        return x
+        return MutableBits._from_joined([create_bitrust_from_any(item) for item in sequence])
 
     @classmethod
     def from_ones(cls, n: int, /) -> MutableBits:
@@ -1246,9 +1191,7 @@ class MutableBitsOld:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = object.__new__(cls)
-        x._bitstore = MutableBitRust.from_ones(n)
-        return x
+        return MutableBits._from_ones(n)
 
     @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> MutableBits:
@@ -1271,10 +1214,8 @@ class MutableBitsOld:
             xt = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        x = object.__new__(cls)
         # TODO: clone here shouldn't be needed.
-        x._bitstore = xt._bitstore.clone_as_mutable()
-        return x
+        return xt.clone_as_mutable()
 
     # TODO: The two from_random methods can probably live in the base class again now?
     @classmethod
@@ -1324,9 +1265,7 @@ class MutableBitsOld:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        x = object.__new__(cls)
-        x._bitstore = str_to_bitstore_cached(s).clone_as_mutable()
-        return x
+        return str_to_bitstore_cached(s).clone_as_mutable()
 
     @classmethod
     def from_zeros(cls, n: int, /) -> MutableBits:
@@ -1345,9 +1284,7 @@ class MutableBitsOld:
             return cls()
         if n < 0:
             raise ValueError(f"Negative bit length given: {n}.")
-        x = object.__new__(cls)
-        x._bitstore = MutableBitRust.from_zeros(n)
-        return x
+        return MutableBits._from_zeros(n)
 
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
@@ -1357,15 +1294,14 @@ class MutableBitsOld:
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
         bs = create_bitrust_from_any(bs)
-        x = object.__new__(self.__class__)
-        x._bitstore = self._bitstore.clone_as_mutable()
-        x._bitstore.append(bs)
+        x = self.clone_as_mutable()
+        x.append(bs)
         return x
 
     def __iadd__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits in-place."""
         bs = create_bitrust_from_any(bs)
-        self._bitstore.append(bs)
+        self.append(bs)
         return self
 
     def __ilshift__(self, n: int, /) -> MutableBits:
@@ -1384,7 +1320,7 @@ class MutableBitsOld:
             '110000'
 
         """
-        self._bitstore.lshift_inplace(n)
+        self.lshift_inplace(n)
         return self
 
     def __irshift__(self, n: int, /) -> MutableBits:
@@ -1403,7 +1339,7 @@ class MutableBitsOld:
             '000011'
 
         """
-        self._bitstore.rshift_inplace(n)
+        self.rshift_inplace(n)
         return self
 
 
@@ -1429,13 +1365,13 @@ class MutableBitsOld:
                 key += len(self)
             if not 0 <= key < len(self):
                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self._bitstore.set_index(bool(value), key)
+            self.set_index(bool(value), key)
         else:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot set bits with a step other than 1")
             bs = create_bitrust_from_any(value)
-            self._bitstore.set_slice(start, stop, bs)
+            self.set_slice(start, stop, bs)
 
     def __delitem__(self, key: int | slice) -> None:
         if isinstance(key, numbers.Integral):
@@ -1443,12 +1379,12 @@ class MutableBitsOld:
                 key += len(self)
             if not 0 <= key < len(self):
                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self._bitstore.set_slice(key, key + 1, BitRust.from_zeros(0))
+            self.set_slice(key, key + 1, Bits._from_zeros(0))
         else:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot delete bits with a step other than 1")
-            self._bitstore.set_slice(start, stop, BitRust.from_zeros(0))
+            self.set_slice(start, stop, Bits._from_zeros(0))
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
@@ -1473,15 +1409,11 @@ class MutableBitsOld:
 
         Used internally only.
         """
-        x = cls()
-        x._bitstore = create_mutable_bitrust_from_any(any_)
-        return x
+        return create_mutable_bitrust_from_any(any_)
 
     def to_bits(self) -> Bits:
         """Create and return an immutable copy of the MutableBits as Bits instance."""
-        x = Bits()
-        x._bitstore = self._bitstore.clone_as_immutable()
-        return x
+        return self.clone_as_immutable()
 
     __hash__ = None
     """The hash method is not available for a ``MutableBits`` object as it is mutable."""
@@ -1489,15 +1421,11 @@ class MutableBitsOld:
     def __copy__(self: MutableBits) -> MutableBits:
         """Return a new copy of the MutableBits for the copy module.
         """
-        x = MutableBits()
-        x._bitstore = self._bitstore.clone_as_mutable()
-        return x
+        return self.clone_as_mutable()
 
     def _slice(self: MutableBits, start: int, length: int) -> MutableBits:
         """Used internally to get a slice, without error checking. A copy of the data is made."""
-        bs = object.__new__(self.__class__)
-        bs._bitstore = self._bitstore.get_slice_unchecked(start, length)
-        return bs
+        return self.get_slice_unchecked(start, length)
 
     def append(self, bs: BitsType, /) -> MutableBits:
         """Append bits to the end of the current MutableBits in-place.
@@ -1513,7 +1441,7 @@ class MutableBitsOld:
 
         """
         bs = create_bitrust_from_any(bs)
-        self._bitstore.append(bs)
+        self._append(bs)
         return self
 
     def prepend(self, bs: BitsType, /) -> MutableBits:
@@ -1530,7 +1458,7 @@ class MutableBitsOld:
 
         """
         bs = create_bitrust_from_any(bs)
-        self._bitstore.prepend(bs)
+        self._prepend(bs)
         return self
 
     def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:
@@ -1566,7 +1494,7 @@ class MutableBitsOld:
             x = self._slice(startbit, byte_length * 8).to_bytes()
             chunks.append(MutableBits.from_bytes(x[::-1]))
         x = MutableBits.from_joined(chunks)
-        self._bitstore = x._bitstore
+        self[:] = x
         return self
 
     def insert(self, pos: int, bs: BitsType, /) -> MutableBits:
@@ -1608,11 +1536,11 @@ class MutableBitsOld:
 
         """
         if pos is None:
-            self._bitstore.invert_all()
+            self.invert_all()
         elif not isinstance(pos, abc.Iterable):
-            self._bitstore.invert_single_bit(pos)
+            self.invert_single_bit(pos)
         else:
-            self._bitstore.invert_bit_list(list(pos))
+            self.invert_bit_list(list(pos))
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1638,12 +1566,12 @@ class MutableBitsOld:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        bs = self._bitstore.as_immutable()
-        new_bs = MutableBitRust.from_joined([bs.getslice(0, start),
+        bs = self.as_immutable()
+        new_bs = MutableBits.from_joined([bs.getslice(0, start),
                                       bs.getslice(start + n, end),
                                       bs.getslice(start, start + n),
                                       bs.getslice(end, len(bs))])
-        self._bitstore = new_bs
+        self = new_bs
         return self
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1669,12 +1597,12 @@ class MutableBitsOld:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = self._validate_slice(start, end)
         n %= end - start
-        bs = self._bitstore.as_immutable()
-        new_bs = MutableBitRust.from_joined([bs.getslice(0, start),
+        bs = self.as_immutable()
+        new_bs = MutableBits.from_joined([bs.getslice(0, start),
                                       bs.getslice(end - n, end),
                                       bs.getslice(start, end - n),
                                       bs.getslice(end, len(bs))])
-        self._bitstore = new_bs
+        self = new_bs
         return self
 
     def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
@@ -1699,11 +1627,11 @@ class MutableBitsOld:
         """
         v = True if value else False
         if not isinstance(pos, Sequence):
-            self._bitstore.set_index(v, pos)
+            self.set_index(v, pos)
         elif isinstance(pos, range):
-            self._bitstore.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
+            self.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
         else:
-            self._bitstore.set_from_sequence(v, pos)
+            self.set_from_sequence(v, pos)
         return self
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
@@ -1751,7 +1679,7 @@ class MutableBitsOld:
                 break
         if not starting_points:
             return self
-        original = self._bitstore.clone_as_immutable()
+        original = self.clone_as_immutable()
         replacement_list = [original.getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new_bitrust)
@@ -1759,7 +1687,7 @@ class MutableBitsOld:
         # Final replacement
         replacement_list.append(new_bitrust)
         replacement_list.append(original.getslice(starting_points[-1] + len(old_bitrust), len(original)))
-        self._bitstore = MutableBitRust.from_joined(replacement_list)
+        self = MutableBits.from_joined(replacement_list)
         return self
 
     def reverse(self) -> MutableBits:
@@ -1774,14 +1702,9 @@ class MutableBitsOld:
             MutableBits('0b1101')
 
         """
-        self._bitstore.reverse()
+        self._reverse()
         return self
 
-class Bits:
-    pass
-
-class MutableBits:
-    pass
 
 # Patching on the methods to Bits and MutableBits to avoid inheritance.
 def _patch_classes():

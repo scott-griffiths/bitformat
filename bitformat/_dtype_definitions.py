@@ -3,7 +3,6 @@ from __future__ import annotations
 import struct
 from typing import Literal
 from bitformat._common import DtypeKind
-from bitformat.bit_rust import BitRust
 from ._dtypes import DtypeDefinition
 from ._bits import Bits, create_bitrust_from_any
 
@@ -14,7 +13,7 @@ from ._bits import Bits, create_bitrust_from_any
 
 # ----- Integer types -----
 
-def to_u(bs: BitRust, start: int, length: int) -> int:
+def to_u(bs: Bits, start: int, length: int) -> int:
     """Return data as an unsigned int from a slice of the bitstore."""
     assert start >= 0
     assert length >= 0
@@ -27,7 +26,7 @@ def to_u(bs: BitRust, start: int, length: int) -> int:
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
 
-def from_u(u: int, length: int) -> BitRust:
+def from_u(u: int, length: int) -> Bits:
     if length == 0:
         raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
     u = int(u)
@@ -37,14 +36,14 @@ def from_u(u: int, length: int) -> BitRust:
         raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
                          f"The allowed range is[0, {(1 << length) - 1}].")
     if length <= 64:
-        return BitRust.from_u64(u, length)
+        return Bits.from_u64(u, length)
     else:
         b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
         offset = 8 - (length % 8)
         if offset == 8:
-            return BitRust.from_bytes(b)
+            return Bits._from_bytes(b)
         else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
+            return Bits.from_bytes_with_offset(b, offset=offset)
 
 def u_bits2chars(bit_length: int) -> int:
     # How many characters is largest possible int of this length?
@@ -55,7 +54,7 @@ u_defn = DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "uns
                     from_u, to_u, int,False, u_bits2chars, endianness_variants=True)
 
 
-def to_i(bs: BitRust, start: int, length: int) -> int:
+def to_i(bs: Bits, start: int, length: int) -> int:
     """Return data as a signed int from a slice of the bitstore."""
     if length == 0:
         raise ValueError("Cannot interpret empty Bits as an integer.")
@@ -66,7 +65,7 @@ def to_i(bs: BitRust, start: int, length: int) -> int:
         bs = bs.getslice(start, start + length)
         return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
 
-def from_i(i: int, length: int) -> BitRust:
+def from_i(i: int, length: int) -> Bits:
     if length == 0:
         raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
     i = int(i)
@@ -75,14 +74,14 @@ def from_i(i: int, length: int) -> BitRust:
                          f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
     if length < 64:
         # Faster method for shorter lengths.
-        return BitRust.from_i64(i, length)
+        return Bits.from_i64(i, length)
     else:
         b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
         offset = 8 - (length % 8)
         if offset == 8:
-            return BitRust.from_bytes(b)
+            return Bits._from_bytes(b)
         else:
-            return BitRust.from_bytes_with_offset(b, offset=offset)
+            return Bits.from_bytes_with_offset(b, offset=offset)
 
 def i_bits2chars(bit_length: int) -> int:
     # How many characters is largest negative int of this length? (To include minus sign).
@@ -95,37 +94,37 @@ i_defn = DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed
 
 # ----- Literal types -----
 
-def to_bin(bs: BitRust, start: int, length: int) -> str:
+def to_bin(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as a binary string."""
     return bs.slice_to_bin(start, length)
 
-def from_bin(binstring: str, length: None = None) -> BitRust:
+def from_bin(binstring: str, length: None = None) -> Bits:
     """Create from the value given in binstring."""
-    return BitRust.from_bin(binstring)
+    return Bits._from_bin(binstring)
 
-def to_oct(bs: BitRust, start: int, length: int) -> str:
+def to_oct(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
     return bs.slice_to_oct(start, length)
 
-def from_oct(octstring: str, length: None = None) -> BitRust:
+def from_oct(octstring: str, length: None = None) -> Bits:
     """Create from the value given in octstring."""
-    return BitRust.from_oct(octstring)
+    return Bits._from_oct(octstring)
 
-def to_hex(bs: BitRust, start: int, length: int) -> str:
+def to_hex(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as a hexadecimal string."""
     return bs.slice_to_hex(start, length)
 
-def from_hex(hexstring: str, length: None = None) -> BitRust:
+def from_hex(hexstring: str, length: None = None) -> Bits:
     """Create from the value given in hexstring."""
-    return BitRust.from_hex(hexstring)
+    return Bits._from_hex(hexstring)
 
-def to_bytes(bs: BitRust, start: int, length: int) -> bytes:
+def to_bytes(bs: Bits, start: int, length: int) -> bytes:
     """Return interpretation as bytes."""
     return bs.slice_to_bytes(start, length)
 
-def from_bytes(data: bytearray | bytes | list, length: None = None) -> BitRust:
+def from_bytes(data: bytearray | bytes | list, length: None = None) -> Bits:
     """Create from a bytes or bytearray object."""
-    return BitRust.from_bytes(bytes(data))
+    return Bits._from_bytes(bytes(data))
 
 
 bin_defn = DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
@@ -144,12 +143,12 @@ bytes_defn = DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
 
 # ----- Float types -----
 
-def to_f(bs: BitRust, start: int, length: int) -> float:
+def to_f(bs: Bits, start: int, length: int) -> float:
     """Interpret as a big-endian float."""
     fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
     return struct.unpack(fmt, to_bytes(bs, start, length))[0]
 
-def from_f(f: float | str, length: int | None) -> BitRust:
+def from_f(f: float | str, length: int | None) -> Bits:
     if length is None:
         raise ValueError("No length can be inferred for the float initialiser.")
     f = float(f)
@@ -159,7 +158,7 @@ def from_f(f: float | str, length: int | None) -> BitRust:
     except OverflowError:
         # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
         b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-    return BitRust.from_bytes(b)
+    return Bits._from_bytes(b)
 
 def f_bits2chars(bit_length: Literal[16, 32, 64]) -> int:
     # These bit lengths were found by looking at lots of possible values
@@ -176,20 +175,18 @@ f_defn = DtypeDefinition(DtypeKind.FLOAT, "an IEEE floating point number", "floa
 
 # ----- Other known length types -----
 
-def to_bits(bs: BitRust, start: int, length: int) -> Bits:
+def to_bits(bs: Bits, start: int, length: int) -> Bits:
     """Just return as a Bits."""
     assert start >= 0
     assert length >= 0
-    x = object.__new__(Bits)
-    x._bitstore = bs
-    return x
+    return bs
 
-def from_bits(bs: BitsType, length: None = None) -> BitRust:
+def from_bits(bs: BitsType, length: None = None) -> Bits:
     return create_bitrust_from_any(bs)
 
 def bits_bits2chars(bit_length: int) -> int:
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits.from_zeros(bit_length)
+    temp = Bits._from_zeros(bit_length)
     return len(temp._simple_str())
 
 
@@ -198,13 +195,13 @@ bits_defn = DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
                 False, bits_bits2chars)
 
 
-def to_bool(bs: BitRust, start: int, _length: int) -> bool:
+def to_bool(bs: Bits, start: int, _length: int) -> bool:
     """Interpret as a bool"""
     assert _length == 1
     return bs.getindex(start)
 
-def from_bool(value: bool, length: None = None) -> BitRust:
-    return BitRust.from_bools([bool(value)])
+def from_bool(value: bool, length: None = None) -> Bits:
+    return Bits._from_bools([bool(value)])
 
 def bool_bits2chars(_: Literal[1]) -> int:
     # Bools are printed as 1 or 0, not True or False, so are one character each
@@ -218,7 +215,7 @@ bool_defn = DtypeDefinition(DtypeKind.BOOL, "a bool (True or False)", "bool",
 
 # ----- Special case pad type -----
 
-def to_pad(_bs: BitRust, _start: int, _length: int) -> None:
+def to_pad(_bs: Bits, _start: int, _length: int) -> None:
     return None
 
 def from_pad(value: None, length: int) -> None:

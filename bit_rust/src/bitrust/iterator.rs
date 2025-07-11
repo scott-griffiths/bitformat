@@ -1,10 +1,10 @@
-use crate::bitrust::BitRust;
+use crate::bitrust::Bits;
 use pyo3::prelude::*;
 use pyo3::PyResult;
 
 #[pyclass]
 pub struct BitRustBoolIterator {
-    pub(crate) bits: Py<BitRust>,
+    pub(crate) bits: Py<Bits>,
     pub(crate) index: usize,
     pub(crate) length: usize,
 }

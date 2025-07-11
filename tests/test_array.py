@@ -918,12 +918,12 @@ class TestDelegation:
     def test_setitem(self):
         a = Array("i4", [1, 2, 5, 5])
         d = a.bits
-        assert d._bitstore is a._bitstore
+        assert d is a._bitstore
         d[-4:] = "0xf"
         assert a.to_list() == [1, 2, 5, -1]
         a.bits[:4] = '0b0000'
         assert a.to_list() == [0, 2, 5, -1]
-        assert d._bitstore is a._bitstore
+        assert d is a._bitstore
 
     def test_mutability(self):
         a = Array("i4", [1, 2, 5, 5])

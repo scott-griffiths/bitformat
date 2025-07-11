@@ -10,7 +10,6 @@ from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
 import operator
 import sys
-from bitformat.bit_rust import MutableBitRust, BitRust
 
 __all__ = ["Array"]
 
@@ -68,7 +67,7 @@ class Array:
       gives the leftovers at the end of the data.
     """
 
-    _bitstore: MutableBitRust
+    _bitstore: MutableBits
     _dtype: Dtype
     _item_size: int
 
@@ -97,7 +96,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBitRust.from_bytes(bytes_data)
+        x._bitstore = MutableBits.from_bytes(bytes_data)
         return x
 
     @classmethod
@@ -106,8 +105,8 @@ class Array:
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
         bits = Bits._from_any(bits)
-        # We may change the internal BitRust, so need to make a copy here.
-        x._bitstore = bits._bitstore.clone_as_mutable()
+        # We may change the Bits, so need to make a copy here.
+        x._bitstore = bits.clone_as_mutable()
         return x
 
     @classmethod
@@ -115,7 +114,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBitRust.from_zeros(n * x._item_size)
+        x._bitstore = MutableBits._from_zeros(n * x._item_size)
         return x
 
     @classmethod
@@ -123,7 +122,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBitRust.from_zeros(0)
+        x._bitstore = MutableBits._from_zeros(0)
         x.extend(iterable)
         return x
 
@@ -142,18 +141,14 @@ class Array:
         Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
         Use the :meth:`~Array.to_bits()` method if you need a copy of the data instead.
         """
-        x = MutableBits()
-        x._bitstore = self._bitstore
-        return x
+        return self._bitstore
 
     @bits.setter
     def bits(self, value: BitsType) -> None:
         self._bitstore = create_mutable_bitrust_from_any(value)
 
     def _get_bit_slice(self, start: int, stop: int) -> MutableBits:
-        x = MutableBits()
-        x._bitstore = self._bitstore.getslice(start, stop)
-        return x
+        return self._bitstore.getslice(start, stop)
 
     @property
     def item_size(self) -> int:
@@ -191,9 +186,9 @@ class Array:
             raise ValueError(f"A fixed length data type is needed for an Array, received '{new_dtype}'.")
         self._item_size = self._dtype.bit_length
 
-    def _create_element(self, value: ElementType) -> BitRust:
+    def _create_element(self, value: ElementType) -> Bits:
         """Create Bits from value according to the token_name and token_length"""
-        return self._dtype.pack(value)._bitstore
+        return self._dtype.pack(value)
 
     def __len__(self) -> int:
         """The number of complete elements in the ``Array``."""
@@ -213,7 +208,7 @@ class Array:
                 for s in range(start * self._item_size, stop * self._item_size, step * self._item_size):
                     d.append(self._bitstore.getslice(s, s + self._item_size).clone_as_immutable())
                 a = self.__class__(self._dtype)
-                a._bitstore = MutableBitRust.from_joined(d)
+                a._bitstore = MutableBits._from_joined(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
@@ -238,7 +233,7 @@ class Array:
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = BitRust.from_joined([self._create_element(x) for x in value])
+                new_data = Bits.from_joined([self._create_element(x) for x in value])
                 self._bitstore.set_slice(start * self._item_size, stop * self._item_size, new_data)
                 return
             items_in_slice = len(range(start, stop, step))
@@ -257,14 +252,14 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self._item_size * key
             x = self._create_element(value)
-            self._bitstore.overwrite(start, x)
+            self._bitstore._overwrite(start, x)
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start * self._item_size).clone_as_immutable(),
+                self._bitstore = MutableBits.from_joined([self._bitstore.getslice(0, start * self._item_size).clone_as_immutable(),
                                                self._bitstore.getslice(stop * self._item_size, len(self._bitstore)).clone_as_immutable()])
                 return
             # We need to delete from the end or the earlier positions will change
@@ -274,7 +269,7 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, s * self._item_size).clone_as_immutable(),
+                self._bitstore = MutableBits.from_joined([self._bitstore.getslice(0, s * self._item_size).clone_as_immutable(),
                                                self._bitstore.getslice((s + 1) * self._item_size, len(self._bitstore)).clone_as_immutable()])
         else:
             if key < 0:
@@ -282,7 +277,7 @@ class Array:
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self._item_size * key
-            self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, start).clone_as_immutable(),
+            self._bitstore = MutableBits.from_joined([self._bitstore.getslice(0, start).clone_as_immutable(),
                                            self._bitstore.getslice(start + self._item_size, len(self._bitstore)).clone_as_immutable()])
 
     def __repr__(self) -> str:
@@ -342,8 +337,7 @@ class Array:
                 dtype = DtypeSingle.from_params(dtype.kind, self.dtype.size)
         l = []
         for start in range(0, len(self._bitstore) - dtype.bit_length + 1, dtype.bit_length):
-            b = Bits()
-            b._bitstore = self._bitstore.getslice(start, start + dtype.bit_length)
+            b = self._bitstore.getslice(start, start + dtype.bit_length)
             l.append(dtype.unpack(b))
         return l
 
@@ -371,7 +365,7 @@ class Array:
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
-            self._bitstore.append(Bits.from_bytes(iterable)._bitstore)
+            self._bitstore.append(Bits.from_bytes(iterable))
             return self
         if len(self._bitstore) % self._item_size != 0:
             raise ValueError(f"Cannot extend Array as its data length ({len(self._bitstore)} bits) "
@@ -386,7 +380,7 @@ class Array:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._create_element(item) for item in iterable]
-            self._bitstore.append(BitRust.from_joined(to_join))
+            self._bitstore.append(Bits.from_joined(to_join))
         return self
 
     def insert(self, pos: int, x: ElementType, /) -> Array:
@@ -401,7 +395,7 @@ class Array:
             pos += len(self)
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = MutableBitRust.from_joined([self._bitstore.getslice(0, pos * self._item_size).clone_as_immutable(),
+        self._bitstore = MutableBits.from_joined([self._bitstore.getslice(0, pos * self._item_size).clone_as_immutable(),
                                        v,
                                        self._bitstore.getslice(pos * self._item_size, len(self._bitstore)).clone_as_immutable()])
         return self
@@ -432,10 +426,9 @@ class Array:
         if self._item_size % 8 != 0:
             raise ValueError("byte_swap can only be used for whole-byte elements. "
                              f"The '{self._dtype}' format is {self._item_size} bits long.")
-        b = MutableBits()
-        b._bitstore = self._bitstore.clone_as_mutable()
+        b = self._bitstore.clone_as_mutable()
         b.byte_swap(self._item_size // 8)
-        self._bitstore = b._bitstore
+        self._bitstore = b
         return self
 
     def count(self, value: ElementType, /) -> int:
@@ -461,9 +454,7 @@ class Array:
 
     def to_bits(self) -> Bits:
         """Return as a Bits object. This is an immutable copy of the current Array data."""
-        x = Bits()
-        x._bitstore = self._bitstore.clone_as_immutable()
-        return x
+        return self._bitstore.clone_as_immutable()
 
     def reverse(self) -> Array:
         """Reverse the order of all items in the Array in place.
@@ -484,7 +475,7 @@ class Array:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._bitstore)} bits) "
                              f"is not a multiple of the format length ({self._item_size} bits).")
         self._bitstore = MutableBits.from_joined([self._get_bit_slice(s - self._item_size, s)
-                                           for s in range(len(self._bitstore), 0, -self._item_size)])._bitstore
+                                           for s in range(len(self._bitstore), 0, -self._item_size)])
         return self
 
     def pp(self, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None, groups: int | None = None,
@@ -594,8 +585,7 @@ class Array:
                 return op(a)
 
         for i in range(len(self)):
-            b = MutableBits()
-            b._bitstore = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
+            b = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
             v = self._dtype.unpack(b)
             try:
                 new_data += new_array._dtype.pack(partial_op(v))
@@ -607,7 +597,7 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        new_array._bitstore = new_data._bitstore
+        new_array._bitstore = new_data
         return new_array
 
     def _apply_op_to_all_elements_inplace(self, op, value: int | float) -> Array:
@@ -619,8 +609,7 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            b = MutableBits()
-            b._bitstore = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
+            b = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
             v = self._dtype.unpack(b)
             try:
                 new_data += self._dtype.pack(op(v, value))
@@ -632,7 +621,7 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' to Array caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        self._bitstore = new_data._bitstore.clone_as_mutable()
+        self._bitstore = new_data.clone_as_mutable()
         return self
 
     def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
@@ -676,10 +665,8 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            a_bits = MutableBits()
-            a_bits._bitstore = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
-            b_bits = MutableBits()
-            b_bits._bitstore = other._bitstore.getslice(other._item_size * i, other._item_size * (i + 1))
+            a_bits = self._bitstore.getslice(self._item_size * i, self._item_size * (i + 1))
+            b_bits = other._bitstore.getslice(other._item_size * i, other._item_size * (i + 1))
             a = self._dtype.unpack(a_bits)
             b = other._dtype.unpack(b_bits)
             try:
@@ -692,7 +679,7 @@ class Array:
         if failures != 0:
             raise ValueError(f"Applying operator '{op.__name__}' between Arrays caused {failures} errors. "
                              f'First error at index {index} was: "{msg}"')
-        new_array._bitstore = new_data._bitstore
+        new_array._bitstore = new_data
         return new_array
 
     @classmethod
