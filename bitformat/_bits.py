@@ -17,6 +17,10 @@ from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
 
+_unprintable = list(range(0x00, 0x20))  # ASCII control characters
+_unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
+
+
 # Things that can be converted to Bits or MutableBits.
 BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 
@@ -107,21 +111,23 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
 def create_bitrust_from_any(any_: BitsType) -> BitRust:
     if isinstance(any_, str):
         return str_to_bitstore_cached(any_)
-    if isinstance(any_,  _BaseBits):
+    if isinstance(any_,  (Bits, MutableBits)):
         return any_._bitstore.clone_as_immutable()
+    if isinstance(any_,  (BitRust, MutableBitRust)):
+        return any_.clone_as_immutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return BitRust.from_bytes(any_)
-    raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a BitRust object.")
+    raise TypeError(f"Cannot convert object of type {type(any_)} to a BitRust object.")
 
 
 def create_mutable_bitrust_from_any(any_: BitsType) -> MutableBitRust:
     if isinstance(any_, str):
         return str_to_mutable_bitstore(any_)
-    if isinstance(any_,  _BaseBits):
+    if isinstance(any_, (Bits, MutableBits)):
         return any_._bitstore.clone_as_mutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return MutableBitRust.from_bytes(any_)
-    raise TypeError(f"Cannot convert '{any_}' of type {type(any_)} to a MutableBitRust object.")
+    raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBitRust object.")
 
 
 @functools.lru_cache(CACHE_SIZE)
@@ -484,8 +490,6 @@ class _BaseBits:
 
     # ----- Private Methods -----
 
-    _unprintable = list(range(0x00, 0x20))  # ASCII control characters
-    _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 
     def _get_bytes_printable(self) -> str:
         """Return an approximation of the data as a string of printable characters."""
@@ -701,7 +705,7 @@ class _BaseBits:
         """Return a new Bits representing a slice of the current Bits."""
         if isinstance(key, numbers.Integral):
             return bool(self._bitstore.getindex(key))
-        bs = super().__new__(self.__class__)
+        bs = object.__new__(self.__class__)
         start, stop, step = key.indices(len(self))
         if step == 1:
             bs._bitstore = self._bitstore.getslice(start, stop)
@@ -805,9 +809,7 @@ class _BaseBits:
 
 
 
-class Bits(_BaseBits):
-
-    __slots__ = ()
+class Bits:
 
     # ----- Class Methods -----
 
@@ -1136,9 +1138,9 @@ class Bits(_BaseBits):
         return x
 
 
-class MutableBits(_BaseBits):
+class MutableBits:
 
-    __slots__ = ()
+    __slots__ = ("_bitstore",)
 
     # ----- Class Methods -----
 
@@ -1763,6 +1765,19 @@ class MutableBits(_BaseBits):
         return self
 
 
+# Patching on the methods to Bits and MutableBits to avoid inheritance.
+def _patch_classes():
+    x = _BaseBits.__dict__.items()
+    for name, method in _BaseBits.__dict__.items():
+        if isinstance(method, classmethod):
+            setattr(Bits, name, classmethod(method.__func__))
+            setattr(MutableBits, name, classmethod(method.__func__))
+        elif callable(method):
+            setattr(Bits, name, method)
+            setattr(MutableBits, name, method)
+
+
+_patch_classes()
 
 Sequence.register(Bits)
 Sequence.register(MutableBits)
