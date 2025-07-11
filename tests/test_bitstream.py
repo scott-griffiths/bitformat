@@ -963,7 +963,7 @@ class TestManyDifferentThings:
     def test_const_bits_copy(self):
         a = Bits("0xabc")
         b = copy.copy(a)
-        assert id(a._bitstore) == id(b._bitstore)
+        assert id(a) == id(b)
 
 
 class TestSet:

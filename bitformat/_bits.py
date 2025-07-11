@@ -1571,7 +1571,7 @@ class MutableBitsOld:
                                       bs.getslice(start + n, end),
                                       bs.getslice(start, start + n),
                                       bs.getslice(end, len(bs))])
-        self = new_bs
+        self[:] = new_bs
         return self
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
@@ -1602,7 +1602,7 @@ class MutableBitsOld:
                                       bs.getslice(end - n, end),
                                       bs.getslice(start, end - n),
                                       bs.getslice(end, len(bs))])
-        self = new_bs
+        self[:] = new_bs
         return self
 
     def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
@@ -1687,7 +1687,7 @@ class MutableBitsOld:
         # Final replacement
         replacement_list.append(new_bits)
         replacement_list.append(original.getslice(starting_points[-1] + len(old_bits), len(original)))
-        self = MutableBits.from_joined(replacement_list)
+        self[:] = MutableBits.from_joined(replacement_list)
         return self
 
     def reverse(self) -> MutableBits:
