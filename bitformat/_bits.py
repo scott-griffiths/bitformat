@@ -616,22 +616,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Operators
 
-    @overload
-    def __getitem__(self: Bits, key: slice, /) -> Bits: ...
-
-    @overload
-    def __getitem__(self, key: int, /) -> bool: ...
-
-    def __getitem__(self, key: slice | int, /) -> Bits | MutableBits | bool:
-        """Return a new Bits representing a slice of the current Bits."""
-        if isinstance(key, numbers.Integral):
-            return bool(self.getindex(key))
-        start, stop, step = key.indices(len(self))
-        if step == 1:
-            return self.getslice(start, stop)
-        else:
-            return self.getslice_with_step(start, stop, step)
-
     def __invert__(self) -> Bits | MutableBits:
         """Return the instance with every bit inverted.
 

@@ -1,3 +1,4 @@
+use pyo3::types::PyBool;
 use std::fmt;
 use std::fmt::Write;
 use crate::bitrust::helpers;
@@ -6,8 +7,10 @@ use bytemuck;
 use pyo3::exceptions::{PyNotImplementedError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
+use pyo3::types::PySlice;
 use crate::bitrust::MutableBits;
 use crate::bitrust::BitRustBoolIterator;
+use pyo3::conversion::IntoPyObject;
 
 #[pyfunction]
 pub fn split_tokens(s: String) -> Vec<String> {
@@ -723,6 +726,34 @@ impl Bits {
         Ok(self.data[index])
     }
 
+    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+        let py = key.py();
+        // Handle integer indexing
+        if let Ok(index) = key.extract::<i64>() {
+            let value: bool = self.getindex(index)?;
+            let py_value = PyBool::new(py, value);
+            return Ok(py_value.to_owned().into());
+        }
+
+        // Handle slice indexing
+        if let Ok(slice) = key.downcast::<PySlice>() {
+            let indices = slice.indices(self.len() as isize)?;
+            let start: i64 = indices.start.try_into().unwrap();
+            let stop: i64 = indices.stop.try_into().unwrap();
+            let step: i64 = indices.step.try_into().unwrap();
+
+            let result = if step == 1 {
+                self.getslice(start as usize, stop as usize)?
+            } else {
+                self.getslice_with_step(start, stop, step)?
+            };
+            let py_obj = Py::new(py, result)?.into_pyobject(py)?;
+            return Ok(py_obj.into());
+        }
+
+        Err(pyo3::exceptions::PyTypeError::new_err("Index must be an integer or a slice."))
+    }
+
     pub(crate) fn validate_shift(&self, n: i64) -> PyResult<usize> {
         if self.len() == 0 {
             return Err(PyValueError::new_err("Cannot shift an empty Bits."));
@@ -956,9 +987,9 @@ mod tests {
     #[test]
     fn test_all_set() {
         let b = Bits::from_bin("111").unwrap();
-        assert!(b._all());
+        assert!(b.all());
         let c = Bits::from_oct("7777777777").unwrap();
-        assert!(c._all());
+        assert!(c.all());
     }
 
     #[test]

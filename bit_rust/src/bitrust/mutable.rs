@@ -1,3 +1,4 @@
+use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use crate::bitrust::{bits, helpers};
 use crate::bitrust::Bits;
 use pyo3::exceptions::{PyIndexError, PyValueError};
@@ -5,7 +6,8 @@ use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
 use pyo3::prelude::PyAnyMethods;
 use bits::BitCollection;
-
+use pyo3::types::{PyBool, PySlice};
+use pyo3::types::PySliceMethods;
 
 #[pyclass]
 pub struct MutableBits {
@@ -283,6 +285,34 @@ impl MutableBits {
         self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBits { inner: bits })
     }
 
+    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+        let py = key.py();
+        // Handle integer indexing
+        if let Ok(index) = key.extract::<i64>() {
+            let value: bool = self.getindex(index)?;
+            let py_value = PyBool::new(py, value);
+            return Ok(py_value.to_owned().into());
+        }
+
+        // Handle slice indexing
+        if let Ok(slice) = key.downcast::<PySlice>() {
+            let indices = slice.indices(self.len() as isize)?;
+            let start: i64 = indices.start.try_into().unwrap();
+            let stop: i64 = indices.stop.try_into().unwrap();
+            let step: i64 = indices.step.try_into().unwrap();
+
+            let result = if step == 1 {
+                self.getslice(start as usize, stop as usize)?
+            } else {
+                self.getslice_with_step(start, stop, step)?
+            };
+            let py_obj = Py::new(py, result)?.into_pyobject(py)?;
+            return Ok(py_obj.into());
+        }
+
+        Err(pyo3::exceptions::PyTypeError::new_err("Index must be an integer or a slice."))
+    }
+
     pub fn _to_bytes(&self) -> Vec<u8> {
         self.inner._to_bytes()
     }
@@ -334,7 +364,7 @@ impl MutableBits {
     ///     False
     ///     >>> MutableBits('0b1000').any()
     ///     True
-    /// 
+    ///
     pub fn any(&self) -> bool {
         self.inner.any()
     }
