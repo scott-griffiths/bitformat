@@ -315,16 +315,28 @@ impl MutableBits {
     ///
     /// .. code-block:: pycon
     ///
-    /// >>> MutableBits('0b1111').all()
-    /// True
-    /// >>> MutableBits('0b1011').all()
-    /// False
-    pub fn _all(&self) -> bool {
+    ///     >>> MutableBits('0b1111').all()
+    ///     True
+    ///     >>> MutableBits('0b1011').all()
+    ///     False
+    ///
+    pub fn all(&self) -> bool {
         self.inner.all()
     }
 
-    pub fn _any(&self) -> bool {
-        self.inner._any()
+    /// Return True if any bits are equal to 1, otherwise return False.
+    ///
+    /// :return: ``True`` if any bits are 1, otherwise ``False``.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> MutableBits('0b0000').any()
+    ///     False
+    ///     >>> MutableBits('0b1000').any()
+    ///     True
+    /// 
+    pub fn any(&self) -> bool {
+        self.inner.any()
     }
 
     pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {

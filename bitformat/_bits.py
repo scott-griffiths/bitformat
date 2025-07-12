@@ -188,22 +188,6 @@ are monkey-patched into those classes later. Yes, it would be more normal to use
 this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
-    def any(self) -> bool:
-        """
-        Return True if any bits are equal to 1, otherwise return False.
-
-        :return: ``True`` if any bits are 1, otherwise ``False``.
-
-        .. code-block:: pycon
-
-            >>> Bits('0b0000').any()
-            False
-            >>> Bits('0b1000').any()
-            True
-
-        """
-        return self._any()
-
     def count(self, value: Any, /) -> int:
         """
         Return count of total number of either zero or one bits.

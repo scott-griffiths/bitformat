@@ -673,23 +673,33 @@ impl Bits {
         }
     }
 
-
     /// Return True if all bits are equal to 1, otherwise return False.
-    /// 
+    ///
     /// :return: ``True`` if all bits are 1, otherwise ``False``.
-    /// 
+    ///
     /// .. code-block:: pycon
-    /// 
-    /// >>> Bits('0b1111').all()
-    /// True
-    /// >>> Bits('0b1011').all()
-    /// False
+    ///
+    ///     >>> Bits('0b1111').all()
+    ///     True
+    ///     >>> Bits('0b1011').all()
+    ///     False
+    ///
     pub fn all(&self) -> bool {
         self.data.all()
     }
 
-    /// Returns true if any of the bits are set to 1.
-    pub fn _any(&self) -> bool {
+    /// Return True if any bits are equal to 1, otherwise return False.
+    ///
+    /// :return: ``True`` if any bits are 1, otherwise ``False``.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> Bits('0b0000').any()
+    ///     False
+    ///     >>> Bits('0b1000').any()
+    ///     True
+    ///
+    pub fn any(&self) -> bool {
         self.data.any()
     }
 
@@ -1048,9 +1058,9 @@ mod tests {
     #[test]
     fn test_any_set() {
         let bits = Bits::from_bin("0000").unwrap();
-        assert!(!bits._any());
+        assert!(!bits.any());
         let bits = Bits::from_bin("1000").unwrap();
-        assert!(bits._any());
+        assert!(bits.any());
     }
 
     #[test]
@@ -1248,7 +1258,7 @@ mod tests {
         let empty_immutable = Bits::from_zeros(0);
 
         assert_eq!(empty_mutable.len(), 0);
-        assert!(!empty_mutable._any());
+        assert!(!empty_mutable.any());
 
         assert_eq!(empty_mutable.clone_as_immutable().len(), 0);
 

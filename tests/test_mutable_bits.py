@@ -975,3 +975,11 @@ def test_shifting_inplace():
         a <<= -1
     with pytest.raises(ValueError):
         a >>= -1
+
+def test_all_any():
+    a = MutableBits('0x00')
+    assert not a.any()
+    assert not a.all()
+    b = MutableBits('0xff')
+    assert b.any()
+    assert b.all()
