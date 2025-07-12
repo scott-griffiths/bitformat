@@ -123,16 +123,6 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     return bits_per_group, has_length_in_fmt
 
 
-def create_mutablebits_from_any(any_: BitsType) -> MutableBits:
-    if isinstance(any_, (Bits, MutableBits)):
-        return any_.clone_as_mutable()
-    if isinstance(any_, str):
-        return str_to_mutablebits(any_)
-    if isinstance(any_, (bytes, bytearray, memoryview)):
-        return MutableBits.from_bytes(any_)
-    raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
-
-
 @functools.lru_cache(CACHE_SIZE)
 def token_to_bits(token: str) -> Bits:
 
@@ -688,7 +678,7 @@ this is a step to using the Rust classes as the base classes."""
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = create_mutablebits_from_any(bs)
+        bs = MutableBits._from_any(bs)
         bs.append(self)
         if isinstance(self, Bits):
             x = bs.as_immutable()
@@ -1361,8 +1351,8 @@ class MutableBitsMethods:
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
         )
 
-    @classmethod
-    def _from_any(cls, any_: BitsType, /) -> MutableBits:
+    @staticmethod
+    def _from_any(any_: BitsType, /) -> MutableBits:
         """Create a new class instance from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
@@ -1370,7 +1360,13 @@ class MutableBitsMethods:
 
         Used internally only.
         """
-        return create_mutablebits_from_any(any_)
+        if isinstance(any_, (Bits, MutableBits)):
+            return any_.clone_as_mutable()
+        if isinstance(any_, str):
+            return str_to_mutablebits(any_)
+        if isinstance(any_, (bytes, bytearray, memoryview)):
+            return MutableBits.from_bytes(any_)
+        raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
 
     def to_bits(self) -> Bits:
         """Create and return an immutable copy of the MutableBits as Bits instance."""
