@@ -125,22 +125,22 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
 
 
 def create_bits_from_any(any_: BitsType) -> Bits:
+    if isinstance(any_, Bits):
+        return any_
+    if isinstance(any_, MutableBits):
+        return any_.clone_as_immutable()
     if isinstance(any_, str):
         return str_to_bits_cached(any_)
-    if isinstance(any_,  (Bits, MutableBits)):
-        return any_.clone_as_immutable()
-    if isinstance(any_,  MutableBits):
-        return any_.clone_as_immutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return Bits.from_bytes(any_)
     raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 
 def create_mutablebits_from_any(any_: BitsType) -> MutableBits:
-    if isinstance(any_, str):
-        return str_to_mutablebits(any_)
     if isinstance(any_, (Bits, MutableBits)):
         return any_.clone_as_mutable()
+    if isinstance(any_, str):
+        return str_to_mutablebits(any_)
     if isinstance(any_, (bytes, bytearray, memoryview)):
         return MutableBits.from_bytes(any_)
     raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
@@ -174,7 +174,7 @@ def token_to_bits(token: str) -> Bits:
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bits_cached(s: str) -> Bits:
     tokens = split_tokens(s)
-    return Bits._from_joined([token_to_bits(t) for t in tokens if t])
+    return Bits.from_joined([token_to_bits(t) for t in tokens if t])
 
 
 def str_to_mutablebits(s: str) -> MutableBits:
@@ -237,14 +237,14 @@ this is a step to using the Rust classes as the base classes."""
         # Yield all the full chunks in a tight loop
         start = 0
         for _ in range(full_chunks_to_yield):
-            yield self._slice(start, chunk_size)
+            yield self.get_slice_unchecked(start, chunk_size)
             start += chunk_size
 
         # Now, determine if there's one more chunk to yield.
         # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
         chunks_yielded = full_chunks_to_yield
         if (count is None or chunks_yielded < count) and start < length:
-            yield self._slice(start, length - start)
+            yield self.get_slice_unchecked(start, length - start)
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
@@ -1031,8 +1031,8 @@ class BitsMethods:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            start = self._slice(0, 800)
-            end = self._slice(length - 800, 800)
+            start = self.get_slice_unchecked(0, 800)
+            end = self.get_slice_unchecked(length - 800, 800)
             return hash(((start + end).to_bytes(), length))
 
     def __setitem__(self, key, value):
@@ -1064,10 +1064,6 @@ class BitsMethods:
 
         """
         return self
-
-    def _slice(self: Bits, start: int, length: int) -> Bits:
-        """Used internally to get a slice, without error checking."""
-        return self.get_slice_unchecked(start, length)
 
     def to_mutable_bits(self) -> MutableBits:
         """Create and return a mutable copy of the Bits as a MutableBits instance."""
