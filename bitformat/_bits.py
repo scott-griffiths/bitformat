@@ -123,19 +123,6 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     return bits_per_group, has_length_in_fmt
 
 
-
-def create_bits_from_any(any_: BitsType) -> Bits:
-    if isinstance(any_, Bits):
-        return any_
-    if isinstance(any_, MutableBits):
-        return any_.clone_as_immutable()
-    if isinstance(any_, str):
-        return str_to_bits_cached(any_)
-    if isinstance(any_, (bytes, bytearray, memoryview)):
-        return Bits.from_bytes(any_)
-    raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
-
-
 def create_mutablebits_from_any(any_: BitsType) -> MutableBits:
     if isinstance(any_, (Bits, MutableBits)):
         return any_.clone_as_mutable()
@@ -245,7 +232,7 @@ this is a step to using the Rust classes as the base classes."""
             False
 
         """
-        suffix = create_bits_from_any(suffix)
+        suffix = Bits._from_any(suffix)
         if len(suffix) <= len(self):
             return self.getslice(len(self) - len(suffix), len(self)).equals(suffix)
         return False
@@ -266,7 +253,7 @@ this is a step to using the Rust classes as the base classes."""
             6
 
         """
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
@@ -386,7 +373,7 @@ this is a step to using the Rust classes as the base classes."""
             5
 
         """
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
@@ -407,7 +394,7 @@ this is a step to using the Rust classes as the base classes."""
             False
 
         """
-        prefix = create_bits_from_any(prefix)
+        prefix = Bits._from_any(prefix)
         if len(prefix) <= len(self):
             return self.getslice(0, len(prefix)).equals(prefix)
         return False
@@ -535,7 +522,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         if bs is self:
             return self
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         s = self._and(bs)
         return s
 
@@ -547,7 +534,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         if bs is self:
             return self
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         s = self._or(bs)
         return s
 
@@ -557,7 +544,7 @@ this is a step to using the Rust classes as the base classes."""
         Raises ValueError if the two Bits have differing lengths.
 
         """
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         s = self._xor(bs)
         return s
 
@@ -616,7 +603,7 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         try:
-            other = create_bits_from_any(bs)
+            other = Bits._from_any(bs)
         except TypeError:
             return False
         return self.equals(other)
@@ -822,7 +809,7 @@ class BitsMethods:
             b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        return Bits._from_joined([create_bits_from_any(item) for item in sequence])
+        return Bits._from_joined([Bits._from_any(item) for item in sequence])
 
     @classmethod
     def from_ones(cls, n: int, /) -> Bits:
@@ -934,8 +921,8 @@ class BitsMethods:
             raise ValueError(f"Negative bit length given: {n}.")
         return Bits._from_zeros(n)
 
-    @classmethod
-    def _from_any(cls, any_: BitsType, /) -> Bits:
+    @staticmethod
+    def _from_any(any_: BitsType, /) -> Bits:
         """Create a new class instance from one of the many things that can be used to build it.
 
         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
@@ -943,7 +930,16 @@ class BitsMethods:
 
         Used internally only.
         """
-        return create_bits_from_any(any_)
+        if isinstance(any_, Bits):
+            return any_
+        if isinstance(any_, MutableBits):
+            return any_.clone_as_immutable()
+        if isinstance(any_, str):
+            return str_to_bits_cached(any_)
+        if isinstance(any_, (bytes, bytearray, memoryview)):
+            return Bits.from_bytes(any_)
+        raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
+
 
     def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """
@@ -985,7 +981,7 @@ class BitsMethods:
         """
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         c = 0
         for i in self.findall(bs, ba):
@@ -997,7 +993,7 @@ class BitsMethods:
 
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         x = self.clone_as_mutable()
         x.append(bs)
         x = x.as_immutable()
@@ -1137,7 +1133,7 @@ class MutableBitsMethods:
             b = MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
 
         """
-        return MutableBits._from_joined([create_bits_from_any(item) for item in sequence])
+        return MutableBits._from_joined([Bits._from_any(item) for item in sequence])
 
     @classmethod
     def from_ones(cls, n: int, /) -> MutableBits:
@@ -1258,14 +1254,14 @@ class MutableBitsMethods:
 
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         x = self.clone_as_mutable()
         x.append(bs)
         return x
 
     def __iadd__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits in-place."""
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         self.append(bs)
         return self
 
@@ -1335,7 +1331,7 @@ class MutableBitsMethods:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot set bits with a step other than 1")
-            bs = create_bits_from_any(value)
+            bs = Bits._from_any(value)
             self.set_slice(start, stop, bs)
 
     def __delitem__(self, key: int | slice) -> None:
@@ -1405,7 +1401,7 @@ class MutableBitsMethods:
             MutableBits('0x0f0a')
 
         """
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         self._append(bs)
         return self
 
@@ -1422,7 +1418,7 @@ class MutableBitsMethods:
             MutableBits('0x0a0f')
 
         """
-        bs = create_bits_from_any(bs)
+        bs = Bits._from_any(bs)
         self._prepend(bs)
         return self
 
@@ -1622,8 +1618,8 @@ class MutableBitsMethods:
         """
         if count == 0:
             return self
-        old_bits = create_bits_from_any(old)
-        new_bits = create_bits_from_any(new)
+        old_bits = Bits._from_any(old)
+        new_bits = Bits._from_any(new)
         if len(old_bits) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
         start, end = _validate_slice(len(self), start, end)
