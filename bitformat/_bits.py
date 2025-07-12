@@ -28,6 +28,15 @@ BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 # The size of various caches used to improve performance
 CACHE_SIZE = 256
 
+
+def _validate_slice(length: int, start: int | None, end: int | None) -> tuple[int, int]:
+    """Validate start and end and return them as positive bit positions."""
+    start = 0 if start is None else (start + length if start < 0 else start)
+    end = length if end is None else (end + length if end < 0 else end)
+    if not 0 <= start <= end <= length:
+        raise ValueError(f"Invalid slice positions for Bits length {length}: start={start}, end={end}.")
+    return start, end
+
 def convert_bytes_to_printable(b: bytes) -> str:
     # For everything that isn't printable ASCII, use value from 'Latin Extended-A' unicode block.
     string = "".join(chr(0x100 + x) if x in _unprintable else chr(x) for x in b)
@@ -117,7 +126,7 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
 
 def create_bits_from_any(any_: BitsType) -> Bits:
     if isinstance(any_, str):
-        return str_to_bitstore_cached(any_)
+        return str_to_bits_cached(any_)
     if isinstance(any_,  (Bits, MutableBits)):
         return any_.clone_as_immutable()
     if isinstance(any_,  MutableBits):
@@ -129,7 +138,7 @@ def create_bits_from_any(any_: BitsType) -> Bits:
 
 def create_mutablebits_from_any(any_: BitsType) -> MutableBits:
     if isinstance(any_, str):
-        return str_to_mutable_bitstore(any_)
+        return str_to_mutablebits(any_)
     if isinstance(any_, (Bits, MutableBits)):
         return any_.clone_as_mutable()
     if isinstance(any_, (bytes, bytearray, memoryview)):
@@ -138,7 +147,7 @@ def create_mutablebits_from_any(any_: BitsType) -> MutableBits:
 
 
 @functools.lru_cache(CACHE_SIZE)
-def token_to_bitstore(token: str) -> Bits:
+def token_to_bits(token: str) -> Bits:
 
     if token and token[0] == '0':
         return string_literal_to_bits(token)
@@ -163,17 +172,17 @@ def token_to_bitstore(token: str) -> Bits:
 
 # When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
 @functools.lru_cache(CACHE_SIZE)
-def str_to_bitstore_cached(s: str) -> Bits:
+def str_to_bits_cached(s: str) -> Bits:
     tokens = split_tokens(s)
-    return Bits._from_joined([token_to_bitstore(t) for t in tokens if t])
+    return Bits._from_joined([token_to_bits(t) for t in tokens if t])
 
 
-def str_to_mutable_bitstore(s: str) -> MutableBits:
+def str_to_mutablebits(s: str) -> MutableBits:
     tokens = split_tokens(s)
-    return MutableBits.from_joined([token_to_bitstore(t) for t in tokens if t])
+    return MutableBits.from_joined([token_to_bits(t) for t in tokens if t])
 
 
-class _BaseBits:
+class BaseBitsMethods:
     """Not a real class! This contains the common methods for Bits and MutableBits, and they
 are monkey-patched into those classes later. Yes, it would be more normal to use inheritance, but
 this is a step to using the Rust classes as the base classes."""
@@ -464,14 +473,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Private Methods -----
 
-    def _validate_slice(self, start: int | None, end: int | None) -> tuple[int, int]:
-        """Validate start and end and return them as positive bit positions."""
-        start = 0 if start is None else (start + len(self) if start < 0 else start)
-        end = len(self) if end is None else (end + len(self) if end < 0 else end)
-        if not 0 <= start <= end <= len(self):
-            raise ValueError(f"Invalid slice positions for Bits length {len(self)}: start={start}, end={end}.")
-        return start, end
-
     def _simple_str(self) -> str:
         length = len(self)
         if length == 0:
@@ -750,12 +751,12 @@ this is a step to using the Rust classes as the base classes."""
         bs -- The Bits to search for.
 
         """
-        found = _BaseBits.find(self, bs, byte_aligned=False)
+        found = BaseBitsMethods.find(self, bs, byte_aligned=False)
         return False if found is None else True
 
 
 
-class BitsOld:
+class BitsMethods:
     """
     An immutable container of binary data.
 
@@ -793,7 +794,7 @@ class BitsOld:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bitstore_cached(s)
+            return str_to_bits_cached(s)
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> Bits:
@@ -928,7 +929,7 @@ class BitsOld:
             a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
 
         """
-        return str_to_bitstore_cached(s)
+        return str_to_bits_cached(s)
 
     @classmethod
     def from_zeros(cls, n: int, /) -> Bits:
@@ -1073,7 +1074,7 @@ class BitsOld:
         return self.clone_as_mutable()
 
 
-class MutableBitsOld:
+class MutableBitsMethods:
     """
     A mutable container of binary data.
 
@@ -1112,7 +1113,7 @@ class MutableBitsOld:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bitstore_cached(s).clone_as_mutable()
+            return str_to_bits_cached(s).clone_as_mutable()
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> MutableBits:
@@ -1249,7 +1250,7 @@ class MutableBitsOld:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        return str_to_bitstore_cached(s).clone_as_mutable()
+        return str_to_bits_cached(s).clone_as_mutable()
 
     @classmethod
     def from_zeros(cls, n: int, /) -> MutableBits:
@@ -1548,7 +1549,7 @@ class MutableBitsOld:
             raise ValueError("Cannot rotate an empty Bits.")
         if n < 0:
             raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
+        start, end = _validate_slice(len(self), start, end)
         n %= end - start
         bs = self.as_immutable()
         new_bs = MutableBits.from_joined([bs.getslice(0, start),
@@ -1579,7 +1580,7 @@ class MutableBitsOld:
             raise ValueError("Cannot rotate an empty Bits.")
         if n < 0:
             raise ValueError("Cannot rotate by negative amount.")
-        start, end = self._validate_slice(start, end)
+        start, end = _validate_slice(len(self), start, end)
         n %= end - start
         bs = self.as_immutable()
         new_bs = MutableBits.from_joined([bs.getslice(0, start),
@@ -1645,7 +1646,7 @@ class MutableBitsOld:
         new_bits = create_bits_from_any(new)
         if len(old_bits) == 0:
             raise ValueError("Empty Bits cannot be replaced.")
-        start, end = self._validate_slice(start, end)
+        start, end = _validate_slice(len(self), start, end)
         if byte_aligned is None:
             byte_aligned = Options().byte_aligned
         # First find all the places where we want to do the replacements
@@ -1692,7 +1693,7 @@ class MutableBitsOld:
 
 # Patching on the methods to Bits and MutableBits to avoid inheritance.
 def _patch_classes():
-    for name, method in _BaseBits.__dict__.items():
+    for name, method in BaseBitsMethods.__dict__.items():
         if isinstance(method, classmethod):
             setattr(Bits, name, classmethod(method.__func__))
             setattr(MutableBits, name, classmethod(method.__func__))
@@ -1700,13 +1701,13 @@ def _patch_classes():
             setattr(Bits, name, method)
             setattr(MutableBits, name, method)
 
-    for name, method in BitsOld.__dict__.items():
+    for name, method in BitsMethods.__dict__.items():
         if isinstance(method, classmethod):
             setattr(Bits, name, classmethod(method.__func__))
         elif callable(method):
             setattr(Bits, name, method)
 
-    for name, method in MutableBitsOld.__dict__.items():
+    for name, method in MutableBitsMethods.__dict__.items():
         if isinstance(method, classmethod):
             setattr(MutableBits, name, classmethod(method.__func__))
         elif callable(method):

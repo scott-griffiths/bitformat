@@ -3,7 +3,6 @@ from __future__ import annotations
 import abc
 import functools
 from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
-import inspect
 import bitformat
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
@@ -341,15 +340,15 @@ class DtypeSingle(Dtype):
 
         x._set_fn = definition.set_fn
 
-        def create_bitstore(v):
+        def create_bits(v):
             return x._set_fn(v, length=x._bit_length)
 
-        def create_bitstore_le(v):
+        def create_bits_le(v):
             bs = x._set_fn(v, length=x._bit_length)
             mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
             mutable.byte_swap()
             return mutable.as_immutable()
-        x._create_fn = create_bitstore_le if little_endian else create_bitstore
+        x._create_fn = create_bits_le if little_endian else create_bits
         return x
 
     @classmethod
@@ -505,8 +504,7 @@ class DtypeArray(Dtype):
             return value
         if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        # TODO: Simplify again after converting to bitstore creation
-        return Bits._from_joined([self._dtype_single._create_fn(v) for v in value])
+        return Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
 
     @override
     @final

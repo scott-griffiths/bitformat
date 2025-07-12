@@ -14,7 +14,7 @@ from ._bits import Bits, create_bits_from_any
 # ----- Integer types -----
 
 def to_u(bs: Bits, start: int, length: int) -> int:
-    """Return data as an unsigned int from a slice of the bitstore."""
+    """Return data as an unsigned int from a slice of the bits."""
     assert start >= 0
     assert length >= 0
     if length == 0:
@@ -55,7 +55,7 @@ u_defn = DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "uns
 
 
 def to_i(bs: Bits, start: int, length: int) -> int:
-    """Return data as a signed int from a slice of the bitstore."""
+    """Return data as a signed int from a slice of the bits."""
     if length == 0:
         raise ValueError("Cannot interpret empty Bits as an integer.")
     if length <= 64:
