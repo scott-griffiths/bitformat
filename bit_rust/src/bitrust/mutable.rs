@@ -1,7 +1,7 @@
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use crate::bitrust::{bits, helpers};
 use crate::bitrust::Bits;
-use pyo3::exceptions::{PyIndexError, PyValueError};
+use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use std::ops::Not;
 use pyo3::prelude::PyAnyMethods;
@@ -83,17 +83,16 @@ impl MutableBits {
 #[pymethods]
 impl MutableBits {
 
-    pub fn equals(&self, other: PyObject) -> bool {
-        Python::with_gil(|py| {
-            let other_any = other.bind(py);
-            if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
-                return self.inner.data == other_bitrust.data;
-            }
-            if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
-                return self.inner.data == other_mutable_bitrust.inner.data;
-            }
-            false
-        })
+    // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
+    pub fn equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
+        let other_any = other.bind(py);
+        if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
+            return Ok(self.inner.data == other_bitrust.data);
+        }
+        if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
+            return Ok(self.inner.data == other_mutable_bitrust.inner.data);
+        }
+        Err(PyTypeError::new_err("")) // TODO
     }
 
     pub fn _byte_swap(&mut self) -> PyResult<()> {

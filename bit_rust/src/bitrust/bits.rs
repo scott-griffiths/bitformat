@@ -4,7 +4,7 @@ use std::fmt::Write;
 use crate::bitrust::helpers;
 use bitvec::prelude::*;
 use bytemuck;
-use pyo3::exceptions::{PyNotImplementedError, PyValueError};
+use pyo3::exceptions::{PyNotImplementedError, PyValueError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use pyo3::types::PySlice;
@@ -370,15 +370,16 @@ impl Bits {
         ))
     }
 
-    pub fn equals(&self, other: PyObject, py: Python) -> bool {
+    // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
+    pub fn equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
         if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
-            return self.data == other_bitrust.data;
+            return Ok(self.data == other_bitrust.data);
         }
         if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
-            return self.data == other_mutable_bitrust.inner.data;
+            return Ok(self.data == other_mutable_bitrust.inner.data);
         }
-        false
+        Err(PyTypeError::new_err("")) // TODO
     }
 
     #[staticmethod]

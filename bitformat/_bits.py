@@ -8,7 +8,7 @@ import io
 import functools
 from ast import literal_eval
 from collections import abc
-from typing import Union, Iterable, Any, TextIO, overload, Iterator
+from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
@@ -50,7 +50,7 @@ def format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_
     if isinstance(dtype, (DtypeSingle, DtypeArray)):
         n = dtype.kind
         if n is DtypeKind.BYTES:  # Special case for bytes to print one character each.
-            get_fn = lambda b: convert_bytes_to_printable(b.to_bytes())
+            get_fn = lambda b: convert_bytes_to_printable(b.bytes)
         elif n is DtypeKind.BOOL:  # Special case for bool to print '1' or '0' instead of `True` or `False`.
             get_fn = Register().get_single_dtype(DtypeKind.UINT, bits_per_group).unpack
         align = ">"
@@ -593,10 +593,14 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         try:
-            other = Bits._from_any(bs)
-        except TypeError:
-            return False
-        return self.equals(other)
+            # We try to direct comparison first for efficiency reasons.
+            return self.equals(bs)
+        except TypeError:  # bs wasn't a Bits or MutableBits
+            try:
+                other = Bits._from_any(bs)
+            except TypeError:
+                return False
+            return self.equals(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.
@@ -1356,9 +1360,6 @@ class MutableBitsMethods:
         """Create and return an immutable copy of the MutableBits as Bits instance."""
         return self.clone_as_immutable()
 
-    __hash__ = None
-    """The hash method is not available for a ``MutableBits`` object as it is mutable."""
-
     def __copy__(self: MutableBits) -> MutableBits:
         """Return a new copy of the MutableBits for the copy module.
         """
@@ -1668,6 +1669,10 @@ def _patch_classes():
             setattr(MutableBits, name, classmethod(method.__func__))
         elif callable(method):
             setattr(MutableBits, name, method)
+
+
+# The hash method is not available for a ``MutableBits`` object as it is mutable.
+MutableBits.__hash__ = None
 
 
 _patch_classes()
