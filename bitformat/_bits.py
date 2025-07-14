@@ -1420,11 +1420,11 @@ class MutableBitsMethods:
 
         """
         if pos is None:
-            self.invert_all()
+            self._invert_all()
         elif not isinstance(pos, abc.Iterable):
-            self.invert_single_bit(pos)
+            self._invert_single_bit(pos)
         else:
-            self.invert_bit_list(list(pos))
+            self._invert_bit_list(list(pos))
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:

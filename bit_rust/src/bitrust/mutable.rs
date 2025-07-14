@@ -430,7 +430,7 @@ impl MutableBits {
         self.inner._rfind(b, start, bytealigned)
     }
 
-    pub fn invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
+    pub fn _invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
         for pos in pos_list {
             let pos: usize = helpers::validate_index(pos, self.len())?;
             let value = self.inner.data[pos];
@@ -439,7 +439,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
+    pub fn _invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
         let pos: usize = helpers::validate_index(pos, self.len())?;
         let mut data = std::mem::take(&mut self.inner.data);
         let value = data[pos];
@@ -448,7 +448,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn invert_all(&mut self) {
+    pub fn _invert_all(&mut self) {
         self.inner.data = std::mem::take(&mut self.inner.data).not();
     }
 

@@ -954,14 +954,14 @@ mod tests {
     #[test]
     fn test_invert() {
         let mut b = MutableBits::from_bin_checked("0").unwrap();
-        b.invert_all();
+        b._invert_all();
         assert_eq!(b.to_bin(), "1");
         let mut b = MutableBits::from_bin_checked("01110").unwrap();
-        b.invert_all();
+        b._invert_all();
         assert_eq!(b.to_bin(), "10001");
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
         let mut long = MutableBits::from_hex_checked(hex_str).unwrap();
-        long.invert_all();
+        long._invert_all();
     }
 
     #[test]
@@ -1103,11 +1103,11 @@ mod tests {
     #[test]
     fn test_invert_bit_list() {
         let mut bits = MutableBits::from_bin_checked("0000").unwrap();
-        bits.invert_bit_list(vec![0, 2]).unwrap();
+        bits._invert_bit_list(vec![0, 2]).unwrap();
         assert_eq!(bits.to_bin(), "1010");
-        bits.invert_bit_list(vec![-1, -3]).unwrap();
+        bits._invert_bit_list(vec![-1, -3]).unwrap();
         assert_eq!(bits.to_bin(), "1111");
-        bits.invert_bit_list(vec![0, 1, 2, 3]).unwrap();
+        bits._invert_bit_list(vec![0, 1, 2, 3]).unwrap();
         assert_eq!(bits.to_bin(), "0000");
     }
 
@@ -1125,10 +1125,10 @@ mod tests {
     #[test]
     fn test_invert_all() {
         let mut bits = MutableBits::from_bin_checked("0000").unwrap();
-        bits.invert_all();
+        bits._invert_all();
         assert_eq!(bits.to_bin(), "1111");
         let mut bits = MutableBits::from_bin_checked("1010").unwrap();
-        bits.invert_all();
+        bits._invert_all();
         assert_eq!(bits.to_bin(), "0101");
     }
 
@@ -1143,9 +1143,9 @@ mod tests {
     #[test]
     fn test_invert_single_bit() {
         let mut bits = MutableBits::from_bin_checked("0000").unwrap();
-        bits.invert_single_bit(1).unwrap();
+        bits._invert_single_bit(1).unwrap();
         assert_eq!(bits.to_bin(), "0100");
-        bits.invert_single_bit(-1).unwrap();
+        bits._invert_single_bit(-1).unwrap();
         assert_eq!(bits.to_bin(), "0101");
     }
 
@@ -1278,7 +1278,7 @@ mod tests {
         m._append(&other);
         assert_eq!(m.to_bin(), "00111111");
 
-        m.invert_all();
+        m._invert_all();
         assert_eq!(m.to_bin(), "11000000");
     }
 
@@ -1354,7 +1354,7 @@ mod tests {
             }
         }
 
-        large.invert_all();
+        large._invert_all();
     }
 
     #[test]
@@ -1429,7 +1429,7 @@ mod tests {
     #[test]
     fn negative_indexing_in_mutable() {
         let mut m = MutableBits::from_bin_checked("10101010").unwrap();
-        m.invert_single_bit(-2).unwrap();
+        m._invert_single_bit(-2).unwrap();
         assert_eq!(m.to_bin(), "10101000");
 
         assert_eq!(m.getindex(-3).unwrap(), false);

@@ -14,7 +14,7 @@ mod tests {
     #[test]
     fn test_invert_all() {
         let mut mb = MutableBits::_from_zeros(4);
-        mb.invert_all();
+        mb._invert_all();
         assert_eq!(mb.to_bin(), "1111");
     }
 
@@ -63,4 +63,3 @@ mod tests {
         assert_eq!(mb.to_bin(), "0101");
     }
 }
-
