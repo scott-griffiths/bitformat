@@ -620,15 +620,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Operators
 
-    def __lshift__(self: Bits, n: int, /) -> Bits:
-        """Return new Bits shifted by n to the left.
-
-        n -- the number of bits to shift. Must be >= 0.
-
-        """
-        x = self._lshift(n)
-        return x
-
     def __mul__(self: Bits, n: int, /) -> Bits:
         """Return new Bits consisting of n concatenations of self.
 
@@ -668,15 +659,6 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         return self.__mul__(n)
-
-    def __rshift__(self: Bits, n: int, /) -> Bits:
-        """Return new Bits shifted by n to the right.
-
-        n -- the number of bits to shift. Must be >= 0.
-
-        """
-        x = self._rshift(n)
-        return x
 
     # ----- Other
 
@@ -990,7 +972,7 @@ class BitsMethods:
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
         # Check if the method exists in MutableBits
-        if hasattr(MutableBits, name) and callable(getattr(MutableBits, name)):
+        if hasattr(MutableBits, name) and callable(getattr(MutableBits, name)) and not name.startswith("_"):
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{name}'. "
                 f"Did you mean to use the MutableBits class? Or you could replace '.{name}(...)' with '.to_mutable_bits().{name}(...)'."
@@ -1142,7 +1124,6 @@ class MutableBitsMethods:
         # TODO: clone here shouldn't be needed.
         return xt.clone_as_mutable()
 
-    # TODO: The two from_random methods can probably live in the base class again now?
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
         """

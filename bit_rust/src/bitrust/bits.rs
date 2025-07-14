@@ -778,8 +778,11 @@ impl Bits {
         Ok(n as usize)
     }
 
-    // TODO: These should move to work on MutableBits in-place instead.
-    pub fn _lshift(&self, n: i64) -> PyResult<Self> {
+    /// Return new Bits shifted by n to the left.
+    ///
+    /// n -- the number of bits to shift. Must be >= 0.
+    ///
+    pub fn __lshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self.validate_shift(n)?;
         if shift == 0 {
             return Ok(self.clone_as_immutable());
@@ -794,7 +797,11 @@ impl Bits {
         Ok(Self::new(result_data))
     }
 
-    pub fn _rshift(&self, n: i64) -> PyResult<Self> {
+    /// Return new Bits shifted by n to the right.
+    ///
+    /// n -- the number of bits to shift. Must be >= 0.
+    ///
+    pub fn __rshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self.validate_shift(n)?;
         if shift == 0 {
             return Ok(self.clone_as_immutable());

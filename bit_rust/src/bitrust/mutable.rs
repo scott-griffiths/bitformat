@@ -448,12 +448,20 @@ impl MutableBits {
         Ok(MutableBits::new(self.inner.data.clone().not()))
     }
 
-    pub fn _lshift(&self, n: i64) -> PyResult<Self> {
-        Ok(MutableBits::new(self.inner._lshift(n)?.data))
+    /// Return new MutableBits shifted by n to the left.
+    ///
+    /// n -- the number of bits to shift. Must be >= 0.
+    ///
+    pub fn __lshift__(&self, n: i64) -> PyResult<Self> {
+        Ok(MutableBits::new(self.inner.__lshift__(n)?.data))
     }
 
-    pub fn _rshift(&self, n: i64) -> PyResult<Self> {
-        Ok(MutableBits::new(self.inner._rshift(n)?.data))
+    /// Return new MutableBits shifted by n to the right.
+    ///
+    /// n -- the number of bits to shift. Must be >= 0.
+    ///
+    pub fn __rshift__(&self, n: i64) -> PyResult<Self> {
+        Ok(MutableBits::new(self.inner.__rshift__(n)?.data))
     }
 
     pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
