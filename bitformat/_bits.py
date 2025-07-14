@@ -1314,7 +1314,7 @@ class MutableBitsMethods:
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
         # Check if the method exists in Bits
-        if hasattr(Bits, name) and callable(getattr(Bits, name)):
+        if hasattr(Bits, name) and callable(getattr(Bits, name)) and not name.startswith("_"):
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{name}'. "
                 f"Did you mean to use the Bits class? Or you could replace '.{name}(...)' with '.to_bits().{name}(...)'."

@@ -448,6 +448,14 @@ impl MutableBits {
         Ok(MutableBits::new(self.inner.data.clone().not()))
     }
 
+    pub fn _lshift(&self, n: i64) -> PyResult<Self> {
+        Ok(MutableBits::new(self.inner._lshift(n)?.data))
+    }
+
+    pub fn _rshift(&self, n: i64) -> PyResult<Self> {
+        Ok(MutableBits::new(self.inner._rshift(n)?.data))
+    }
+
     pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
             let pos: usize = helpers::validate_index(idx, self.inner.len())?;

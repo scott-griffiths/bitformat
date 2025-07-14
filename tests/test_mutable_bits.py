@@ -983,3 +983,11 @@ def test_all_any():
     b = MutableBits('0xff')
     assert b.any()
     assert b.all()
+
+def test_shifts():
+    a = MutableBits.from_ones(5)
+    a += '0b0'
+    b = a << 1
+    assert b == '0b111100'
+    c = b >> 1
+    assert c == '0b011110'
