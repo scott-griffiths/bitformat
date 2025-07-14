@@ -1,16 +1,16 @@
-use pyo3::PyRefMut;
-use pyo3::{Bound, IntoPyObject, Py, PyAny};
-use crate::bitrust::{bits, helpers};
 use crate::bitrust::Bits;
-use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
-use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
-use std::ops::Not;
-use pyo3::prelude::PyAnyMethods;
+use crate::bitrust::{bits, helpers};
 use bits::BitCollection;
-use pyo3::types::{PyBool, PySlice};
+use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
+use pyo3::prelude::PyAnyMethods;
 use pyo3::types::PySliceMethods;
+use pyo3::types::{PyBool, PySlice};
+use pyo3::PyRefMut;
+use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
+use pyo3::{Bound, IntoPyObject, Py, PyAny};
+use std::ops::Not;
 
-#[pyclass(freelist=8, module="bitformat")]
+#[pyclass(freelist = 8, module = "bitformat")]
 pub struct MutableBits {
     pub(crate) inner: Bits,
 }
@@ -20,37 +20,59 @@ impl BitCollection for MutableBits {
         self.inner.len()
     }
     fn from_zeros(length: usize) -> Self {
-        Self { inner: <Bits as BitCollection>::from_zeros(length) }
+        Self {
+            inner: <Bits as BitCollection>::from_zeros(length),
+        }
     }
     fn from_ones(length: usize) -> Self {
-        Self { inner: <Bits as BitCollection>::from_ones(length) }
+        Self {
+            inner: <Bits as BitCollection>::from_ones(length),
+        }
     }
     fn from_bytes(data: Vec<u8>) -> Self {
-        Self { inner: <Bits as BitCollection>::from_bytes(data) }
+        Self {
+            inner: <Bits as BitCollection>::from_bytes(data),
+        }
     }
     fn from_bin(binary_string: &str) -> Result<Self, String> {
-        Ok(Self { inner: <Bits as BitCollection>::from_bin(binary_string)? })
+        Ok(Self {
+            inner: <Bits as BitCollection>::from_bin(binary_string)?,
+        })
     }
     fn from_oct(oct: &str) -> Result<Self, String> {
-        Ok(Self { inner: <Bits as BitCollection>::from_oct(oct)? })
+        Ok(Self {
+            inner: <Bits as BitCollection>::from_oct(oct)?,
+        })
     }
     fn from_hex(hex: &str) -> Result<Self, String> {
-        Ok(Self { inner: <Bits as BitCollection>::from_hex(hex)? })
+        Ok(Self {
+            inner: <Bits as BitCollection>::from_hex(hex)?,
+        })
     }
     fn from_u64(value: u64, length: usize) -> Self {
-        Self { inner: <Bits as BitCollection>::from_u64(value, length) }
+        Self {
+            inner: <Bits as BitCollection>::from_u64(value, length),
+        }
     }
     fn from_i64(value: i64, length: usize) -> Self {
-        Self { inner: <Bits as BitCollection>::from_i64(value, length) }
+        Self {
+            inner: <Bits as BitCollection>::from_i64(value, length),
+        }
     }
     fn logical_or(&self, other: &Bits) -> Self {
-        Self { inner: self.inner.logical_or(other) }
+        Self {
+            inner: self.inner.logical_or(other),
+        }
     }
     fn logical_and(&self, other: &Bits) -> Self {
-        Self { inner: self.inner.logical_and(other) }
+        Self {
+            inner: self.inner.logical_and(other),
+        }
     }
     fn logical_xor(&self, other: &Bits) -> Self {
-        Self { inner: self.inner.logical_xor(other) }
+        Self {
+            inner: self.inner.logical_xor(other),
+        }
     }
 }
 
@@ -68,7 +90,9 @@ impl PartialEq<Bits> for MutableBits {
 
 impl MutableBits {
     pub fn new(bv: helpers::BV) -> Self {
-        Self { inner: Bits::new(bv) }
+        Self {
+            inner: Bits::new(bv),
+        }
     }
 }
 
@@ -83,7 +107,6 @@ impl MutableBits {
 
 #[pymethods]
 impl MutableBits {
-
     // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
     pub fn equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
@@ -98,14 +121,17 @@ impl MutableBits {
 
     pub fn _byte_swap(&mut self) -> PyResult<()> {
         if self.inner.data.len() % 8 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot use byte_swap as not a whole number of bytes ({} bits long).", self.inner.data.len())));
+            return Err(PyValueError::new_err(format!(
+                "Cannot use byte_swap as not a whole number of bytes ({} bits long).",
+                self.inner.data.len()
+            )));
         }
         let mut bytes = self.inner.slice_to_bytes(0, self.len())?;
         bytes.reverse();
         self.inner.data = helpers::BV::from_vec(bytes);
         Ok(())
     }
-    
+
     pub fn _overwrite(&mut self, start: usize, value: &Bits) -> PyResult<()> {
         if start + value.len() > self.len() {
             return Err(PyIndexError::new_err("Slice out of bounds"));
@@ -207,7 +233,9 @@ impl MutableBits {
             let b: bool = value.extract(py)?;
             bv.push(b);
         }
-        Ok(Self { inner: Bits::new(bv)})
+        Ok(Self {
+            inner: Bits::new(bv),
+        })
     }
 
     #[staticmethod]
@@ -217,7 +245,9 @@ impl MutableBits {
 
     #[staticmethod]
     pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
-        Self { inner: Bits::from_bytes_with_offset(data, offset) }
+        Self {
+            inner: Bits::from_bytes_with_offset(data, offset),
+        }
     }
 
     #[staticmethod]
@@ -272,17 +302,21 @@ impl MutableBits {
     }
 
     pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
-        self.inner.getslice(start_bit, end_bit).map(|bits| MutableBits { inner: bits })
+        self.inner
+            .getslice(start_bit, end_bit)
+            .map(|bits| MutableBits { inner: bits })
     }
 
     pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
         MutableBits {
-            inner: self.inner.get_slice_unchecked(start_bit, length)
+            inner: self.inner.get_slice_unchecked(start_bit, length),
         }
     }
 
     pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
-        self.inner.getslice_with_step(start_bit, end_bit, step).map(|bits| MutableBits { inner: bits })
+        self.inner
+            .getslice_with_step(start_bit, end_bit, step)
+            .map(|bits| MutableBits { inner: bits })
     }
 
     pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<PyObject> {
@@ -310,14 +344,18 @@ impl MutableBits {
             return Ok(py_obj.into());
         }
 
-        Err(pyo3::exceptions::PyTypeError::new_err("Index must be an integer or a slice."))
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Index must be an integer or a slice.",
+        ))
     }
 
     pub fn _to_bytes(&self) -> Vec<u8> {
         self.inner._to_bytes()
     }
 
-    pub fn slice_to_bin(&self, start: usize, end: usize) -> String { self.inner.slice_to_bin(start, end)}
+    pub fn slice_to_bin(&self, start: usize, end: usize) -> String {
+        self.inner.slice_to_bin(start, end)
+    }
 
     pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
         self.inner.slice_to_oct(start, end)
@@ -399,6 +437,17 @@ impl MutableBits {
         self.inner.data = std::mem::take(&mut self.inner.data).not();
     }
 
+    /// Return the instance with every bit inverted.
+    ///
+    /// Raises ValueError if the MutableBits is empty.
+    ///
+    pub fn __invert__(&self) -> PyResult<Self> {
+        if self.inner.data.is_empty() {
+            return Err(PyValueError::new_err("Cannot invert empty MutableBits."));
+        }
+        Ok(MutableBits::new(self.inner.data.clone().not()))
+    }
+
     pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
             let pos: usize = helpers::validate_index(idx, self.inner.len())?;
@@ -411,7 +460,13 @@ impl MutableBits {
         self.set_from_sequence(value, vec![index])
     }
 
-    pub fn set_from_slice(&mut self, value: bool, start: i64, stop: i64, step: i64) -> PyResult<()> {
+    pub fn set_from_slice(
+        &mut self,
+        value: bool,
+        start: i64,
+        stop: i64,
+        step: i64,
+    ) -> PyResult<()> {
         let len = self.inner.len() as i64;
         let mut positive_start = if start < 0 { start + len } else { start };
         let mut positive_stop = if stop < 0 { stop + len } else { stop };
@@ -457,7 +512,7 @@ impl MutableBits {
     pub fn clone_as_immutable(&self) -> Bits {
         Bits::new(self.inner.data.clone())
     }
-    
+
     /// Convert to immutable BitRust - without cloning the data.
     pub fn as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
@@ -495,6 +550,4 @@ impl MutableBits {
         self.inner.data.shift_right(shift);
         Ok(())
     }
-
-
 }

@@ -1,16 +1,17 @@
-use pyo3::types::PyBool;
-use std::fmt;
-use std::fmt::Write;
 use crate::bitrust::helpers;
+use crate::bitrust::BitRustBoolIterator;
+use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
-use pyo3::exceptions::{PyNotImplementedError, PyValueError, PyTypeError};
-use pyo3::prelude::*;
-use pyo3::{pyclass, pymethods, PyRef, PyResult};
-use pyo3::types::PySlice;
-use crate::bitrust::MutableBits;
-use crate::bitrust::BitRustBoolIterator;
 use pyo3::conversion::IntoPyObject;
+use pyo3::exceptions::{PyNotImplementedError, PyTypeError, PyValueError};
+use pyo3::prelude::*;
+use pyo3::types::PyBool;
+use pyo3::types::PySlice;
+use pyo3::{pyclass, pymethods, PyRef, PyResult};
+use std::fmt;
+use std::fmt::Write;
+use std::ops::Not;
 
 #[pyfunction]
 pub fn split_tokens(s: String) -> Vec<String> {
@@ -38,7 +39,6 @@ pub fn split_tokens(s: String) -> Vec<String> {
 
 #[pyfunction]
 pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
-
     if s.starts_with("0x") {
         return Bits::_from_hex(&s);
     } else if s.starts_with("0o") {
@@ -46,13 +46,14 @@ pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
     } else if s.starts_with("0b") {
         return Bits::_from_bin(&s);
     }
-    
-    Err(PyValueError::new_err(format!("Can't parse token '{}'. Did you mean to prefix with '0x', '0b' or '0o'?", s)))
+
+    Err(PyValueError::new_err(format!(
+        "Can't parse token '{}'. Did you mean to prefix with '0x', '0b' or '0o'?",
+        s
+    )))
 }
 
-
-
-pub trait BitCollection: Sized{
+pub trait BitCollection: Sized {
     fn len(&self) -> usize;
     fn from_zeros(length: usize) -> Self;
     fn from_ones(length: usize) -> Self;
@@ -69,7 +70,7 @@ pub trait BitCollection: Sized{
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
-#[pyclass(frozen, freelist=8, module="bitformat")]
+#[pyclass(frozen, freelist = 8, module = "bitformat")]
 pub struct Bits {
     pub(crate) data: helpers::BV,
 }
@@ -110,7 +111,6 @@ impl fmt::Binary for Bits {
         Ok(())
     }
 }
-
 
 impl BitCollection for Bits {
     fn len(&self) -> usize {
@@ -183,12 +183,7 @@ impl BitCollection for Bits {
         }
         let data = match hex::decode(new_hex) {
             Ok(d) => d,
-            Err(e) => {
-                return Err(format!(
-                    "Cannot convert from hex '{hex}': {}",
-                    e
-                ))
-            }
+            Err(e) => return Err(format!("Cannot convert from hex '{hex}': {}", e)),
         };
         let mut bv = Bits::from_bytes(data).data;
         if is_odd_length {
@@ -234,7 +229,10 @@ impl fmt::Debug for Bits {
         if self.len() > 100 {
             return f
                 .debug_struct("Bits")
-                .field("hex", &self.slice(0, 100).slice_to_hex(0, self.len()).unwrap())
+                .field(
+                    "hex",
+                    &self.slice(0, 100).slice_to_hex(0, self.len()).unwrap(),
+                )
                 .field("length", &self.len())
                 .finish();
         }
@@ -272,7 +270,9 @@ impl Bits {
 
     /// Slice used internally without bounds checking.
     fn slice(&self, start_bit: usize, length: usize) -> Self {
-        Bits::new(BitVec::from_bitslice(&self.data[start_bit..start_bit + length]))
+        Bits::new(BitVec::from_bitslice(
+            &self.data[start_bit..start_bit + length],
+        ))
     }
 
     pub(crate) fn to_bin(&self) -> String {
@@ -281,13 +281,14 @@ impl Bits {
 
     pub(crate) fn to_hex(&self) -> String {
         if self.len() % 4 != 0 {
-            panic!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", self.len());
+            panic!(
+                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
+                self.len()
+            );
         }
         format!("{:x}", self)
     }
-
 }
-
 
 #[pyclass(name = "BitRustFindAllIterator")]
 pub struct PyBitRustFindAllIterator {
@@ -300,7 +301,6 @@ pub struct PyBitRustFindAllIterator {
 
 #[pymethods]
 impl PyBitRustFindAllIterator {
-
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
@@ -328,7 +328,8 @@ impl PyBitRustFindAllIterator {
             }
 
             let haystack_len = haystack_rs.len();
-            if current_pos >= haystack_len || haystack_len.saturating_sub(current_pos) < needle_len {
+            if current_pos >= haystack_len || haystack_len.saturating_sub(current_pos) < needle_len
+            {
                 return Ok(None); // No space left for the needle or already past the end
             }
             haystack_rs._find(&needle_rs, current_pos, byte_aligned)
@@ -340,13 +341,10 @@ impl PyBitRustFindAllIterator {
                 slf.current_pos = pos + step;
                 Ok(Some(pos))
             }
-            None => {
-                Ok(None)
-            }
+            None => Ok(None),
         }
     }
 }
-
 
 /// Public Python-facing methods.
 #[pymethods]
@@ -393,15 +391,19 @@ impl Bits {
     }
 
     pub fn to_u64(&self, start: usize, length: usize) -> u64 {
-        self.data[start .. start + length].load_be::<u64>()
+        self.data[start..start + length].load_be::<u64>()
     }
 
-    pub fn to_i64(&self, start:usize, length: usize) -> i64 {
-        self.data[start .. start + length].load_be::<i64>()
+    pub fn to_i64(&self, start: usize, length: usize) -> i64 {
+        self.data[start..start + length].load_be::<i64>()
     }
 
     #[pyo3(signature = (needle_obj, byte_aligned=false))]
-    pub fn findall(slf: PyRef<'_, Self>, needle_obj: Py<Bits>, byte_aligned: bool) -> PyResult<Py<PyBitRustFindAllIterator>> {
+    pub fn findall(
+        slf: PyRef<'_, Self>,
+        needle_obj: Py<Bits>,
+        byte_aligned: bool,
+    ) -> PyResult<Py<PyBitRustFindAllIterator>> {
         let py = slf.py();
         let haystack_obj: Py<Bits> = slf.into(); // Get a Py<BitRust> for the haystack (self)
 
@@ -459,7 +461,7 @@ impl Bits {
     pub fn _from_bin(binary_string: &str) -> PyResult<Self> {
         match BitCollection::from_bin(binary_string) {
             Ok(result) => Ok(result),
-            Err(e) => Err(PyValueError::new_err(e))
+            Err(e) => Err(PyValueError::new_err(e)),
         }
     }
 
@@ -467,7 +469,7 @@ impl Bits {
     pub fn _from_hex(hex: &str) -> PyResult<Self> {
         match BitCollection::from_hex(hex) {
             Ok(result) => Ok(result),
-            Err(e) => Err(PyValueError::new_err(e))
+            Err(e) => Err(PyValueError::new_err(e)),
         }
     }
 
@@ -475,7 +477,7 @@ impl Bits {
     pub fn _from_oct(oct: &str) -> PyResult<Self> {
         match BitCollection::from_oct(oct) {
             Ok(x) => Ok(x),
-            Err(e) => Err(PyValueError::new_err(e))
+            Err(e) => Err(PyValueError::new_err(e)),
         }
     }
 
@@ -525,13 +527,16 @@ impl Bits {
 
     pub fn slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
         if length % 8 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret as bytes - length of {} is not a multiple of 8 bits.", length)));
+            return Err(PyValueError::new_err(format!(
+                "Cannot interpret as bytes - length of {} is not a multiple of 8 bits.",
+                length
+            )));
         }
         if length == 0 {
             return Ok(Vec::new());
         }
         let mut bv = BitVec::<u8, Msb0>::with_capacity(length);
-        bv.extend_from_bitslice(&self.data[start .. start + length]);
+        bv.extend_from_bitslice(&self.data[start..start + length]);
         Ok(bv.into_vec())
     }
 
@@ -541,14 +546,20 @@ impl Bits {
 
     pub fn slice_to_oct(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 3 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret as octal - length of {} is not a multiple of 3 bits.", length)));
+            return Err(PyValueError::new_err(format!(
+                "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
+                length
+            )));
         }
         Ok(format!("{:o}", self.slice(start, length)))
     }
 
     pub fn slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 4 != 0 {
-            return Err(PyValueError::new_err(format!("Cannot interpret as hex - length of {} is not a multiple of 4 bits.", length)));
+            return Err(PyValueError::new_err(format!(
+                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
+                length
+            )));
         }
         Ok(format!("{:x}", self.slice(start, length)))
     }
@@ -592,7 +603,7 @@ impl Bits {
             pos = pos / 8 * 8;
         }
         while pos >= start + step {
-            if self.slice(pos,  b.len()) == *b {
+            if self.slice(pos, b.len()) == *b {
                 return Some(pos - start);
             }
             pos -= step;
@@ -752,7 +763,9 @@ impl Bits {
             return Ok(py_obj.into());
         }
 
-        Err(pyo3::exceptions::PyTypeError::new_err("Index must be an integer or a slice."))
+        Err(pyo3::exceptions::PyTypeError::new_err(
+            "Index must be an integer or a slice.",
+        ))
     }
 
     pub(crate) fn validate_shift(&self, n: i64) -> PyResult<usize> {
@@ -791,12 +804,23 @@ impl Bits {
             return Ok(Self::from_zeros(len));
         }
         let mut result_data = helpers::BV::repeat(false, shift);
-        result_data.extend_from_bitslice(&self.data[.. len - shift]);
+        result_data.extend_from_bitslice(&self.data[..len - shift]);
         Ok(Self::new(result_data))
     }
 
+    /// Return the instance with every bit inverted.
+    ///
+    /// Raises ValueError if the Bits is empty.
+    ///
+    pub fn __invert__(&self) -> PyResult<Self> {
+        if self.data.is_empty() {
+            return Err(PyValueError::new_err("Cannot invert empty Bits."));
+        }
+        Ok(Bits {
+            data: self.data.clone().not(),
+        })
+    }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -903,7 +927,6 @@ mod tests {
         let mut b = MutableBits::from_bin_checked("11001").unwrap();
         b._reverse();
         assert_eq!(b.to_bin(), "10011");
-
     }
 
     #[test]
@@ -1404,6 +1427,4 @@ mod tests {
 
         assert!(m.getslice(9, 10).is_err());
     }
-
-
 }

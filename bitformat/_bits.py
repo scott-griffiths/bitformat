@@ -620,20 +620,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Operators
 
-    def __invert__(self) -> Bits | MutableBits:
-        """Return the instance with every bit inverted.
-
-        Raises ValueError if the Bits is empty.
-
-        """
-        if len(self) == 0:
-            raise ValueError("Cannot invert empty Bits.")
-        x = self.clone_as_mutable()
-        x.invert_all()
-        if isinstance(self, Bits):
-            x = x.as_immutable()
-        return x
-
     def __lshift__(self: Bits, n: int, /) -> Bits:
         """Return new Bits shifted by n to the left.
 
