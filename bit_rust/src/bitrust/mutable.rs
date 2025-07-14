@@ -378,8 +378,18 @@ impl MutableBits {
         self.inner.to_int_byte_data(signed)
     }
 
-    pub fn _count(&self, value: PyObject, py: Python) -> PyResult<usize> {
-        self.inner._count(value, py)
+    /// Return count of total number of either zero or one bits.
+    ///
+    ///     :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
+    ///     :return: The count of bits set to 1 or 0.
+    ///
+    ///     .. code-block:: pycon
+    ///
+    ///         >>> MutableBits('0xef').count(1)
+    ///         7
+    ///
+    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+        self.inner.count(value, py)
     }
 
     /// Return True if all bits are equal to 1, otherwise return False.

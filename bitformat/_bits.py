@@ -165,21 +165,6 @@ are monkey-patched into those classes later. Yes, it would be more normal to use
 this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
-    def count(self, value: Any, /) -> int:
-        """
-        Return count of total number of either zero or one bits.
-
-        :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
-        :return: The count of bits set to 1 or 0.
-
-        .. code-block:: pycon
-
-            >>> Bits('0xef').count(1)
-            7
-
-        """
-        return self._count(value)
-
     def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """Internal version of chunks so that it can be used on MutableBits."""
         if count is not None and count < 0:
