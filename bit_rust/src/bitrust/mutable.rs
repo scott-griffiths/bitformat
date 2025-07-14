@@ -1,3 +1,4 @@
+use pyo3::PyRefMut;
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use crate::bitrust::{bits, helpers};
 use crate::bitrust::Bits;
@@ -9,7 +10,7 @@ use bits::BitCollection;
 use pyo3::types::{PyBool, PySlice};
 use pyo3::types::PySliceMethods;
 
-#[pyclass]
+#[pyclass(freelist=8, module="bitformat")]
 pub struct MutableBits {
     pub(crate) inner: Bits,
 }

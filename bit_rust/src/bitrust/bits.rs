@@ -69,7 +69,7 @@ pub trait BitCollection: Sized{
 
 /// BitRust is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
-#[pyclass(frozen)]
+#[pyclass(frozen, freelist=8, module="bitformat")]
 pub struct Bits {
     pub(crate) data: helpers::BV,
 }
