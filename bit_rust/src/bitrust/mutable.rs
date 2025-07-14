@@ -5,7 +5,6 @@ use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::PyAnyMethods;
 use pyo3::types::PySliceMethods;
 use pyo3::types::{PyBool, PySlice};
-use pyo3::PyRefMut;
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use std::ops::Not;
@@ -349,8 +348,14 @@ impl MutableBits {
         ))
     }
 
-    pub fn _to_bytes(&self) -> Vec<u8> {
-        self.inner._to_bytes()
+    /// Return the MutableBits as bytes, padding with zero bits if needed.
+    ///
+    /// Up to seven zero bits will be added at the end to byte align.
+    ///
+    /// :return: The MutableBits as bytes.
+    ///
+    pub fn to_bytes(&self) -> Vec<u8> {
+        self.inner.to_bytes()
     }
 
     pub fn slice_to_bin(&self, start: usize, end: usize) -> String {

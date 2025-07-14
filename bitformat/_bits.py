@@ -389,16 +389,6 @@ this is a step to using the Rust classes as the base classes."""
             return self.getslice(0, len(prefix)).equals(prefix)
         return False
 
-    def to_bytes(self) -> bytes:
-        """Return the Bits as bytes, padding with zero bits if needed.
-
-        Up to seven zero bits will be added at the end to byte align.
-
-        :return: The Bits as bytes.
-
-        """
-        return self._to_bytes()
-
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.

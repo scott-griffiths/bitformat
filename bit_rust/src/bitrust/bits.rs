@@ -512,8 +512,13 @@ impl Bits {
         bv.into_vec()
     }
 
-    /// Convert to bytes, padding with zero bits if needed.
-    pub fn _to_bytes(&self) -> Vec<u8> {
+    /// Return the Bits as bytes, padding with zero bits if needed.
+    ///
+    /// Up to seven zero bits will be added at the end to byte align.
+    ///
+    /// :return: The Bits as bytes.
+    ///
+    pub fn to_bytes(&self) -> Vec<u8> {
         if self.data.is_empty() {
             return Vec::new();
         }
@@ -837,46 +842,46 @@ mod tests {
     fn from_bytes() {
         let data: Vec<u8> = vec![10, 20, 30];
         let bits = Bits::from_bytes(data);
-        assert_eq!(*bits._to_bytes(), vec![10, 20, 30]);
+        assert_eq!(*bits.to_bytes(), vec![10, 20, 30]);
         assert_eq!(bits.len(), 24);
     }
 
     #[test]
     fn from_hex() {
         let bits = Bits::from_hex("0x0a_14  _1e").unwrap();
-        assert_eq!(*bits._to_bytes(), vec![10, 20, 30]);
+        assert_eq!(*bits.to_bytes(), vec![10, 20, 30]);
         assert_eq!(bits.len(), 24);
         let bits = Bits::from_hex("").unwrap();
         assert_eq!(bits.len(), 0);
         let bits = Bits::from_hex("hello");
         assert!(bits.is_err());
         let bits = Bits::from_hex("1").unwrap();
-        assert_eq!(*bits._to_bytes(), vec![16]);
+        assert_eq!(*bits.to_bytes(), vec![16]);
         assert_eq!(bits.len(), 4);
     }
 
     #[test]
     fn from_bin() {
         let bits = Bits::from_bin("00001010").unwrap();
-        assert_eq!(*bits._to_bytes(), vec![10]);
+        assert_eq!(*bits.to_bytes(), vec![10]);
         assert_eq!(bits.len(), 8);
         let bits = Bits::from_bin("").unwrap();
         assert_eq!(bits.len(), 0);
         let bits = Bits::from_bin("hello");
         assert!(bits.is_err());
         let bits = Bits::from_bin("1").unwrap();
-        assert_eq!(*bits._to_bytes(), vec![128]);
+        assert_eq!(*bits.to_bytes(), vec![128]);
         assert_eq!(bits.len(), 1);
     }
 
     #[test]
     fn from_zeros() {
         let bits = Bits::from_zeros(8);
-        assert_eq!(*bits._to_bytes(), vec![0]);
+        assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "00");
         let bits = Bits::from_zeros(9);
-        assert_eq!(*bits._to_bytes(), vec![0, 0]);
+        assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
         let bits = Bits::from_zeros(0);
         assert_eq!(bits.len(), 0);
@@ -885,13 +890,13 @@ mod tests {
     #[test]
     fn from_ones() {
         let bits = Bits::from_ones(8);
-        assert_eq!(*bits._to_bytes(), vec![255]);
+        assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "ff");
         let bits = Bits::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
-        assert_eq!((*bits._to_bytes())[0], 0xff);
-        assert_eq!((*bits._to_bytes())[1] & 0x80, 0x80);
+        assert_eq!((*bits.to_bytes())[0], 0xff);
+        assert_eq!((*bits.to_bytes())[1] & 0x80, 0x80);
         assert_eq!(bits.len(), 9);
         let bits = Bits::from_ones(0);
         assert_eq!(bits.len(), 0);
@@ -1037,10 +1042,10 @@ mod tests {
     #[test]
     fn test_to_bytes_from_slice() {
         let a = Bits::from_ones(16);
-        assert_eq!(a._to_bytes(), vec![255, 255]);
+        assert_eq!(a.to_bytes(), vec![255, 255]);
         let b = a.getslice(7, a.len()).unwrap();
         assert_eq!(b.to_bin(), "111111111");
-        assert_eq!(b._to_bytes(), vec![255, 128]);
+        assert_eq!(b.to_bytes(), vec![255, 128]);
     }
 
     #[test]
@@ -1392,7 +1397,7 @@ mod tests {
     //     assert_eq!(m.to_bin(), "11110000");
     //     assert_eq!(m.to_hex().unwrap(), "f0");
     //     assert_eq!(m.to_oct().unwrap(), "360");
-    //     assert_eq!(m._to_bytes(), vec![0xF0]);
+    //     assert_eq!(m.to_bytes(), vec![0xF0]);
     // }
 
     #[test]
