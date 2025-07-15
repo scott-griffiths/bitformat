@@ -211,9 +211,24 @@ impl MutableBits {
         BitCollection::from_i64(value, length)
     }
 
+    /// Create a new instance with all bits set to zero.
+    ///
+    /// :param n: The number of bits.
+    /// :return: A MutableBits object with all bits set to zero.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_zeros(500)  # 500 zero bits
+    ///
     #[staticmethod]
-    pub fn _from_zeros(length: usize) -> Self {
-        BitCollection::from_zeros(length)
+    pub fn from_zeros(length: i64) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        Ok(BitCollection::from_zeros(length as usize))
     }
 
     #[staticmethod]

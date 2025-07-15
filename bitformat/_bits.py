@@ -670,7 +670,7 @@ class BitsMethods:
 
     def __new__(cls, s: str | None = None, /) -> Bits:
         if s is None:
-            return Bits._from_zeros(0)
+            return Bits.from_zeros(0)
         else:
             if not isinstance(s, str):
                 err = f"Expected a str for Bits constructor, but received a {type(s)}. "
@@ -822,25 +822,6 @@ class BitsMethods:
 
         """
         return str_to_bits_cached(s)
-
-    @classmethod
-    def from_zeros(cls, n: int, /) -> Bits:
-        """
-        Create a new instance with all bits set to zero.
-
-        :param n: The number of bits.
-        :return: A Bits object with all bits set to zero.
-
-        .. code-block:: python
-
-            a = Bits.from_zeros(500)  # 500 zero bits
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        return Bits._from_zeros(n)
 
     @staticmethod
     def _from_any(any_: BitsType, /) -> Bits:
@@ -994,7 +975,7 @@ class MutableBitsMethods:
 
     def __new__(cls, s: str | None = None, /) -> MutableBits:
         if s is None:
-            return MutableBits._from_zeros(0)
+            return MutableBits.from_zeros(0)
         else:
             if not isinstance(s, str):
                 err = f"Expected a str for MutableBits constructor, but received a {type(s)}. "
@@ -1148,25 +1129,6 @@ class MutableBitsMethods:
         """
         return str_to_bits_cached(s)._clone_as_mutable()
 
-    @classmethod
-    def from_zeros(cls, n: int, /) -> MutableBits:
-        """
-        Create a new instance with all bits set to zero.
-
-        :param n: The number of bits.
-        :return: A MutableBits object with all bits set to zero.
-
-        .. code-block:: python
-
-            a = MutableBits.from_zeros(500)  # 500 zero bits
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        return MutableBits._from_zeros(n)
-
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
         raise TypeError("MutableBits objects are not iterable. "
@@ -1260,12 +1222,12 @@ class MutableBitsMethods:
                 key += len(self)
             if not 0 <= key < len(self):
                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self._set_slice(key, key + 1, Bits._from_zeros(0))
+            self._set_slice(key, key + 1, Bits.from_zeros(0))
         else:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot delete bits with a step other than 1")
-            self._set_slice(start, stop, Bits._from_zeros(0))
+            self._set_slice(start, stop, Bits.from_zeros(0))
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""

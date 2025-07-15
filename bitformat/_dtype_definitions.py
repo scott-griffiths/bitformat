@@ -186,7 +186,7 @@ def from_bits(bs: BitsType, length: None = None) -> Bits:
 
 def bits_bits2chars(bit_length: int) -> int:
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits._from_zeros(bit_length)
+    temp = Bits.from_zeros(bit_length)
     return len(temp._simple_str())
 
 

@@ -423,9 +423,24 @@ impl Bits {
         self.len()
     }
 
+    /// Create a new instance with all bits set to zero.
+    ///
+    /// :param n: The number of bits.
+    /// :return: A Bits object with all bits set to zero.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits.from_zeros(500)  # 500 zero bits
+    ///
     #[staticmethod]
-    pub fn _from_zeros(length: usize) -> Self {
-        BitCollection::from_zeros(length)
+    pub fn from_zeros(length: i64) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        Ok(BitCollection::from_zeros(length as usize))
     }
 
     #[staticmethod]
@@ -643,7 +658,7 @@ impl Bits {
     /// Return a slice of the current BitRust.
     pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         if start_bit >= end_bit {
-            return Ok(Bits::from_zeros(0));
+            return Ok(BitCollection::from_zeros(0));
         }
         assert!(start_bit < end_bit);
         if end_bit > self.len() {
@@ -672,7 +687,7 @@ impl Bits {
         }
         if step > 0 {
             if start_bit >= end_bit {
-                return Ok(Bits::from_zeros(0));
+                return Ok(BitCollection::from_zeros(0));
             }
             if end_bit as usize > self.len() {
                 return Err(PyValueError::new_err("end bit goes past the end"));
@@ -685,7 +700,7 @@ impl Bits {
             ))
         } else {
             if start_bit <= end_bit || start_bit == -1 {
-                return Ok(Bits::from_zeros(0));
+                return Ok(BitCollection::from_zeros(0));
             }
             if start_bit as usize > self.len() {
                 return Err(PyValueError::new_err("start bit goes past the end"));
@@ -804,7 +819,7 @@ impl Bits {
         }
         let len = self.len();
         if shift >= len {
-            return Ok(Self::from_zeros(len));
+            return Ok(BitCollection::from_zeros(len));
         }
         let mut result_data = helpers::BV::with_capacity(len);
         result_data.extend_from_bitslice(&self.data[shift..]);
@@ -823,7 +838,7 @@ impl Bits {
         }
         let len = self.len();
         if shift >= len {
-            return Ok(Self::from_zeros(len));
+            return Ok(BitCollection::from_zeros(len));
         }
         let mut result_data = helpers::BV::repeat(false, shift);
         result_data.extend_from_bitslice(&self.data[..len - shift]);
@@ -886,14 +901,14 @@ mod tests {
 
     #[test]
     fn from_zeros() {
-        let bits = Bits::from_zeros(8);
+        let bits = Bits::from_zeros(8).unwrap();
         assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "00");
-        let bits = Bits::from_zeros(9);
+        let bits = Bits::from_zeros(9).unwrap();
         assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
-        let bits = Bits::from_zeros(0);
+        let bits = Bits::from_zeros(0).unwrap();
         assert_eq!(bits.len(), 0);
     }
 
@@ -966,7 +981,7 @@ mod tests {
 
     #[test]
     fn test_find() {
-        let b1 = Bits::from_zeros(10);
+        let b1 = Bits::from_zeros(10).unwrap();
         let b2 = Bits::from_ones(2);
         assert_eq!(b1._find(&b2, 0, false), None);
         let b3 = Bits::from_bin("00001110").unwrap();
@@ -1040,7 +1055,7 @@ mod tests {
 
     #[test]
     fn test_set_index() {
-        let mut b = MutableBits::_from_zeros(10);
+        let mut b = MutableBits::from_zeros(10).unwrap();
         b._set_index(true, 0).unwrap();
         assert_eq!(b.to_bin(), "1000000000");
         b._set_index(true, -1).unwrap();
@@ -1242,7 +1257,7 @@ mod tests {
 
     #[test]
     fn mutable_constructors() {
-        let m1 = MutableBits::_from_zeros(4);
+        let m1 = MutableBits::from_zeros(4).unwrap();
         assert_eq!(m1.to_bin(), "0000");
 
         let m2 = MutableBits::_from_ones(4);
@@ -1305,7 +1320,7 @@ mod tests {
 
     #[test]
     fn mutable_set_operations() {
-        let mut m = MutableBits::_from_zeros(8);
+        let mut m = MutableBits::from_zeros(8).unwrap();
 
         m._set_index(true, 0).unwrap();
         m._set_index(true, 7).unwrap();
@@ -1331,22 +1346,22 @@ mod tests {
 
     #[test]
     fn empty_data_operations() {
-        let empty_mutable = MutableBits::_from_zeros(0);
-        let empty_immutable = Bits::from_zeros(0);
+        let empty_mutable = MutableBits::from_zeros(0).unwrap();
+        let empty_immutable = Bits::from_zeros(0).unwrap();
 
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());
 
         assert_eq!(empty_mutable._clone_as_immutable().len(), 0);
 
-        let mut another_empty = MutableBits::_from_zeros(0);
+        let mut another_empty = MutableBits::from_zeros(0).unwrap();
         another_empty._append(&empty_immutable);
         assert_eq!(another_empty.len(), 0);
     }
 
     #[test]
     fn large_mutable_operations() {
-        let mut large = MutableBits::_from_zeros(1000);
+        let mut large = MutableBits::from_zeros(1000).unwrap();
 
         for i in 0..1000 {
             if i % 3 == 0 {
