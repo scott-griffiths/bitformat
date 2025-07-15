@@ -93,9 +93,6 @@ impl MutableBits {
             inner: Bits::new(bv),
         }
     }
-}
-
-impl MutableBits {
     pub fn to_bin(&self) -> String {
         self.inner.to_bin()
     }
@@ -107,7 +104,7 @@ impl MutableBits {
 #[pymethods]
 impl MutableBits {
     // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
-    pub fn equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
+    pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
         if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
             return Ok(self.inner.data == other_bitrust.data);
@@ -125,7 +122,7 @@ impl MutableBits {
                 self.inner.data.len()
             )));
         }
-        let mut bytes = self.inner.slice_to_bytes(0, self.len())?;
+        let mut bytes = self.inner._slice_to_bytes(0, self.len())?;
         bytes.reverse();
         self.inner.data = helpers::BV::from_vec(bytes);
         Ok(())
@@ -139,7 +136,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn set_slice(&mut self, start: usize, end: usize, value: &Bits) -> PyResult<()> {
+    pub fn _set_slice(&mut self, start: usize, end: usize, value: &Bits) -> PyResult<()> {
         if end - start == value.len() {
             // This is an overwrite, so no need to move data around.
             return self._overwrite(start, value);
@@ -156,7 +153,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn ixor(&mut self, other: &MutableBits) -> PyResult<()> {
+    pub fn _ixor(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -165,7 +162,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn ior(&mut self, other: &MutableBits) -> PyResult<()> {
+    pub fn _ior(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -174,7 +171,7 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn iand(&mut self, other: &MutableBits) -> PyResult<()> {
+    pub fn _iand(&mut self, other: &MutableBits) -> PyResult<()> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
@@ -205,12 +202,12 @@ impl MutableBits {
     }
 
     #[staticmethod]
-    pub fn from_u64(value: u64, length: usize) -> Self {
+    pub fn _from_u64(value: u64, length: usize) -> Self {
         BitCollection::from_u64(value, length)
     }
 
     #[staticmethod]
-    pub fn from_i64(value: i64, length: usize) -> Self {
+    pub fn _from_i64(value: i64, length: usize) -> Self {
         BitCollection::from_i64(value, length)
     }
 
@@ -243,14 +240,15 @@ impl MutableBits {
     }
 
     #[staticmethod]
-    pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
+    pub fn _from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         Self {
-            inner: Bits::from_bytes_with_offset(data, offset),
+            inner: Bits::_from_bytes_with_offset(data, offset),
         }
     }
 
+    // TODO: Are these used?
     #[staticmethod]
-    pub fn from_bin_checked(binary_string: &str) -> PyResult<Self> {
+    pub fn _from_bin_checked(binary_string: &str) -> PyResult<Self> {
         match BitCollection::from_bin(binary_string) {
             Ok(bits) => Ok(bits),
             Err(e) => Err(PyValueError::new_err(e)),
@@ -258,7 +256,7 @@ impl MutableBits {
     }
 
     #[staticmethod]
-    pub fn from_hex_checked(hex: &str) -> PyResult<Self> {
+    pub fn _from_hex_checked(hex: &str) -> PyResult<Self> {
         match BitCollection::from_hex(hex) {
             Ok(bits) => Ok(bits),
             Err(e) => Err(PyValueError::new_err(e)),
@@ -266,7 +264,7 @@ impl MutableBits {
     }
 
     #[staticmethod]
-    pub fn from_oct_checked(oct: &str) -> PyResult<Self> {
+    pub fn _from_oct_checked(oct: &str) -> PyResult<Self> {
         match BitCollection::from_oct(oct) {
             Ok(bits) => Ok(bits),
             Err(e) => Err(PyValueError::new_err(e)),
@@ -284,37 +282,37 @@ impl MutableBits {
         MutableBits::new(bv)
     }
 
-    pub fn to_u64(&self, start: usize, length: usize) -> u64 {
-        self.inner.to_u64(start, length)
+    pub fn _to_u64(&self, start: usize, length: usize) -> u64 {
+        self.inner._to_u64(start, length)
     }
 
-    pub fn to_i64(&self, start: usize, length: usize) -> i64 {
-        self.inner.to_i64(start, length)
+    pub fn _to_i64(&self, start: usize, length: usize) -> i64 {
+        self.inner._to_i64(start, length)
     }
 
     pub fn __len__(&self) -> usize {
         self.inner.len()
     }
 
-    pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
-        self.inner.getindex(bit_index)
+    pub fn _getindex(&self, bit_index: i64) -> PyResult<bool> {
+        self.inner._getindex(bit_index)
     }
 
-    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
+    pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         self.inner
-            .getslice(start_bit, end_bit)
+            ._getslice(start_bit, end_bit)
             .map(|bits| MutableBits { inner: bits })
     }
 
-    pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
+    pub fn _get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
         MutableBits {
-            inner: self.inner.get_slice_unchecked(start_bit, length),
+            inner: self.inner._get_slice_unchecked(start_bit, length),
         }
     }
 
-    pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
+    pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         self.inner
-            .getslice_with_step(start_bit, end_bit, step)
+            ._getslice_with_step(start_bit, end_bit, step)
             .map(|bits| MutableBits { inner: bits })
     }
 
@@ -322,7 +320,7 @@ impl MutableBits {
         let py = key.py();
         // Handle integer indexing
         if let Ok(index) = key.extract::<i64>() {
-            let value: bool = self.getindex(index)?;
+            let value: bool = self._getindex(index)?;
             let py_value = PyBool::new(py, value);
             return Ok(py_value.to_owned().into());
         }
@@ -335,9 +333,9 @@ impl MutableBits {
             let step: i64 = indices.step.try_into().unwrap();
 
             let result = if step == 1 {
-                self.getslice(start as usize, stop as usize)?
+                self._getslice(start as usize, stop as usize)?
             } else {
-                self.getslice_with_step(start, stop, step)?
+                self._getslice_with_step(start, stop, step)?
             };
             let py_obj = Py::new(py, result)?.into_pyobject(py)?;
             return Ok(py_obj.into());
@@ -358,24 +356,24 @@ impl MutableBits {
         self.inner.to_bytes()
     }
 
-    pub fn slice_to_bin(&self, start: usize, end: usize) -> String {
-        self.inner.slice_to_bin(start, end)
+    pub fn _slice_to_bin(&self, start: usize, end: usize) -> String {
+        self.inner._slice_to_bin(start, end)
     }
 
-    pub fn slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
-        self.inner.slice_to_oct(start, end)
+    pub fn _slice_to_oct(&self, start: usize, end: usize) -> PyResult<String> {
+        self.inner._slice_to_oct(start, end)
     }
 
-    pub fn slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
-        self.inner.slice_to_hex(start, end)
+    pub fn _slice_to_hex(&self, start: usize, end: usize) -> PyResult<String> {
+        self.inner._slice_to_hex(start, end)
     }
 
-    pub fn slice_to_bytes(&self, start: usize, end: usize) -> PyResult<Vec<u8>> {
-        self.inner.slice_to_bytes(start, end)
+    pub fn _slice_to_bytes(&self, start: usize, end: usize) -> PyResult<Vec<u8>> {
+        self.inner._slice_to_bytes(start, end)
     }
 
-    pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
-        self.inner.to_int_byte_data(signed)
+    pub fn _to_int_byte_data(&self, signed: bool) -> Vec<u8> {
+        self.inner._to_int_byte_data(signed)
     }
 
     /// Return count of total number of either zero or one bits.
@@ -479,7 +477,7 @@ impl MutableBits {
         Ok(MutableBits::new(self.inner.__rshift__(n)?.data))
     }
 
-    pub fn set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
+    pub fn _set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
             let pos: usize = helpers::validate_index(idx, self.inner.len())?;
             self.inner.data.set(pos, value);
@@ -487,11 +485,11 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn set_index(&mut self, value: bool, index: i64) -> PyResult<()> {
-        self.set_from_sequence(value, vec![index])
+    pub fn _set_index(&mut self, value: bool, index: i64) -> PyResult<()> {
+        self._set_from_sequence(value, vec![index])
     }
 
-    pub fn set_from_slice(
+    pub fn _set_from_slice(
         &mut self,
         value: bool,
         start: i64,
@@ -535,17 +533,18 @@ impl MutableBits {
     }
 
     /// Return a copy with a real copy of the data.
-    pub fn clone_as_mutable(&self) -> Self {
+    pub fn _clone_as_mutable(&self) -> Self {
         MutableBits::new(self.inner.data.clone())
     }
 
     /// Convert to immutable BitRust - cloning the data.
-    pub fn clone_as_immutable(&self) -> Bits {
+    pub fn _clone_as_immutable(&self) -> Bits {
         Bits::new(self.inner.data.clone())
     }
 
+    // TODO: Should this be part of the API? Is it useful in Python?
     /// Convert to immutable BitRust - without cloning the data.
-    pub fn as_immutable(&mut self) -> Bits {
+    pub fn _as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
         Bits::new(data)
     }
@@ -569,15 +568,15 @@ impl MutableBits {
     }
 
     /// In-place left shift
-    pub fn lshift_inplace(&mut self, n: i64) -> PyResult<()> {
-        let shift = self.inner.validate_shift(n)?;
+    pub fn _lshift_inplace(&mut self, n: i64) -> PyResult<()> {
+        let shift = self.inner._validate_shift(n)?;
         self.inner.data.shift_left(shift);
         Ok(())
     }
 
     /// In-place right shift
-    pub fn rshift_inplace(&mut self, n: i64) -> PyResult<()> {
-        let shift = self.inner.validate_shift(n)?;
+    pub fn _rshift_inplace(&mut self, n: i64) -> PyResult<()> {
+        let shift = self.inner._validate_shift(n)?;
         self.inner.data.shift_right(shift);
         Ok(())
     }

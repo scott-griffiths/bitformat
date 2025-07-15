@@ -15,7 +15,7 @@
 #     b3 = BitRust.from_bytes(b'hello')
 #     assert b3.slice_to_hex(0, len(b3)) == '68656c6c6f'
 #     assert b3.to_bytes() == b'hello'
-#     b4 = b3.getslice(8, 40)
+#     b4 = b3._getslice(8, 40)
 #     assert b4.slice_to_hex(0, len(b4)) == '656c6c6f'
 #     assert b4.to_bytes() == b'ello'
 #
@@ -24,7 +24,7 @@
 #     b = BitRust.from_ones(4)
 #     c = BitRust.from_joined([a, b])
 #     assert c.slice_to_bin(0, len(c)) == '00001111'
-#     c = c.clone_as_mutable()
+#     c = c._clone_as_mutable()
 #     c.reverse()
 #     assert c.slice_to_bin(0, len(c)) == '11110000'
 #
@@ -44,5 +44,5 @@
 # def test_to_bytes():
 #     a = BitRust.from_ones(16)
 #     assert a.to_bytes() == b"\xff\xff"
-#     b = a.getslice(7, len(a))
+#     b = a._getslice(7, len(a))
 #     assert b.to_bytes() == b"\xff\x80"

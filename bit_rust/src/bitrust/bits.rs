@@ -231,7 +231,7 @@ impl fmt::Debug for Bits {
                 .debug_struct("Bits")
                 .field(
                     "hex",
-                    &self.slice(0, 100).slice_to_hex(0, self.len()).unwrap(),
+                    &self.slice(0, 100)._slice_to_hex(0, self.len()).unwrap(),
                 )
                 .field("length", &self.len())
                 .finish();
@@ -239,7 +239,7 @@ impl fmt::Debug for Bits {
         if self.len() % 4 == 0 {
             return f
                 .debug_struct("Bits")
-                .field("hex", &self.slice_to_hex(0, self.len()).unwrap())
+                .field("hex", &self._slice_to_hex(0, self.len()).unwrap())
                 .field("length", &self.len())
                 .finish();
         }
@@ -369,7 +369,7 @@ impl Bits {
     }
 
     // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
-    pub fn equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
+    pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
         if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
             return Ok(self.data == other_bitrust.data);
@@ -381,25 +381,25 @@ impl Bits {
     }
 
     #[staticmethod]
-    pub fn from_u64(value: u64, length: usize) -> Self {
+    pub fn _from_u64(value: u64, length: usize) -> Self {
         BitCollection::from_u64(value, length)
     }
 
     #[staticmethod]
-    pub fn from_i64(value: i64, length: usize) -> Self {
+    pub fn _from_i64(value: i64, length: usize) -> Self {
         BitCollection::from_i64(value, length)
     }
 
-    pub fn to_u64(&self, start: usize, length: usize) -> u64 {
+    pub fn _to_u64(&self, start: usize, length: usize) -> u64 {
         self.data[start..start + length].load_be::<u64>()
     }
 
-    pub fn to_i64(&self, start: usize, length: usize) -> i64 {
+    pub fn _to_i64(&self, start: usize, length: usize) -> i64 {
         self.data[start..start + length].load_be::<i64>()
     }
 
     #[pyo3(signature = (needle_obj, byte_aligned=false))]
-    pub fn findall(
+    pub fn _findall(
         slf: PyRef<'_, Self>,
         needle_obj: Py<Bits>,
         byte_aligned: bool,
@@ -439,7 +439,7 @@ impl Bits {
     }
 
     #[staticmethod]
-    pub fn from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
+    pub fn _from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         debug_assert!(offset < 8);
         let mut bv: helpers::BV = Self::from_bytes(data).data;
         bv.drain(..offset);
@@ -492,7 +492,7 @@ impl Bits {
     }
 
     /// Return bytes that can easily be converted to an int in Python
-    pub fn to_int_byte_data(&self, signed: bool) -> Vec<u8> {
+    pub fn _to_int_byte_data(&self, signed: bool) -> Vec<u8> {
         if self.len() == 0 {
             return Vec::new();
         }
@@ -530,7 +530,7 @@ impl Bits {
         bv.into_vec()
     }
 
-    pub fn slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
+    pub fn _slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
         if length % 8 != 0 {
             return Err(PyValueError::new_err(format!(
                 "Cannot interpret as bytes - length of {} is not a multiple of 8 bits.",
@@ -545,11 +545,11 @@ impl Bits {
         Ok(bv.into_vec())
     }
 
-    pub fn slice_to_bin(&self, start: usize, length: usize) -> String {
+    pub fn _slice_to_bin(&self, start: usize, length: usize) -> String {
         format!("{:b}", self.slice(start, length))
     }
 
-    pub fn slice_to_oct(&self, start: usize, length: usize) -> PyResult<String> {
+    pub fn _slice_to_oct(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 3 != 0 {
             return Err(PyValueError::new_err(format!(
                 "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
@@ -559,7 +559,7 @@ impl Bits {
         Ok(format!("{:o}", self.slice(start, length)))
     }
 
-    pub fn slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
+    pub fn _slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
         if length % 4 != 0 {
             return Err(PyValueError::new_err(format!(
                 "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
@@ -641,7 +641,7 @@ impl Bits {
     }
 
     /// Return a slice of the current BitRust.
-    pub fn getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
+    pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         if start_bit >= end_bit {
             return Ok(Bits::from_zeros(0));
         }
@@ -652,11 +652,11 @@ impl Bits {
         Ok(self.slice(start_bit, end_bit - start_bit))
     }
 
-    pub fn get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
+    pub fn _get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
         self.slice(start_bit, length)
     }
 
-    pub fn getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
+    pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         if step == 0 {
             return Err(PyValueError::new_err("Step cannot be zero."));
         }
@@ -734,13 +734,13 @@ impl Bits {
     }
 
     /// Return as a MutableBitRust with a copy of the data.
-    pub fn clone_as_mutable(&self) -> MutableBits {
+    pub fn _clone_as_mutable(&self) -> MutableBits {
         MutableBits {
             inner: Bits::new(self.data.clone()),
         }
     }
 
-    pub fn clone_as_immutable(&self) -> Self {
+    pub fn _clone_as_immutable(&self) -> Self {
         // TODO? We don't need to clone the data, just return the same BitRust instance.
         Bits {
             data: self.data.clone(),
@@ -748,7 +748,7 @@ impl Bits {
     }
 
     /// Returns the bool value at a given bit index.
-    pub fn getindex(&self, bit_index: i64) -> PyResult<bool> {
+    pub fn _getindex(&self, bit_index: i64) -> PyResult<bool> {
         let index = helpers::validate_index(bit_index, self.len())?;
         Ok(self.data[index])
     }
@@ -757,7 +757,7 @@ impl Bits {
         let py = key.py();
         // Handle integer indexing
         if let Ok(index) = key.extract::<i64>() {
-            let value: bool = self.getindex(index)?;
+            let value: bool = self._getindex(index)?;
             let py_value = PyBool::new(py, value);
             return Ok(py_value.to_owned().into());
         }
@@ -770,9 +770,9 @@ impl Bits {
             let step: i64 = indices.step.try_into().unwrap();
 
             let result = if step == 1 {
-                self.getslice(start as usize, stop as usize)?
+                self._getslice(start as usize, stop as usize)?
             } else {
-                self.getslice_with_step(start, stop, step)?
+                self._getslice_with_step(start, stop, step)?
             };
             let py_obj = Py::new(py, result)?.into_pyobject(py)?;
             return Ok(py_obj.into());
@@ -783,7 +783,7 @@ impl Bits {
         ))
     }
 
-    pub(crate) fn validate_shift(&self, n: i64) -> PyResult<usize> {
+    pub(crate) fn _validate_shift(&self, n: i64) -> PyResult<usize> {
         if self.len() == 0 {
             return Err(PyValueError::new_err("Cannot shift an empty Bits."));
         }
@@ -798,9 +798,9 @@ impl Bits {
     /// n -- the number of bits to shift. Must be >= 0.
     ///
     pub fn __lshift__(&self, n: i64) -> PyResult<Self> {
-        let shift = self.validate_shift(n)?;
+        let shift = self._validate_shift(n)?;
         if shift == 0 {
-            return Ok(self.clone_as_immutable());
+            return Ok(self._clone_as_immutable());
         }
         let len = self.len();
         if shift >= len {
@@ -817,9 +817,9 @@ impl Bits {
     /// n -- the number of bits to shift. Must be >= 0.
     ///
     pub fn __rshift__(&self, n: i64) -> PyResult<Self> {
-        let shift = self.validate_shift(n)?;
+        let shift = self._validate_shift(n)?;
         if shift == 0 {
-            return Ok(self.clone_as_immutable());
+            return Ok(self._clone_as_immutable());
         }
         let len = self.len();
         if shift >= len {
@@ -915,20 +915,20 @@ mod tests {
     #[test]
     fn get_index() {
         let bits = Bits::from_bin("001100").unwrap();
-        assert_eq!(bits.getindex(0).unwrap(), false);
-        assert_eq!(bits.getindex(1).unwrap(), false);
-        assert_eq!(bits.getindex(2).unwrap(), true);
-        assert_eq!(bits.getindex(3).unwrap(), true);
-        assert_eq!(bits.getindex(4).unwrap(), false);
-        assert_eq!(bits.getindex(5).unwrap(), false);
-        assert!(bits.getindex(6).is_err());
-        assert!(bits.getindex(60).is_err());
+        assert_eq!(bits._getindex(0).unwrap(), false);
+        assert_eq!(bits._getindex(1).unwrap(), false);
+        assert_eq!(bits._getindex(2).unwrap(), true);
+        assert_eq!(bits._getindex(3).unwrap(), true);
+        assert_eq!(bits._getindex(4).unwrap(), false);
+        assert_eq!(bits._getindex(5).unwrap(), false);
+        assert!(bits._getindex(6).is_err());
+        assert!(bits._getindex(60).is_err());
     }
 
     #[test]
     fn hex_edge_cases() {
         let b1 = Bits::from_hex("0123456789abcdef").unwrap();
-        let b2 = b1.getslice(12, b1.len()).unwrap();
+        let b2 = b1._getslice(12, b1.len()).unwrap();
         assert_eq!(b2.to_hex(), "3456789abcdef");
         assert_eq!(b2.len(), 52);
         let t = Bits::from_hex("123").unwrap();
@@ -937,30 +937,30 @@ mod tests {
 
     #[test]
     fn test_reverse() {
-        let mut b = MutableBits::from_bin_checked("11110000").unwrap();
+        let mut b = MutableBits::_from_bin_checked("11110000").unwrap();
         b._reverse();
         assert_eq!(b.to_bin(), "00001111");
-        let mut b = MutableBits::from_bin_checked("1").unwrap();
+        let mut b = MutableBits::_from_bin_checked("1").unwrap();
         b._reverse();
         assert_eq!(b.to_bin(), "1");
-        let mut empty = MutableBits::from_bin_checked("").unwrap();
+        let mut empty = MutableBits::_from_bin_checked("").unwrap();
         empty._reverse();
         assert_eq!(empty.to_bin(), "");
-        let mut b = MutableBits::from_bin_checked("11001").unwrap();
+        let mut b = MutableBits::_from_bin_checked("11001").unwrap();
         b._reverse();
         assert_eq!(b.to_bin(), "10011");
     }
 
     #[test]
     fn test_invert() {
-        let mut b = MutableBits::from_bin_checked("0").unwrap();
+        let mut b = MutableBits::_from_bin_checked("0").unwrap();
         b._invert_all();
         assert_eq!(b.to_bin(), "1");
-        let mut b = MutableBits::from_bin_checked("01110").unwrap();
+        let mut b = MutableBits::_from_bin_checked("01110").unwrap();
         b._invert_all();
         assert_eq!(b.to_bin(), "10001");
         let hex_str = "abcdef8716258765162548716258176253172635712654714";
-        let mut long = MutableBits::from_hex_checked(hex_str).unwrap();
+        let mut long = MutableBits::_from_hex_checked(hex_str).unwrap();
         long._invert_all();
     }
 
@@ -1007,9 +1007,9 @@ mod tests {
 
     #[test]
     fn test_set_mutable_slice() {
-        let mut a = MutableBits::from_hex_checked("0011223344").unwrap();
+        let mut a = MutableBits::_from_hex_checked("0011223344").unwrap();
         let b = Bits::from_hex("ff").unwrap();
-        a.set_slice(8, 16, &b).unwrap();
+        a._set_slice(8, 16, &b).unwrap();
         assert_eq!(a.to_hex(), "00ff223344");
     }
 
@@ -1017,17 +1017,17 @@ mod tests {
     fn test_get_mutable_slice() {
         let a = Bits::from_hex("01ffff").unwrap();
         assert_eq!(a.len(), 24);
-        let b = a.getslice(1, a.len()).unwrap();
+        let b = a._getslice(1, a.len()).unwrap();
         assert_eq!(b.len(), 23);
-        let c = b.clone_as_mutable();
+        let c = b._clone_as_mutable();
         assert_eq!(c.len(), 23);
     }
 
     #[test]
     fn test_getslice() {
         let a = Bits::from_bin("00010001").unwrap();
-        assert_eq!(a.getslice(0, 4).unwrap().to_bin(), "0001");
-        assert_eq!(a.getslice(4, 8).unwrap().to_bin(), "0001");
+        assert_eq!(a._getslice(0, 4).unwrap().to_bin(), "0001");
+        assert_eq!(a._getslice(4, 8).unwrap().to_bin(), "0001");
     }
 
     #[test]
@@ -1041,11 +1041,11 @@ mod tests {
     #[test]
     fn test_set_index() {
         let mut b = MutableBits::_from_zeros(10);
-        b.set_index(true, 0).unwrap();
+        b._set_index(true, 0).unwrap();
         assert_eq!(b.to_bin(), "1000000000");
-        b.set_index(true, -1).unwrap();
+        b._set_index(true, -1).unwrap();
         assert_eq!(b.to_bin(), "1000000001");
-        b.set_index(false, 0).unwrap();
+        b._set_index(false, 0).unwrap();
         assert_eq!(b.to_bin(), "0000000001");
     }
 
@@ -1053,7 +1053,7 @@ mod tests {
     fn test_to_bytes_from_slice() {
         let a = Bits::from_ones(16);
         assert_eq!(a.to_bytes(), vec![255, 255]);
-        let b = a.getslice(7, a.len()).unwrap();
+        let b = a._getslice(7, a.len()).unwrap();
         assert_eq!(b.to_bin(), "111111111");
         assert_eq!(b.to_bytes(), vec![255, 128]);
     }
@@ -1061,13 +1061,13 @@ mod tests {
     #[test]
     fn test_to_int_byte_data() {
         let a = Bits::from_bin("111111111").unwrap();
-        let b = a.to_int_byte_data(false);
+        let b = a._to_int_byte_data(false);
         assert_eq!(b, vec![1, 255]);
-        let c = a.to_int_byte_data(true);
+        let c = a._to_int_byte_data(true);
         assert_eq!(c, vec![255, 255]);
         let s = a.slice(5, 3);
-        assert_eq!(s.to_int_byte_data(false), vec![7]);
-        assert_eq!(s.to_int_byte_data(true), vec![255]);
+        assert_eq!(s._to_int_byte_data(false), vec![7]);
+        assert_eq!(s._to_int_byte_data(true), vec![255]);
     }
 
     #[test]
@@ -1093,16 +1093,16 @@ mod tests {
     #[test]
     fn test_to_oct() {
         let bits = Bits::from_bin("001010011").unwrap();
-        assert_eq!(bits.slice_to_oct(0, bits.len()).unwrap(), "123");
+        assert_eq!(bits._slice_to_oct(0, bits.len()).unwrap(), "123");
         let bits = Bits::from_bin("111").unwrap();
-        assert_eq!(bits.slice_to_oct(0, 3).unwrap(), "7");
+        assert_eq!(bits._slice_to_oct(0, 3).unwrap(), "7");
         let bits = Bits::from_bin("000").unwrap();
-        assert_eq!(bits.slice_to_oct(0, 3).unwrap(), "0");
+        assert_eq!(bits._slice_to_oct(0, 3).unwrap(), "0");
     }
 
     #[test]
     fn test_invert_bit_list() {
-        let mut bits = MutableBits::from_bin_checked("0000").unwrap();
+        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
         bits._invert_bit_list(vec![0, 2]).unwrap();
         assert_eq!(bits.to_bin(), "1010");
         bits._invert_bit_list(vec![-1, -3]).unwrap();
@@ -1113,21 +1113,21 @@ mod tests {
 
     #[test]
     fn test_set_from_slice() {
-        let mut bits = MutableBits::from_bin_checked("00000000").unwrap();
-        bits.set_from_slice(true, 1, 7, 2).unwrap();
+        let mut bits = MutableBits::_from_bin_checked("00000000").unwrap();
+        bits._set_from_slice(true, 1, 7, 2).unwrap();
         assert_eq!(bits.to_bin(), "01010100");
-        bits.set_from_slice(true, -7, -1, 2).unwrap();
+        bits._set_from_slice(true, -7, -1, 2).unwrap();
         assert_eq!(bits.to_bin(), "01010100");
-        bits.set_from_slice(false, 1, 7, 2).unwrap();
+        bits._set_from_slice(false, 1, 7, 2).unwrap();
         assert_eq!(bits.to_bin(), "00000000");
     }
 
     #[test]
     fn test_invert_all() {
-        let mut bits = MutableBits::from_bin_checked("0000").unwrap();
+        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
         bits._invert_all();
         assert_eq!(bits.to_bin(), "1111");
-        let mut bits = MutableBits::from_bin_checked("1010").unwrap();
+        let mut bits = MutableBits::_from_bin_checked("1010").unwrap();
         bits._invert_all();
         assert_eq!(bits.to_bin(), "0101");
     }
@@ -1142,7 +1142,7 @@ mod tests {
 
     #[test]
     fn test_invert_single_bit() {
-        let mut bits = MutableBits::from_bin_checked("0000").unwrap();
+        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
         bits._invert_single_bit(1).unwrap();
         assert_eq!(bits.to_bin(), "0100");
         bits._invert_single_bit(-1).unwrap();
@@ -1175,9 +1175,9 @@ mod tests {
 
     #[test]
     fn test_from_bytes_with_offset() {
-        let bits = Bits::from_bytes_with_offset(vec![0b11110000], 4);
+        let bits = Bits::_from_bytes_with_offset(vec![0b11110000], 4);
         assert_eq!(bits.to_bin(), "0000");
-        let bits = Bits::from_bytes_with_offset(vec![0b11110000, 0b00001111], 4);
+        let bits = Bits::_from_bytes_with_offset(vec![0b11110000, 0b00001111], 4);
         assert_eq!(bits.to_bin(), "000000001111");
     }
 
@@ -1201,19 +1201,19 @@ mod tests {
     #[test]
     fn test_getslice_withstep() {
         let bits = Bits::from_bin("11001100").unwrap();
-        let slice = bits.getslice_with_step(0, 8, 2).unwrap();
+        let slice = bits._getslice_with_step(0, 8, 2).unwrap();
         assert_eq!(slice.to_bin(), "1010");
-        let slice = bits.getslice_with_step(7, -1, -2).unwrap();
+        let slice = bits._getslice_with_step(7, -1, -2).unwrap();
         assert_eq!(slice.to_bin(), "0101");
-        let slice = bits.getslice_with_step(0, 8, 1).unwrap();
+        let slice = bits._getslice_with_step(0, 8, 1).unwrap();
         assert_eq!(slice.to_bin(), "11001100");
-        let slice = bits.getslice_with_step(7, -1, -1).unwrap();
+        let slice = bits._getslice_with_step(7, -1, -1).unwrap();
         assert_eq!(slice.to_bin(), "00110011");
-        let slice = bits.getslice_with_step(0, 8, 8).unwrap();
+        let slice = bits._getslice_with_step(0, 8, 8).unwrap();
         assert_eq!(slice.to_bin(), "1");
-        let slice = bits.getslice_with_step(0, 8, -8).unwrap();
+        let slice = bits._getslice_with_step(0, 8, -8).unwrap();
         assert_eq!(slice.to_bin(), "");
-        let slice = bits.getslice_with_step(0, 8, 3).unwrap();
+        let slice = bits._getslice_with_step(0, 8, 3).unwrap();
         assert_eq!(slice.to_bin(), "100");
     }
 
@@ -1226,17 +1226,17 @@ mod tests {
 
     #[test]
     fn freeze_preserves_data() {
-        let mutable = MutableBits::from_bin_checked("1100").unwrap();
-        let immutable = mutable.clone_as_immutable();
+        let mutable = MutableBits::_from_bin_checked("1100").unwrap();
+        let immutable = mutable._clone_as_immutable();
         assert_eq!(immutable.to_bin(), "1100");
     }
 
     #[test]
     fn modify_then_freeze() {
-        let mut mutable = MutableBits::from_bin_checked("0000").unwrap();
-        mutable.set_index(true, 1).unwrap();
-        mutable.set_index(true, 2).unwrap();
-        let immutable = mutable.clone_as_immutable();
+        let mut mutable = MutableBits::_from_bin_checked("0000").unwrap();
+        mutable._set_index(true, 1).unwrap();
+        mutable._set_index(true, 2).unwrap();
+        let immutable = mutable._clone_as_immutable();
         assert_eq!(immutable.to_bin(), "0110");
     }
 
@@ -1248,21 +1248,21 @@ mod tests {
         let m2 = MutableBits::_from_ones(4);
         assert_eq!(m2.to_bin(), "1111");
 
-        let m3 = MutableBits::from_bin_checked("1010").unwrap();
+        let m3 = MutableBits::_from_bin_checked("1010").unwrap();
         assert_eq!(m3.to_bin(), "1010");
 
-        let m4 = MutableBits::from_hex_checked("a").unwrap();
+        let m4 = MutableBits::_from_hex_checked("a").unwrap();
         assert_eq!(m4.to_bin(), "1010");
 
-        let m5 = MutableBits::from_oct_checked("12").unwrap();
+        let m5 = MutableBits::_from_oct_checked("12").unwrap();
         assert_eq!(m5.to_bin(), "001010");
     }
 
     #[test]
     fn mutable_equality() {
-        let m1 = MutableBits::from_bin_checked("1100").unwrap();
-        let m2 = MutableBits::from_bin_checked("1100").unwrap();
-        let m3 = MutableBits::from_bin_checked("0011").unwrap();
+        let m1 = MutableBits::_from_bin_checked("1100").unwrap();
+        let m2 = MutableBits::_from_bin_checked("1100").unwrap();
+        let m3 = MutableBits::_from_bin_checked("0011").unwrap();
 
         assert!(m1 == m2);
         assert!(m1 != m3);
@@ -1270,7 +1270,7 @@ mod tests {
 
     #[test]
     fn mutable_operations() {
-        let mut m = MutableBits::from_bin_checked("1100").unwrap();
+        let mut m = MutableBits::_from_bin_checked("1100").unwrap();
         m._reverse();
         assert_eq!(m.to_bin(), "0011");
 
@@ -1284,18 +1284,18 @@ mod tests {
 
     #[test]
     fn mutable_getslice() {
-        let m = MutableBits::from_bin_checked("11001010").unwrap();
+        let m = MutableBits::_from_bin_checked("11001010").unwrap();
 
-        let slice1 = m.getslice(2, 6).unwrap();
+        let slice1 = m._getslice(2, 6).unwrap();
         assert_eq!(slice1.to_bin(), "0010");
 
-        let slice2 = m.getslice_with_step(0, 8, 2).unwrap();
+        let slice2 = m._getslice_with_step(0, 8, 2).unwrap();
         assert_eq!(slice2.to_bin(), "1011");
     }
 
     #[test]
     fn mutable_find_operations() {
-        let haystack = MutableBits::from_bin_checked("00110011").unwrap();
+        let haystack = MutableBits::_from_bin_checked("00110011").unwrap();
         let needle = Bits::from_bin("11").unwrap();
 
         assert_eq!(haystack._find(&needle, 0, false), Some(2));
@@ -1307,25 +1307,25 @@ mod tests {
     fn mutable_set_operations() {
         let mut m = MutableBits::_from_zeros(8);
 
-        m.set_index(true, 0).unwrap();
-        m.set_index(true, 7).unwrap();
+        m._set_index(true, 0).unwrap();
+        m._set_index(true, 7).unwrap();
         assert_eq!(m.to_bin(), "10000001");
 
-        m.set_from_slice(true, 2, 6, 1).unwrap();
+        m._set_from_slice(true, 2, 6, 1).unwrap();
         assert_eq!(m.to_bin(), "10111101");
 
-        m.set_from_sequence(false, vec![0, 3, 7]).unwrap();
+        m._set_from_sequence(false, vec![0, 3, 7]).unwrap();
         assert_eq!(m.to_bin(), "00101100");
     }
 
     #[test]
     fn mutable_immutable_interaction() {
-        let pattern1 = MutableBits::from_bin_checked("1100").unwrap();
+        let pattern1 = MutableBits::_from_bin_checked("1100").unwrap();
         let pattern2 = Bits::from_bin("0011").unwrap();
 
         let mut m = MutableBits::new(pattern1.inner.data);
 
-        m.set_slice(0, 2, &pattern2).unwrap();
+        m._set_slice(0, 2, &pattern2).unwrap();
         assert_eq!(m.to_bin(), "001100");
     }
 
@@ -1337,7 +1337,7 @@ mod tests {
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());
 
-        assert_eq!(empty_mutable.clone_as_immutable().len(), 0);
+        assert_eq!(empty_mutable._clone_as_immutable().len(), 0);
 
         let mut another_empty = MutableBits::_from_zeros(0);
         another_empty._append(&empty_immutable);
@@ -1350,7 +1350,7 @@ mod tests {
 
         for i in 0..1000 {
             if i % 3 == 0 {
-                large.set_index(true, i as i64).unwrap();
+                large._set_index(true, i as i64).unwrap();
             }
         }
 
@@ -1359,32 +1359,32 @@ mod tests {
 
     #[test]
     fn mutable_edge_index_operations() {
-        let mut m = MutableBits::from_bin_checked("1010").unwrap();
+        let mut m = MutableBits::_from_bin_checked("1010").unwrap();
 
-        m.set_index(false, 0).unwrap();
-        m.set_index(false, 3).unwrap();
+        m._set_index(false, 0).unwrap();
+        m._set_index(false, 3).unwrap();
         assert_eq!(m.to_bin(), "0010");
 
-        m.set_index(true, -1).unwrap();
-        m.set_index(true, -4).unwrap();
+        m._set_index(true, -1).unwrap();
+        m._set_index(true, -4).unwrap();
         assert_eq!(m.to_bin(), "1011");
 
-        assert!(m.set_index(true, 4).is_err());
-        assert!(m.set_index(true, -5).is_err());
+        assert!(m._set_index(true, 4).is_err());
+        assert!(m._set_index(true, -5).is_err());
     }
 
     #[test]
     fn set_mutable_slice_with_bit_rust() {
-        let mut m = MutableBits::from_bin_checked("00000000").unwrap();
+        let mut m = MutableBits::_from_bin_checked("00000000").unwrap();
         let pattern = Bits::from_bin("1111").unwrap();
 
-        m.set_slice(2, 6, &pattern).unwrap();
+        m._set_slice(2, 6, &pattern).unwrap();
         assert_eq!(m.to_bin(), "00111100");
 
-        m.set_slice(0, 2, &pattern).unwrap();
+        m._set_slice(0, 2, &pattern).unwrap();
         assert_eq!(m.to_bin(), "1111111100");
 
-        m.set_slice(6, 8, &pattern).unwrap();
+        m._set_slice(6, 8, &pattern).unwrap();
         assert_eq!(m.to_bin(), "111111111100");
     }
 
@@ -1392,9 +1392,9 @@ mod tests {
     fn conversion_round_trip() {
         let original = Bits::from_bin("101010").unwrap();
         let mut mutable = MutableBits::new(original.data);
-        mutable.set_index(false, 0).unwrap();
-        mutable.set_index(true, 1).unwrap();
-        let result = mutable.as_immutable();
+        mutable._set_index(false, 0).unwrap();
+        mutable._set_index(true, 1).unwrap();
+        let result = mutable._as_immutable();
 
         assert_eq!(result.to_bin(), "011010");
     }
@@ -1412,41 +1412,41 @@ mod tests {
 
     #[test]
     fn mutable_from_checked_constructors() {
-        let bin = MutableBits::from_bin_checked("1010").unwrap();
+        let bin = MutableBits::_from_bin_checked("1010").unwrap();
         assert_eq!(bin.to_bin(), "1010");
 
-        let hex = MutableBits::from_hex_checked("a").unwrap();
+        let hex = MutableBits::_from_hex_checked("a").unwrap();
         assert_eq!(hex.to_bin(), "1010");
 
-        let oct = MutableBits::from_oct_checked("12").unwrap();
+        let oct = MutableBits::_from_oct_checked("12").unwrap();
         assert_eq!(oct.to_bin(), "001010");
 
-        assert!(MutableBits::from_bin_checked("123").is_err());
-        assert!(MutableBits::from_hex_checked("xy").is_err());
-        assert!(MutableBits::from_oct_checked("89").is_err());
+        assert!(MutableBits::_from_bin_checked("123").is_err());
+        assert!(MutableBits::_from_hex_checked("xy").is_err());
+        assert!(MutableBits::_from_oct_checked("89").is_err());
     }
 
     #[test]
     fn negative_indexing_in_mutable() {
-        let mut m = MutableBits::from_bin_checked("10101010").unwrap();
+        let mut m = MutableBits::_from_bin_checked("10101010").unwrap();
         m._invert_single_bit(-2).unwrap();
         assert_eq!(m.to_bin(), "10101000");
 
-        assert_eq!(m.getindex(-3).unwrap(), false);
-        assert_eq!(m.getindex(-8).unwrap(), true);
-        assert!(m.getindex(-9).is_err());
+        assert_eq!(m._getindex(-3).unwrap(), false);
+        assert_eq!(m._getindex(-8).unwrap(), true);
+        assert!(m._getindex(-9).is_err());
     }
 
     #[test]
     fn mutable_getslice_edge_cases() {
-        let m = MutableBits::from_bin_checked("11001010").unwrap();
+        let m = MutableBits::_from_bin_checked("11001010").unwrap();
 
-        let empty = m.getslice(4, 4).unwrap();
+        let empty = m._getslice(4, 4).unwrap();
         assert_eq!(empty.to_bin(), "");
 
-        let full = m.getslice(0, m.len()).unwrap();
+        let full = m._getslice(0, m.len()).unwrap();
         assert_eq!(full.to_bin(), "11001010");
 
-        assert!(m.getslice(9, 10).is_err());
+        assert!(m._getslice(9, 10).is_err());
     }
 }

@@ -183,14 +183,14 @@ this is a step to using the Rust classes as the base classes."""
         # Yield all the full chunks in a tight loop
         start = 0
         for _ in range(full_chunks_to_yield):
-            yield self.get_slice_unchecked(start, chunk_size)
+            yield self._get_slice_unchecked(start, chunk_size)
             start += chunk_size
 
         # Now, determine if there's one more chunk to yield.
         # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
         chunks_yielded = full_chunks_to_yield
         if (count is None or chunks_yielded < count) and start < length:
-            yield self.get_slice_unchecked(start, length - start)
+            yield self._get_slice_unchecked(start, length - start)
 
     def ends_with(self, suffix: BitsType, /) -> bool:
         """
@@ -209,7 +209,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         suffix = Bits._from_any(suffix)
         if len(suffix) <= len(self):
-            return self.getslice(len(self) - len(suffix), len(self)).equals(suffix)
+            return self._getslice(len(self) - len(suffix), len(self))._equals(suffix)
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -371,7 +371,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         prefix = Bits._from_any(prefix)
         if len(prefix) <= len(self):
-            return self.getslice(0, len(prefix)).equals(prefix)
+            return self._getslice(0, len(prefix))._equals(prefix)
         return False
 
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
@@ -569,13 +569,13 @@ this is a step to using the Rust classes as the base classes."""
         """
         try:
             # We try to direct comparison first for efficiency reasons.
-            return self.equals(bs)
+            return self._equals(bs)
         except TypeError:  # bs wasn't a Bits or MutableBits
             try:
                 other = Bits._from_any(bs)
             except TypeError:
                 return False
-            return self.equals(other)
+            return self._equals(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.
@@ -609,9 +609,9 @@ this is a step to using the Rust classes as the base classes."""
         if isinstance(self, Bits):
             for _ in range(n):
                 mutable.append(self)
-            return mutable.as_immutable()
+            return mutable._as_immutable()
         else:
-            b = self.clone_as_immutable()
+            b = self._clone_as_immutable()
             for _ in range(n):
                 mutable.append(b)
             return mutable
@@ -621,7 +621,7 @@ this is a step to using the Rust classes as the base classes."""
         bs = MutableBits._from_any(bs)
         bs.append(self)
         if isinstance(self, Bits):
-            x = bs.as_immutable()
+            x = bs._as_immutable()
         else:
             x = bs
         return x
@@ -854,7 +854,7 @@ class BitsMethods:
         if isinstance(any_, Bits):
             return any_
         if isinstance(any_, MutableBits):
-            return any_.clone_as_immutable()
+            return any_._clone_as_immutable()
         if isinstance(any_, str):
             return str_to_bits_cached(any_)
         if isinstance(any_, (bytes, bytearray, memoryview)):
@@ -905,7 +905,7 @@ class BitsMethods:
         bs = Bits._from_any(bs)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         c = 0
-        for i in self.findall(bs, ba):
+        for i in self._findall(bs, ba):
             if count is not None and c >= count:
                 return
             c += 1
@@ -915,9 +915,9 @@ class BitsMethods:
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = Bits._from_any(bs)
-        x = self.clone_as_mutable()
+        x = self._clone_as_mutable()
         x.append(bs)
-        x = x.as_immutable()
+        x = x._as_immutable()
         return x
 
     def __hash__(self) -> int:
@@ -932,8 +932,8 @@ class BitsMethods:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            start = self.get_slice_unchecked(0, 800)
-            end = self.get_slice_unchecked(length - 800, 800)
+            start = self._get_slice_unchecked(0, 800)
+            end = self._get_slice_unchecked(length - 800, 800)
             return hash(((start + end).to_bytes(), length))
 
     def __setitem__(self, key, value):
@@ -968,7 +968,7 @@ class BitsMethods:
 
     def to_mutable_bits(self) -> MutableBits:
         """Create and return a mutable copy of the Bits as a MutableBits instance."""
-        return self.clone_as_mutable()
+        return self._clone_as_mutable()
 
 
 class MutableBitsMethods:
@@ -1010,7 +1010,7 @@ class MutableBitsMethods:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bits_cached(s).clone_as_mutable()
+            return str_to_bits_cached(s)._clone_as_mutable()
 
     @classmethod
     def from_bytes(cls, b: bytes, /) -> MutableBits:
@@ -1097,7 +1097,7 @@ class MutableBitsMethods:
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         # TODO: clone here shouldn't be needed.
-        return xt.clone_as_mutable()
+        return xt._clone_as_mutable()
 
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
@@ -1146,7 +1146,7 @@ class MutableBitsMethods:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        return str_to_bits_cached(s).clone_as_mutable()
+        return str_to_bits_cached(s)._clone_as_mutable()
 
     @classmethod
     def from_zeros(cls, n: int, /) -> MutableBits:
@@ -1175,7 +1175,7 @@ class MutableBitsMethods:
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
         bs = Bits._from_any(bs)
-        x = self.clone_as_mutable()
+        x = self._clone_as_mutable()
         x.append(bs)
         return x
 
@@ -1201,7 +1201,7 @@ class MutableBitsMethods:
             '110000'
 
         """
-        self.lshift_inplace(n)
+        self._lshift_inplace(n)
         return self
 
     def __irshift__(self, n: int, /) -> MutableBits:
@@ -1220,7 +1220,7 @@ class MutableBitsMethods:
             '000011'
 
         """
-        self.rshift_inplace(n)
+        self._rshift_inplace(n)
         return self
 
 
@@ -1246,13 +1246,13 @@ class MutableBitsMethods:
                 key += len(self)
             if not 0 <= key < len(self):
                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self.set_index(bool(value), key)
+            self._set_index(bool(value), key)
         else:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot set bits with a step other than 1")
             bs = Bits._from_any(value)
-            self.set_slice(start, stop, bs)
+            self._set_slice(start, stop, bs)
 
     def __delitem__(self, key: int | slice) -> None:
         if isinstance(key, numbers.Integral):
@@ -1260,12 +1260,12 @@ class MutableBitsMethods:
                 key += len(self)
             if not 0 <= key < len(self):
                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self.set_slice(key, key + 1, Bits._from_zeros(0))
+            self._set_slice(key, key + 1, Bits._from_zeros(0))
         else:
             start, stop, step = key.indices(len(self))
             if step != 1:
                 raise ValueError("Cannot delete bits with a step other than 1")
-            self.set_slice(start, stop, Bits._from_zeros(0))
+            self._set_slice(start, stop, Bits._from_zeros(0))
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
@@ -1291,7 +1291,7 @@ class MutableBitsMethods:
         Used internally only.
         """
         if isinstance(any_, (Bits, MutableBits)):
-            return any_.clone_as_mutable()
+            return any_._clone_as_mutable()
         if isinstance(any_, str):
             return str_to_mutablebits(any_)
         if isinstance(any_, (bytes, bytearray, memoryview)):
@@ -1300,16 +1300,16 @@ class MutableBitsMethods:
 
     def to_bits(self) -> Bits:
         """Create and return an immutable copy of the MutableBits as Bits instance."""
-        return self.clone_as_immutable()
+        return self._clone_as_immutable()
 
     def __copy__(self: MutableBits) -> MutableBits:
         """Return a new copy of the MutableBits for the copy module.
         """
-        return self.clone_as_mutable()
+        return self._clone_as_mutable()
 
     def _slice(self: MutableBits, start: int, length: int) -> MutableBits:
         """Used internally to get a slice, without error checking. A copy of the data is made."""
-        return self.get_slice_unchecked(start, length)
+        return self._get_slice_unchecked(start, length)
 
     def append(self, bs: BitsType, /) -> MutableBits:
         """Append bits to the end of the current MutableBits in-place.
@@ -1450,11 +1450,11 @@ class MutableBitsMethods:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = _validate_slice(len(self), start, end)
         n %= end - start
-        bs = self.as_immutable()
-        new_bs = MutableBits.from_joined([bs.getslice(0, start),
-                                      bs.getslice(start + n, end),
-                                      bs.getslice(start, start + n),
-                                      bs.getslice(end, len(bs))])
+        bs = self._as_immutable()
+        new_bs = MutableBits.from_joined([bs._getslice(0, start),
+                                      bs._getslice(start + n, end),
+                                      bs._getslice(start, start + n),
+                                      bs._getslice(end, len(bs))])
         self[:] = new_bs
         return self
 
@@ -1481,11 +1481,11 @@ class MutableBitsMethods:
             raise ValueError("Cannot rotate by negative amount.")
         start, end = _validate_slice(len(self), start, end)
         n %= end - start
-        bs = self.as_immutable()
-        new_bs = MutableBits.from_joined([bs.getslice(0, start),
-                                      bs.getslice(end - n, end),
-                                      bs.getslice(start, end - n),
-                                      bs.getslice(end, len(bs))])
+        bs = self._as_immutable()
+        new_bs = MutableBits.from_joined([bs._getslice(0, start),
+                                      bs._getslice(end - n, end),
+                                      bs._getslice(start, end - n),
+                                      bs._getslice(end, len(bs))])
         self[:] = new_bs
         return self
 
@@ -1511,11 +1511,11 @@ class MutableBitsMethods:
         """
         v = True if value else False
         if not isinstance(pos, Sequence):
-            self.set_index(v, pos)
+            self._set_index(v, pos)
         elif isinstance(pos, range):
-            self.set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
+            self._set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
         else:
-            self.set_from_sequence(v, pos)
+            self._set_from_sequence(v, pos)
         return self
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
@@ -1563,14 +1563,14 @@ class MutableBitsMethods:
                 break
         if not starting_points:
             return self
-        original = self.clone_as_immutable()
-        replacement_list = [original.getslice(0, starting_points[0])]
+        original = self._clone_as_immutable()
+        replacement_list = [original._getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new_bits)
-            replacement_list.append(original.getslice(starting_points[i] + len(old_bits), starting_points[i + 1]))
+            replacement_list.append(original._getslice(starting_points[i] + len(old_bits), starting_points[i + 1]))
         # Final replacement
         replacement_list.append(new_bits)
-        replacement_list.append(original.getslice(starting_points[-1] + len(old_bits), len(original)))
+        replacement_list.append(original._getslice(starting_points[-1] + len(old_bits), len(original)))
         self[:] = MutableBits.from_joined(replacement_list)
         return self
 

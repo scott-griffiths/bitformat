@@ -59,7 +59,7 @@ class TestCreation:
     #     assert a[0] == float('inf')
     #     assert a[1] == 0.0
     #     b = Array('p4binary', [100000, -0.0])
-    #     assert a.equals(b)
+    #     assert a._equals(b)
 
     def test_creation_from_multiple(self):
         with pytest.raises(ValueError):

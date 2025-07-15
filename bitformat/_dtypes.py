@@ -331,9 +331,9 @@ class DtypeSingle(Dtype):
         if little_endian:
             def get_fn_le(bits, start, length):
                 # TODO: Should take slice here
-                mutable_b = bits.clone_as_mutable()
+                mutable_b = bits._clone_as_mutable()
                 mutable_b.byte_swap()
-                return definition.get_fn(mutable_b.clone_as_immutable(), start, length)
+                return definition.get_fn(mutable_b._clone_as_immutable(), start, length)
             x._get_fn = get_fn_le
         else:
             x._get_fn = definition.get_fn
@@ -345,9 +345,9 @@ class DtypeSingle(Dtype):
 
         def create_bits_le(v):
             bs = x._set_fn(v, length=x._bit_length)
-            mutable = bs.clone_as_mutable()  # TODO: Do we really need to clone here?
+            mutable = bs._clone_as_mutable()  # TODO: Do we really need to clone here?
             mutable.byte_swap()
-            return mutable.as_immutable()
+            return mutable._as_immutable()
         x._create_fn = create_bits_le if little_endian else create_bits
         return x
 
@@ -898,16 +898,16 @@ class Register:
             def fget_le_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                mutable_b = b.clone_as_mutable()
+                mutable_b = b._clone_as_mutable()
                 mutable_b.byte_swap()
-                return definition.get_fn(mutable_b.clone_as_immutable(), 0, len(b))
+                return definition.get_fn(mutable_b._clone_as_immutable(), 0, len(b))
 
             def fget_le_mutable_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                c = b.clone_as_mutable()
+                c = b._clone_as_mutable()
                 c.byte_swap()
-                return definition.get_fn(c.as_immutable(), 0, len(b))
+                return definition.get_fn(c._as_immutable(), 0, len(b))
 
             fget_ne_bits = fget_le_bits if byteorder == "little" else fget_be
             fget_ne_mutable_bits = fget_le_mutable_bits if byteorder == "little" else fget_be

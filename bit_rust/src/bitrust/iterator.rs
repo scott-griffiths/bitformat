@@ -18,7 +18,7 @@ impl BitRustBoolIterator {
     fn __next__(&mut self, py: Python<'_>) -> PyResult<Option<bool>> {
         if self.index < self.length {
             let bits = self.bits.borrow(py);
-            let result = bits.getindex(self.index as i64);
+            let result = bits._getindex(self.index as i64);
             self.index += 1;
             result.map(Some)
         } else {

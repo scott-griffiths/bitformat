@@ -20,11 +20,11 @@ def to_u(bs: Bits, start: int, length: int) -> int:
     if length == 0:
         raise ValueError("Cannot interpret empty Bits as an integer.")
     if length <= 64:
-        return bs.to_u64(start, length)
+        return bs._to_u64(start, length)
     else:
         # Longer stores are unlikely in practice - this method is slower.
-        bs = bs.getslice(start, start + length)
-        return int.from_bytes(bs.to_int_byte_data(False), byteorder="big", signed=False)
+        bs = bs._getslice(start, start + length)
+        return int.from_bytes(bs._to_int_byte_data(False), byteorder="big", signed=False)
 
 def from_u(u: int, length: int) -> Bits:
     if length == 0:
@@ -36,14 +36,14 @@ def from_u(u: int, length: int) -> Bits:
         raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
                          f"The allowed range is[0, {(1 << length) - 1}].")
     if length <= 64:
-        return Bits.from_u64(u, length)
+        return Bits._from_u64(u, length)
     else:
         b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
         offset = 8 - (length % 8)
         if offset == 8:
             return Bits._from_bytes(b)
         else:
-            return Bits.from_bytes_with_offset(b, offset=offset)
+            return Bits._from_bytes_with_offset(b, offset=offset)
 
 def u_bits2chars(bit_length: int) -> int:
     # How many characters is largest possible int of this length?
@@ -59,11 +59,11 @@ def to_i(bs: Bits, start: int, length: int) -> int:
     if length == 0:
         raise ValueError("Cannot interpret empty Bits as an integer.")
     if length <= 64:
-        return bs.to_i64(start, length)
+        return bs._to_i64(start, length)
     else:
         # Longer store are unlikely in practice - this method is slower.
-        bs = bs.getslice(start, start + length)
-        return int.from_bytes(bs.to_int_byte_data(True), byteorder="big", signed=True)
+        bs = bs._getslice(start, start + length)
+        return int.from_bytes(bs._to_int_byte_data(True), byteorder="big", signed=True)
 
 def from_i(i: int, length: int) -> Bits:
     if length == 0:
@@ -74,14 +74,14 @@ def from_i(i: int, length: int) -> Bits:
                          f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
     if length < 64:
         # Faster method for shorter lengths.
-        return Bits.from_i64(i, length)
+        return Bits._from_i64(i, length)
     else:
         b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
         offset = 8 - (length % 8)
         if offset == 8:
             return Bits._from_bytes(b)
         else:
-            return Bits.from_bytes_with_offset(b, offset=offset)
+            return Bits._from_bytes_with_offset(b, offset=offset)
 
 def i_bits2chars(bit_length: int) -> int:
     # How many characters is largest negative int of this length? (To include minus sign).
@@ -96,7 +96,7 @@ i_defn = DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed
 
 def to_bin(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as a binary string."""
-    return bs.slice_to_bin(start, length)
+    return bs._slice_to_bin(start, length)
 
 def from_bin(binstring: str, length: None = None) -> Bits:
     """Create from the value given in binstring."""
@@ -104,7 +104,7 @@ def from_bin(binstring: str, length: None = None) -> Bits:
 
 def to_oct(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
-    return bs.slice_to_oct(start, length)
+    return bs._slice_to_oct(start, length)
 
 def from_oct(octstring: str, length: None = None) -> Bits:
     """Create from the value given in octstring."""
@@ -112,7 +112,7 @@ def from_oct(octstring: str, length: None = None) -> Bits:
 
 def to_hex(bs: Bits, start: int, length: int) -> str:
     """Return interpretation as a hexadecimal string."""
-    return bs.slice_to_hex(start, length)
+    return bs._slice_to_hex(start, length)
 
 def from_hex(hexstring: str, length: None = None) -> Bits:
     """Create from the value given in hexstring."""
@@ -120,7 +120,7 @@ def from_hex(hexstring: str, length: None = None) -> Bits:
 
 def to_bytes(bs: Bits, start: int, length: int) -> bytes:
     """Return interpretation as bytes."""
-    return bs.slice_to_bytes(start, length)
+    return bs._slice_to_bytes(start, length)
 
 def from_bytes(data: bytearray | bytes | list, length: None = None) -> Bits:
     """Create from a bytes or bytearray object."""
@@ -198,7 +198,7 @@ bits_defn = DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
 def to_bool(bs: Bits, start: int, _length: int) -> bool:
     """Interpret as a bool"""
     assert _length == 1
-    return bs.getindex(start)
+    return bs._getindex(start)
 
 def from_bool(value: bool, length: None = None) -> Bits:
     return Bits._from_bools([bool(value)])
