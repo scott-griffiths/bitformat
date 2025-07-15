@@ -350,6 +350,24 @@ impl PyBitRustFindAllIterator {
 /// Public Python-facing methods.
 #[pymethods]
 impl Bits {
+
+    /// Return string representations for printing.
+    pub fn __str__(&self) -> String {
+        if self.len() == 0 {
+            return "".to_string();
+        }
+        if self.len() % 4 == 0 {
+            return format!("0x{}", self.to_hex());
+        }
+        return format!("0b{}", self.to_bin());
+    }
+
+    /// Return representation that could be used to recreate the instance.
+    pub fn __repr__(&self, py: Python) -> String {
+        let class_name = py.get_type::<Self>().name().unwrap();
+        format!("{}('{}')", class_name, self.__str__())
+    }
+
     fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BitRustBoolIterator>> {
         let py = slf.py();
         let length = slf.len();
@@ -434,7 +452,7 @@ impl Bits {
     ///     a = Bits.from_zeros(500)  # 500 zero bits
     ///
     #[classmethod]
-    pub fn from_zeros(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
+    pub fn from_zeros(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -454,7 +472,7 @@ impl Bits {
     ///     Bits('0b11111')
     ///
     #[classmethod]
-    pub fn from_ones(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
+    pub fn from_ones(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -473,7 +491,7 @@ impl Bits {
     /// a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
     ///
     #[classmethod]
-    pub fn from_bytes(cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
+    pub fn from_bytes(_cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
 

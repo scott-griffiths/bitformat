@@ -115,6 +115,16 @@ impl MutableBits {
         Err(PyTypeError::new_err("")) // TODO
     }
 
+    /// Return string representations for printing.
+    pub fn __str__(&self) -> String {
+        self.inner.__str__()
+    }
+
+    /// Return representation that could be used to recreate the instance.
+    pub fn __repr__(&self, py: Python) -> String {
+        self.inner.__repr__(py)
+    }
+
     pub fn _byte_swap(&mut self) -> PyResult<()> {
         if self.inner.data.len() % 8 != 0 {
             return Err(PyValueError::new_err(format!(
@@ -221,7 +231,7 @@ impl MutableBits {
     ///     a = MutableBits.from_zeros(500)  # 500 zero bits
     ///
     #[classmethod]
-    pub fn from_zeros(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
+    pub fn from_zeros(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -241,7 +251,7 @@ impl MutableBits {
     ///     MutableBits('0b11111')
     ///
     #[classmethod]
-    pub fn from_ones(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
+    pub fn from_ones(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -273,7 +283,7 @@ impl MutableBits {
     ///     a = MutableBits.from_bytes(b"some_bytes_maybe_from_a_file")
     ///
     #[classmethod]
-    pub fn from_bytes(cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
+    pub fn from_bytes(_cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
 

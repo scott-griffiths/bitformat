@@ -57,7 +57,7 @@ def format_bits(bits: Bits, bits_per_group: int, sep: str, dtype: Dtype, colour_
         if any(x is n for x in [DtypeKind.BIN, DtypeKind.OCT, DtypeKind.HEX, DtypeKind.BITS, DtypeKind.BYTES]):
             align = "<"
         if dtype.kind is DtypeKind.BITS:
-            x = sep.join(f"{b._simple_str(): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
+            x = sep.join(f"{str(b): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
         else:
             x = sep.join(f"{str(get_fn(b)): {align}{chars_per_group}}" for b in bits._chunks(bits_per_group))
 
@@ -409,17 +409,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Private Methods -----
 
-    def _simple_str(self) -> str:
-        length = len(self)
-        if length == 0:
-            s = ""
-        elif length % 4 == 0:
-            s = "0x" + self.unpack("hex")
-        else:
-            s = "0b" + self.unpack("bin")
-        return s
-
-
     def _pp(self, dtype1: Dtype, dtype2: Dtype | None, bits_per_group: int,
             width: int, sep: str, format_sep: str, show_offset: bool, stream: TextIO, offset_factor: int,
             groups: int | None) -> None:
@@ -545,18 +534,6 @@ this is a step to using the Rust classes as the base classes."""
 
     def __bytes__(self) -> bytes:
         return self.to_bytes()
-
-    def __str__(self) -> str:
-        """Return string representations of Bits for printing."""
-        length = len(self)
-        if length == 0:
-            return ""
-        return self._simple_str()
-
-    def __repr__(self) -> str:
-        """Return representation that could be used to recreate the Bits.."""
-        repr_ = f"{self.__class__.__name__}('{self._simple_str()}')"
-        return repr_
 
     # ----- Comparisons
 
