@@ -131,7 +131,7 @@ def token_to_bits(token: str) -> Bits:
 
     if token.startswith(("b'", 'b"')):
         # A bytes literal?
-        return Bits._from_bytes(ast.literal_eval(token))
+        return Bits.from_bytes(ast.literal_eval(token))
     try:
         dtype_str, value_str = token.split("=", 1)
         dtype = Dtype.from_string(dtype_str)
@@ -689,19 +689,6 @@ class BitsMethods:
             return str_to_bits_cached(s)
 
     @classmethod
-    def from_bytes(cls, b: bytes, /) -> Bits:
-        """Create a new instance from a bytes object.
-
-        :param b: The bytes object to convert to a :class:`Bits`.
-
-        .. code-block:: python
-
-            a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
-
-        """
-        return Bits._from_bytes(b)
-
-    @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> Bits:
         """
         Create a new instance from an iterable by converting each element to a bool.
@@ -973,19 +960,6 @@ class MutableBitsMethods:
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
             return str_to_bits_cached(s)._clone_as_mutable()
-
-    @classmethod
-    def from_bytes(cls, b: bytes, /) -> MutableBits:
-        """Create a new instance from a bytes object.
-
-        :param b: The bytes object to convert to a :class:`MutableBits`.
-
-        .. code-block:: python
-
-            a = MutableBits.from_bytes(b"some_bytes_maybe_from_a_file")
-
-        """
-        return MutableBits._from_bytes(b)
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:

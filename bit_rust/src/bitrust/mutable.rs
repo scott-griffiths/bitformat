@@ -3,8 +3,8 @@ use crate::bitrust::{bits, helpers};
 use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::PyAnyMethods;
-use pyo3::types::PySliceMethods;
 use pyo3::types::{PyBool, PySlice};
+use pyo3::types::{PySliceMethods, PyType};
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use std::ops::Not;
@@ -220,8 +220,8 @@ impl MutableBits {
     ///
     ///     a = MutableBits.from_zeros(500)  # 500 zero bits
     ///
-    #[staticmethod]
-    pub fn from_zeros(length: i64) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_zeros(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -240,8 +240,8 @@ impl MutableBits {
     ///     >>> MutableBits.from_ones(5)
     ///     MutableBits('0b11111')
     ///
-    #[staticmethod]
-    pub fn from_ones(length: i64) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_ones(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -264,8 +264,16 @@ impl MutableBits {
         })
     }
 
-    #[staticmethod]
-    pub fn _from_bytes(data: Vec<u8>) -> Self {
+    /// Create a new instance from a bytes object.
+    ///
+    /// :param b: The bytes object to convert to a :class:`MutableBits`.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_bytes(b"some_bytes_maybe_from_a_file")
+    ///
+    #[classmethod]
+    pub fn from_bytes(cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
 

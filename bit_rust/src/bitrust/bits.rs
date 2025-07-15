@@ -8,6 +8,7 @@ use pyo3::exceptions::{PyNotImplementedError, PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyBool;
 use pyo3::types::PySlice;
+use pyo3::types::PyType;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::fmt;
 use std::fmt::Write;
@@ -185,7 +186,7 @@ impl BitCollection for Bits {
             Ok(d) => d,
             Err(e) => return Err(format!("Cannot convert from hex '{hex}': {}", e)),
         };
-        let mut bv = Bits::from_bytes(data).data;
+        let mut bv = <Bits as BitCollection>::from_bytes(data).data;
         if is_odd_length {
             bv.drain(bv.len() - 4..bv.len());
         }
@@ -432,8 +433,8 @@ impl Bits {
     ///
     ///     a = Bits.from_zeros(500)  # 500 zero bits
     ///
-    #[staticmethod]
-    pub fn from_zeros(length: i64) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_zeros(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -452,8 +453,8 @@ impl Bits {
     ///     >>> Bits.from_ones(5)
     ///     Bits('0b11111')
     ///
-    #[staticmethod]
-    pub fn from_ones(length: i64) -> PyResult<Self> {
+    #[classmethod]
+    pub fn from_ones(cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
         if length < 0 {
             return Err(PyValueError::new_err(format!(
                 "Negative bit length given: {}.",
@@ -463,15 +464,23 @@ impl Bits {
         Ok(BitCollection::from_ones(length as usize))
     }
 
-    #[staticmethod]
-    pub fn _from_bytes(data: Vec<u8>) -> Self {
+    /// Create a new instance from a bytes object.
+    ///
+    /// :param b: The bytes object to convert to a :class:`Bits`.
+    ///
+    /// .. code-block:: python
+    ///
+    /// a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
+    ///
+    #[classmethod]
+    pub fn from_bytes(cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
 
     #[staticmethod]
     pub fn _from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         debug_assert!(offset < 8);
-        let mut bv: helpers::BV = Self::from_bytes(data).data;
+        let mut bv: helpers::BV = <Bits as BitCollection>::from_bytes(data).data;
         bv.drain(..offset);
         Bits::new(bv)
     }
@@ -881,7 +890,7 @@ mod tests {
     #[test]
     fn from_bytes() {
         let data: Vec<u8> = vec![10, 20, 30];
-        let bits = Bits::from_bytes(data);
+        let bits = <Bits as BitCollection>::from_bytes(data);
         assert_eq!(*bits.to_bytes(), vec![10, 20, 30]);
         assert_eq!(bits.len(), 24);
     }
@@ -916,29 +925,29 @@ mod tests {
 
     #[test]
     fn from_zeros() {
-        let bits = Bits::from_zeros(8).unwrap();
+        let bits = <Bits as BitCollection>::from_zeros(8);
         assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "00");
-        let bits = Bits::from_zeros(9).unwrap();
+        let bits = <Bits as BitCollection>::from_zeros(9);
         assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
-        let bits = Bits::from_zeros(0).unwrap();
+        let bits = <Bits as BitCollection>::from_zeros(0);
         assert_eq!(bits.len(), 0);
     }
 
     #[test]
     fn from_ones() {
-        let bits = Bits::from_ones(8).unwrap();
+        let bits = <Bits as BitCollection>::from_ones(8);
         assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "ff");
-        let bits = Bits::from_ones(9).unwrap();
+        let bits = <Bits as BitCollection>::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
         assert_eq!((*bits.to_bytes())[0], 0xff);
         assert_eq!((*bits.to_bytes())[1] & 0x80, 0x80);
         assert_eq!(bits.len(), 9);
-        let bits = Bits::from_ones(0).unwrap();
+        let bits = <Bits as BitCollection>::from_ones(0);
         assert_eq!(bits.len(), 0);
     }
 
@@ -996,8 +1005,8 @@ mod tests {
 
     #[test]
     fn test_find() {
-        let b1 = Bits::from_zeros(10).unwrap();
-        let b2 = Bits::from_ones(2).unwrap();
+        let b1 = <Bits as BitCollection>::from_zeros(10);
+        let b2 = <Bits as BitCollection>::from_ones(2);
         assert_eq!(b1._find(&b2, 0, false), None);
         let b3 = Bits::from_bin("00001110").unwrap();
         let b4 = Bits::from_bin("01").unwrap();
@@ -1070,7 +1079,7 @@ mod tests {
 
     #[test]
     fn test_set_index() {
-        let mut b = MutableBits::from_zeros(10).unwrap();
+        let mut b = <MutableBits as BitCollection>::from_zeros(10);
         b._set_index(true, 0).unwrap();
         assert_eq!(b.to_bin(), "1000000000");
         b._set_index(true, -1).unwrap();
@@ -1081,7 +1090,7 @@ mod tests {
 
     #[test]
     fn test_to_bytes_from_slice() {
-        let a = Bits::from_ones(16).unwrap();
+        let a = <Bits as BitCollection>::from_ones(16);
         assert_eq!(a.to_bytes(), vec![255, 255]);
         let b = a._getslice(7, a.len()).unwrap();
         assert_eq!(b.to_bin(), "111111111");
@@ -1272,10 +1281,10 @@ mod tests {
 
     #[test]
     fn mutable_constructors() {
-        let m1 = MutableBits::from_zeros(4).unwrap();
+        let m1 = <MutableBits as BitCollection>::from_zeros(4);
         assert_eq!(m1.to_bin(), "0000");
 
-        let m2 = MutableBits::from_ones(4).unwrap();
+        let m2 = <MutableBits as BitCollection>::from_ones(4);
         assert_eq!(m2.to_bin(), "1111");
 
         let m3 = MutableBits::_from_bin_checked("1010").unwrap();
@@ -1335,7 +1344,7 @@ mod tests {
 
     #[test]
     fn mutable_set_operations() {
-        let mut m = MutableBits::from_zeros(8).unwrap();
+        let mut m = <MutableBits as BitCollection>::from_zeros(8);
 
         m._set_index(true, 0).unwrap();
         m._set_index(true, 7).unwrap();
@@ -1361,22 +1370,22 @@ mod tests {
 
     #[test]
     fn empty_data_operations() {
-        let empty_mutable = MutableBits::from_zeros(0).unwrap();
-        let empty_immutable = Bits::from_zeros(0).unwrap();
+        let empty_mutable = <MutableBits as BitCollection>::from_zeros(0);
+        let empty_immutable = <Bits as BitCollection>::from_zeros(0);
 
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());
 
         assert_eq!(empty_mutable._clone_as_immutable().len(), 0);
 
-        let mut another_empty = MutableBits::from_zeros(0).unwrap();
+        let mut another_empty = <MutableBits as BitCollection>::from_zeros(0);
         another_empty._append(&empty_immutable);
         assert_eq!(another_empty.len(), 0);
     }
 
     #[test]
     fn large_mutable_operations() {
-        let mut large = MutableBits::from_zeros(1000).unwrap();
+        let mut large = <MutableBits as BitCollection>::from_zeros(1000);
 
         for i in 0..1000 {
             if i % 3 == 0 {

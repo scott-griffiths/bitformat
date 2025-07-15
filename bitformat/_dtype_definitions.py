@@ -41,7 +41,7 @@ def from_u(u: int, length: int) -> Bits:
         b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
         offset = 8 - (length % 8)
         if offset == 8:
-            return Bits._from_bytes(b)
+            return Bits.from_bytes(b)
         else:
             return Bits._from_bytes_with_offset(b, offset=offset)
 
@@ -79,7 +79,7 @@ def from_i(i: int, length: int) -> Bits:
         b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
         offset = 8 - (length % 8)
         if offset == 8:
-            return Bits._from_bytes(b)
+            return Bits.from_bytes(b)
         else:
             return Bits._from_bytes_with_offset(b, offset=offset)
 
@@ -124,7 +124,7 @@ def to_bytes(bs: Bits, start: int, length: int) -> bytes:
 
 def from_bytes(data: bytearray | bytes | list, length: None = None) -> Bits:
     """Create from a bytes or bytearray object."""
-    return Bits._from_bytes(bytes(data))
+    return Bits.from_bytes(bytes(data))
 
 
 bin_defn = DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
@@ -158,7 +158,7 @@ def from_f(f: float | str, length: int | None) -> Bits:
     except OverflowError:
         # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
         b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-    return Bits._from_bytes(b)
+    return Bits.from_bytes(b)
 
 def f_bits2chars(bit_length: Literal[16, 32, 64]) -> int:
     # These bit lengths were found by looking at lots of possible values
