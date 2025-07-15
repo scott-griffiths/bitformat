@@ -231,9 +231,24 @@ impl MutableBits {
         Ok(BitCollection::from_zeros(length as usize))
     }
 
+    /// Create a new instance with all bits set to one.
+    ///
+    /// :param n: The number of bits.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> MutableBits.from_ones(5)
+    ///     MutableBits('0b11111')
+    ///
     #[staticmethod]
-    pub fn _from_ones(length: usize) -> Self {
-        BitCollection::from_ones(length)
+    pub fn from_ones(length: i64) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        Ok(BitCollection::from_ones(length as usize))
     }
 
     #[staticmethod]

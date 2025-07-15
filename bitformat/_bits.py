@@ -733,25 +733,6 @@ class BitsMethods:
         return Bits._from_joined([Bits._from_any(item) for item in sequence])
 
     @classmethod
-    def from_ones(cls, n: int, /) -> Bits:
-        """
-        Create a new instance with all bits set to one.
-
-        :param n: The number of bits.
-
-        .. code-block:: pycon
-
-            >>> Bits.from_ones(5)
-            Bits('0b11111')
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        return Bits._from_ones(n)
-
-    @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits :
         """
         Pack a value according to a data type or data type tuple.
@@ -1036,25 +1017,6 @@ class MutableBitsMethods:
 
         """
         return MutableBits._from_joined([Bits._from_any(item) for item in sequence])
-
-    @classmethod
-    def from_ones(cls, n: int, /) -> MutableBits:
-        """
-        Create a new instance with all bits set to one.
-
-        :param n: The number of bits.
-
-        .. code-block:: pycon
-
-            >>> MutableBits.from_ones(5)
-            MutableBits('0b11111')
-
-        """
-        if n == 0:
-            return cls()
-        if n < 0:
-            raise ValueError(f"Negative bit length given: {n}.")
-        return MutableBits._from_ones(n)
 
     @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> MutableBits:

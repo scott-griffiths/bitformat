@@ -443,9 +443,24 @@ impl Bits {
         Ok(BitCollection::from_zeros(length as usize))
     }
 
+    /// Create a new instance with all bits set to one.
+    ///
+    /// :param n: The number of bits.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> Bits.from_ones(5)
+    ///     Bits('0b11111')
+    ///
     #[staticmethod]
-    pub fn _from_ones(length: usize) -> Self {
-        BitCollection::from_ones(length)
+    pub fn from_ones(length: i64) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        Ok(BitCollection::from_ones(length as usize))
     }
 
     #[staticmethod]
@@ -914,16 +929,16 @@ mod tests {
 
     #[test]
     fn from_ones() {
-        let bits = Bits::from_ones(8);
+        let bits = Bits::from_ones(8).unwrap();
         assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
         assert_eq!(bits.to_hex(), "ff");
-        let bits = Bits::from_ones(9);
+        let bits = Bits::from_ones(9).unwrap();
         assert_eq!(bits.to_bin(), "111111111");
         assert_eq!((*bits.to_bytes())[0], 0xff);
         assert_eq!((*bits.to_bytes())[1] & 0x80, 0x80);
         assert_eq!(bits.len(), 9);
-        let bits = Bits::from_ones(0);
+        let bits = Bits::from_ones(0).unwrap();
         assert_eq!(bits.len(), 0);
     }
 
@@ -982,7 +997,7 @@ mod tests {
     #[test]
     fn test_find() {
         let b1 = Bits::from_zeros(10).unwrap();
-        let b2 = Bits::from_ones(2);
+        let b2 = Bits::from_ones(2).unwrap();
         assert_eq!(b1._find(&b2, 0, false), None);
         let b3 = Bits::from_bin("00001110").unwrap();
         let b4 = Bits::from_bin("01").unwrap();
@@ -1066,7 +1081,7 @@ mod tests {
 
     #[test]
     fn test_to_bytes_from_slice() {
-        let a = Bits::from_ones(16);
+        let a = Bits::from_ones(16).unwrap();
         assert_eq!(a.to_bytes(), vec![255, 255]);
         let b = a._getslice(7, a.len()).unwrap();
         assert_eq!(b.to_bin(), "111111111");
@@ -1260,7 +1275,7 @@ mod tests {
         let m1 = MutableBits::from_zeros(4).unwrap();
         assert_eq!(m1.to_bin(), "0000");
 
-        let m2 = MutableBits::_from_ones(4);
+        let m2 = MutableBits::from_ones(4).unwrap();
         assert_eq!(m2.to_bin(), "1111");
 
         let m3 = MutableBits::_from_bin_checked("1010").unwrap();

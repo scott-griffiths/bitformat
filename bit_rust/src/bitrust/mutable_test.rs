@@ -21,7 +21,7 @@ mod tests {
     #[test]
     fn test_append_and_prepend() {
         let mut mb = MutableBits::from_zeros(2).unwrap();
-        let br = Bits::_from_ones(2);
+        let br = Bits::from_ones(2).unwrap();
         mb._append(&br);
         assert_eq!(mb.to_bin(), "0011");
         mb._prepend(&br);
@@ -31,7 +31,7 @@ mod tests {
     #[test]
     fn test_set_slice() {
         let mut mb = MutableBits::from_zeros(6).unwrap();
-        let br = Bits::_from_ones(2);
+        let br = Bits::from_ones(2).unwrap();
         mb._set_slice(2, 4, &br).unwrap();
         assert_eq!(mb.to_bin(), "001100");
     }
@@ -39,20 +39,20 @@ mod tests {
     #[test]
     fn test_overwrite_slice() {
         let mut mb = MutableBits::from_zeros(6).unwrap();
-        let br = Bits::_from_ones(2);
+        let br = Bits::from_ones(2).unwrap();
         mb._set_slice(2, 4, &br).unwrap();
         assert_eq!(mb.to_bin(), "001100");
     }
 
     #[test]
     fn test_iand_ior_ixor() {
-        let mut mb1 = MutableBits::_from_ones(4);
+        let mut mb1 = MutableBits::from_ones(4).unwrap();
         let mb2 = MutableBits::from_zeros(4).unwrap();
         mb1._iand(&mb2).unwrap();
         assert_eq!(mb1.to_bin(), "0000");
-        mb1._ior(&MutableBits::_from_ones(4)).unwrap();
+        mb1._ior(&MutableBits::from_ones(4).unwrap()).unwrap();
         assert_eq!(mb1.to_bin(), "1111");
-        mb1._ixor(&MutableBits::_from_ones(4)).unwrap();
+        mb1._ixor(&MutableBits::from_ones(4).unwrap()).unwrap();
         assert_eq!(mb1.to_bin(), "0000");
     }
 
