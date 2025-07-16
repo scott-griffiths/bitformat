@@ -501,13 +501,19 @@ impl MutableBits {
     ) -> PyResult<PyRefMut<'a, Self>> {
         match pos {
             None => {
-                slf._invert_all();
+                slf.inner.data = std::mem::take(&mut slf.inner.data).not();
             }
             Some(p) => {
-                if let Ok(val) = p.extract::<i64>() {
-                    slf._invert_single_bit(val)?;
-                } else if let Ok(val) = p.extract::<Vec<i64>>() {
-                    slf._invert_bit_list(val)?;
+                if let Ok(pos) = p.extract::<i64>() {
+                    let pos: usize = helpers::validate_index(pos, slf.len())?;
+                    let value = slf.inner.data[pos];
+                    slf.inner.data.set(pos, !value);
+                } else if let Ok(pos_list) = p.extract::<Vec<i64>>() {
+                    for pos in pos_list {
+                        let pos: usize = helpers::validate_index(pos, slf.len())?;
+                        let value = slf.inner.data[pos];
+                        slf.inner.data.set(pos, !value);
+                    }
                 } else {
                     return Err(PyTypeError::new_err(
                         "invert() argument must be an integer, an iterable of ints, or None",
@@ -516,28 +522,6 @@ impl MutableBits {
             }
         }
         Ok(slf)
-    }
-
-    pub fn _invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {
-        for pos in pos_list {
-            let pos: usize = helpers::validate_index(pos, self.len())?;
-            let value = self.inner.data[pos];
-            self.inner.data.set(pos, !value);
-        }
-        Ok(())
-    }
-
-    pub fn _invert_single_bit(&mut self, pos: i64) -> PyResult<()> {
-        let pos: usize = helpers::validate_index(pos, self.len())?;
-        let mut data = std::mem::take(&mut self.inner.data);
-        let value = data[pos];
-        data.set(pos, !value);
-        self.inner.data = data;
-        Ok(())
-    }
-
-    pub fn _invert_all(&mut self) {
-        self.inner.data = std::mem::take(&mut self.inner.data).not();
     }
 
     /// Return the instance with every bit inverted.
