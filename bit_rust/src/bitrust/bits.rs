@@ -1,5 +1,5 @@
 use crate::bitrust::helpers;
-use crate::bitrust::BitRustBoolIterator;
+use crate::bitrust::BitsBoolIterator;
 use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
@@ -69,7 +69,7 @@ pub trait BitCollection: Sized {
     fn logical_xor(&self, other: &Bits) -> Self;
 }
 
-/// BitRust is a struct that holds an arbitrary amount of binary data.
+/// Bits is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
 #[pyclass(frozen, freelist = 8, module = "bitformat")]
 pub struct Bits {
@@ -204,21 +204,21 @@ impl BitCollection for Bits {
     }
     fn logical_or(&self, other: &Bits) -> Self {
         if self.len() != other.len() {
-            panic!("Cannot perform logical OR on BitRust of different lengths.");
+            panic!("Cannot perform logical OR on Bits of different lengths.");
         }
         let result = self.data.clone() | &other.data;
         Bits::new(result)
     }
     fn logical_and(&self, other: &Bits) -> Self {
         if self.len() != other.len() {
-            panic!("Cannot perform logical AND on BitRust of different lengths.");
+            panic!("Cannot perform logical AND on Bits of different lengths.");
         }
         let result = self.data.clone() & &other.data;
         Bits::new(result)
     }
     fn logical_xor(&self, other: &Bits) -> Self {
         if self.len() != other.len() {
-            panic!("Cannot perform logical XOR on BitRust of different lengths.");
+            panic!("Cannot perform logical XOR on Bits of different lengths.");
         }
         let result = self.data.clone() ^ &other.data;
         Bits::new(result)
@@ -291,8 +291,8 @@ impl Bits {
     }
 }
 
-#[pyclass(name = "BitRustFindAllIterator")]
-pub struct PyBitRustFindAllIterator {
+#[pyclass(name = "BitsFindAllIterator")]
+pub struct PyBitsFindAllIterator {
     pub haystack: Py<Bits>, // Py<T> keeps the Python object alive
     pub needle: Py<Bits>,
     pub current_pos: usize,
@@ -301,7 +301,7 @@ pub struct PyBitRustFindAllIterator {
 }
 
 #[pymethods]
-impl PyBitRustFindAllIterator {
+impl PyBitsFindAllIterator {
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
@@ -333,7 +333,11 @@ impl PyBitRustFindAllIterator {
             {
                 return Ok(None); // No space left for the needle or already past the end
             }
-            haystack_rs._find(&needle_rs, current_pos, byte_aligned)
+            if byte_aligned {
+                helpers::find_bitvec_bytealigned(&haystack_rs, &needle_rs, current_pos)
+            } else {
+                helpers::find_bitvec(&haystack_rs, &needle_rs, current_pos)
+            }
         };
 
         // Now, `slf` can be mutably accessed without conflicting with the previous borrows.
@@ -350,7 +354,6 @@ impl PyBitRustFindAllIterator {
 /// Public Python-facing methods.
 #[pymethods]
 impl Bits {
-
     /// Return string representations for printing.
     pub fn __str__(&self) -> String {
         if self.len() == 0 {
@@ -368,12 +371,12 @@ impl Bits {
         format!("{}('{}')", class_name, self.__str__())
     }
 
-    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BitRustBoolIterator>> {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BitsBoolIterator>> {
         let py = slf.py();
         let length = slf.len();
         Py::new(
             py,
-            BitRustBoolIterator {
+            BitsBoolIterator {
                 bits: slf.into(),
                 index: 0,
                 length,
@@ -390,11 +393,11 @@ impl Bits {
     // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
     pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
-        if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
-            return Ok(self.data == other_bitrust.data);
+        if let Ok(other_bits) = other_any.extract::<PyRef<Bits>>() {
+            return Ok(self.data == other_bits.data);
         }
-        if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
-            return Ok(self.data == other_mutable_bitrust.inner.data);
+        if let Ok(other_mutable_bits) = other_any.extract::<PyRef<MutableBits>>() {
+            return Ok(self.data == other_mutable_bits.inner.data);
         }
         Err(PyTypeError::new_err("")) // TODO
     }
@@ -422,13 +425,13 @@ impl Bits {
         slf: PyRef<'_, Self>,
         needle_obj: Py<Bits>,
         byte_aligned: bool,
-    ) -> PyResult<Py<PyBitRustFindAllIterator>> {
+    ) -> PyResult<Py<PyBitsFindAllIterator>> {
         let py = slf.py();
-        let haystack_obj: Py<Bits> = slf.into(); // Get a Py<BitRust> for the haystack (self)
+        let haystack_obj: Py<Bits> = slf.into(); // Get a Py<Bits> for the haystack (self)
 
         let step = if byte_aligned { 8 } else { 1 };
 
-        let iter_obj = PyBitRustFindAllIterator {
+        let iter_obj = PyBitsFindAllIterator {
             haystack: haystack_obj,
             needle: needle_obj,
             current_pos: 0,
@@ -697,7 +700,7 @@ impl Bits {
         }
     }
 
-    /// Return a slice of the current BitRust.
+    /// Return a slice of the current Bits.
     pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         if start_bit >= end_bit {
             return Ok(BitCollection::from_zeros(0));
@@ -790,7 +793,7 @@ impl Bits {
         self.data.any()
     }
 
-    /// Return as a MutableBitRust with a copy of the data.
+    /// Return as a MutableBits with a copy of the data.
     pub fn _clone_as_mutable(&self) -> MutableBits {
         MutableBits {
             inner: Bits::new(self.data.clone()),
@@ -798,7 +801,7 @@ impl Bits {
     }
 
     pub fn _clone_as_immutable(&self) -> Self {
-        // TODO? We don't need to clone the data, just return the same BitRust instance.
+        // TODO? We don't need to clone the data, just return the same Bits instance.
         Bits {
             data: self.data.clone(),
         }
@@ -1431,7 +1434,7 @@ mod tests {
     }
 
     #[test]
-    fn set_mutable_slice_with_bit_rust() {
+    fn set_mutable_slice_with_bits() {
         let mut m = MutableBits::_from_bin_checked("00000000").unwrap();
         let pattern = Bits::from_bin("1111").unwrap();
 

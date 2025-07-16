@@ -3,14 +3,14 @@ use pyo3::prelude::*;
 use pyo3::PyResult;
 
 #[pyclass]
-pub struct BitRustBoolIterator {
+pub struct BitsBoolIterator {
     pub(crate) bits: Py<Bits>,
     pub(crate) index: usize,
     pub(crate) length: usize,
 }
 
 #[pymethods]
-impl BitRustBoolIterator {
+impl BitsBoolIterator {
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }

@@ -106,11 +106,11 @@ impl MutableBits {
     // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
     pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
         let other_any = other.bind(py);
-        if let Ok(other_bitrust) = other_any.extract::<PyRef<Bits>>() {
-            return Ok(self.inner.data == other_bitrust.data);
+        if let Ok(other_bits) = other_any.extract::<PyRef<Bits>>() {
+            return Ok(self.inner.data == other_bits.data);
         }
-        if let Ok(other_mutable_bitrust) = other_any.extract::<PyRef<MutableBits>>() {
-            return Ok(self.inner.data == other_mutable_bitrust.inner.data);
+        if let Ok(other_mutable_bits) = other_any.extract::<PyRef<MutableBits>>() {
+            return Ok(self.inner.data == other_mutable_bits.inner.data);
         }
         Err(PyTypeError::new_err("")) // TODO
     }
@@ -320,11 +320,11 @@ impl MutableBits {
     }
 
     #[staticmethod]
-    pub fn _from_joined(bits_vec: Vec<PyRef<Bits>>) -> Self {
-        let bitrust_vec: Vec<&Bits> = bits_vec.iter().map(|x| &**x).collect();
-        let total_len: usize = bitrust_vec.iter().map(|b| b.len()).sum();
+    pub fn _from_joined(py_bits_vec: Vec<PyRef<Bits>>) -> Self {
+        let bits_vec: Vec<&Bits> = py_bits_vec.iter().map(|x| &**x).collect();
+        let total_len: usize = bits_vec.iter().map(|b| b.len()).sum();
         let mut bv = helpers::BV::with_capacity(total_len);
-        for bits in bitrust_vec {
+        for bits in bits_vec {
             bv.extend_from_bitslice(&bits.data);
         }
         MutableBits::new(bv)
@@ -585,13 +585,13 @@ impl MutableBits {
         MutableBits::new(self.inner.data.clone())
     }
 
-    /// Convert to immutable BitRust - cloning the data.
+    /// Convert to immutable Bits - cloning the data.
     pub fn _clone_as_immutable(&self) -> Bits {
         Bits::new(self.inner.data.clone())
     }
 
     // TODO: Should this be part of the API? Is it useful in Python?
-    /// Convert to immutable BitRust - without cloning the data.
+    /// Convert to immutable Bits - without cloning the data.
     pub fn _as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
         Bits::new(data)
