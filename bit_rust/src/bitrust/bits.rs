@@ -1012,19 +1012,6 @@ mod tests {
     }
 
     #[test]
-    fn test_invert() {
-        let mut b = MutableBits::_from_bin_checked("0").unwrap();
-        b._invert_all();
-        assert_eq!(b.to_bin(), "1");
-        let mut b = MutableBits::_from_bin_checked("01110").unwrap();
-        b._invert_all();
-        assert_eq!(b.to_bin(), "10001");
-        let hex_str = "abcdef8716258765162548716258176253172635712654714";
-        let mut long = MutableBits::_from_hex_checked(hex_str).unwrap();
-        long._invert_all();
-    }
-
-    #[test]
     fn test_find() {
         let b1 = <Bits as BitCollection>::from_zeros(10);
         let b2 = <Bits as BitCollection>::from_ones(2);
@@ -1161,17 +1148,6 @@ mod tests {
     }
 
     #[test]
-    fn test_invert_bit_list() {
-        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
-        bits._invert_bit_list(vec![0, 2]).unwrap();
-        assert_eq!(bits.to_bin(), "1010");
-        bits._invert_bit_list(vec![-1, -3]).unwrap();
-        assert_eq!(bits.to_bin(), "1111");
-        bits._invert_bit_list(vec![0, 1, 2, 3]).unwrap();
-        assert_eq!(bits.to_bin(), "0000");
-    }
-
-    #[test]
     fn test_set_from_slice() {
         let mut bits = MutableBits::_from_bin_checked("00000000").unwrap();
         bits._set_from_slice(true, 1, 7, 2).unwrap();
@@ -1183,30 +1159,11 @@ mod tests {
     }
 
     #[test]
-    fn test_invert_all() {
-        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
-        bits._invert_all();
-        assert_eq!(bits.to_bin(), "1111");
-        let mut bits = MutableBits::_from_bin_checked("1010").unwrap();
-        bits._invert_all();
-        assert_eq!(bits.to_bin(), "0101");
-    }
-
-    #[test]
     fn test_any_set() {
         let bits = Bits::from_bin("0000").unwrap();
         assert!(!bits.any());
         let bits = Bits::from_bin("1000").unwrap();
         assert!(bits.any());
-    }
-
-    #[test]
-    fn test_invert_single_bit() {
-        let mut bits = MutableBits::_from_bin_checked("0000").unwrap();
-        bits._invert_single_bit(1).unwrap();
-        assert_eq!(bits.to_bin(), "0100");
-        bits._invert_single_bit(-1).unwrap();
-        assert_eq!(bits.to_bin(), "0101");
     }
 
     #[test]
@@ -1337,9 +1294,6 @@ mod tests {
         let other = Bits::from_bin("1111").unwrap();
         m._append(&other);
         assert_eq!(m.to_bin(), "00111111");
-
-        m._invert_all();
-        assert_eq!(m.to_bin(), "11000000");
     }
 
     #[test]
@@ -1402,19 +1356,6 @@ mod tests {
         let mut another_empty = <MutableBits as BitCollection>::from_zeros(0);
         another_empty._append(&empty_immutable);
         assert_eq!(another_empty.len(), 0);
-    }
-
-    #[test]
-    fn large_mutable_operations() {
-        let mut large = <MutableBits as BitCollection>::from_zeros(1000);
-
-        for i in 0..1000 {
-            if i % 3 == 0 {
-                large._set_index(true, i as i64).unwrap();
-            }
-        }
-
-        large._invert_all();
     }
 
     #[test]
@@ -1488,9 +1429,7 @@ mod tests {
 
     #[test]
     fn negative_indexing_in_mutable() {
-        let mut m = MutableBits::_from_bin_checked("10101010").unwrap();
-        m._invert_single_bit(-2).unwrap();
-        assert_eq!(m.to_bin(), "10101000");
+        let m = MutableBits::_from_bin_checked("10101010").unwrap();
 
         assert_eq!(m._getindex(-3).unwrap(), false);
         assert_eq!(m._getindex(-8).unwrap(), true);

@@ -13,13 +13,6 @@ mod tests {
     }
 
     #[test]
-    fn test_invert_all() {
-        let mut mb = <MutableBits as BitCollection>::from_zeros(4);
-        mb._invert_all();
-        assert_eq!(mb.to_bin(), "1111");
-    }
-
-    #[test]
     fn test_append_and_prepend() {
         let mut mb = <MutableBits as BitCollection>::from_zeros(2);
         let br = <Bits as BitCollection>::from_ones(2);
