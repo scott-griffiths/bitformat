@@ -5,6 +5,7 @@ use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::PyAnyMethods;
 use pyo3::types::{PyBool, PySlice};
 use pyo3::types::{PySliceMethods, PyType};
+use pyo3::PyRefMut;
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use std::ops::Not;
@@ -474,6 +475,47 @@ impl MutableBits {
 
     pub fn _rfind(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
         self.inner._rfind(b, start, bytealigned)
+    }
+
+    /// Return the MutableBits with one or many bits inverted between 0 and 1.
+    ///
+    /// :param pos: Either a single bit position or an iterable of bit positions.
+    /// :return: self
+    ///
+    /// Raises IndexError if pos < -len(self) or pos >= len(self).
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b10111')
+    ///     >>> a.invert(1)
+    ///     MutableBits('0b11111')
+    ///     >>> a.invert([0, 2])
+    ///     MutableBits('0b01011')
+    ///     >>> a.invert()
+    ///     MutableBits('0b10100')
+    ///
+    #[pyo3(signature = (pos = None))]
+    pub fn invert<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        pos: Option<&Bound<'a, PyAny>>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        match pos {
+            None => {
+                slf._invert_all();
+            }
+            Some(p) => {
+                if let Ok(val) = p.extract::<i64>() {
+                    slf._invert_single_bit(val)?;
+                } else if let Ok(val) = p.extract::<Vec<i64>>() {
+                    slf._invert_bit_list(val)?;
+                } else {
+                    return Err(PyTypeError::new_err(
+                        "invert() argument must be an integer, an iterable of ints, or None",
+                    ));
+                }
+            }
+        }
+        Ok(slf)
     }
 
     pub fn _invert_bit_list(&mut self, pos_list: Vec<i64>) -> PyResult<()> {

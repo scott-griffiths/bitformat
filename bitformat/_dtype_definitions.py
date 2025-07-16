@@ -198,7 +198,7 @@ bits_defn = DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
 def to_bool(bs: Bits, start: int, _length: int) -> bool:
     """Interpret as a bool"""
     assert _length == 1
-    return bs._getindex(start)
+    return bs[start]
 
 def from_bool(value: bool, length: None = None) -> Bits:
     return Bits._from_bools([bool(value)])

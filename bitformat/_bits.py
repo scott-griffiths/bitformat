@@ -1293,33 +1293,6 @@ class MutableBitsMethods:
         self.__setitem__(slice(pos, pos), bs)
         return self
 
-    def invert(self, pos: Iterable[int] | int | None = None) -> MutableBits:
-        """Return the MutableBits with one or many bits inverted between 0 and 1.
-
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :return: self
-
-        Raises IndexError if pos < -len(self) or pos >= len(self).
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0b10111')
-            >>> a.invert(1)
-            MutableBits('0b11111')
-            >>> a.invert([0, 2])
-            MutableBits('0b01011')
-            >>> a.invert()
-            MutableBits('0b10100')
-
-        """
-        if pos is None:
-            self._invert_all()
-        elif not isinstance(pos, abc.Iterable):
-            self._invert_single_bit(pos)
-        else:
-            self._invert_bit_list(list(pos))
-        return self
-
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
         """Return MutableBits with bit pattern rotated to the left.
 
