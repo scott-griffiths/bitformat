@@ -51,11 +51,4 @@ mod tests {
             .unwrap();
         assert_eq!(mb1.to_bin(), "0000");
     }
-
-    #[test]
-    fn test_reverse() {
-        let mut mb = MutableBits::_from_bin_checked("1010").unwrap();
-        mb._reverse();
-        assert_eq!(mb.to_bin(), "0101");
-    }
 }

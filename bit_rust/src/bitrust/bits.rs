@@ -996,22 +996,6 @@ mod tests {
     }
 
     #[test]
-    fn test_reverse() {
-        let mut b = MutableBits::_from_bin_checked("11110000").unwrap();
-        b._reverse();
-        assert_eq!(b.to_bin(), "00001111");
-        let mut b = MutableBits::_from_bin_checked("1").unwrap();
-        b._reverse();
-        assert_eq!(b.to_bin(), "1");
-        let mut empty = MutableBits::_from_bin_checked("").unwrap();
-        empty._reverse();
-        assert_eq!(empty.to_bin(), "");
-        let mut b = MutableBits::_from_bin_checked("11001").unwrap();
-        b._reverse();
-        assert_eq!(b.to_bin(), "10011");
-    }
-
-    #[test]
     fn test_find() {
         let b1 = <Bits as BitCollection>::from_zeros(10);
         let b2 = <Bits as BitCollection>::from_ones(2);
@@ -1283,17 +1267,6 @@ mod tests {
 
         assert!(m1 == m2);
         assert!(m1 != m3);
-    }
-
-    #[test]
-    fn mutable_operations() {
-        let mut m = MutableBits::_from_bin_checked("1100").unwrap();
-        m._reverse();
-        assert_eq!(m.to_bin(), "0011");
-
-        let other = Bits::from_bin("1111").unwrap();
-        m._append(&other);
-        assert_eq!(m.to_bin(), "00111111");
     }
 
     #[test]

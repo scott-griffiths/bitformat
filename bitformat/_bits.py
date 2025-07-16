@@ -1440,21 +1440,6 @@ class MutableBitsMethods:
         self[:] = MutableBits.from_joined(replacement_list)
         return self
 
-    def reverse(self) -> MutableBits:
-        """Reverse bits.
-
-        :return: self
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0b1011')
-            >>> a.reverse()
-            MutableBits('0b1101')
-
-        """
-        self._reverse()
-        return self
-
 
 # Patching on the methods to Bits and MutableBits to avoid inheritance.
 def _patch_classes():

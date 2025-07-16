@@ -524,6 +524,21 @@ impl MutableBits {
         Ok(slf)
     }
 
+    /// Reverse bits in-place.
+    ///
+    /// :return: self
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> a.reverse()
+    ///     MutableBits('0b1101')
+    ///
+    pub fn reverse(mut slf: PyRefMut<'_, Self>) -> PyRefMut<'_, Self> {
+        slf.inner.data.reverse();
+        slf
+    }
+
     /// Return the instance with every bit inverted.
     ///
     /// Raises ValueError if the MutableBits is empty.
@@ -621,11 +636,6 @@ impl MutableBits {
     pub fn _as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
         Bits::new(data)
-    }
-
-    /// Reverses all bits in place.
-    pub fn _reverse(&mut self) {
-        self.inner.data.reverse();
     }
 
     /// Append in-place
