@@ -123,7 +123,6 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     return bits_per_group, has_length_in_fmt
 
 
-@functools.lru_cache(CACHE_SIZE)
 def token_to_bits(token: str) -> Bits:
 
     if token and token[0] == '0':
@@ -132,6 +131,12 @@ def token_to_bits(token: str) -> Bits:
     if token.startswith(("b'", 'b"')):
         # A bytes literal?
         return Bits.from_bytes(ast.literal_eval(token))
+
+    raise TypeError  # Just signaling internally that we can't deal with it here.
+
+
+@functools.lru_cache(CACHE_SIZE)
+def dtype_token_to_bits(token: str) -> Bits:
     try:
         dtype_str, value_str = token.split("=", 1)
         dtype = Dtype.from_string(dtype_str)
@@ -146,17 +151,30 @@ def token_to_bits(token: str) -> Bits:
         raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
     return dtype.pack(value)
 
-
 # When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
 @functools.lru_cache(CACHE_SIZE)
 def str_to_bits_cached(s: str) -> Bits:
     tokens = split_tokens(s)
-    return Bits.from_joined([token_to_bits(t) for t in tokens if t])
+    bits_array = []
+    for token in tokens:
+        if token:
+            try:
+                bits_array.append(token_to_bits(token))
+            except TypeError:
+                bits_array.append(dtype_token_to_bits(token))
+    return Bits.from_joined(bits_array)
 
 
 def str_to_mutablebits(s: str) -> MutableBits:
     tokens = split_tokens(s)
-    return MutableBits.from_joined([token_to_bits(t) for t in tokens if t])
+    bits_array = []
+    for token in tokens:
+        if token:
+            try:
+                bits_array.append(token_to_bits(token))
+            except TypeError:
+                bits_array.append(dtype_token_to_bits(token))
+    return MutableBits.from_joined(bits_array)
 
 
 class BaseBitsMethods:
@@ -781,10 +799,10 @@ class BitsMethods:
             return any_
         if isinstance(any_, MutableBits):
             return any_._clone_as_immutable()
-        if isinstance(any_, str):
-            return str_to_bits_cached(any_)
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return Bits.from_bytes(any_)
+        if isinstance(any_, str):
+            return str_to_bits_cached(any_)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 
