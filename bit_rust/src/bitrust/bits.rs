@@ -149,30 +149,32 @@ impl BitCollection for Bits {
         b.set_uninitialized(false);
         Ok(Bits::new(b))
     }
-    fn from_oct(oct: &str) -> Result<Self, String> {
-        let mut bin_str = String::new();
-        let skip = if oct.starts_with("0o") { 2 } else { 0 };
-        for ch in oct.chars().skip(skip) {
-            match ch {
-                '0' => bin_str.push_str("000"),
-                '1' => bin_str.push_str("001"),
-                '2' => bin_str.push_str("010"),
-                '3' => bin_str.push_str("011"),
-                '4' => bin_str.push_str("100"),
-                '5' => bin_str.push_str("101"),
-                '6' => bin_str.push_str("110"),
-                '7' => bin_str.push_str("111"),
+    fn from_oct(octal_string: &str) -> Result<Self, String> {
+        // Ignore any leading '0o'
+        let s = octal_string.strip_prefix("0o").unwrap_or(octal_string);
+        let mut b: helpers::BV = helpers::BV::with_capacity(s.len() * 3);
+        for c in s.chars() {
+            match c {
+                '0' => b.extend_from_bitslice(bits![0, 0, 0]),
+                '1' => b.extend_from_bitslice(bits![0, 0, 1]),
+                '2' => b.extend_from_bitslice(bits![0, 1, 0]),
+                '3' => b.extend_from_bitslice(bits![0, 1, 1]),
+                '4' => b.extend_from_bitslice(bits![1, 0, 0]),
+                '5' => b.extend_from_bitslice(bits![1, 0, 1]),
+                '6' => b.extend_from_bitslice(bits![1, 1, 0]),
+                '7' => b.extend_from_bitslice(bits![1, 1, 1]),
                 '_' => continue,
                 c if c.is_whitespace() => continue,
                 _ => {
                     return Err(format!(
-                        "Cannot convert from oct '{oct}': Invalid character '{ch}'."
+                        "Cannot convert from oct '{octal_string}': Invalid character '{c}'."
                     ))
                 }
             }
         }
-        Ok(<Bits as BitCollection>::from_bin(&bin_str)?)
+        Ok(Bits::new(b))
     }
+
     fn from_hex(hex: &str) -> Result<Self, String> {
         // Ignore any leading '0x'
         let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
@@ -633,21 +635,24 @@ impl Bits {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(Bits::logical_and(self, other))
+        let result = self.data.clone() & &other.data;
+        Ok(Bits::new(result))
     }
 
     pub fn _or(&self, other: &Bits) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(Bits::logical_or(self, other))
+        let result = self.data.clone() | &other.data;
+        Ok(Bits::new(result))
     }
 
     pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
         if self.len() != other.len() {
             return Err(PyValueError::new_err("Lengths do not match."));
         }
-        Ok(Bits::logical_xor(self, other))
+        let result = self.data.clone() ^ &other.data;
+        Ok(Bits::new(result))
     }
 
     pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
@@ -667,9 +672,12 @@ impl Bits {
         if bytealigned {
             pos = pos / 8 * 8;
         }
-        while pos >= start + step {
-            if self.slice(pos, b.len()) == *b {
-                return Some(pos - start);
+        while pos >= start {
+            if &self.data[pos..pos + b.len()] == &b.data {
+                return Some(pos);
+            }
+            if pos < step {
+                break;
             }
             pos -= step;
         }

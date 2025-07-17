@@ -1116,7 +1116,6 @@ class MutableBitsMethods:
         self._rshift_inplace(n)
         return self
 
-
     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
         """Set a bit or a slice of bits.
 
@@ -1170,9 +1169,7 @@ class MutableBitsMethods:
             )
 
         # Default behavior
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{name}'"
-        )
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     @staticmethod
     def _from_any(any_: BitsType, /) -> MutableBits:
@@ -1199,10 +1196,6 @@ class MutableBitsMethods:
         """Return a new copy of the MutableBits for the copy module.
         """
         return self._clone_as_mutable()
-
-    def _slice(self: MutableBits, start: int, length: int) -> MutableBits:
-        """Used internally to get a slice, without error checking. A copy of the data is made."""
-        return self._get_slice_unchecked(start, length)
 
     def append(self, bs: BitsType, /) -> MutableBits:
         """Append bits to the end of the current MutableBits in-place.
@@ -1268,7 +1261,7 @@ class MutableBitsMethods:
                              f"but it needs to be a multiple of {byte_length} bytes.")
         chunks = []
         for startbit in range(0, len(self), byte_length * 8):
-            x = self._slice(startbit, byte_length * 8).to_bytes()
+            x = self._get_slice_unchecked(startbit, byte_length * 8).to_bytes()
             chunks.append(MutableBits.from_bytes(x[::-1]))
         x = MutableBits.from_joined(chunks)
         self[:] = x
