@@ -991,3 +991,8 @@ def test_shifts():
     assert b == '0b111100'
     c = b >> 1
     assert c == '0b011110'
+
+def test_str():
+    a = MutableBits.from_ones(8)
+    assert a.__str__() == '0xff'
+    assert a.__repr__() == "MutableBits('0xff')"

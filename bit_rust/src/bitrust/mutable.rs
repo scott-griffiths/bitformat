@@ -2,7 +2,7 @@ use crate::bitrust::Bits;
 use crate::bitrust::{bits, helpers};
 use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
-use pyo3::prelude::PyAnyMethods;
+use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
 use pyo3::types::{PyBool, PySlice};
 use pyo3::types::{PySliceMethods, PyType};
 use pyo3::PyRefMut;
@@ -123,7 +123,8 @@ impl MutableBits {
 
     /// Return representation that could be used to recreate the instance.
     pub fn __repr__(&self, py: Python) -> String {
-        self.inner.__repr__(py)
+        let class_name = py.get_type::<Self>().name().unwrap();
+        format!("{}('{}')", class_name, self.__str__())
     }
 
     pub fn _byte_swap(&mut self) -> PyResult<()> {
