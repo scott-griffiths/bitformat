@@ -12,9 +12,19 @@ use pyo3::types::PyType;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::fmt;
 use std::fmt::Write;
+use std::num::NonZeroUsize;
 use std::ops::Not;
 
-#[pyfunction]
+use lru::LruCache;
+use once_cell::sync::Lazy;
+use std::sync::Mutex;
+
+// Define a static LRU cache with capacity of 256 items
+static BITS_CACHE: Lazy<Mutex<LruCache<String, helpers::BV>>> =
+    Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(256).unwrap())));
+
+static DTYPE_PARSER: Lazy<Mutex<Option<PyObject>>> = Lazy::new(|| Mutex::new(None));
+
 pub fn split_tokens(s: String) -> Vec<String> {
     // Remove whitespace
     let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
@@ -38,7 +48,6 @@ pub fn split_tokens(s: String) -> Vec<String> {
     tokens
 }
 
-#[pyfunction]
 pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
     if s.starts_with("0x") {
         return Bits::_from_hex(&s);
@@ -356,6 +365,60 @@ impl PyBitsFindAllIterator {
 /// Public Python-facing methods.
 #[pymethods]
 impl Bits {
+    #[classmethod]
+    pub fn _str_to_bits_rust(
+        _cls: &Bound<'_, PyType>,
+        s: String,
+        dtype_parser: &Bound<'_, PyAny>,
+    ) -> PyResult<Bits> {
+        // Check cache first
+        {
+            let mut cache = BITS_CACHE.lock().unwrap();
+            if let Some(cached_data) = cache.get(&s) {
+                return Ok(Bits::new(cached_data.clone()));
+            }
+        }
+        let tokens = split_tokens(s.clone());
+        let mut bits_array = Vec::<Bits>::new();
+        for token in tokens {
+            if token.is_empty() {
+                continue;
+            }
+            match string_literal_to_bits(token.clone()) {
+                Ok(bits) => bits_array.push(bits),
+                Err(_) => {
+                    // Call out to the Python dtype parser - see if it can handle it.
+                    let result = dtype_parser.call1((token,))?;
+                    // Convert result
+                    let bits_ref = result.extract::<PyRef<Bits>>()?;
+                    bits_array.push(Bits::new(bits_ref.data.clone()));
+                }
+            }
+        }
+        // Combine all bits
+        let result = if bits_array.is_empty() {
+            return Ok(Bits::from_zeros(_cls, 0)?);
+        } else if bits_array.len() == 1 {
+            bits_array.remove(0)
+        } else {
+            //  (TODO: Use other method)
+            let total_len: usize = bits_array.iter().map(|b| b.len()).sum();
+            let mut result = helpers::BV::with_capacity(total_len);
+
+            for bits in bits_array {
+                result.extend_from_bitslice(&bits.data);
+            }
+            Bits::new(result)
+        };
+        // Update cache with new result
+        {
+            let mut cache = BITS_CACHE.lock().unwrap();
+            cache.put(s, result.data.clone());
+        }
+
+        Ok(result)
+    }
+
     /// Return string representations for printing.
     pub fn __str__(&self) -> String {
         if self.len() == 0 {

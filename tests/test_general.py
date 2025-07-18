@@ -1,5 +1,7 @@
 
-from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray
+from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits
+
+from bitformat._bits import dtype_token_to_bits
 
 # import tomllib
 #
@@ -48,3 +50,9 @@ def test_info_strings():
         assert '\n' not in info
         assert len(info) > 0
         # print(f"{thing!r} : {info}")
+
+def test_rust_string_conversion():
+    s = Bits._str_to_bits_rust('0xf', dtype_token_to_bits)
+    assert s == Bits('0xf')
+    s = Bits._str_to_bits_rust('u12=10', dtype_token_to_bits)
+    assert s == Bits('u12=10')

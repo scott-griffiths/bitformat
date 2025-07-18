@@ -12,7 +12,6 @@ from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import split_tokens, string_literal_to_bits
 from bitformat.bit_rust import Bits, MutableBits
 from collections.abc import Sequence
 
@@ -123,19 +122,6 @@ def process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     return bits_per_group, has_length_in_fmt
 
 
-def token_to_bits(token: str) -> Bits:
-
-    if token and token[0] == '0':
-        return string_literal_to_bits(token)
-
-    if token.startswith(("b'", 'b"')):
-        # A bytes literal?
-        return Bits.from_bytes(ast.literal_eval(token))
-
-    raise TypeError  # Just signaling internally that we can't deal with it here.
-
-
-@functools.lru_cache(CACHE_SIZE)
 def dtype_token_to_bits(token: str) -> Bits:
     try:
         dtype_str, value_str = token.split("=", 1)
@@ -150,31 +136,6 @@ def dtype_token_to_bits(token: str) -> Bits:
     except ValueError:
         raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
     return dtype.pack(value)
-
-# When used to create a Bits (rather than MutableBits) it's a good optimisation to cache the result here.
-@functools.lru_cache(CACHE_SIZE)
-def str_to_bits_cached(s: str) -> Bits:
-    tokens = split_tokens(s)
-    bits_array = []
-    for token in tokens:
-        if token:
-            try:
-                bits_array.append(token_to_bits(token))
-            except TypeError:
-                bits_array.append(dtype_token_to_bits(token))
-    return Bits.from_joined(bits_array)
-
-
-def str_to_mutablebits(s: str) -> MutableBits:
-    tokens = split_tokens(s)
-    bits_array = []
-    for token in tokens:
-        if token:
-            try:
-                bits_array.append(token_to_bits(token))
-            except TypeError:
-                bits_array.append(dtype_token_to_bits(token))
-    return MutableBits.from_joined(bits_array)
 
 
 class BaseBitsMethods:
@@ -681,7 +642,7 @@ class BitsMethods:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bits_cached(s)
+            return Bits._str_to_bits_rust(s, dtype_token_to_bits)
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> Bits:
@@ -784,7 +745,7 @@ class BitsMethods:
             a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
 
         """
-        return str_to_bits_cached(s)
+        return Bits._str_to_bits_rust(s, dtype_token_to_bits)
 
     @staticmethod
     def _from_any(any_: BitsType, /) -> Bits:
@@ -802,7 +763,7 @@ class BitsMethods:
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return Bits.from_bytes(any_)
         if isinstance(any_, str):
-            return str_to_bits_cached(any_)
+            return Bits._str_to_bits_rust(any_, dtype_token_to_bits)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 
@@ -954,7 +915,7 @@ class MutableBitsMethods:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bits_cached(s)._clone_as_mutable()
+            return Bits._str_to_bits_rust(s, dtype_token_to_bits)._clone_as_mutable()
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
@@ -1058,7 +1019,7 @@ class MutableBitsMethods:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        return str_to_bits_cached(s)._clone_as_mutable()
+        return Bits._str_to_bits_rust(s, dtype_token_to_bits)._clone_as_mutable()
 
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
@@ -1183,7 +1144,7 @@ class MutableBitsMethods:
         if isinstance(any_, (Bits, MutableBits)):
             return any_._clone_as_mutable()
         if isinstance(any_, str):
-            return str_to_mutablebits(any_)
+            return Bits._str_to_bits_rust(any_, dtype_token_to_bits)._clone_as_mutable()
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return MutableBits.from_bytes(any_)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
