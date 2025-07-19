@@ -12,7 +12,7 @@ from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import Bits, MutableBits
+from bitformat.bit_rust import Bits, MutableBits, str_to_bits_rust
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -624,26 +624,6 @@ class BitsMethods:
     """
     # ----- Class Methods -----
 
-    def __new__(cls, s: str | None = None, /) -> Bits:
-        if s is None:
-            return Bits.from_zeros(0)
-        else:
-            if not isinstance(s, str):
-                err = f"Expected a str for Bits constructor, but received a {type(s)}. "
-                if isinstance(s, MutableBits):
-                    err += "You can use the 'to_bits()' method on the `MutableBits` instance instead."
-                elif isinstance(s, (bytes, bytearray, memoryview)):
-                    err += "You can use 'Bits.from_bytes()' instead."
-                elif isinstance(s, int):
-                    err += "Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?"
-                elif isinstance(s, (tuple, list)):
-                    err += "Perhaps you want to use 'Bits.from_joined()' instead?"
-                else:
-                    err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
-                           "from_ones(), from_zeros(), from_dtype() or from_random()."
-                raise TypeError(err)
-            return Bits._str_to_bits_rust(s, dtype_token_to_bits)
-
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> Bits:
         """
@@ -745,7 +725,7 @@ class BitsMethods:
             a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
 
         """
-        return Bits._str_to_bits_rust(s, dtype_token_to_bits)
+        return str_to_bits_rust(s)
 
     @staticmethod
     def _from_any(any_: BitsType, /) -> Bits:
@@ -763,7 +743,7 @@ class BitsMethods:
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return Bits.from_bytes(any_)
         if isinstance(any_, str):
-            return Bits._str_to_bits_rust(any_, dtype_token_to_bits)
+            return str_to_bits_rust(any_)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 
@@ -915,7 +895,7 @@ class MutableBitsMethods:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return Bits._str_to_bits_rust(s, dtype_token_to_bits)._clone_as_mutable()
+            return str_to_bits_rust(s)._clone_as_mutable()
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
@@ -1019,7 +999,7 @@ class MutableBitsMethods:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        return Bits._str_to_bits_rust(s, dtype_token_to_bits)._clone_as_mutable()
+        return str_to_bits_rust(s)._clone_as_mutable()
 
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
@@ -1144,7 +1124,7 @@ class MutableBitsMethods:
         if isinstance(any_, (Bits, MutableBits)):
             return any_._clone_as_mutable()
         if isinstance(any_, str):
-            return Bits._str_to_bits_rust(any_, dtype_token_to_bits)._clone_as_mutable()
+            return str_to_bits_rust(any_)._clone_as_mutable()
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return MutableBits.from_bytes(any_)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")

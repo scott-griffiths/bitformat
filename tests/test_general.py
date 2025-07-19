@@ -1,7 +1,7 @@
 
 from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits
 
-from bitformat._bits import dtype_token_to_bits
+from bitformat._bits import str_to_bits_rust
 
 # import tomllib
 #
@@ -52,7 +52,7 @@ def test_info_strings():
         # print(f"{thing!r} : {info}")
 
 def test_rust_string_conversion():
-    s = Bits._str_to_bits_rust('0xf', dtype_token_to_bits)
+    s = str_to_bits_rust('0xf')
     assert s == Bits('0xf')
-    s = Bits._str_to_bits_rust('u12=10', dtype_token_to_bits)
+    s = str_to_bits_rust('u12=10')
     assert s == Bits('u12=10')

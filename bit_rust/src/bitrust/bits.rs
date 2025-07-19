@@ -63,6 +63,80 @@ pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
     )))
 }
 
+#[pyfunction]
+pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
+    // Check cache first
+    {
+        let mut cache = BITS_CACHE.lock().unwrap();
+        if let Some(cached_data) = cache.get(&s) {
+            return Ok(Bits::new(cached_data.clone()));
+        }
+    }
+    let tokens = split_tokens(s.clone());
+    let mut bits_array = Vec::<Bits>::new();
+
+    for token in tokens {
+        if token.is_empty() {
+            continue;
+        }
+        match string_literal_to_bits(token.clone()) {
+            Ok(bits) => bits_array.push(bits),
+            Err(_) => {
+                // Call out to the Python dtype parser - see if it can handle it.
+                Python::with_gil(|py| -> PyResult<()> {
+                    // Only access the parser inside this scope
+                    let parser_guard = DTYPE_PARSER.lock().unwrap();
+                    let parser = match &*parser_guard {
+                        Some(p) => p,
+                        None => {
+                            return Err(PyValueError::new_err(
+                                "dtype_parser has not been set. Call set_dtype_parser first",
+                            ));
+                        }
+                    };
+                    let dtype_parser = parser.bind(py);
+                    let result = dtype_parser.call1((token.clone(),))?;
+                    // Convert result
+                    let bits_ref = result.extract::<PyRef<Bits>>()?;
+                    bits_array.push(Bits::new(bits_ref.data.clone()));
+                    Ok(())
+                })?; // Propagate any Python errors
+            }
+        }
+    }
+    // Combine all bits
+    let result = if bits_array.is_empty() {
+        Bits::new(helpers::BV::repeat(false, 0))
+    } else if bits_array.len() == 1 {
+        bits_array.remove(0)
+    } else {
+        //  (TODO: Use other method)
+        let total_len: usize = bits_array.iter().map(|b| b.len()).sum();
+        let mut result = helpers::BV::with_capacity(total_len);
+
+        for bits in bits_array {
+            result.extend_from_bitslice(&bits.data);
+        }
+
+        Bits::new(result)
+    };
+    // Update cache with new result
+    {
+        let mut cache = BITS_CACHE.lock().unwrap();
+        cache.put(s, result.data.clone());
+    }
+
+    Ok(result)
+}
+
+#[pyfunction]
+pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
+    // Store the Python object directly - no conversion needed
+    let mut parser_guard = DTYPE_PARSER.lock().unwrap();
+    *parser_guard = Some(dtype_parser);
+    Ok(())
+}
+
 pub trait BitCollection: Sized {
     fn len(&self) -> usize;
     fn from_zeros(length: usize) -> Self;
@@ -365,58 +439,29 @@ impl PyBitsFindAllIterator {
 /// Public Python-facing methods.
 #[pymethods]
 impl Bits {
-    #[classmethod]
-    pub fn _str_to_bits_rust(
-        _cls: &Bound<'_, PyType>,
-        s: String,
-        dtype_parser: &Bound<'_, PyAny>,
-    ) -> PyResult<Bits> {
-        // Check cache first
-        {
-            let mut cache = BITS_CACHE.lock().unwrap();
-            if let Some(cached_data) = cache.get(&s) {
-                return Ok(Bits::new(cached_data.clone()));
-            }
+    #[new]
+    #[pyo3(signature = (s = None))]
+    pub fn py_new(s: Option<String>) -> PyResult<Self> {
+        match s {
+            None => Ok(BitCollection::from_zeros(0)),
+            Some(s) => str_to_bits_rust(s),
         }
-        let tokens = split_tokens(s.clone());
-        let mut bits_array = Vec::<Bits>::new();
-        for token in tokens {
-            if token.is_empty() {
-                continue;
-            }
-            match string_literal_to_bits(token.clone()) {
-                Ok(bits) => bits_array.push(bits),
-                Err(_) => {
-                    // Call out to the Python dtype parser - see if it can handle it.
-                    let result = dtype_parser.call1((token,))?;
-                    // Convert result
-                    let bits_ref = result.extract::<PyRef<Bits>>()?;
-                    bits_array.push(Bits::new(bits_ref.data.clone()));
-                }
-            }
-        }
-        // Combine all bits
-        let result = if bits_array.is_empty() {
-            return Ok(Bits::from_zeros(_cls, 0)?);
-        } else if bits_array.len() == 1 {
-            bits_array.remove(0)
-        } else {
-            //  (TODO: Use other method)
-            let total_len: usize = bits_array.iter().map(|b| b.len()).sum();
-            let mut result = helpers::BV::with_capacity(total_len);
-
-            for bits in bits_array {
-                result.extend_from_bitslice(&bits.data);
-            }
-            Bits::new(result)
-        };
-        // Update cache with new result
-        {
-            let mut cache = BITS_CACHE.lock().unwrap();
-            cache.put(s, result.data.clone());
-        }
-
-        Ok(result)
+        // TODO: We previously had an interesting TypeError message if s wasn't a string
+        // We should reinstate this:
+        //  if not isinstance(s, str):
+        //      err = f"Expected a str for Bits constructor, but received a {type(s)}. "
+        //      if isinstance(s, MutableBits):
+        //          err += "You can use the 'to_bits()' method on the `MutableBits` instance instead."
+        //      elif isinstance(s, (bytes, bytearray, memoryview)):
+        //          err += "You can use 'Bits.from_bytes()' instead."
+        //      elif isinstance(s, int):
+        //          err += "Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?"
+        //      elif isinstance(s, (tuple, list)):
+        //          err += "Perhaps you want to use 'Bits.from_joined()' instead?"
+        //      else:
+        //          err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
+        //                 "from_ones(), from_zeros(), from_dtype() or from_random()."
+        //      raise TypeError(err)
     }
 
     /// Return string representations for printing.

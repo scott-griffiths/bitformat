@@ -31,7 +31,7 @@ __author__ = "Scott Griffiths"
 
 
 from ._version import VERSION as __version__
-from ._bits import Bits, MutableBits
+from ._bits import Bits, MutableBits, dtype_token_to_bits
 from ._array import Array
 from ._dtypes import DtypeDefinition, Register, Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ._fieldtype import FieldType
@@ -46,6 +46,10 @@ from ._options import Options
 from ._common import Expression, Endianness, byteorder, DtypeKind
 from ._reader import Reader
 from ._dtype_definitions import dtype_definitions
+
+# This lets us pass in a Python method for the Rust parser to use.
+from .bit_rust import set_dtype_parser
+set_dtype_parser(dtype_token_to_bits)
 
 
 for dt in dtype_definitions:
