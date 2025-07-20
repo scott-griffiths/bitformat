@@ -146,7 +146,7 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     }
 
     if let Ok(any_mutable_bits) = any_bound.extract::<PyRef<MutableBits>>() {
-        return Ok(any_mutable_bits._clone_as_immutable());
+        return Ok(any_mutable_bits.to_bits());
     }
 
     if let Ok(any_string) = any_bound.extract::<String>() {
@@ -932,8 +932,8 @@ impl Bits {
         self.data.any()
     }
 
-    /// Return as a MutableBits with a copy of the data.
-    pub fn _clone_as_mutable(&self) -> MutableBits {
+    /// Create and return a mutable copy of the Bits as a MutableBits instance.
+    pub fn to_mutable_bits(&self) -> MutableBits {
         MutableBits {
             inner: Bits::new(self.data.clone()),
         }
@@ -1187,7 +1187,7 @@ mod tests {
         assert_eq!(a.len(), 24);
         let b = a._getslice(1, a.len()).unwrap();
         assert_eq!(b.len(), 23);
-        let c = b._clone_as_mutable();
+        let c = b.to_mutable_bits();
         assert_eq!(c.len(), 23);
     }
 
@@ -1365,7 +1365,7 @@ mod tests {
     #[test]
     fn freeze_preserves_data() {
         let mutable = MutableBits::_from_bin_checked("1100").unwrap();
-        let immutable = mutable._clone_as_immutable();
+        let immutable = mutable.to_bits();
         assert_eq!(immutable.to_bin(), "1100");
     }
 
@@ -1374,7 +1374,7 @@ mod tests {
         let mut mutable = MutableBits::_from_bin_checked("0000").unwrap();
         mutable._set_index(true, 1).unwrap();
         mutable._set_index(true, 2).unwrap();
-        let immutable = mutable._clone_as_immutable();
+        let immutable = mutable.to_bits();
         assert_eq!(immutable.to_bin(), "0110");
     }
 
@@ -1461,7 +1461,7 @@ mod tests {
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());
 
-        assert_eq!(empty_mutable._clone_as_immutable().len(), 0);
+        assert_eq!(empty_mutable.to_bits().len(), 0);
 
         let mut another_empty = <MutableBits as BitCollection>::from_zeros(0);
         another_empty._append(&empty_immutable);

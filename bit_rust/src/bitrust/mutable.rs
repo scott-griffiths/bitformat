@@ -622,13 +622,13 @@ impl MutableBits {
         Ok(())
     }
 
-    /// Return a copy with a real copy of the data.
-    pub fn _clone_as_mutable(&self) -> Self {
+    /// Return a new copy of the MutableBits for the copy module.
+    pub fn __copy__(&self) -> Self {
         MutableBits::new(self.inner.data.clone())
     }
 
-    /// Convert to immutable Bits - cloning the data.
-    pub fn _clone_as_immutable(&self) -> Bits {
+    /// Create and return an immutable copy of the MutableBits as Bits instance.
+    pub fn to_bits(&self) -> Bits {
         Bits::new(self.inner.data.clone())
     }
 

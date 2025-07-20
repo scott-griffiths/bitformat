@@ -550,7 +550,7 @@ this is a step to using the Rust classes as the base classes."""
                 mutable.append(self)
             return mutable._as_immutable()
         else:
-            b = self._clone_as_immutable()
+            b = self.to_bits()
             for _ in range(n):
                 mutable.append(b)
             return mutable
@@ -710,26 +710,6 @@ class BitsMethods:
         """
         return str_to_bits_rust(s)
 
-    # @staticmethod
-    # def _from_any(any_: BitsType, /) -> Bits:
-    #     """Create a new class instance from one of the many things that can be used to build it.
-    #
-    #     This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-    #     The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
-    #
-    #     Used internally only.
-    #     """
-    #     if isinstance(any_, Bits):
-    #         return any_
-    #     if isinstance(any_, MutableBits):
-    #         return any_._clone_as_immutable()
-    #     if isinstance(any_, (bytes, bytearray, memoryview)):
-    #         return Bits.from_bytes(any_)
-    #     if isinstance(any_, str):
-    #         return str_to_bits_rust(any_)
-    #     raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
-
-
     def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """
         Return Bits generator by cutting into bits sized chunks.
@@ -783,7 +763,7 @@ class BitsMethods:
     def __add__(self, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = bits_from_any(bs)
-        x = self._clone_as_mutable()
+        x = self.to_mutable_bits()
         x.append(bs)
         x = x._as_immutable()
         return x
@@ -834,10 +814,6 @@ class BitsMethods:
         """
         return self
 
-    def to_mutable_bits(self) -> MutableBits:
-        """Create and return a mutable copy of the Bits as a MutableBits instance."""
-        return self._clone_as_mutable()
-
 
 class MutableBitsMethods:
     """
@@ -878,7 +854,7 @@ class MutableBitsMethods:
                     err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
                            "from_ones(), from_zeros(), from_dtype() or from_random()."
                 raise TypeError(err)
-            return str_to_bits_rust(s)._clone_as_mutable()
+            return str_to_bits_rust(s).to_mutable_bits()
 
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
@@ -933,7 +909,7 @@ class MutableBitsMethods:
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         # TODO: clone here shouldn't be needed.
-        return xt._clone_as_mutable()
+        return xt.to_mutable_bits()
 
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
@@ -982,7 +958,7 @@ class MutableBitsMethods:
             a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
 
         """
-        return str_to_bits_rust(s)._clone_as_mutable()
+        return str_to_bits_rust(s).to_mutable_bits()
 
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
@@ -992,7 +968,7 @@ class MutableBitsMethods:
     def __add__(self, bs: BitsType, /) -> MutableBits:
         """Concatenate Bits and return a new Bits."""
         bs = bits_from_any(bs)
-        x = self._clone_as_mutable()
+        x = self.__copy__()
         x.append(bs)
         return x
 
@@ -1104,22 +1080,15 @@ class MutableBitsMethods:
 
         Used internally only.
         """
-        if isinstance(any_, (Bits, MutableBits)):
-            return any_._clone_as_mutable()
+        if isinstance(any_, Bits):
+            return any_.to_mutable_bits()
+        if isinstance(any_, MutableBits):
+            return any_
         if isinstance(any_, str):
-            return str_to_bits_rust(any_)._clone_as_mutable()
+            return str_to_bits_rust(any_).to_mutable_bits()
         if isinstance(any_, (bytes, bytearray, memoryview)):
             return MutableBits.from_bytes(any_)
         raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
-
-    def to_bits(self) -> Bits:
-        """Create and return an immutable copy of the MutableBits as Bits instance."""
-        return self._clone_as_immutable()
-
-    def __copy__(self: MutableBits) -> MutableBits:
-        """Return a new copy of the MutableBits for the copy module.
-        """
-        return self._clone_as_mutable()
 
     def append(self, bs: BitsType, /) -> MutableBits:
         """Append bits to the end of the current MutableBits in-place.
@@ -1346,7 +1315,7 @@ class MutableBitsMethods:
                 break
         if not starting_points:
             return self
-        original = self._clone_as_immutable()
+        original = self.to_bits()
         replacement_list = [original._getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new_bits)

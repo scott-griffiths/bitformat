@@ -331,9 +331,9 @@ class DtypeSingle(Dtype):
         if little_endian:
             def get_fn_le(bits, start, length):
                 # TODO: Should take slice here
-                mutable_b = bits._clone_as_mutable()
+                mutable_b = bits.to_mutable_bits()
                 mutable_b.byte_swap()
-                return definition.get_fn(mutable_b._clone_as_immutable(), start, length)
+                return definition.get_fn(mutable_b.to_bits(), start, length)
             x._get_fn = get_fn_le
         else:
             x._get_fn = definition.get_fn
@@ -345,7 +345,7 @@ class DtypeSingle(Dtype):
 
         def create_bits_le(v):
             bs = x._set_fn(v, length=x._bit_length)
-            mutable = bs._clone_as_mutable()  # TODO: Do we really need to clone here?
+            mutable = bs.to_mutable_bits()  # TODO: Do we really need to clone here?
             mutable.byte_swap()
             return mutable._as_immutable()
         x._create_fn = create_bits_le if little_endian else create_bits
@@ -898,14 +898,14 @@ class Register:
             def fget_le_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                mutable_b = b._clone_as_mutable()
+                mutable_b = b.to_mutable_bits()
                 mutable_b.byte_swap()
-                return definition.get_fn(mutable_b._clone_as_immutable(), 0, len(b))
+                return definition.get_fn(mutable_b.to_bits(), 0, len(b))
 
             def fget_le_mutable_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                c = b._clone_as_mutable()
+                c = b.to_mutable_bits()
                 c.byte_swap()
                 return definition.get_fn(c._as_immutable(), 0, len(b))
 
