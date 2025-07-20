@@ -1,5 +1,5 @@
 
-from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits
+from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits, MutableBits
 
 from bitformat._bits import str_to_bits_rust, bits_from_any
 
@@ -64,5 +64,5 @@ def test_rust_bits_creation():
     assert b == Bits.from_bytes(b'123')
     b = b.to_mutable_bits()
     c = bits_from_any(b)
-    assert b == Bits.from_bytes(b'123')
-    assert type(b) == Bits
+    assert c == Bits.from_bytes(b'123')
+    assert type(b) == MutableBits

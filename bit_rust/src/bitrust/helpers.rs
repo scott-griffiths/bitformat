@@ -1,9 +1,9 @@
 /// Helper functions.
 use super::*;
+use bits::BitCollection;
 use bitvec::prelude::*;
 use pyo3::exceptions::PyIndexError;
 use pyo3::PyResult;
-use bits::BitCollection;
 // The choice of size is interesting. Can choose u8, u16, u32, u64.
 // Also can choose Lsb0 or Msb0.
 // Not sure of all the performance implications yet.
@@ -66,11 +66,7 @@ pub fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize
 }
 
 // The same as find_bitvec but only returns matches that are a multiple of 8.
-pub fn find_bitvec_bytealigned(
-    haystack: &Bits,
-    needle: &Bits,
-    start: usize,
-) -> Option<usize> {
+pub fn find_bitvec_bytealigned(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;

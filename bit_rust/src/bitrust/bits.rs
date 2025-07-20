@@ -137,7 +137,6 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
     Ok(())
 }
 
-
 #[pyfunction]
 pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
@@ -183,6 +182,7 @@ pub trait BitCollection: Sized {
 
 /// Bits is a struct that holds an arbitrary amount of binary data.
 /// Currently it's just wrapping a BitVec from the bitvec crate.
+#[derive(Clone)]
 #[pyclass(frozen, freelist = 8, module = "bitformat")]
 pub struct Bits {
     pub(crate) data: helpers::BV,
@@ -530,10 +530,9 @@ impl Bits {
     /// >>> Bits('0b1110') == '0xe'
     /// True
     ///
-    pub fn __eq__(&self, other: PyObject, py: Python) -> PyResult<bool> {
+    pub fn __eq__(&self, other: PyObject, py: Python) -> bool {
         // TODO: This risks creating copies of Bits or MutableBits when they're not needed.
-        let other_bits = bits_from_any(other, py)?;
-        Ok(self.data == other_bits.data)
+        bits_from_any(other, py).map_or(false, |b| self.data == b.data)
     }
 
     #[staticmethod]
@@ -941,10 +940,8 @@ impl Bits {
     }
 
     pub fn _clone_as_immutable(&self) -> Self {
-        // TODO? We don't need to clone the data, just return the same Bits instance.
-        Bits {
-            data: self.data.clone(),
-        }
+        // TODO: The clone shouldn't have to copy the data. Use Rc internally?
+        self.clone()
     }
 
     /// Returns the bool value at a given bit index.
