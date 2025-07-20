@@ -1,14 +1,44 @@
-use crate::bitrust::{bits, helpers};
+use crate::bitrust::{bits, helpers, str_to_bits_rust};
 use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
 use pyo3::types::{PyBool, PySlice};
 use pyo3::types::{PySliceMethods, PyType};
-use pyo3::PyRefMut;
 use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
+use pyo3::{pyfunction, PyRefMut};
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use std::ops::Not;
+
+#[pyfunction]
+pub fn mutable_bits_from_any(any: PyObject, py: Python) -> PyResult<MutableBits> {
+    let any_bound = any.bind(py);
+
+    if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
+        return Ok(any_bits.to_mutable_bits());
+    }
+
+    if let Ok(any_mutable_bits) = any_bound.extract::<PyRef<MutableBits>>() {
+        return Ok(any_mutable_bits.__copy__());
+    }
+
+    if let Ok(any_string) = any_bound.extract::<String>() {
+        let bits = str_to_bits_rust(any_string)?;
+        return Ok(bits.to_mutable_bits());
+    }
+    if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
+        let bits = <Bits as BitCollection>::from_bytes(any_bytes);
+        return Ok(bits.to_mutable_bits());
+    }
+    let type_name = match any_bound.get_type().name() {
+        Ok(name) => name.to_string(),
+        Err(_) => "<unknown>".to_string(),
+    };
+    Err(PyTypeError::new_err(format!(
+        "Cannot convert object of type {} to a MutableBits object.",
+        type_name
+    )))
+}
 
 #[pyclass(freelist = 8, module = "bitformat")]
 pub struct MutableBits {

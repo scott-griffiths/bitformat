@@ -5,14 +5,12 @@ import numbers
 import random
 import sys
 import io
-import functools
 from ast import literal_eval
-from collections import abc
 from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import Bits, MutableBits, str_to_bits_rust, bits_from_any
+from bitformat.bit_rust import Bits, MutableBits, str_to_bits_rust, bits_from_any, mutable_bits_from_any
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -557,7 +555,7 @@ this is a step to using the Rust classes as the base classes."""
 
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
-        bs = MutableBits._from_any(bs)
+        bs = mutable_bits_from_any(bs)
         bs.append(self)
         if isinstance(self, Bits):
             x = bs._as_immutable()
