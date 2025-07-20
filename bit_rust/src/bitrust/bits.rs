@@ -4,7 +4,7 @@ use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
 use pyo3::conversion::IntoPyObject;
-use pyo3::exceptions::{PyNotImplementedError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::PyBool;
 use pyo3::types::PySlice;
@@ -137,34 +137,17 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
     Ok(())
 }
 
-// def _from_any(any_: BitsType, /) -> Bits:
-// """Create a new class instance from one of the many things that can be used to build it.
-//
-//         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-//         The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
-//
-//         Used internally only.
-//         """
-// if isinstance(any_, Bits):
-// return any_
-// if isinstance(any_, MutableBits):
-// return any_._clone_as_immutable()
-// if isinstance(any_, (bytes, bytearray, memoryview)):
-// return Bits.from_bytes(any_)
-// if isinstance(any_, str):
-// return str_to_bits_rust(any_)
-// raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
 
 #[pyfunction]
 pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
-    if Python::with_gil(|py| any_bound.is_instance_of::<Bits>()) {
-        let bits = any_bound.extract::<PyRef<Bits>>()?;
-        return Ok(bits._clone_as_immutable());
+
+    if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
+        return Ok(any_bits._clone_as_immutable());
     }
-    if Python::with_gil(|py| any_bound.is_instance_of::<MutableBits>()) {
-        let mutable_bits = any_bound.extract::<PyRef<MutableBits>>()?;
-        return Ok(mutable_bits._clone_as_immutable());
+
+    if let Ok(any_mutable_bits) = any_bound.extract::<PyRef<MutableBits>>() {
+        return Ok(any_mutable_bits._clone_as_immutable());
     }
 
     if let Ok(any_string) = any_bound.extract::<String>() {
@@ -173,7 +156,14 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
         return Ok(<Bits as BitCollection>::from_bytes(any_bytes));
     }
-    Err(PyTypeError::new_err(""))
+    let type_name = match any_bound.get_type().name() {
+        Ok(name) => name.to_string(),
+        Err(_) => "<unknown>".to_string(),
+    };
+    Err(PyTypeError::new_err(format!(
+        "Cannot convert object of type {} to a Bits object.",
+        type_name
+    )))
 }
 
 pub trait BitCollection: Sized {
@@ -533,22 +523,17 @@ impl Bits {
         )
     }
 
-    fn __eq__(&self, _other: PyRef<Self>) -> PyResult<bool> {
-        Err(PyNotImplementedError::new_err(
-            "Use the equals() method for equality checks.",
-        ))
-    }
-
-    // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
-    pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
-        let other_any = other.bind(py);
-        if let Ok(other_bits) = other_any.extract::<PyRef<Bits>>() {
-            return Ok(self.data == other_bits.data);
-        }
-        if let Ok(other_mutable_bits) = other_any.extract::<PyRef<MutableBits>>() {
-            return Ok(self.data == other_mutable_bits.inner.data);
-        }
-        Err(PyTypeError::new_err("")) // TODO
+    /// Return True if two Bits have the same binary representation.
+    ///
+    /// The right hand side will be promoted to a Bits if needed and possible.
+    ///
+    /// >>> Bits('0b1110') == '0xe'
+    /// True
+    ///
+    pub fn __eq__(&self, other: PyObject, py: Python) -> PyResult<bool> {
+        // TODO: This risks creating copies of Bits or MutableBits when they're not needed.
+        let other_bits = bits_from_any(other, py)?;
+        Ok(self.data == other_bits.data)
     }
 
     #[staticmethod]

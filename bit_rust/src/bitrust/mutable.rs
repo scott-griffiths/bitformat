@@ -1,5 +1,5 @@
-use crate::bitrust::Bits;
 use crate::bitrust::{bits, helpers};
+use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
@@ -104,16 +104,16 @@ impl MutableBits {
 
 #[pymethods]
 impl MutableBits {
-    // Only checks equality with Bits or MutableBits. Otherwise raises TypeError.
-    pub fn _equals(&self, other: PyObject, py: Python) -> PyResult<bool> {
-        let other_any = other.bind(py);
-        if let Ok(other_bits) = other_any.extract::<PyRef<Bits>>() {
-            return Ok(self.inner.data == other_bits.data);
-        }
-        if let Ok(other_mutable_bits) = other_any.extract::<PyRef<MutableBits>>() {
-            return Ok(self.inner.data == other_mutable_bits.inner.data);
-        }
-        Err(PyTypeError::new_err("")) // TODO
+    /// Return True if two MutableBits have the same binary representation.
+    ///
+    /// The right hand side will be promoted to a MutableBits if needed and possible.
+    ///
+    /// >>> MutableBits('0xf2') == '0b11110010'
+    /// True
+    ///
+    pub fn __eq__(&self, other: PyObject, py: Python) -> PyResult<bool> {
+        let other_bits = bits_from_any(other, py)?;
+        Ok(self.inner.data == other_bits.data)
     }
 
     /// Return string representations for printing.

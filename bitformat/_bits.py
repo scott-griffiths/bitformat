@@ -188,7 +188,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         suffix = bits_from_any(suffix)
         if len(suffix) <= len(self):
-            return self._getslice(len(self) - len(suffix), len(self))._equals(suffix)
+            return self._getslice(len(self) - len(suffix), len(self)) == suffix
         return False
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
@@ -350,7 +350,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         prefix = bits_from_any(prefix)
         if len(prefix) <= len(self):
-            return self._getslice(0, len(prefix))._equals(prefix)
+            return self._getslice(0, len(prefix)) == prefix
         return False
 
     def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
@@ -515,23 +515,6 @@ this is a step to using the Rust classes as the base classes."""
         return self.to_bytes()
 
     # ----- Comparisons
-
-    def __eq__(self, bs: Any, /) -> bool:
-        """Return True if two Bits have the same binary representation.
-
-        >>> Bits('0b1110') == '0xe'
-        True
-
-        """
-        try:
-            # We try to direct comparison first for efficiency reasons.
-            return self._equals(bs)
-        except TypeError:  # bs wasn't a Bits or MutableBits
-            try:
-                other = bits_from_any(bs)
-            except TypeError:
-                return False
-            return self._equals(other)
 
     def __ge__(self, other: Any, /) -> bool:
         # Bits can't really be ordered.

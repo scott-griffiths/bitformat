@@ -553,7 +553,7 @@ class Array:
         if isinstance(other, Array):
             if self._dtype != other._dtype:
                 return False
-            if not self._bitstore._equals(other._bitstore):
+            if not self._bitstore == other._bitstore:
                 return False
             return True
         return False
