@@ -13,16 +13,6 @@ mod tests {
     }
 
     #[test]
-    fn test_append_and_prepend() {
-        let mut mb = <MutableBits as BitCollection>::from_zeros(2);
-        let br = <Bits as BitCollection>::from_ones(2);
-        mb._append(&br);
-        assert_eq!(mb.to_bin(), "0011");
-        mb._prepend(&br);
-        assert_eq!(mb.to_bin(), "110011");
-    }
-
-    #[test]
     fn test_set_slice() {
         let mut mb = <MutableBits as BitCollection>::from_zeros(6);
         let br = <Bits as BitCollection>::from_ones(2);

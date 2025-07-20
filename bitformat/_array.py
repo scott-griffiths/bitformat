@@ -8,7 +8,7 @@ from bitformat._bits import Bits, BitsType, MutableBits
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
-from bitformat.bit_rust import bits_from_any
+from bitformat.bit_rust import bits_from_any, mutable_bits_from_any
 import operator
 import sys
 
@@ -146,7 +146,7 @@ class Array:
 
     @bits.setter
     def bits(self, value: BitsType) -> None:
-        self._bitstore = MutableBits._from_any(value)
+        self._bitstore = mutable_bits_from_any(value)
 
     def _get_bit_slice(self, start: int, stop: int) -> MutableBits:
         return self._bitstore._getslice(start, stop)
@@ -632,7 +632,7 @@ class Array:
 
     def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = MutableBits._from_any(value)
+        value = mutable_bits_from_any(value)
         if len(value) != self._item_size:
             raise ValueError(f"Bitwise op {op} needs a Bits of length {self._item_size} to match "
                              f"format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")

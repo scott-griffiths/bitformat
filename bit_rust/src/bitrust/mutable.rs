@@ -669,17 +669,60 @@ impl MutableBits {
         Bits::new(data)
     }
 
-    /// Append in-place
-    pub fn _append(&mut self, other: &Bits) {
-        self.inner.data.extend(&other.data);
+    /// Append bits to the end of the current MutableBits in-place.
+    ///
+    /// :param bs: The bits to append.
+    /// :return: self
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0x0f')
+    ///     >>> a.append('0x0a')
+    ///     MutableBits('0x0f0a')
+    ///
+    pub fn append<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        bs: PyObject,
+        py: Python<'_>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        // Check if bs is the same object as slf
+        // let pointless = slf.clone();
+        // let slf_obj = pointless.into_pyobject(py)?;
+        // if bs.is(&slf_obj) {
+        //     // If bs is slf, clone inner bits first then append
+        //     let bits_clone = slf.inner.clone();
+        //     slf.inner.data.extend(bits_clone.data);
+        // } else {
+        // Normal case - convert bs to Bits and append
+        let bs = bits_from_any(bs, py)?;
+        slf.inner.data.extend(bs.data);
+        // }
+        Ok(slf)
     }
 
-    /// Prepend in-place
-    pub fn _prepend(&mut self, other: &Bits) {
-        let self_data = std::mem::take(&mut self.inner.data);
-        let mut new_data = other.data.to_bitvec();
-        new_data.extend(self_data);
-        self.inner.data = new_data;
+    // TODO: append and prepend don't work if used with themselves. They need a 'if bs is self' check.
+
+    ///Prepend bits to the beginning of the current MutableBits in-place.
+    ///
+    /// :param bs: The bits to prepend.
+    /// :return: self
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0x0f')
+    ///     >>> a.prepend('0x0a')
+    ///     MutableBits('0x0a0f')
+    ///
+    pub fn prepend<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        bs: PyObject,
+        py: Python<'_>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        let self_data = std::mem::take(&mut slf.inner.data);
+        let mut new_data = mutable_bits_from_any(bs, py)?;
+        new_data.inner.data.extend(self_data);
+        slf.inner.data = new_data.inner.data;
+        Ok(slf)
     }
 
     /// In-place left shift

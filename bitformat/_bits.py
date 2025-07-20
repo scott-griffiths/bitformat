@@ -1069,59 +1069,6 @@ class MutableBitsMethods:
         # Default behavior
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
-    @staticmethod
-    def _from_any(any_: BitsType, /) -> MutableBits:
-        """Create a new class instance from one of the many things that can be used to build it.
-
-        This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
-        The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
-
-        Used internally only.
-        """
-        if isinstance(any_, Bits):
-            return any_.to_mutable_bits()
-        if isinstance(any_, MutableBits):
-            return any_
-        if isinstance(any_, str):
-            return str_to_bits_rust(any_).to_mutable_bits()
-        if isinstance(any_, (bytes, bytearray, memoryview)):
-            return MutableBits.from_bytes(any_)
-        raise TypeError(f"Cannot convert object of type {type(any_)} to a MutableBits object.")
-
-    def append(self, bs: BitsType, /) -> MutableBits:
-        """Append bits to the end of the current MutableBits in-place.
-
-        :param bs: The bits to append.
-        :return: self
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0x0f')
-            >>> a.append('0x0a')
-            MutableBits('0x0f0a')
-
-        """
-        bs = bits_from_any(bs)
-        self._append(bs)
-        return self
-
-    def prepend(self, bs: BitsType, /) -> MutableBits:
-        """Prepend bits to the beginning of the current MutableBits in-place.
-
-        :param bs: The bits to prepend.
-        :return: self
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0x0f')
-            >>> a.prepend('0x0a')
-            MutableBits('0x0a0f')
-
-        """
-        bs = bits_from_any(bs)
-        self._prepend(bs)
-        return self
-
     def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:
         """Change the byte endianness in-place. Return the MutableBits.
 

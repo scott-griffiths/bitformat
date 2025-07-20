@@ -905,7 +905,7 @@ class Register:
             def fget_le_mutable_bits(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                c = b.__copy__()  # TODO: Not sure we raelly need a copy here.
+                c = b.__copy__()  # TODO: Not sure we really need a copy here.
                 c.byte_swap()
                 return definition.get_fn(c._as_immutable(), 0, len(b))
 

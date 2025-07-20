@@ -1464,8 +1464,6 @@ mod tests {
         assert_eq!(empty_mutable.to_bits().len(), 0);
 
         let mut another_empty = <MutableBits as BitCollection>::from_zeros(0);
-        another_empty._append(&empty_immutable);
-        assert_eq!(another_empty.len(), 0);
     }
 
     #[test]
