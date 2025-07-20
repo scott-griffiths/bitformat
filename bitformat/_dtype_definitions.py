@@ -5,7 +5,7 @@ from typing import Literal
 from bitformat._common import DtypeKind
 from ._dtypes import DtypeDefinition
 from ._bits import Bits
-
+from .bit_rust import bits_from_any
 
 
 # The definitions for each of the data types.
@@ -182,7 +182,7 @@ def to_bits(bs: Bits, start: int, length: int) -> Bits:
     return bs
 
 def from_bits(bs: BitsType, length: None = None) -> Bits:
-    return Bits._from_any(bs)
+    return bits_from_any(bs)
 
 def bits_bits2chars(bit_length: int) -> int:
     # For bits type we can see how long it needs to be printed by trying any value

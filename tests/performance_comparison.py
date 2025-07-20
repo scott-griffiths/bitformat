@@ -107,7 +107,7 @@ def test_primes_bitformat():
     for i in range(2, math.ceil(math.sqrt(limit))):
         if is_prime[i]:
             is_prime.set(False, range(i * i, limit, i))
-    twin_primes = len(list(is_prime.find_all('0b101')))
+    twin_primes = len(list(is_prime.to_bits().find_all('0b101')))
     assert twin_primes == 239101
     return twin_primes
 

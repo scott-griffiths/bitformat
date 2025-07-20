@@ -10,6 +10,7 @@ from typing import Any, Sequence, TextIO
 from ._options import Options
 from lark import UnexpectedInput
 import lark
+from .bit_rust import bits_from_any
 
 __all__ = ["FieldType"]
 
@@ -90,7 +91,7 @@ class FieldType(abc.ABC):
         :param b: The bits to parse.
         :return: The number of bits used.
         """
-        b = Bits() if b is None else Bits._from_any(b)
+        b = Bits() if b is None else bits_from_any(b)
         self.clear()
         try:
             return self._parse(b, 0, kwargs)

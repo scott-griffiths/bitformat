@@ -7,6 +7,7 @@ from ._common import override, Indenter, Colour, DtypeKind, validate_name, Expre
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
+from .bit_rust import bits_from_any
 
 __all__ = ["Field"]
 
@@ -95,7 +96,7 @@ class Field(FieldType):
         :param const: Whether the field is constant, defaults to False.
         :return: The Field instance.
         """
-        b = Bits._from_any(b)
+        b = bits_from_any(b)
         if len(b) == 0:
             raise ValueError("Can't create a Field from an empty Bits object.")
         return cls.from_params(DtypeSingle.from_params(DtypeKind.BITS, len(b)), name, b, const)

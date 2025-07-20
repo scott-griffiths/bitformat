@@ -9,5 +9,6 @@ fn bit_rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     m.add_function(wrap_pyfunction!(bitrust::str_to_bits_rust, m)?)?;
     m.add_function(wrap_pyfunction!(bitrust::set_dtype_parser, m)?)?;
+    m.add_function(wrap_pyfunction!(bitrust::bits_from_any, m)?)?;
     Ok(())
 }

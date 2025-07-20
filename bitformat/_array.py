@@ -8,6 +8,7 @@ from bitformat._bits import Bits, BitsType, MutableBits
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
+from bitformat.bit_rust import bits_from_any
 import operator
 import sys
 
@@ -104,7 +105,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        bits = Bits._from_any(bits)
+        bits = bits_from_any(bits)
         # We may change the Bits, so need to make a copy here.
         x._bitstore = bits._clone_as_mutable()
         return x

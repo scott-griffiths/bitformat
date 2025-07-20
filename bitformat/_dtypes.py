@@ -7,7 +7,7 @@ import bitformat
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
-from bitformat.bit_rust import Bits
+from bitformat.bit_rust import Bits, bits_from_any
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
@@ -381,7 +381,7 @@ class DtypeSingle(Dtype):
     @override
     @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
-        b = bitformat.Bits._from_any(b)
+        b = bits_from_any(b)
         if self._size.is_none():
             # Try to unpack everything
             return self._get_fn(b, 0, len(b))
@@ -509,7 +509,7 @@ class DtypeArray(Dtype):
     @override
     @final
     def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
-        b = bitformat.Bits._from_any(b)
+        b = bits_from_any(b)
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
         items = self._items.evaluate()
@@ -662,7 +662,7 @@ class DtypeTuple(Dtype):
         """
         if self._bit_length is None:
             raise ValueError(f"{self!r} doesn't have a well defined size, so cannot be unpacked. Perhaps try parse() instead?")
-        b = bitformat.Bits._from_any(b)
+        b = bits_from_any(b)
 
         if self._bit_length > len(b):
             if self._dynamic_index is not None:

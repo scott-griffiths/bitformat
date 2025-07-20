@@ -137,6 +137,45 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
     Ok(())
 }
 
+// def _from_any(any_: BitsType, /) -> Bits:
+// """Create a new class instance from one of the many things that can be used to build it.
+//
+//         This method will be implicitly called whenever an object needs to be promoted to a :class:`Bits`.
+//         The builder can delegate to :meth:`Bits.from_bytes` or :meth:`Bits.from_string` as appropriate.
+//
+//         Used internally only.
+//         """
+// if isinstance(any_, Bits):
+// return any_
+// if isinstance(any_, MutableBits):
+// return any_._clone_as_immutable()
+// if isinstance(any_, (bytes, bytearray, memoryview)):
+// return Bits.from_bytes(any_)
+// if isinstance(any_, str):
+// return str_to_bits_rust(any_)
+// raise TypeError(f"Cannot convert object of type {type(any_)} to a Bits object.")
+
+#[pyfunction]
+pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
+    let any_bound = any.bind(py);
+    if Python::with_gil(|py| any_bound.is_instance_of::<Bits>()) {
+        let bits = any_bound.extract::<PyRef<Bits>>()?;
+        return Ok(bits._clone_as_immutable());
+    }
+    if Python::with_gil(|py| any_bound.is_instance_of::<MutableBits>()) {
+        let mutable_bits = any_bound.extract::<PyRef<MutableBits>>()?;
+        return Ok(mutable_bits._clone_as_immutable());
+    }
+
+    if let Ok(any_string) = any_bound.extract::<String>() {
+        return str_to_bits_rust(any_string);
+    }
+    if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
+        return Ok(<Bits as BitCollection>::from_bytes(any_bytes));
+    }
+    Err(PyTypeError::new_err(""))
+}
+
 pub trait BitCollection: Sized {
     fn len(&self) -> usize;
     fn from_zeros(length: usize) -> Self;
