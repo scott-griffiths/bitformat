@@ -16,8 +16,8 @@ jobs:
       #  You can use '[full-build]' in commit message to force all platforms builds without a tag.
       matrix:
         os: ${{ (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')) && !contains(github.event.head_commit.message, '[full-build]') 
-              ? ['ubuntu-latest']
-              : ['ubuntu-latest', 'ubuntu-24.04-arm', 'windows-latest', 'macos-13', 'macos-14'] }}
+          ? ['ubuntu-latest']
+          : ['ubuntu-latest', 'ubuntu-24.04-arm', 'windows-latest', 'macos-13', 'macos-14'] }}
     steps:
       - uses: actions/checkout@v3
 
