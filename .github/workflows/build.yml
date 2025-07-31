@@ -77,10 +77,17 @@ jobs:
           CIBW_BEFORE_ALL_LINUX: >
             curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y &&
             source $HOME/.cargo/env
-          CIBW_SKIP: ""
+          CIBW_SKIP: "*-musllinux_i686"
           CIBW_BEFORE_BUILD_MACOS: >
             rustup target add x86_64-apple-darwin aarch64-apple-darwin
           MACOSX_DEPLOYMENT_TARGET: 10.12
+          CIBW_MANYLINUX_X86_64_IMAGE: "quay.io/pypa/manylinux2014_x86_64:latest"
+          CIBW_MANYLINUX_I686_IMAGE: "quay.io/pypa/manylinux2014_i686:latest"
+          CIBW_MANYLINUX_AARCH64_IMAGE: "quay.io/pypa/manylinux2014_aarch64:latest"
+          CIBW_MANYLINUX_PPC64LE_IMAGE: "quay.io/pypa/manylinux2014_ppc64le:latest"
+          CIBW_MANYLINUX_S390X_IMAGE: "quay.io/pypa/manylinux2014_s390x:latest"
+          CIBW_MUSLLINUX_X86_64_IMAGE: "quay.io/pypa/musllinux_1_2_x86_64:latest"
+          CIBW_MUSLLINUX_I686_IMAGE: "quay.io/pypa/musllinux_1_2_i686:latest"
 
       - name: Build sdist
         if: matrix.os == 'ubuntu-latest'
