@@ -315,7 +315,7 @@ class DtypeSingle(Dtype):
         x = DtypeSingle.__new__(DtypeSingle)
         x._definition = definition
         if size.has_const_value and size.const_value is None and definition.allowed_sizes.only_one_value():
-            size_int = definition.allowed_sizes.values[0]
+            size_int = definition.allowed_sizes.sizes[0]
             size = Expression.from_int(size_int)
         x._size = size
         x._bit_length = None
@@ -362,10 +362,6 @@ class DtypeSingle(Dtype):
         this builder will be more efficient and is used internally to avoid string parsing.
 
         """
-        if size is None:
-            size = Expression.from_none()
-        elif isinstance(size, int):
-            size = Expression.from_int(size)
         x = Register().get_single_dtype(kind, size, endianness)
         return x
 
@@ -747,52 +743,66 @@ class DtypeTuple(Dtype):
 
 
 class AllowedSizes:
-    values: tuple[int, ...]
+    min_size: int | None
+    max_size: int | None
+    sizes: tuple[int, ...]
 
     """Used to specify either concrete values or ranges of values that are allowed lengths for data types."""
 
-    def __init__(self, values: tuple[int, ...] = tuple()) -> None:
-        self.values = values
+    def __init__(self, min_size: int | None = None, max_size: int | None = None, sizes: tuple[int, ...] = tuple()) -> None:
+        self.min_size = min_size
+        self.max_size = max_size
+        self.sizes = sizes
+        if self.min_size is None and self.max_size is None and not self.sizes:
+            raise ValueError  # Don't set sizes if min/max are set
+        if self.sizes and (self.min_size is not None or self.max_size is not None):
+            raise ValueError  # Don't set min/max is sizes is set.
 
-    def __bool__(self) -> bool:
-        return bool(self.values)
 
     def __str__(self) -> str:
-        return str(self.values)
+        if self.sizes:
+            return str(self.sizes)
+        upper_limit = "" if self.max_size is None else self.max_size
+        return f"[{self.min_size} .. {upper_limit}]"
 
     def __contains__(self, other: Any) -> bool:
-        if not self.values:
+        if not self.sizes:
+            if other < self.min_size:
+                return False
+            if self.max_size is not None and other > self.max_size:
+                return False
             return True
-        return other in self.values
+        return other in self.sizes
 
     def only_one_value(self) -> bool:
-        return bool(self.values and len(self.values) == 1)
+        return bool(self.sizes and len(self.sizes) == 1)
 
 
 class DtypeDefinition:
     """Represents a class of dtypes, such as ``bytes`` or ``f``, rather than a concrete dtype such as ``f32``."""
 
     def __init__(self, kind: DtypeKind, description: str, short_description: str,
+                 allowed_sizes: AllowedSizes,
                  set_fn: Callable = None, get_fn: Callable = None,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 allowed_sizes: tuple[int, ...] = tuple(), bits_per_character: int | None = None,
+                 bits_per_character: int | None = None,
                  endianness_variants: bool = False):
         self.kind = kind
         self.description = description
         self.short_description = short_description
+        self.allowed_sizes = allowed_sizes
         self.return_type = return_type
         self.is_signed = is_signed
-        self.allowed_sizes = AllowedSizes(allowed_sizes)
         self.bits_per_character = bits_per_character
         self.endianness_variants = endianness_variants
         self.set_fn = set_fn
 
-        if self.allowed_sizes.values:
+        if self.allowed_sizes.sizes:
 
             def allowed_size_checked_get_fn(br, start, length):
                 if length not in self.allowed_sizes:
                     if self.allowed_sizes.only_one_value():
-                        raise ValueError(f"'{self.kind}' dtypes must have a size of {self.allowed_sizes.values[0]}, but received a size of {length}.")
+                        raise ValueError(f"'{self.kind}' dtypes must have a size of {self.allowed_sizes.sizes[0]}, but received a size of {length}.")
                     else:
                         raise ValueError(f"'{self.kind}' dtypes must have a size in {self.allowed_sizes}, but received a size of {length}.")
                 return get_fn(br, start, length)
@@ -813,18 +823,14 @@ class DtypeDefinition:
         self.bitlength2chars_fn = bitlength2chars_fn
 
     def sanitize(self, size: Expression, endianness: Endianness) -> tuple[Expression, Endianness]:
-        if size.has_const_value and size.const_value is not None and self.allowed_sizes:
-            if size.const_value == 0:
+        if size.has_const_value and size.const_value is not None:
+            if size.const_value not in self.allowed_sizes:
                 if self.allowed_sizes.only_one_value():
-                    size = Expression.from_int(self.allowed_sizes.values[0])
-            else:
-                if size.const_value not in self.allowed_sizes:
-                    if self.allowed_sizes.only_one_value():
-                        raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype, but its "
-                                         f"only allowed size is {self.allowed_sizes.values[0]}.")
-                    else:
-                        raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype which "
-                                         f"is not one of its possible sizes. Must be one of {self.allowed_sizes}.")
+                    raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype, but its "
+                                     f"only allowed size is {self.allowed_sizes.sizes[0]}.")
+                else:
+                    raise ValueError(f"A size of {size} was supplied for the '{self.kind}' dtype which "
+                                     f"is not an allowed size. Must be in {self.allowed_sizes}.")
         if endianness is not Endianness.UNSPECIFIED:
             if not self.endianness_variants:
                 raise ValueError(f"The '{self.kind}' dtype does not support endianness variants, but '{endianness.value}' was specified.")

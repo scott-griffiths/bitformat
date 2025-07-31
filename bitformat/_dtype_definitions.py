@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 from typing import Literal
 from bitformat._common import DtypeKind
-from ._dtypes import DtypeDefinition
+from ._dtypes import DtypeDefinition, AllowedSizes
 from ._bits import Bits
 from .bit_rust import bits_from_any
 
@@ -50,8 +50,16 @@ def u_bits2chars(bit_length: int) -> int:
     return len(str((1 << bit_length) - 1))
 
 
-u_defn = DtypeDefinition(DtypeKind.UINT, "a two's complement unsigned int", "unsigned int",
-                    from_u, to_u, int,False, u_bits2chars, endianness_variants=True)
+u_defn = DtypeDefinition(DtypeKind.UINT,
+                         "a two's complement unsigned int",
+                         "unsigned int",
+                         AllowedSizes(1, None),
+                         from_u,
+                         to_u,
+                         int,
+                         False,
+                         u_bits2chars,
+                         endianness_variants=True)
 
 
 def to_i(bs: Bits, start: int, length: int) -> int:
@@ -88,8 +96,16 @@ def i_bits2chars(bit_length: int) -> int:
     return len(str((-1 << (bit_length - 1))))
 
 
-i_defn = DtypeDefinition(DtypeKind.INT, "a two's complement signed int", "signed int",
-                    from_i, to_i, int,True, i_bits2chars, endianness_variants=True)
+i_defn = DtypeDefinition(DtypeKind.INT,
+                         "a two's complement signed int",
+                         "signed int",
+                         AllowedSizes(1, None),
+                         from_i,
+                         to_i,
+                         int,
+                         True,
+                         i_bits2chars,
+                         endianness_variants=True)
 
 
 # ----- Literal types -----
@@ -127,18 +143,42 @@ def from_bytes(data: bytearray | bytes | list, length: None = None) -> Bits:
     return Bits.from_bytes(bytes(data))
 
 
-bin_defn = DtypeDefinition(DtypeKind.BIN, "a binary string", "binary string",
-                from_bin, to_bin, str,
-                False, bits_per_character=1)
-oct_defn = DtypeDefinition(DtypeKind.OCT, "an octal string", "octal string",
-                from_oct, to_oct, str,
-                False, bits_per_character=3)
-hex_defn = DtypeDefinition(DtypeKind.HEX, "a hexadecimal string", "hex string",
-                from_hex, to_hex, str,
-                False, bits_per_character=4)
-bytes_defn = DtypeDefinition(DtypeKind.BYTES, "a bytes object", "bytes",
-                from_bytes, to_bytes, bytes,
-                False, bits_per_character=8)
+bin_defn = DtypeDefinition(DtypeKind.BIN,
+                           "a binary string",
+                           "binary string",
+                           AllowedSizes(0, None),
+                           from_bin,
+                           to_bin,
+                           str,
+                           False,
+                           bits_per_character=1)
+oct_defn = DtypeDefinition(DtypeKind.OCT,
+                           "an octal string",
+                           "octal string",
+                           AllowedSizes(0, None),
+                           from_oct,
+                           to_oct,
+                           str,
+                           False,
+                           bits_per_character=3)
+hex_defn = DtypeDefinition(DtypeKind.HEX,
+                           "a hexadecimal string",
+                           "hex string",
+                           AllowedSizes(0, None),
+                           from_hex,
+                           to_hex,
+                           str,
+                           False,
+                           bits_per_character=4)
+bytes_defn = DtypeDefinition(DtypeKind.BYTES,
+                             "a bytes object",
+                             "bytes",
+                             AllowedSizes(0, None),
+                             from_bytes,
+                             to_bytes,
+                             bytes,
+                             False,
+                             bits_per_character=8)
 
 
 # ----- Float types -----
@@ -168,9 +208,16 @@ def f_bits2chars(bit_length: Literal[16, 32, 64]) -> int:
         return 24  # Empirical value
 
 
-f_defn = DtypeDefinition(DtypeKind.FLOAT, "an IEEE floating point number", "float",
-                from_f, to_f, float,
-                True, f_bits2chars, endianness_variants=True, allowed_sizes=(16, 32, 64))
+f_defn = DtypeDefinition(DtypeKind.FLOAT,
+                         "an IEEE floating point number",
+                         "float",
+                         AllowedSizes(sizes=(16, 32, 64)),
+                         from_f,
+                         to_f,
+                         float,
+                         True,
+                         f_bits2chars,
+                         endianness_variants=True)
 
 
 # ----- Other known length types -----
@@ -190,9 +237,15 @@ def bits_bits2chars(bit_length: int) -> int:
     return len(str(temp))
 
 
-bits_defn = DtypeDefinition(DtypeKind.BITS, "a Bits object", "Bits",
-                from_bits, to_bits, Bits,
-                False, bits_bits2chars)
+bits_defn = DtypeDefinition(DtypeKind.BITS,
+                            "a Bits object",
+                            "Bits",
+                            AllowedSizes(0, None),
+                            from_bits,
+                            to_bits,
+                            Bits,
+                            False,
+                            bits_bits2chars)
 
 
 def to_bool(bs: Bits, start: int, _length: int) -> bool:
@@ -208,9 +261,15 @@ def bool_bits2chars(_: Literal[1]) -> int:
     return 1
 
 
-bool_defn = DtypeDefinition(DtypeKind.BOOL, "a bool (True or False)", "bool",
-                from_bool, to_bool, bool,
-                False, bool_bits2chars, allowed_sizes=(1,))
+bool_defn = DtypeDefinition(DtypeKind.BOOL,
+                            "a bool (True or False)",
+                            "bool",
+                            AllowedSizes(sizes=(1,)),
+                            from_bool,
+                            to_bool,
+                            bool,
+                            False,
+                            bool_bits2chars)
 
 
 # ----- Special case pad type -----
@@ -221,9 +280,15 @@ def to_pad(_bs: Bits, _start: int, _length: int) -> None:
 def from_pad(value: None, length: int) -> None:
     raise ValueError("It's not possible to set a 'pad' value.")
 
-pad_defn = DtypeDefinition(DtypeKind.PAD, "a skipped section of padding", "padding",
-                from_pad, to_pad, None,
-                False, None)
+pad_defn = DtypeDefinition(DtypeKind.PAD,
+                           "a skipped section of padding",
+                           "padding",
+                           AllowedSizes(0, None),
+                           from_pad,
+                           to_pad,
+                           None,
+                           False,
+                           None)
 
 # ----------
 

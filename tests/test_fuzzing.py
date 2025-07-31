@@ -9,11 +9,11 @@ import math
 
 def get_allowed_length(dtype_kind, length):
     al = Register().kind_to_def[dtype_kind].allowed_sizes
-    if al and al.values:
-        if al.values[-1] is Ellipsis:
-            return al.values[1] * length
+    if al and al.sizes:
+        if al.sizes[-1] is Ellipsis:
+            return al.sizes[1] * length
         else:
-            return al.values[length % len(al.values)]
+            return al.sizes[length % len(al.sizes)]
     return length
 
 
@@ -99,11 +99,11 @@ def test_format_consistency(dtype_kinds, lengths):
         ],
         lengths,
     ):
-        if al.values:
-            if al.values[-1] is Ellipsis:
-                als.append(al.values[1] * length)
+        if al.sizes:
+            if al.sizes[-1] is Ellipsis:
+                als.append(al.sizes[1] * length)
             else:
-                als.append(al.values[length % len(al.values)])
+                als.append(al.sizes[length % len(al.sizes)])
         else:
             als.append(length)
 
