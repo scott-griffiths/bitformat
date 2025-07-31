@@ -13,12 +13,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
-      #  You can use '[full-build]' in commit message to force all platforms builds without a tag.
       matrix:
-        os: ${{ (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/')) && !contains(github.event.head_commit.message, '[full-build]') 
-          ? ['ubuntu-latest']
-          : ['ubuntu-latest', 'ubuntu-24.04-arm', 'windows-latest', 'macos-13', 'macos-14'] }}
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, macos-13, macos-14]
+
     steps:
+      - name: Check if build should run
+        id: should_run
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            exit 0
+          fi
+          if [[ "${{ github.event_name }}" == "push" && ! "${{ github.ref }}" =~ ^refs/tags/ && ! "${{ github.event.head_commit.message }}" =~ \[full-build\] ]]; then
+            echo "Skipping build for ${{ matrix.os }}"
+            exit 1
+          fi
+
       - uses: actions/checkout@v3
 
       - name: Set up Python
