@@ -51,8 +51,8 @@ class DtypeTransformer(Transformer):
     def dtype_single(items) -> DtypeSingle:
         assert len(items) == 3
         kind = items[0]
-        endianness = Endianness.UNSPECIFIED if items[1] is None else items[1]
-        size = items[2]
+        size = items[1]
+        endianness = Endianness.UNSPECIFIED if items[2] is None else items[2]
         return DtypeSingle.from_params(kind, size, endianness)
 
     @staticmethod
@@ -408,7 +408,7 @@ class DtypeSingle(Dtype):
         hide_length = self._size.has_const_value and self._size.const_value is None or self._definition.allowed_sizes.only_one_value()
         size_str = "" if hide_length else str(self.size)
         endianness = "" if self._endianness is Endianness.UNSPECIFIED else "_" + self._endianness.value
-        return f"{self._definition.kind}{endianness}{size_str}"
+        return f"{self._definition.kind}{size_str}{endianness}"
 
     @override
     @final

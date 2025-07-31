@@ -149,7 +149,7 @@ class TestCreation:
         with pytest.raises(ValueError):
             b.dtype = "hello_everyone"
         with pytest.raises(ValueError):
-            b.dtype = "u_le12"
+            b.dtype = "u12_le"
             _ = b[0]
         with pytest.raises(ValueError):
             b.dtype = "float17"
@@ -989,10 +989,10 @@ def test_rgb_array():
 
 
 def test_dtype_array_byte_swap():
-    a = Array("[u_le16; 3]", [(1, 2, 3), (4, 5, 6)])
+    a = Array("[u16_le; 3]", [(1, 2, 3), (4, 5, 6)])
     assert a[1] == (4, 5, 6)
     a.byte_swap()
-    a.dtype = "[u_be16; 3]"
+    a.dtype = "[u16_be; 3]"
     assert a[1] == (6, 5, 4)
 
 

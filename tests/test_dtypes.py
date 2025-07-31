@@ -221,9 +221,9 @@ def test_endianness_type_str():
     d_be = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.BIG)
     d_ne = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.NATIVE)
 
-    d_le2 = Dtype("u_le16")
-    d_be2 = Dtype("u_be16")
-    d_ne2 = Dtype("u_ne16")
+    d_le2 = Dtype("u16_le")
+    d_be2 = Dtype("u16_be")
+    d_ne2 = Dtype("u16_ne")
 
     assert d_le == d_le2
     assert d_be == d_be2
@@ -269,20 +269,20 @@ def test_dtype_tuple_slicing():
 
 
 def test_dtype_str_with_le():
-    d = Dtype("u_le16")
-    assert str(d) == "u_le16"
-    d = Dtype.from_string("f_be16")
-    assert str(d) == "f_be16"
-    d = Dtype("i_ne16")
-    assert str(d) == "i_ne16"
-    assert repr(d) == "DtypeSingle('i_ne16')"
+    d = Dtype("u16_le")
+    assert str(d) == "u16_le"
+    d = Dtype.from_string("f16_be")
+    assert str(d) == "f16_be"
+    d = Dtype("i16_ne")
+    assert str(d) == "i16_ne"
+    assert repr(d) == "DtypeSingle('i16_ne')"
 
 
 def test_hashing():
     a = Dtype('u8')
-    b = Dtype('u_be8')
-    c = Dtype('u_le8')
-    d = Dtype('u_ne8')
+    b = Dtype('u8_be')
+    c = Dtype('u8_le')
+    d = Dtype('u8_ne')
     e = Dtype('i8')
     f = Dtype('[u8; 1]')
     g = Dtype('[u8; 2]')
@@ -292,11 +292,11 @@ def test_hashing():
     assert len(s) == 9
 
 def test_str():
-    a = Dtype('u_le8')
+    a = Dtype('u8_le')
     b = Dtype('(bool, [i5; 1])')
-    assert str(a) == 'u_le8'
+    assert str(a) == 'u8_le'
     assert str(b) == '(bool, [i5; 1])'
-    assert repr(a) == "DtypeSingle('u_le8')"
+    assert repr(a) == "DtypeSingle('u8_le')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
     # nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Bits._set_u, Bits._get_u)
     # s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
@@ -328,10 +328,10 @@ def test_creating_dtype_with_no_size():
         _ = Dtype('[i;]')
 
 def test_from_string_methods():
-    a = Dtype.from_string('u_le16')
+    a = Dtype.from_string('u16_le')
     b = Dtype.from_string('[u8; 2]')
     c = Dtype.from_string('(bool, u15)')
-    ap = DtypeSingle('u_le16')
+    ap = DtypeSingle('u16_le')
     bp = DtypeArray('[u8; 2]')
     cp = DtypeTuple('(bool, u15)')
     assert isinstance(a, DtypeSingle)
@@ -407,8 +407,8 @@ def test_unpack_dtype_array_with_no_length():
         _ = d.unpack(b)
 
 def test_dtype_single_endianness():
-    d_le = Dtype("u_le16")
-    d_be = Dtype("u_be16")
+    d_le = Dtype("u16_le")
+    d_be = Dtype("u16_be")
     val = 0x1234
     packed_le = d_le.pack(val)
     packed_be = d_be.pack(val)
@@ -419,9 +419,9 @@ def test_dtype_single_endianness():
 
 def test_dtype_single_invalid_endianness():
     with pytest.raises(ValueError):
-        Dtype("u_le7") # Endianness only for whole bytes
+        Dtype("u7_le") # Endianness only for whole bytes
     with pytest.raises(ValueError):
-        Dtype("bytes_le2") # Bytes type does not support endianness
+        Dtype("bytes2_le") # Bytes type does not support endianness
 
 def test_dtype_single_pack_invalid_value():
     d = Dtype("u8")
@@ -456,19 +456,19 @@ def test_dtype_single_evaluate_with_expression():
     assert d_concrete.unpack(packed) == 100
 
 def test_dtype_single_info():
-    d = Dtype("f_be32")
+    d = Dtype("f32_be")
     info_str = d.info()
     assert "32 bit" in info_str
     assert "float" in info_str
-    assert "big-endian" in info_str # Based on current DtypeSingle.info() for f_be32
+    assert "big-endian" in info_str # Based on current DtypeSingle.info() for f32_be
     d_bytes = Dtype("bytes5")
     info_str_bytes = d_bytes.info()
     assert "40 bit (5 characters)" in info_str_bytes
     assert "bytes" in info_str_bytes
 
 def test_dtype_array_endianness():
-    d_le = Dtype("[u_le16; 2]")
-    d_be = Dtype("[u_be16; 2]")
+    d_le = Dtype("[u16_le; 2]")
+    d_be = Dtype("[u16_be; 2]")
     val = [0x1234, 0x5678]
     packed_le = d_le.pack(val)
     packed_be = d_be.pack(val)
@@ -518,7 +518,7 @@ def test_dtype_array_evaluate_with_expression():
     assert d_concrete.unpack(packed) == tuple(val)
 
 def test_dtype_array_info():
-    d = Dtype("[f_le16; 3]")
+    d = Dtype("[f16_le; 3]")
     info_str = d.info()
     assert "array" in info_str
     assert "16 bit" in info_str # DtypeSingle part
@@ -620,7 +620,7 @@ def test_dtype_tuple_evaluate_with_expression():
     assert unpacked[1] == tuple(val[1])
 
 def test_dtype_tuple_info():
-    d = Dtype("(u_le16, [bool;2])")
+    d = Dtype("(u16_le, [bool;2])")
     info_str = d.info()
     assert "tuple of" in info_str
     assert "16 bit little-endian unsigned int" in info_str

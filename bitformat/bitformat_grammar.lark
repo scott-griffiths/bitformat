@@ -21,7 +21,7 @@ dtype_items: INT | expression
 ?field_dtype: field_dtype_tuple | dtype_single | dtype_array
 
 // A dtype with a single type and optional size, for example "u8".
-dtype_single: dtype_kind ["_" dtype_modifier] [dtype_size]
+dtype_single: dtype_kind [dtype_size] ["_" dtype_modifier]
 // An array with items of a single dtype, for example "[u8; 4]".
 dtype_array: "[" dtype_single ";" [dtype_items] "]"
 // A tuple of dtypes, for example "(u8, u16, [u32; 10])".

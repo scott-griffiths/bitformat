@@ -332,11 +332,11 @@ def test_repeat_with_dtype():
 
 
 def test_field_array_str():
-    f = Field.from_string("test   :  f_le32 = 0.25  ")
-    assert str(f) == "test: f_le32 = 0.25"
+    f = Field.from_string("test   :  f32_le = 0.25  ")
+    assert str(f) == "test: f32_le = 0.25"
     assert f.to_bits().unpack('f_le') == 0.25
-    f = Field.from_string("test: [f_le32 ; 3]")
-    assert str(f) == "test: [f_le32; 3]"
+    f = Field.from_string("test: [f32_le ; 3]")
+    assert str(f) == "test: [f32_le; 3]"
 
 
 def test_format_repr_string():
@@ -346,8 +346,8 @@ def test_format_repr_string():
 
 
 def test_to_bits():
-    f1 = Format.from_params(["u_le8", "u_be8", "u_ne8"])
-    f = Format("(u_le8, u_be8, u_ne8)")
+    f1 = Format.from_params(["u8_le", "u8_be", "u8_ne"])
+    f = Format("(u8_le, u8_be, u8_ne)")
     assert f == f1
     f.pack([1, 2, 3])
     b = f.to_bits()

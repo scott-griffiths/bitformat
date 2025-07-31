@@ -471,21 +471,21 @@ class TestPrettyPrintingErrors:
 
 class TestPrettyPrinting_NewFormats:
     def test_float(self):
-        a = Bits.from_string("f_le32=10.5")
+        a = Bits.from_string("f32_le=10.5")
         s = io.StringIO()
-        a.pp("f_le32", stream=s)
+        a.pp("f32_le", stream=s)
         assert (
             remove_unprintable(s.getvalue())
-            == """<Bits, dtype1='f_le32', length=32 bits> [
+            == """<Bits, dtype1='f32_le', length=32 bits> [
  0:                    10.5
 ]
 """
         )
         s = io.StringIO()
-        a.pp("f_be16", stream=s)
+        a.pp("f16_be", stream=s)
         assert (
             remove_unprintable(s.getvalue())
-            == """<Bits, dtype1='f_be16', length=32 bits> [
+            == """<Bits, dtype1='f16_be', length=32 bits> [
  0:                     0.0       0.033233642578125
 ]
 """
@@ -577,19 +577,19 @@ def test_mul_by_zero():
 
 
 def test_uintne():
-    s = Bits.from_dtype("u_ne160", 454)
-    t = Bits("u_ne160=454")
+    s = Bits.from_dtype("u160_ne", 454)
+    t = Bits("u160_ne=454")
     assert s == t
 
 
 def test_float_endianness():
-    a = Bits("f_le64=12, f_be64=-0.01, f_ne64=3e33")
-    x, y, z = a.unpack(["f_le64", "f_be64", "f_ne64"])
+    a = Bits("f64_le=12, f64_be=-0.01, f64_ne=3e33")
+    x, y, z = a.unpack(["f64_le", "f64_be", "f64_ne"])
     assert x == 12.0
     assert y == -0.01
     assert z == 3e33
-    a = Bits("f_le16=12, f_be32=-0.01, f_ne32=3e33")
-    x, y, z = a.unpack(["f_le16", "f_be32", "f_ne32"])
+    a = Bits("f16_le=12, f32_be=-0.01, f32_ne=3e33")
+    x, y, z = a.unpack(["f16_le", "f32_be", "f32_ne"])
     assert x / 12.0 == pytest.approx(1.0)
     assert y / -0.01 == pytest.approx(1.0)
     assert z / 3e33 == pytest.approx(1.0)
@@ -599,8 +599,8 @@ def test_non_aligned_float_reading():
     s = Bits("0b1, f32 = 10.0")
     (y,) = s.unpack(["pad1", "f32"])
     assert y == 10.0
-    s = Bits("0b1, f_le32 = 20.0")
-    x, y = s.unpack(["bits1", "f_le32"])
+    s = Bits("0b1, f32_le = 20.0")
+    x, y = s.unpack(["bits1", "f32_le"])
     assert y == 20.0
 
 
@@ -617,15 +617,15 @@ def test_little_endian_uint():
     s = Bits("u16 = 100")
     assert s.unpack("u_le") == 25600
     assert s.u_le == 25600
-    s = Bits("u_le16=100")
+    s = Bits("u16_le=100")
     assert s.u == 25600
     assert s.u_le == 100
-    s = Bits("u_le32=999")
+    s = Bits("u32_le=999")
     assert s.u_le == 999
     s = s.to_mutable_bits()
     s = s.byte_swap()
     assert s.u == 999
-    s = Bits.from_dtype("u_le24", 1001)
+    s = Bits.from_dtype("u24_le", 1001)
     assert s.u_le == 1001
     assert len(s) == 24
     assert s.unpack("u_le") == 1001
@@ -635,9 +635,9 @@ def test_little_endian_uint():
 
 def test_little_endian_errors():
     with pytest.raises(ValueError):
-        _ = Bits("uint_le15=10")
+        _ = Bits("uint15_le=10")
     with pytest.raises(ValueError):
-        _ = Bits("i_le31=-999")
+        _ = Bits("i31_le=-999")
     s = Bits("0xfff")
     with pytest.raises(ValueError):
         _ = s.i_le
@@ -651,7 +651,7 @@ def test_little_endian_errors():
 
 def test_big_endian_errors():
     with pytest.raises(ValueError):
-        _ = Bits("u_be15 = 10")
+        _ = Bits("u15_be = 10")
     b = Bits("0xabc")
     with pytest.raises(ValueError):
         _ = b.f_be
@@ -659,11 +659,11 @@ def test_big_endian_errors():
 
 def test_native_endian_floats():
     if bitformat.byteorder == "little":
-        a = Bits.from_dtype("f_ne64", 0.55)
-        assert a.unpack("f_ne64") == 0.55
+        a = Bits.from_dtype("f64_ne", 0.55)
+        assert a.unpack("f64_ne") == 0.55
         assert a.f_le == 0.55
         assert a.f_ne == 0.55
-        d = Dtype("f_ne64")
+        d =Dtype("f64_ne")
         d2 = DtypeSingle.from_params(DtypeKind.FLOAT, 64, endianness=Endianness.NATIVE)
         assert d == d2
         assert d.endianness is Endianness.NATIVE

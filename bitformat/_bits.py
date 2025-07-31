@@ -125,8 +125,8 @@ def dtype_token_to_bits(token: str) -> Bits:
         dtype_str, value_str = token.split("=", 1)
         dtype = Dtype.from_string(dtype_str)
     except ValueError:
-        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length]=value' (e.g. "
-                         "'u8 = 44') or a literal starting with '0b', '0o' or '0x'.")
+        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length][_endianness]=value' (e.g. "
+                         "'u16_le = 44') or a literal starting with '0b', '0o' or '0x'.")
     if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
         return dtype.pack(value_str)
     try:
