@@ -3,11 +3,8 @@
 import os
 import time
 import datetime
-import sys
 
-sys.path.insert(0, os.path.abspath(".."))
-sys.path.insert(0, os.path.abspath("../bitformat"))
-from _version import VERSION
+from bitformat._version import VERSION
 
 year = datetime.datetime.utcfromtimestamp(
     int(os.environ.get("SOURCE_DATE_EPOCH", time.time()))
@@ -26,7 +23,7 @@ extensions = [
 ]
 autoapi_dirs = ["../bitformat/"]
 autoapi_add_toctree_entry = False
-autodoc_mock_imports = ["bitformat.bit_rust", "lark"]
+autodoc_mock_imports = ["lark"]
 
 add_module_names = False
 
