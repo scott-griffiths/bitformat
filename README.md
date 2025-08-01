@@ -137,7 +137,7 @@ A wide range of data types are supported. These are essentially descriptions on 
 Some example data type strings are:
 
 * `'u3'` - a 3 bit unsigned integer.
-* `'i_le32'` - a 32 bit little-endian signed integer.
+* `'i32_le'` - a 32 bit little-endian signed integer.
 * `'f64'` - a 64 bit IEEE float. Lengths of 16, 32 and 64 are supported.
 * `'bool'` - a single bit boolean value.
 * `'bytes10'` - a 10 byte sequence.

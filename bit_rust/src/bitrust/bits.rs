@@ -180,8 +180,21 @@ pub trait BitCollection: Sized {
     fn logical_xor(&self, other: &Bits) -> Self;
 }
 
-/// Bits is a struct that holds an arbitrary amount of binary data.
-/// Currently it's just wrapping a BitVec from the bitvec crate.
+///     An immutable container of binary data.
+///
+///     To construct, use a builder 'from' method:
+///
+///     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
+///     * ``Bits.from_string(s)`` - Use a formatted string.
+///     * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
+///     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
+///     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
+///     * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+///     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
+///     * ``Bits.from_joined(iterable)`` - Concatenate an iterable of objects.
+///
+///     Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
+///
 #[derive(Clone)]
 #[pyclass(frozen, freelist = 8, module = "bitformat")]
 pub struct Bits {

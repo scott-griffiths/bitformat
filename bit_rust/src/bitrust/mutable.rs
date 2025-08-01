@@ -40,6 +40,21 @@ pub fn mutable_bits_from_any(any: PyObject, py: Python) -> PyResult<MutableBits>
     )))
 }
 
+///     A mutable container of binary data.
+///
+///     To construct, use a builder 'from' method:
+///
+///     * ``MutableBits.from_bytes(b)`` - Create directly from a ``bytes`` object.
+///     * ``MutableBits.from_string(s)`` - Use a formatted string.
+///     * ``MutableBits.from_bools(i)`` - Convert each element in ``i`` to a bool.
+///     * ``MutableBits.from_zeros(n)`` - Initialise with ``n`` zero bits.
+///     * ``MutableBits.from_ones(n)`` - Initialise with ``n`` one bits.
+///     * ``MutableBits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+///     * ``MutableBits.from_dtype(dtype, value)`` - Combine a data type with a value.
+///     * ``MutableBits.from_joined(iterable)`` - Concatenate an iterable of objects.
+///
+///     Using the constructor ``MutableBits(s)`` is an alias for ``MutableBits.from_string(s)``.
+///
 #[pyclass(freelist = 8, module = "bitformat")]
 pub struct MutableBits {
     pub(crate) inner: Bits,

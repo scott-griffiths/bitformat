@@ -27,9 +27,9 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
     * -
       - e.g. ``'bin'``, ``'u'``
     * - :class:`DtypeSingle` (Dtype)
-      - ``DtypeKind`` ``<_modifier>`` ``<size_expression>``
+      - ``DtypeKind`` ``<size_expression>`` ``<_modifier>``
     * -
-      - e.g. ``'u8'``, ``'bool'``, ``'f_le16'``, ``'bytes{n + 1}'``
+      - e.g. ``'u8'``, ``'bool'``, ``'f16_le'``, ``'bytes{n + 1}'``
     * - :class:`DtypeArray` (Dtype)
       - ``[`` ``DtypeSingle`` ``;`` ``<items_expression>`` ``]``
     * -

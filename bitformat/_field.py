@@ -89,9 +89,9 @@ class Field(FieldType):
     def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /,
                   name: str = "", const: bool = False) -> Self:
         """
-        Create a Field instance from bits.
+        Create a Field instance of dtype Bits.
 
-        :param b: The bits to parse.
+        :param b: The Bits or something that can be converted to Bits (such as a formatted string).
         :param name: The name of the field, optional.
         :param const: Whether the field is constant, defaults to False.
         :return: The Field instance.
@@ -104,9 +104,9 @@ class Field(FieldType):
     @classmethod
     def from_bytes(cls, b: bytes | bytearray, /, name: str = "", const: bool = False) -> Field:
         """
-        Create a Field instance from bytes.
+        Create a Field instance of dtype bytes.
 
-        :param b: The bytes to parse.
+        :param b: The bytes or bytearray value to use.
         :param name: The name of the field, optional.
         :param const: Whether the field is constant, defaults to False.
         :return: The Field instance.
