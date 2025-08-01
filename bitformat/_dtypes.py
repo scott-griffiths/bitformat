@@ -113,6 +113,10 @@ class Dtype(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def from_params(cls, *args, **kwargs) -> Self:
+        """Create a new Dtype sub-class from parameters.
+
+        See the sub-classes for the parameters needed for each type.
+        """
         ...
 
     @classmethod
@@ -368,6 +372,11 @@ class DtypeSingle(Dtype):
     @override
     @final
     def pack(self, value: Any, /) -> bitformat.Bits:
+        """Create and return a new Bits from a value.
+
+        The value parameter should be of a type appropriate to the data type.
+
+        """
         # Single item to pack
         b = self._create_fn(value)
         if self._bit_length is not None and len(b) != self._bit_length:
@@ -494,6 +503,11 @@ class DtypeArray(Dtype):
     @override
     @final
     def pack(self, value: Any, /) -> bitformat.Bits:
+        """Create and return a new Bits from a value.
+
+        The value parameter should be of a type appropriate to the data type.
+
+        """
         if isinstance(value, bitformat.Bits):
             if len(value) != self.bit_length:
                 raise ValueError(f"Expected {self.bit_length} bits, but got {len(value)} bits.")
@@ -644,6 +658,11 @@ class DtypeTuple(Dtype):
     @override
     @final
     def pack(self, values: Sequence[Any]) -> bitformat.Bits:
+        """Create and return a new Bits from a value.
+
+        The value parameter should be of a type appropriate to the data type.
+
+        """
         if len(values) != self.items:
             raise ValueError(f"Expected {self.items} values, but got {len(values)}.")
         return bitformat.Bits._from_joined([dtype.pack(value) for dtype, value in zip(self._dtypes, values)])

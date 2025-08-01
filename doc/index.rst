@@ -8,7 +8,7 @@ A Python library for creating and parsing binary formats.
 
 ----
 
-* Efficiently store and manipulate binary data in idiomatic Python using the :ref:`bits` and :ref:`array` classes.
+* Efficiently store and manipulate binary data in idiomatic Python using the :ref:`bits`, :ref:`mutable_bits` and :ref:`array` classes.
 * Powerful binary packing and unpacking functions.
 * Bit-level slicing, joining, searching, replacing and more.
 * A wide array of data types is supported.  Want to use a 13-bit integer or a 16-bit float? Fine - there are no special hoops to jump through.
@@ -28,22 +28,21 @@ It is from the author of the `bitstring <https://github.com/scott-griffiths/bits
 Documentation
 -------------
 
-The introduction covers installation and a few brief examples, but doesn't go into any depth.
+The introduction covers installation and a few brief examples, but doesn't go into much depth.
 
 .. toctree::
     :maxdepth: 2
 
     introduction
 
-This section explores many of the features of the library via some common use cases.
-It's not exhaustive, but should give a good overview of the main features and how to use them.
+We then explore many of the features of the library via some common use cases.
 
 .. toctree::
     :maxdepth: 2
 
     use_cases
 
-The API reference is mostly generated from the docstrings in the library, but some introductory notes are also included in each section.
+The API reference is more comprehensive and is mostly generated from the docstrings in the library. Some introductory notes are included in each section.
 
 .. toctree::
     :maxdepth: 2
