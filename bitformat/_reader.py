@@ -10,7 +10,7 @@ from ._common import DtypeKind
 
 class Reader:
     """
-    Wraps a Bits or MutableBits object and a bit position to allow reading and parsing as a stream of bits.
+    Wraps a :class:`Bits` or :class:`MutableBits` object and a bit position to allow reading and parsing as a stream of bits.
 
     **Methods:**
 
@@ -20,8 +20,9 @@ class Reader:
 
     **Properties:**
 
-    - ``bits``: The ``Bits`` or ``MutableBits`` object.
+    - ``bits``: The :class:`Bits` or :class:`MutableBits` object.
     - ``pos``: The current bit position to read and parse from.
+
     """
 
     def __init__(self, bits: Bits | MutableBits, pos: int = 0) -> None:
@@ -42,16 +43,14 @@ class Reader:
     @property
     def bits(self) -> Bits | MutableBits:
         """
-        Get or set the Bits or MutableBits object associated with the Reader.
+        Get or set the :class:`Bits` or :class:`MutableBits` object associated with the :class:`Reader`.
 
         Changing this object may invalidate the bit position, but it's left
         to the user to manage this.
 
-        **Returns:**
-            Bits | MutableBits: The current bits object.
+        :return: The current bits object.
 
-        **Raises:**
-            ValueError: If the provided value is not a valid BitsType.
+        Raises ValueError if the provided value is not a valid type.
         """
         return self._bits
 
@@ -62,15 +61,14 @@ class Reader:
 
     @property
     def pos(self) -> int:
-        """
-        Get or set the current bit position.
-        Should be a positive int, but no attempt is made to check if the position is valid before it is used.
+        """Get or set the current bit position.
 
-        **Returns:**
-            int: The current bit position.
+        This should be a positive int, but no attempt is made to check if the position is valid before it is used.
 
-        **Raises:**
-            ValueError: If the provided position is not an integer.
+        :return: The current bit position.
+
+        Raises ValueError If set to a value that is not an integer.
+
         """
         return self._pos
 
@@ -79,7 +77,7 @@ class Reader:
         self._pos = int(value)
 
     def read(self, dtype: Dtype | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
-        """Read from the current bit position, and interpret according to the given dtype."""
+        """Read from the current bit position, and interpret according to the given :class:`Dtype`."""
         if isinstance(dtype, int):
             dtype = DtypeSingle.from_params(DtypeKind.BITS, dtype)
         elif isinstance(dtype, str):
@@ -93,14 +91,26 @@ class Reader:
         return x
 
     def peek(self, dtype: Dtype | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:
-        """Peek from the current bit position, and interpret according to the given dtype."""
+        """Peek from the current bit position, and interpret according to the given :class:`Dtype`.
+
+        :param: dtype: The :class:`Dtype` to interpret the bits as, or a string or int that can be converted to a :class:`Dtype`.
+
+        :return: The value interpreted as the given dtype without changing the current position.
+
+        """
         current_pos = self._pos
         value = self.read(dtype)
         self._pos = current_pos
         return value
 
     def parse(self, f: FieldType, /) -> int:
-        """Parse a fieldtype from the current bit position, returning the number of bits parsed."""
+        """Parse a fieldtype from the current bit position, returning the number of bits parsed.
+
+        :param f: The fieldtype to parse.
+        :return: The number of bits parsed.
+
+        :raises TypeError: If `f` is not a subclass of :class:`FieldType`.
+        """
         try:
             bits_parsed = f.parse(self._bits[self._pos :])
         except AttributeError:
