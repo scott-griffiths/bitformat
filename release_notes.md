@@ -1,5 +1,14 @@
 # Release Notes
 
+### Probably August: version 0.6.
+
+* Moved endianness modifier to the end of dtype strings. So it's now `f64_le` instead of `f_le64` for example.
+* Lots of Python code moved into Rust module, including the base `Bits` and `MutableBits` classes.
+* Other significant performance improvements. About 80% of my test suite is now as fast or faster than competing libraries.
+* Added `Let` field type. It's still a bit of a work in progress.
+* Improved platform compatibility - still work to do here though.
+* Added support for Python 3.14.
+
 ### June 2025: version 0.5.
 
 * Added the `MutableBits` class. The 'mutating' methods from `Bits` (which previously returned a new object) have been moved to the new class and now mutate it. The new class was needed as some performance targets were just impossible to hit without it.

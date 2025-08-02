@@ -50,7 +50,8 @@ class Reader:
 
         :return: The current bits object.
 
-        Raises ValueError if the provided value is not a valid type.
+        :raises ValueError: If the provided value is not a valid type.
+
         """
         return self._bits
 
@@ -67,7 +68,7 @@ class Reader:
 
         :return: The current bit position.
 
-        Raises ValueError If set to a value that is not an integer.
+        :raises ValueError: If set to a value that is not an integer.
 
         """
         return self._pos
@@ -119,7 +120,7 @@ class Reader:
         return bits_parsed
 
     def __str__(self) -> str:
-        return f"Reader(<{self._bits.__class__.__name__} class of length {len(self._bits)} bits>, pos={self._pos})"
+        return f"Reader(<{self._bits.__class__.__name__} of length {len(self._bits)} bits>, pos={self._pos})"
 
     def __repr__(self) -> str:
         return str(self)
