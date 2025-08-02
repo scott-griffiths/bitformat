@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Reader, Field, Bits, Dtype, DtypeTuple
+from bitformat import Reader, Field, Bits, Dtype, DtypeTuple, MutableBits
 
 
 def test_creation():
@@ -58,3 +58,16 @@ def test_read_tuple():
     assert x == ('00f', 15)
     x = r.read('(u8, bool, bool)')
     assert x == (0, True, True)
+
+def test_with_mutable_bits():
+    mb = MutableBits('0x00ff')
+    r = Reader(mb)
+    assert r.pos == 0
+    assert r.read('u9') == 1
+    assert r.pos == 9
+    mb.prepend('0b111111111')
+    assert r.pos == 9
+    assert r.read('u9') == 1
+    x = r.bits
+    assert isinstance(x, MutableBits)
+    assert x is mb

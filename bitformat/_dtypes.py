@@ -630,9 +630,6 @@ class DtypeTuple(Dtype):
     def info(self) -> str:
         return f"tuple of ({', '.join(dtype.info() for dtype in self._dtypes)})"
 
-    def __new__(cls, s: str) -> Self:
-        return cls.from_string(s)
-
     @classmethod
     def from_params(cls, dtypes: Sequence[Dtype | str]) -> Self:
         x = super().__new__(cls)

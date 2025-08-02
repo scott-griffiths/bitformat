@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import numbers
 import random
 import sys
@@ -300,7 +299,7 @@ this is a step to using the Rust classes as the base classes."""
         data._pp(dtype1, dtype2, bits_per_group, width, sep, format_sep, show_offset, output_stream, 1, groups)
         output_stream.write("]")
         if trailing_bit_length != 0:
-            output_stream.write(" + trailing_bits = 0b" + Dtype("bin").unpack(self[-trailing_bit_length:]))
+            output_stream.write(" + trailing_bits = 0b" + DtypeSingle("bin").unpack(self[-trailing_bit_length:]))
         output_stream.write("\n")
         stream.write(output_stream.getvalue())
         return
