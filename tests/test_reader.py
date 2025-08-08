@@ -71,3 +71,13 @@ def test_with_mutable_bits():
     x = r.bits
     assert isinstance(x, MutableBits)
     assert x is mb
+
+def test_open_ended_read():
+    a = Bits.from_zeros(100)
+    r = Reader(a)
+    r.pos = 1
+    x = r.peek('[u11;]')
+    assert x == (0, 0, 0, 0, 0, 0, 0, 0, 0)
+    x = r.read('[u11;]')
+    assert x == (0, 0, 0, 0, 0, 0, 0, 0, 0)
+    assert r.pos == 100

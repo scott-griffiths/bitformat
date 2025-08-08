@@ -83,12 +83,8 @@ class Reader:
             dtype = DtypeSingle.from_params(DtypeKind.BITS, dtype)
         elif isinstance(dtype, str):
             dtype = Dtype.from_string(dtype)
-        if self._pos + dtype.bit_length > len(self._bits):
-            raise ValueError(
-                f"Reading '{dtype}' needs {dtype.bit_length} bits, but at position {self._pos} only {len(self._bits) - self._pos} bits remain."
-            )
-        x = dtype.unpack(self.bits[self._pos : self._pos + dtype.bit_length])
-        self._pos += dtype.bit_length
+        bits_read, x = dtype._unpack(self.bits[self._pos :])
+        self._pos += bits_read
         return x
 
     def peek(self, dtype: Dtype | str | int, /) -> Any | tuple[Any] | list[Any | tuple[Any]]:

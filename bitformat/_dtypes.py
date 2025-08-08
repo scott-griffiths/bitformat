@@ -151,13 +151,18 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def _unpack(self, b: BitsType, /) -> tuple[int, Any]:
+        """Unpacks a Bits, returning number of bits unpacked as first element of tuple"""
+        ...
+
     def unpack(self, b: BitsType, /):
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
 
         """
-        ...
+        return self._unpack(b)[1]  # We only return the values, not the number of bits unpacked.
+
 
     @abc.abstractmethod
     def _get_bit_length(self) -> int | None:
@@ -385,17 +390,17 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
+    def _unpack(self, b: BitsType, /) -> tuple[int, Any | tuple[Any]]:
         b = bits_from_any(b)
         if self._size.is_none():
             # Try to unpack everything
-            return self._get_fn(b, 0, len(b))
+            return len(b), self._get_fn(b, 0, len(b))
         if self._bit_length is None:
             raise ExpressionError(f"Cannot unpack a dtype with an unknown size. Got '{self}'")
         if self._bit_length > len(b):
             raise ValueError(f"{self!r} is {self._bit_length} bits long, but only got {len(b)} bits to unpack.")
         else:
-            return self._get_fn(b, 0, self._bit_length)
+            return self._bit_length, self._get_fn(b, 0, self._bit_length)
 
     @override
     @final
@@ -518,7 +523,7 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def unpack(self, b: BitsType, /) -> Any | tuple[Any]:
+    def _unpack(self, b: BitsType, /) -> tuple[int, Any | tuple[Any]]:
         b = bits_from_any(b)
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
@@ -530,7 +535,7 @@ class DtypeArray(Dtype):
             if self._dtype_single.bit_length is None:
                 raise ValueError(f"Cannot unpack when DtypeArray items is unspecified and the DtypeSingle has an unknown size. Got '{self}'")
             items = len(b) // self._dtype_single.bit_length
-        return tuple(
+        return (items * self._dtype_single.bit_length), tuple(
             self._dtype_single.unpack(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])
             for i in range(items)
         )
@@ -666,7 +671,7 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[tuple[Any] | Any]:
+    def _unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[int, tuple[tuple[Any] | Any]]:
         """Unpack a Bits to find its value.
 
         The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
@@ -693,7 +698,7 @@ class DtypeTuple(Dtype):
                 if x is not None:  # Padding could unpack as None
                     vals.append(x)
                 pos += dtype.bit_length
-        return tuple(vals)
+        return pos, tuple(vals)
 
     @override
     @final
