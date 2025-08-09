@@ -224,9 +224,7 @@ f_defn = DtypeDefinition(DtypeKind.FLOAT,
 
 def to_bits(bs: Bits, start: int, length: int) -> Bits:
     """Just return as a Bits."""
-    assert start >= 0
-    assert length >= 0
-    return bs
+    return bs._getslice(start, start + length)
 
 def from_bits(bs: BitsType, length: None = None) -> Bits:
     return bits_from_any(bs)
