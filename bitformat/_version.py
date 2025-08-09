@@ -1,2 +1,2 @@
 # This should be the one source of truth for the version number.
-VERSION = "0.6.1"
+VERSION = "0.6.2"
