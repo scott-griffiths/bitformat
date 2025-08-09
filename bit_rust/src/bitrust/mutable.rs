@@ -147,6 +147,13 @@ impl MutableBits {
     }
 }
 
+fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
+    if a != b {
+        return Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")));
+    }
+    Ok(())
+}
+
 #[pymethods]
 impl MutableBits {
     /// Return True if two MutableBits have the same binary representation.
@@ -211,50 +218,35 @@ impl MutableBits {
     }
 
     pub fn _ixor(&mut self, other: &MutableBits) -> PyResult<()> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-
+        _validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data ^= &other.inner.data;
         Ok(())
     }
 
     pub fn _ior(&mut self, other: &MutableBits) -> PyResult<()> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-
+        _validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data |= &other.inner.data;
         Ok(())
     }
 
     pub fn _iand(&mut self, other: &MutableBits) -> PyResult<()> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
-
+        _validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data &= &other.inner.data;
         Ok(())
     }
 
     pub fn _or(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_or(self, other))
     }
 
     pub fn _and(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_and(self, other))
     }
 
     pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_xor(self, other))
     }
 

@@ -1469,14 +1469,11 @@ mod tests {
     #[test]
     fn empty_data_operations() {
         let empty_mutable = <MutableBits as BitCollection>::from_zeros(0);
-        let empty_immutable = <Bits as BitCollection>::from_zeros(0);
 
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());
 
         assert_eq!(empty_mutable.to_bits().len(), 0);
-
-        let mut another_empty = <MutableBits as BitCollection>::from_zeros(0);
     }
 
     #[test]

@@ -999,3 +999,12 @@ def test_str():
     a = MutableBits.from_ones(8)
     assert a.__str__() == '0xff'
     assert a.__repr__() == "MutableBits('0xff')"
+
+def test_logical_op_misc():
+    a = MutableBits('0xffff')
+    b = MutableBits('0x000')
+    try:
+        _ = a & b
+    except ValueError as e:
+        assert "12" in str(e)
+        assert "16" in str(e)
