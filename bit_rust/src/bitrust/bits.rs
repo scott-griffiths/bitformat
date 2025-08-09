@@ -418,6 +418,13 @@ impl Bits {
     }
 }
 
+pub(crate) fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
+    if a != b {
+        return Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")));
+    }
+    Ok(())
+}
+
 #[pyclass(name = "BitsFindAllIterator")]
 pub struct PyBitsFindAllIterator {
     pub haystack: Py<Bits>, // Py<T> keeps the Python object alive
@@ -739,7 +746,7 @@ impl Bits {
     pub fn _slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
         if length % 8 != 0 {
             return Err(PyValueError::new_err(format!(
-                "Cannot interpret as bytes - length of {} is not a multiple of 8 bits.",
+                "Cannot interpret as bytes - length of {} is not a multiple of 8 bits. Use the to_bytes() method if you want to add zero padding bits.",
                 length
             )));
         }
@@ -776,25 +783,19 @@ impl Bits {
     }
 
     pub fn _and(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() & &other.data;
         Ok(Bits::new(result))
     }
 
     pub fn _or(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() | &other.data;
         Ok(Bits::new(result))
     }
 
     pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
-        if self.len() != other.len() {
-            return Err(PyValueError::new_err("Lengths do not match."));
-        }
+        _validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() ^ &other.data;
         Ok(Bits::new(result))
     }
@@ -859,7 +860,9 @@ impl Bits {
         }
         assert!(start_bit < end_bit);
         if end_bit > self.len() {
-            return Err(PyValueError::new_err("end bit goes past the end"));
+            return Err(PyValueError::new_err(
+                "End bit of the slice goes past the end of the Bits.",
+            ));
         }
         Ok(self.slice(start_bit, end_bit - start_bit))
     }
@@ -870,7 +873,7 @@ impl Bits {
 
     pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         if step == 0 {
-            return Err(PyValueError::new_err("Step cannot be zero."));
+            return Err(PyValueError::new_err("Slice step cannot be zero."));
         }
         // Note that a start_bit or end_bit of -1 means to stop at the beginning when using a negative step.
         // Otherwise they should both be positive indices.
@@ -887,7 +890,9 @@ impl Bits {
                 return Ok(BitCollection::from_zeros(0));
             }
             if end_bit as usize > self.len() {
-                return Err(PyValueError::new_err("end bit goes past the end"));
+                return Err(PyValueError::new_err(
+                    "Slice end goes past the end of the Bits.",
+                ));
             }
             Ok(Bits::new(
                 self.data[start_bit as usize..end_bit as usize]
@@ -900,7 +905,9 @@ impl Bits {
                 return Ok(BitCollection::from_zeros(0));
             }
             if start_bit as usize > self.len() {
-                return Err(PyValueError::new_err("start bit goes past the end"));
+                return Err(PyValueError::new_err(
+                    "Slice start bit is past the end of the Bits.",
+                ));
             }
             // For negative step, the end_bit is inclusive, but the start_bit is exclusive.
             debug_assert!(step < 0);

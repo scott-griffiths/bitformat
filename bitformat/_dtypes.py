@@ -526,14 +526,14 @@ class DtypeArray(Dtype):
     def _unpack(self, b: BitsType, /) -> tuple[int, Any | tuple[Any]]:
         b = bits_from_any(b)
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
-            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only got {len(b)} bits to unpack.")
+            raise ValueError(f"{self!r} is {self.bit_length} bits long, but only {len(b)} bits are available.")
         items = self._items.evaluate()
         if self._dtype_single.bit_length is None:
-            raise ValueError(f"Cannot unpack when the DtypeSingle has an unknown size. Got '{self}'")
+            raise ValueError(f"Cannot read or unpack a DtypeSingle with an unknown size. Got '{self}'")
         if self._items.is_none():
             # For array dtypes with no items (e.g. '[u8;]') unpack as much as possible.
             if self._dtype_single.bit_length is None:
-                raise ValueError(f"Cannot unpack when DtypeArray items is unspecified and the DtypeSingle has an unknown size. Got '{self}'")
+                raise ValueError(f"Cannot read or unpack a DtypeArray if items is unspecified and the DtypeSingle has an unknown size. Got '{self}'")
             items = len(b) // self._dtype_single.bit_length
         return (items * self._dtype_single.bit_length), tuple(
             self._dtype_single.unpack(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])

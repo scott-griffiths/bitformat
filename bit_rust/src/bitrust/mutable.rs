@@ -1,3 +1,4 @@
+use crate::bitrust::bits::_validate_logical_op_lengths;
 use crate::bitrust::{bits, helpers, str_to_bits_rust};
 use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
@@ -145,13 +146,6 @@ impl MutableBits {
     pub fn to_hex(&self) -> String {
         self.inner.to_hex()
     }
-}
-
-fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
-    if a != b {
-        return Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")));
-    }
-    Ok(())
 }
 
 #[pymethods]
