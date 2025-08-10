@@ -62,6 +62,15 @@ pub struct MutableBits {
 }
 
 impl BitCollection for MutableBits {
+    fn get_bit(&self, i: usize) -> bool {
+        self.inner.data[i]
+    }
+    fn to_bin(&self) -> String {
+        self.inner.to_bin()
+    }
+    fn to_oct(&self) -> Result<String, String> {
+        self.inner.to_oct()
+    }
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -140,9 +149,7 @@ impl MutableBits {
             inner: Bits::new(bv),
         }
     }
-    pub fn to_bin(&self) -> String {
-        self.inner.to_bin()
-    }
+
     pub fn to_hex(&self) -> String {
         self.inner.to_hex()
     }

@@ -33,6 +33,11 @@ pub trait BitCollection: Sized {
     fn logical_or(&self, other: &Bits) -> Self;
     fn logical_and(&self, other: &Bits) -> Self;
     fn logical_xor(&self, other: &Bits) -> Self;
+
+    fn get_bit(&self, i: usize) -> bool;
+    fn to_bin(&self) -> String;
+    fn to_oct(&self) -> Result<String, String>;
+    // fn to_hexadecimal(&self) -> String;
 }
 
 // ---- Rust-only helper methods ----
@@ -219,32 +224,37 @@ impl fmt::LowerHex for Bits {
     }
 }
 
-impl fmt::Octal for Bits {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.len() % 3 != 0 {
-            return Err(std::fmt::Error);
-        }
-        for chunk in self.data.chunks(3) {
-            let tribble = chunk.load_be::<u8>();
-            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
-            f.write_char(oct_char)?;
-        }
-        Ok(())
-    }
-}
-
-impl fmt::Binary for Bits {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for bit in self.data.iter() {
-            f.write_char(if *bit { '1' } else { '0' })?;
-        }
-        Ok(())
-    }
-}
-
 impl BitCollection for Bits {
     fn len(&self) -> usize {
         self.data.len()
+    }
+
+    fn get_bit(&self, i: usize) -> bool {
+        self.data[i]
+    }
+
+    fn to_bin(&self) -> String {
+        let mut result = String::with_capacity(self.len());
+        for i in 0..self.len() {
+            result.push(if self.get_bit(i) { '1' } else { '0' });
+        }
+        result
+    }
+
+    fn to_oct(&self) -> Result<String, String> {
+        if self.len() % 3 != 0 {
+            return Err(format!(
+                "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
+                self.len()
+            ));
+        }
+        let mut result = String::with_capacity(self.len() / 3);
+        for chunk in self.data.chunks(3) {
+            let tribble = chunk.load_be::<u8>();
+            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
+            result.push(oct_char);
+        }
+        Ok(result)
     }
 
     fn from_zeros(length: usize) -> Self {
@@ -401,10 +411,6 @@ impl Bits {
         Bits::new(BitVec::from_bitslice(
             &self.data[start_bit..start_bit + length],
         ))
-    }
-
-    pub(crate) fn to_bin(&self) -> String {
-        format!("{:b}", self)
     }
 
     pub(crate) fn to_hex(&self) -> String {
@@ -750,17 +756,13 @@ impl Bits {
     }
 
     pub fn _slice_to_bin(&self, start: usize, length: usize) -> String {
-        format!("{:b}", self.slice(start, length))
+        self.slice(start, length).to_bin()
     }
 
     pub fn _slice_to_oct(&self, start: usize, length: usize) -> PyResult<String> {
-        if length % 3 != 0 {
-            return Err(PyValueError::new_err(format!(
-                "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
-                length
-            )));
-        }
-        Ok(format!("{:o}", self.slice(start, length)))
+        self.slice(start, length)
+            .to_oct()
+            .map_err(PyValueError::new_err)
     }
 
     pub fn _slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
