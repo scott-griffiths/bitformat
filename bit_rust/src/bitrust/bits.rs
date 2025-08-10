@@ -19,13 +19,32 @@ use lru::LruCache;
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 
-// Define a static LRU cache with capacity of 256 items
+// Trait used for commonality between the Bits and MutableBits structs.
+pub trait BitCollection: Sized {
+    fn len(&self) -> usize;
+    fn from_zeros(length: usize) -> Self;
+    fn from_ones(length: usize) -> Self;
+    fn from_bytes(data: Vec<u8>) -> Self;
+    fn from_bin(binary_string: &str) -> Result<Self, String>;
+    fn from_oct(octal_string: &str) -> Result<Self, String>;
+    fn from_hex(hex_string: &str) -> Result<Self, String>;
+    fn from_u64(value: u64, length: usize) -> Self;
+    fn from_i64(value: i64, length: usize) -> Self;
+    fn logical_or(&self, other: &Bits) -> Self;
+    fn logical_and(&self, other: &Bits) -> Self;
+    fn logical_xor(&self, other: &Bits) -> Self;
+}
+
+// ---- Rust-only helper methods ----
+
+// Define a static LRU cache.
+const BITS_CACHE_SIZE: usize = 256;
 static BITS_CACHE: Lazy<Mutex<LruCache<String, helpers::BV>>> =
-    Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(256).unwrap())));
+    Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(BITS_CACHE_SIZE).unwrap())));
 
 static DTYPE_PARSER: Lazy<Mutex<Option<PyObject>>> = Lazy::new(|| Mutex::new(None));
 
-pub fn split_tokens(s: String) -> Vec<String> {
+fn split_tokens(s: String) -> Vec<String> {
     // Remove whitespace
     let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
     let mut tokens = Vec::new();
@@ -48,20 +67,21 @@ pub fn split_tokens(s: String) -> Vec<String> {
     tokens
 }
 
-pub fn string_literal_to_bits(s: String) -> PyResult<Bits> {
+fn string_literal_to_bits(s: &str) -> PyResult<Bits> {
     if s.starts_with("0x") {
-        return Bits::_from_hex(&s);
+        return Bits::_from_hex(s);
     } else if s.starts_with("0o") {
-        return Bits::_from_oct(&s);
+        return Bits::_from_oct(s);
     } else if s.starts_with("0b") {
-        return Bits::_from_bin(&s);
+        return Bits::_from_bin(s);
     }
 
     Err(PyValueError::new_err(format!(
-        "Can't parse token '{}'. Did you mean to prefix with '0x', '0b' or '0o'?",
-        s
+        "Can't parse token '{s}'. Did you mean to prefix with '0x', '0b' or '0o'?"
     )))
 }
+
+// ---- Exported Python helper methods ----
 
 #[pyfunction]
 pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
@@ -79,7 +99,7 @@ pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
         if token.is_empty() {
             continue;
         }
-        match string_literal_to_bits(token.clone()) {
+        match string_literal_to_bits(&token) {
             Ok(bits) => bits_array.push(bits),
             Err(_) => {
                 // Call out to the Python dtype parser - see if it can handle it.
@@ -160,24 +180,8 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
         Err(_) => "<unknown>".to_string(),
     };
     Err(PyTypeError::new_err(format!(
-        "Cannot convert object of type {} to a Bits object.",
-        type_name
+        "Cannot convert object of type {type_name} to a Bits object."
     )))
-}
-
-pub trait BitCollection: Sized {
-    fn len(&self) -> usize;
-    fn from_zeros(length: usize) -> Self;
-    fn from_ones(length: usize) -> Self;
-    fn from_bytes(data: Vec<u8>) -> Self;
-    fn from_bin(binary_string: &str) -> Result<Self, String>;
-    fn from_oct(octal_string: &str) -> Result<Self, String>;
-    fn from_hex(hex_string: &str) -> Result<Self, String>;
-    fn from_u64(value: u64, length: usize) -> Self;
-    fn from_i64(value: i64, length: usize) -> Self;
-    fn logical_or(&self, other: &Bits) -> Self;
-    fn logical_and(&self, other: &Bits) -> Self;
-    fn logical_xor(&self, other: &Bits) -> Self;
 }
 
 ///     An immutable container of binary data.
@@ -242,6 +246,7 @@ impl BitCollection for Bits {
     fn len(&self) -> usize {
         self.data.len()
     }
+
     fn from_zeros(length: usize) -> Self {
         Bits::new(helpers::BV::repeat(false, length))
     }
@@ -330,23 +335,17 @@ impl BitCollection for Bits {
         Bits::new(bv)
     }
     fn logical_or(&self, other: &Bits) -> Self {
-        if self.len() != other.len() {
-            panic!("Cannot perform logical OR on Bits of different lengths.");
-        }
+        debug_assert!(self.len() == other.len());
         let result = self.data.clone() | &other.data;
         Bits::new(result)
     }
     fn logical_and(&self, other: &Bits) -> Self {
-        if self.len() != other.len() {
-            panic!("Cannot perform logical AND on Bits of different lengths.");
-        }
+        debug_assert!(self.len() == other.len());
         let result = self.data.clone() & &other.data;
         Bits::new(result)
     }
     fn logical_xor(&self, other: &Bits) -> Self {
-        if self.len() != other.len() {
-            panic!("Cannot perform logical XOR on Bits of different lengths.");
-        }
+        debug_assert!(self.len() == other.len());
         let result = self.data.clone() ^ &other.data;
         Bits::new(result)
     }
@@ -390,9 +389,10 @@ impl PartialEq<MutableBits> for Bits {
     }
 }
 
-/// Private helper methods. Not part of the Python interface.
+// ---- Bits private helper methods. Not part of the Python interface. ----
+
 impl Bits {
-    pub fn new(bv: helpers::BV) -> Self {
+    pub(crate) fn new(bv: helpers::BV) -> Self {
         Bits { data: bv }
     }
 
@@ -672,26 +672,17 @@ impl Bits {
 
     #[staticmethod]
     pub fn _from_bin(binary_string: &str) -> PyResult<Self> {
-        match BitCollection::from_bin(binary_string) {
-            Ok(result) => Ok(result),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
+        BitCollection::from_bin(binary_string).map_err(PyValueError::new_err)
     }
 
     #[staticmethod]
     pub fn _from_hex(hex: &str) -> PyResult<Self> {
-        match BitCollection::from_hex(hex) {
-            Ok(result) => Ok(result),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
+        BitCollection::from_hex(hex).map_err(PyValueError::new_err)
     }
 
     #[staticmethod]
     pub fn _from_oct(oct: &str) -> PyResult<Self> {
-        match BitCollection::from_oct(oct) {
-            Ok(x) => Ok(x),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
+        BitCollection::from_oct(oct).map_err(PyValueError::new_err)
     }
 
     #[staticmethod]
