@@ -11,7 +11,6 @@ use pyo3::types::PySlice;
 use pyo3::types::PyType;
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::fmt;
-use std::fmt::Write;
 use std::num::NonZeroUsize;
 use std::ops::Not;
 
@@ -37,7 +36,7 @@ pub trait BitCollection: Sized {
     fn get_bit(&self, i: usize) -> bool;
     fn to_bin(&self) -> String;
     fn to_oct(&self) -> Result<String, String>;
-    // fn to_hexadecimal(&self) -> String;
+    fn to_hex(&self) -> Result<String, String>;
 }
 
 // ---- Rust-only helper methods ----
@@ -210,20 +209,6 @@ pub struct Bits {
     pub(crate) data: helpers::BV,
 }
 
-impl fmt::LowerHex for Bits {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.len() % 4 != 0 {
-            return Err(std::fmt::Error);
-        }
-        for chunk in self.data.chunks(4) {
-            let nibble = chunk.load_be::<u8>();
-            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
-            f.write_char(hex_char)?;
-        }
-        Ok(())
-    }
-}
-
 impl BitCollection for Bits {
     fn len(&self) -> usize {
         self.data.len()
@@ -253,6 +238,22 @@ impl BitCollection for Bits {
             let tribble = chunk.load_be::<u8>();
             let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
             result.push(oct_char);
+        }
+        Ok(result)
+    }
+
+    fn to_hex(&self) -> Result<String, String> {
+        if self.len() % 4 != 0 {
+            return Err(format!(
+                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
+                self.len()
+            ));
+        }
+        let mut result = String::with_capacity(self.len() / 4);
+        for chunk in self.data.chunks(4) {
+            let nibble = chunk.load_be::<u8>();
+            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
+            result.push(hex_char);
         }
         Ok(result)
     }
@@ -412,16 +413,6 @@ impl Bits {
             &self.data[start_bit..start_bit + length],
         ))
     }
-
-    pub(crate) fn to_hex(&self) -> String {
-        if self.len() % 4 != 0 {
-            panic!(
-                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
-                self.len()
-            );
-        }
-        format!("{:x}", self)
-    }
 }
 
 pub(crate) fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
@@ -524,10 +515,10 @@ impl Bits {
         if self.len() == 0 {
             return "".to_string();
         }
-        if self.len() % 4 == 0 {
-            return format!("0x{}", self.to_hex());
+        match self.to_hex() {
+            Ok(hex) => format!("0x{}", hex),
+            Err(_) => format!("0b{}", self.to_bin()),
         }
-        return format!("0b{}", self.to_bin());
     }
 
     /// Return representation that could be used to recreate the instance.
@@ -766,13 +757,9 @@ impl Bits {
     }
 
     pub fn _slice_to_hex(&self, start: usize, length: usize) -> PyResult<String> {
-        if length % 4 != 0 {
-            return Err(PyValueError::new_err(format!(
-                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
-                length
-            )));
-        }
-        Ok(format!("{:x}", self.slice(start, length)))
+        self.slice(start, length)
+            .to_hex()
+            .map_err(PyValueError::new_err)
     }
 
     pub fn _and(&self, other: &Bits) -> PyResult<Self> {

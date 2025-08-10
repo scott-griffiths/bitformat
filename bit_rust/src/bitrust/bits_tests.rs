@@ -44,7 +44,7 @@ mod tests {
         let bits = <Bits as BitCollection>::from_zeros(8);
         assert_eq!(*bits.to_bytes(), vec![0]);
         assert_eq!(bits.len(), 8);
-        assert_eq!(bits.to_hex(), "00");
+        assert_eq!(bits.to_hex().unwrap(), "00");
         let bits = <Bits as BitCollection>::from_zeros(9);
         assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
@@ -57,7 +57,7 @@ mod tests {
         let bits = <Bits as BitCollection>::from_ones(8);
         assert_eq!(*bits.to_bytes(), vec![255]);
         assert_eq!(bits.len(), 8);
-        assert_eq!(bits.to_hex(), "ff");
+        assert_eq!(bits.to_hex().unwrap(), "ff");
         let bits = <Bits as BitCollection>::from_ones(9);
         assert_eq!(bits.to_bin(), "111111111");
         assert_eq!((*bits.to_bytes())[0], 0xff);
@@ -84,10 +84,10 @@ mod tests {
     fn hex_edge_cases() {
         let b1 = Bits::from_hex("0123456789abcdef").unwrap();
         let b2 = b1._getslice(12, b1.len()).unwrap();
-        assert_eq!(b2.to_hex(), "3456789abcdef");
+        assert_eq!(b2.to_hex().unwrap(), "3456789abcdef");
         assert_eq!(b2.len(), 52);
         let t = Bits::from_hex("123").unwrap();
-        assert_eq!(t.to_hex(), "123");
+        assert_eq!(t.to_hex().unwrap(), "123");
     }
 
     #[test]
@@ -136,7 +136,7 @@ mod tests {
         let mut a = MutableBits::_from_hex_checked("0011223344").unwrap();
         let b = Bits::from_hex("ff").unwrap();
         a._set_slice(8, 16, &b).unwrap();
-        assert_eq!(a.to_hex(), "00ff223344");
+        assert_eq!(a.to_hex().unwrap(), "00ff223344");
     }
 
     #[test]
