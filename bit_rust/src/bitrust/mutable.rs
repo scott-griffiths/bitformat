@@ -260,6 +260,29 @@ impl MutableBits {
         BitCollection::from_i64(value, length)
     }
 
+    /// Create a new instance from a formatted string.
+    ///
+    /// This method initializes a new instance of :class:`MutableBits` using a formatted string.
+    ///
+    /// :param s: The formatted string to convert.
+    /// :return: A newly constructed ``MutableBits``.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_string("0xff01")
+    ///     b = MutableBits.from_string("0b1")
+    ///     c = MutableBits.from_string("u12 = 31, f16=-0.25")
+    ///
+    /// The `__init__` method for `MutableBits` redirects to the `from_string` method and is sometimes more convenient:
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
+    #[classmethod]
+    pub fn from_string(_cls: &Bound<'_, PyType>, s: String) -> PyResult<Self> {
+        str_to_bits_rust(s).map(|bits| bits.to_mutable_bits())
+    }
+
     /// Create a new instance with all bits set to zero.
     ///
     /// :param n: The number of bits.
