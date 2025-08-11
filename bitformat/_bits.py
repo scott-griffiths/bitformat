@@ -144,9 +144,9 @@ this is a step to using the Rust classes as the base classes."""
     def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
         """Internal version of chunks so that it can be used on MutableBits."""
         if count is not None and count < 0:
-            raise ValueError("Cannot cut - count must be >= 0.")
+            raise ValueError("Cannot generate chunks - count must be >= 0.")
         if chunk_size <= 0:
-            raise ValueError("Cannot cut - bits must be >= 0.")
+            raise ValueError("Cannot generate chunks - bits must be >= 0.")
 
         length = len(self)
         num_full_chunks = length // chunk_size

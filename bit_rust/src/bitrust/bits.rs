@@ -409,17 +409,16 @@ impl Bits {
 
     /// Slice used internally without bounds checking.
     pub(crate) fn slice(&self, start_bit: usize, length: usize) -> Self {
-        Bits::new(BitVec::from_bitslice(
-            &self.data[start_bit..start_bit + length],
-        ))
+        Bits::new(self.data[start_bit..start_bit + length].to_bitvec())
     }
 }
 
 pub(crate) fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
     if a != b {
-        return Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")));
+        Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")))
+    } else {
+        Ok(())
     }
-    Ok(())
 }
 
 #[pyclass(name = "BitsFindAllIterator")]
