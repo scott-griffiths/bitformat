@@ -486,27 +486,45 @@ impl PyBitsFindAllIterator {
 impl Bits {
     #[new]
     #[pyo3(signature = (s = None))]
-    pub fn py_new(s: Option<String>) -> PyResult<Self> {
-        match s {
-            None => Ok(BitCollection::from_zeros(0)),
-            Some(s) => str_to_bits_rust(s),
+    pub fn py_new(s: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+        let Some(s) = s else {
+            return Ok(BitCollection::from_zeros(0));
+        };
+        if let Ok(string_s) = s.extract::<String>() {
+            return str_to_bits_rust(string_s);
         }
-        // TODO: We previously had an interesting TypeError message if s wasn't a string
-        // We should reinstate this:
-        //  if not isinstance(s, str):
-        //      err = f"Expected a str for Bits constructor, but received a {type(s)}. "
-        //      if isinstance(s, MutableBits):
-        //          err += "You can use the 'to_bits()' method on the `MutableBits` instance instead."
-        //      elif isinstance(s, (bytes, bytearray, memoryview)):
-        //          err += "You can use 'Bits.from_bytes()' instead."
-        //      elif isinstance(s, int):
-        //          err += "Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?"
-        //      elif isinstance(s, (tuple, list)):
-        //          err += "Perhaps you want to use 'Bits.from_joined()' instead?"
-        //      else:
-        //          err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
-        //                 "from_ones(), from_zeros(), from_dtype() or from_random()."
-        //      raise TypeError(err)
+
+        // If it's not a string, build a more helpful error message.
+        let type_name = s.get_type().name()?;
+        let mut err = format!(
+            "Expected a str for Bits constructor, but received a {}. ",
+            type_name
+        );
+
+        if s.is_instance_of::<MutableBits>() {
+            err.push_str(
+                "You can use the 'to_bits()' method on the `MutableBits` instance instead.",
+            );
+        } else if s.is_instance_of::<pyo3::types::PyBytes>()
+            || s.is_instance_of::<pyo3::types::PyByteArray>()
+            || s.is_instance_of::<pyo3::types::PyMemoryView>()
+        {
+            err.push_str("You can use 'Bits.from_bytes()' instead.");
+        } else if s.is_instance_of::<pyo3::types::PyInt>() {
+            err.push_str("Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?");
+        } else if s.is_instance_of::<pyo3::types::PyTuple>()
+            || s.is_instance_of::<pyo3::types::PyList>()
+        {
+            err.push_str(
+                "Perhaps you want to use 'Bits.from_joined()' or 'Bits.from_bools()' instead?",
+            );
+        } else {
+            err.push_str(
+                "To create from other types use from_bytes(), from_bools(), from_joined(), \
+                 from_ones(), from_zeros(), from_dtype() or from_random().",
+            );
+        }
+        Err(PyTypeError::new_err(err))
     }
 
     /// Return string representations for printing.
