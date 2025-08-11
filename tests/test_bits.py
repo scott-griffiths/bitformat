@@ -800,3 +800,10 @@ def test_conversion_to_long_ints():
 # def test_bits_from_bytes_string():
 #     a = Bits("b'ABC'")
 #     assert a.to_bytes() == b'ABC'
+
+def test_unpack_tuple():
+    a = Bits('0x12300ff')
+    x, y, z = a.unpack(('hex3', 'u8', 'i'))
+    assert x == '123'
+    assert y == 0
+    assert z == -1

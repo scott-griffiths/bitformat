@@ -350,7 +350,7 @@ this is a step to using the Rust classes as the base classes."""
             return self._getslice(0, len(prefix)) == prefix
         return False
 
-    def unpack(self, fmt: Dtype | str | list[Dtype | str], /) -> Any | list[Any]:
+    def unpack(self, fmt: Dtype | str | Sequence[Dtype | str], /) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
 
@@ -358,7 +358,7 @@ this is a step to using the Rust classes as the base classes."""
         A single Dtype with no length can be used to interpret the whole Bits - in this common case properties
         are provided as a shortcut. For example instead of ``b.unpack('bin')`` you can use ``b.bin``.
 
-        :param fmt: The data type or list of data types to interpret the Bits as.
+        :param fmt: The data type or sequence of data types to interpret the Bits as.
         :return: The interpreted value(s).
 
         .. code-block:: pycon
@@ -374,13 +374,11 @@ this is a step to using the Rust classes as the base classes."""
             -559038737
 
         """
-        # First do the cases where there's only one data type.
-        # For dtypes like hex, bin etc. there's no need to specify a length.
-        if isinstance(fmt, list):
-            d = DtypeTuple.from_params(fmt)
-            return list(d.unpack(self))
         if isinstance(fmt, str):
             fmt = Dtype.from_string(fmt)
+        elif isinstance(fmt, Sequence):
+            d = DtypeTuple.from_params(fmt)
+            return list(d.unpack(self))
         return fmt.unpack(self)
 
     # ----- Private Methods -----
@@ -1053,7 +1051,7 @@ class MutableBitsMethods:
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:
-        """Change the byte endianness in-place. Return the MutableBits.
+        """Change the byte endianness in-place. Returns self.
 
         The whole of the MutableBits will be byte-swapped. It must be a multiple
         of byte_length long.
@@ -1089,7 +1087,7 @@ class MutableBitsMethods:
         return self
 
     def insert(self, pos: int, bs: BitsType, /) -> MutableBits:
-        """Return the MutableBits with bs inserted at bit position pos.
+        """Inserts another Bits or MutableBits at bit position pos. Returns self.
 
         :param pos: The bit position to insert at.
         :param bs: The Bits to insert.
@@ -1108,7 +1106,7 @@ class MutableBitsMethods:
         return self
 
     def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
-        """Return MutableBits with bit pattern rotated to the left.
+        """Rotates bit pattern to the left. Returns self.
 
         :param n: The number of bits to rotate by.
         :param start: Start of slice to rotate. Defaults to 0.
@@ -1139,7 +1137,7 @@ class MutableBitsMethods:
         return self
 
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
-        """Return MutableBits with bit pattern rotated to the right.
+        """Rotates bit pattern to the right. Returns self.
 
         :param n: The number of bits to rotate by.
         :param start: Start of slice to rotate. Defaults to 0.
@@ -1200,12 +1198,12 @@ class MutableBitsMethods:
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> MutableBits:
-        """Return MutableBits with all occurrences of old replaced with new.
+        """Replaces all occurrences of old with new. Returns self.
 
-        :param old: The Bits to replace.
+        :param old: The Bits or to replace.
         :param new: The replacement Bits.
-        :param start: Any occurrences that start before this will not be replaced.
-        :param end: Any occurrences that finish after this will not be replaced.
+        :param start: Any occurrences that start before this bit position will not be replaced.
+        :param end: Any occurrences that finish after this bit position will not be replaced.
         :param count: The maximum number of replacements to make. Defaults to all.
         :param byte_aligned: If True, replacements will only be made on byte boundaries.
         :return: self
