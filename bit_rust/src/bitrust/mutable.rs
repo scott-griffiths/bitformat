@@ -156,6 +156,49 @@ impl MutableBits {
 
 #[pymethods]
 impl MutableBits {
+    #[new]
+    #[pyo3(signature = (s = None))]
+    pub fn py_new(s: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
+        let Some(s) = s else {
+            return Ok(BitCollection::from_zeros(0));
+        };
+        if let Ok(string_s) = s.extract::<String>() {
+            return str_to_bits_rust(string_s).map(|bits| bits.to_mutable_bits());
+        }
+
+        // If it's not a string, build a more helpful error message.
+        let type_name = s.get_type().name()?;
+        let mut err = format!(
+            "Expected a str for Bits constructor, but received a {}. ",
+            type_name
+        );
+
+        if s.is_instance_of::<Bits>() {
+            err.push_str(
+                "You can use the 'to_mutable_bits()' method on the `Bits` instance instead.",
+            );
+        } else if s.is_instance_of::<pyo3::types::PyBytes>()
+            || s.is_instance_of::<pyo3::types::PyByteArray>()
+            || s.is_instance_of::<pyo3::types::PyMemoryView>()
+        {
+            err.push_str("You can use 'MutableBits.from_bytes()' instead.");
+        } else if s.is_instance_of::<pyo3::types::PyInt>() {
+            err.push_str("Perhaps you want to use 'MutableBits.from_zeros()', 'MutableBits.from_ones()' or 'MutableBits.from_random()'?");
+        } else if s.is_instance_of::<pyo3::types::PyTuple>()
+            || s.is_instance_of::<pyo3::types::PyList>()
+        {
+            err.push_str(
+                "Perhaps you want to use 'MutableBits.from_joined()' or 'MutableBits.from_bools()' instead?",
+            );
+        } else {
+            err.push_str(
+                "To create from other types use from_bytes(), from_bools(), from_joined(), \
+                 from_ones(), from_zeros(), from_dtype() or from_random().",
+            );
+        }
+        Err(PyTypeError::new_err(err))
+    }
+
     /// Return True if two MutableBits have the same binary representation.
     ///
     /// The right hand side will be promoted to a MutableBits if needed and possible.

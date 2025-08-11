@@ -790,26 +790,6 @@ class MutableBitsMethods:
 
     # ----- Class Methods -----
 
-    def __new__(cls, s: str | None = None, /) -> MutableBits:
-        if s is None:
-            return MutableBits.from_zeros(0)
-        else:
-            if not isinstance(s, str):
-                err = f"Expected a str for MutableBits constructor, but received a {type(s)}. "
-                if isinstance(s, Bits):
-                    err += "You can use the 'to_mutable_bits()' method on the `Bits` instance instead."
-                elif isinstance(s, (bytes, bytearray, memoryview)):
-                    err += "You can use 'MutableBits.from_bytes()' instead."
-                elif isinstance(s, int):
-                    err += "Perhaps you want to use 'MutableBits.from_zeros()', 'MutableBits.from_ones()' or 'MutableBits.from_random()'?"
-                elif isinstance(s, (tuple, list)):
-                    err += "Perhaps you want to use 'MutableBits.from_joined()' instead?"
-                else:
-                    err += "To create from other types use from_bytes(), from_bools(), from_joined(), "\
-                           "from_ones(), from_zeros(), from_dtype() or from_random()."
-                raise TypeError(err)
-            return str_to_bits_rust(s).to_mutable_bits()
-
     @classmethod
     def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
         """
