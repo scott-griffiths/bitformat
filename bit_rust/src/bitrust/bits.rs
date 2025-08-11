@@ -614,6 +614,30 @@ impl Bits {
         Ok(BitCollection::from_zeros(length as usize))
     }
 
+    /// Create a new instance from a formatted string.
+    ///
+    /// This method initializes a new instance of :class:`Bits` using a formatted string.
+    ///
+    /// :param s: The formatted string to convert.
+    /// :return: A newly constructed ``Bits``.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits.from_string("0xff01")
+    ///     b = Bits.from_string("0b1")
+    ///     c = Bits.from_string("u12 = 31, f16=-0.25")
+    ///
+    /// The `__init__` method for `Bits` redirects to the `from_string` method and is sometimes more convenient:
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits("0xff01")  # Bits(s) is equivalent to Bits.from_string(s)
+    ///
+    #[classmethod]
+    pub fn from_string(_cls: &Bound<'_, PyType>, s: String) -> PyResult<Self> {
+        str_to_bits_rust(s)
+    }
+
     /// Create a new instance with all bits set to one.
     ///
     /// :param n: The number of bits.
