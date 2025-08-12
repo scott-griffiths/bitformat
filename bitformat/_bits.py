@@ -168,26 +168,6 @@ this is a step to using the Rust classes as the base classes."""
         if (count is None or chunks_yielded < count) and start < length:
             yield self._get_slice_unchecked(start, length - start)
 
-    def ends_with(self, suffix: BitsType, /) -> bool:
-        """
-        Return whether the current Bits or MutableBits ends with suffix.
-
-        :param suffix: The Bits to search for.
-        :return: ``True`` if the Bits ends with the suffix, otherwise ``False``.
-
-        .. code-block:: pycon
-
-            >>> Bits('0b101100').ends_with('0b100')
-            True
-            >>> Bits('0b101100').ends_with('0b101')
-            False
-
-        """
-        suffix = bits_from_any(suffix)
-        if len(suffix) <= len(self):
-            return self._getslice(len(self) - len(suffix), len(self)) == suffix
-        return False
-
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
         """
         Find first occurrence of substring bs.
@@ -330,25 +310,6 @@ this is a step to using the Rust classes as the base classes."""
             raise ValueError("Cannot find an empty Bits.")
         p = self._rfind(bs, 0, ba)
         return None if p == -1 else p
-
-    def starts_with(self, prefix: BitsType) -> bool:
-        """Return whether the current Bits starts with prefix.
-
-        :param prefix: The Bits to search for.
-        :return: True if the Bits starts with the prefix, otherwise False.
-
-        .. code-block:: pycon
-
-            >>> Bits('0b101100').starts_with('0b101')
-            True
-            >>> Bits('0b101100').starts_with('0b100')
-            False
-
-        """
-        prefix = bits_from_any(prefix)
-        if len(prefix) <= len(self):
-            return self._getslice(0, len(prefix)) == prefix
-        return False
 
     def unpack(self, fmt: Dtype | str | Sequence[Dtype | str], /) -> Any | list[Any]:
         """

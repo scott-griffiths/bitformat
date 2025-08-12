@@ -850,6 +850,48 @@ impl Bits {
         None
     }
 
+    /// Return whether the current Bits starts with prefix.
+    ///
+    /// :param prefix: The Bits to search for.
+    /// :return: True if the Bits starts with the prefix, otherwise False.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> Bits('0b101100').starts_with('0b101')
+    ///     True
+    ///     >>> Bits('0b101100').starts_with('0b100')
+    ///     False
+    ///
+    pub fn starts_with(&self, prefix: PyObject, py: Python) -> PyResult<bool> {
+        let prefix = bits_from_any(prefix, py)?;
+        if prefix.len() <= self.len() {
+            Ok(prefix == self._get_slice_unchecked(0, prefix.len()))
+        } else {
+            Ok(false)
+        }
+    }
+
+    /// Return whether the current Bits ends with suffix.
+    ///
+    /// :param suffix: The Bits to search for.
+    /// :return: True if the Bits ends with the suffix, otherwise False.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> Bits('0b101100').ends_with('0b10-')
+    ///     True
+    ///     >>> Bits('0b101100').ends_with('0b101')
+    ///     False
+    ///
+    pub fn ends_with(&self, suffix: PyObject, py: Python) -> PyResult<bool> {
+        let suffix = bits_from_any(suffix, py)?;
+        if suffix.len() <= self.len() {
+            Ok(suffix == self._get_slice_unchecked(self.len() - suffix.len(), suffix.len()))
+        } else {
+            Ok(false)
+        }
+    }
+
     /// Return count of total number of either zero or one bits.
     ///
     ///     :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.

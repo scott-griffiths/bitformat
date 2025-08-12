@@ -529,15 +529,47 @@ impl MutableBits {
         self.inner._to_int_byte_data(signed)
     }
 
+    /// Return whether the current MutableBits starts with prefix.
+    ///
+    /// :param prefix: The Bits to search for.
+    /// :return: True if the Bits starts with the prefix, otherwise False.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> MutableBits('0b101100').starts_with('0b101')
+    ///     True
+    ///     >>> MutableBits('0b101100').starts_with('0b100')
+    ///     False
+    ///
+    pub fn starts_with(&self, prefix: PyObject, py: Python) -> PyResult<bool> {
+        self.inner.starts_with(prefix, py)
+    }
+
+    /// Return whether the current MutableBits ends with suffix.
+    ///
+    /// :param suffix: The Bits to search for.
+    /// :return: True if the Bits ends with the suffix, otherwise False.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> MutableBits('0b101100').ends_with('0b10-')
+    ///     True
+    ///     >>> MutableBits('0b101100').ends_with('0b101')
+    ///     False
+    ///
+    pub fn ends_with(&self, suffix: PyObject, py: Python) -> PyResult<bool> {
+        self.inner.ends_with(suffix, py)
+    }
+
     /// Return count of total number of either zero or one bits.
     ///
-    ///     :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
-    ///     :return: The count of bits set to 1 or 0.
+    /// :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
+    /// :return: The count of bits set to 1 or 0.
     ///
-    ///     .. code-block:: pycon
+    /// .. code-block:: pycon
     ///
-    ///         >>> MutableBits('0xef').count(1)
-    ///         7
+    ///     >>> MutableBits('0xef').count(1)
+    ///     7
     ///
     pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
         self.inner.count(value, py)
