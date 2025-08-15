@@ -901,17 +901,43 @@ impl MutableBits {
         Ok(slf)
     }
 
-    /// In-place left shift
-    pub fn _lshift_inplace(&mut self, n: i64) -> PyResult<()> {
-        let shift = self.inner._validate_shift(n)?;
-        self.inner.data.shift_left(shift);
+    /// Shift bits to the left in-place.
+    ///
+    /// :param n: The number of bits to shift. Must be >= 0.
+    /// :return: self
+    ///
+    /// Raises ValueError if n < 0.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> b = MutableBits('0b001100')
+    ///     >>> b <<= 2
+    ///     >>> b.bin
+    ///     '110000'
+    ///
+    pub fn __ilshift__<'a>(mut slf: PyRefMut<'a, Self>, n: i64) -> PyResult<()> {
+        let shift = slf.inner._validate_shift(n)?;
+        slf.inner.data.shift_left(shift);
         Ok(())
     }
 
-    /// In-place right shift
-    pub fn _rshift_inplace(&mut self, n: i64) -> PyResult<()> {
-        let shift = self.inner._validate_shift(n)?;
-        self.inner.data.shift_right(shift);
+    /// Shift bits to the right in-place.
+    ///
+    /// :param n: The number of bits to shift. Must be >= 0.
+    /// :return: self
+    ///
+    /// Raises ValueError if n < 0.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> b = MutableBits('0b001100')
+    ///     >>> b >>= 2
+    ///     >>> b.bin
+    ///     '000011'
+    ///
+    pub fn __irshift__<'a>(mut slf: PyRefMut<'a, Self>, n: i64) -> PyResult<()> {
+        let shift = slf.inner._validate_shift(n)?;
+        slf.inner.data.shift_right(shift);
         Ok(())
     }
 }
