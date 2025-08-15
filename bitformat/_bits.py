@@ -996,37 +996,6 @@ class MutableBitsMethods:
         self.__setitem__(slice(pos, pos), bs)
         return self
 
-    def rol(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
-        """Rotates bit pattern to the left. Returns self.
-
-        :param n: The number of bits to rotate by.
-        :param start: Start of slice to rotate. Defaults to 0.
-        :param end: End of slice to rotate. Defaults to len(self).
-        :return: self
-
-        Raises ValueError if bits < 0.
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0b1011')
-            >>> a.rol(2)
-            MutableBits('0b1110')
-
-        """
-        if not len(self):
-            raise ValueError("Cannot rotate an empty Bits.")
-        if n < 0:
-            raise ValueError("Cannot rotate by negative amount.")
-        start, end = _validate_slice(len(self), start, end)
-        n %= end - start
-        bs = self._as_immutable()
-        new_bs = MutableBits.from_joined([bs._getslice(0, start),
-                                      bs._getslice(start + n, end),
-                                      bs._getslice(start, start + n),
-                                      bs._getslice(end, len(bs))])
-        self[:] = new_bs
-        return self
-
     def ror(self, n: int, /, start: int | None = None, end: int | None = None) -> MutableBits:
         """Rotates bit pattern to the right. Returns self.
 

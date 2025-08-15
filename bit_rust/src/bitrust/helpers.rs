@@ -2,7 +2,7 @@
 use super::*;
 use bits::BitCollection;
 use bitvec::prelude::*;
-use pyo3::exceptions::PyIndexError;
+use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::PyResult;
 // The choice of size is interesting. Can choose u8, u16, u32, u64.
 // Also can choose Lsb0 or Msb0.
@@ -103,13 +103,37 @@ pub fn find_bitvec_bytealigned(haystack: &Bits, needle: &Bits, start: usize) -> 
 }
 
 pub fn validate_index(index: i64, length: usize) -> PyResult<usize> {
-    let index = if index < 0 {
+    let index_p = if index < 0 {
         length as i64 + index
     } else {
         index
     };
-    if index >= length as i64 || index < 0 {
-        return Err(PyIndexError::new_err("Out of range."));
+    if index_p >= length as i64 || index_p < 0 {
+        return Err(PyIndexError::new_err(format!(
+            "Index of {index} is out of range for length of {length}"
+        )));
     }
-    Ok(index as usize)
+    Ok(index_p as usize)
+}
+
+pub fn validate_slice(
+    length: usize,
+    start: Option<i64>,
+    end: Option<i64>,
+) -> PyResult<(usize, usize)> {
+    let mut start = start.unwrap_or(0);
+    let mut end = end.unwrap_or(length as i64);
+    if start < 0 {
+        start += length as i64;
+    }
+    if end < 0 {
+        end += length as i64;
+    }
+
+    if !(0 <= start && start <= end && end <= length as i64) {
+        return Err(PyValueError::new_err(format!(
+            "Invalid slice positions for MutableBits of length {length}: start={start}, end={end}."
+        )));
+    }
+    Ok((start as usize, end as usize))
 }

@@ -413,7 +413,7 @@ impl Bits {
     }
 }
 
-pub(crate) fn _validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
+pub(crate) fn validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
     if a != b {
         Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")))
     } else {
@@ -804,19 +804,19 @@ impl Bits {
     }
 
     pub fn _and(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() & &other.data;
         Ok(Bits::new(result))
     }
 
     pub fn _or(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() | &other.data;
         Ok(Bits::new(result))
     }
 
     pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         let result = self.data.clone() ^ &other.data;
         Ok(Bits::new(result))
     }

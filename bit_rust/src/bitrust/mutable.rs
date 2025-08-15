@@ -1,4 +1,5 @@
-use crate::bitrust::bits::_validate_logical_op_lengths;
+use crate::bitrust::bits::validate_logical_op_lengths;
+use crate::bitrust::helpers::validate_slice;
 use crate::bitrust::{bits, helpers, str_to_bits_rust};
 use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
@@ -261,35 +262,35 @@ impl MutableBits {
     }
 
     pub fn _ixor(&mut self, other: &MutableBits) -> PyResult<()> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data ^= &other.inner.data;
         Ok(())
     }
 
     pub fn _ior(&mut self, other: &MutableBits) -> PyResult<()> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data |= &other.inner.data;
         Ok(())
     }
 
     pub fn _iand(&mut self, other: &MutableBits) -> PyResult<()> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         self.inner.data &= &other.inner.data;
         Ok(())
     }
 
     pub fn _or(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_or(self, other))
     }
 
     pub fn _and(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_and(self, other))
     }
 
     pub fn _xor(&self, other: &Bits) -> PyResult<Self> {
-        _validate_logical_op_lengths(self.len(), other.len())?;
+        validate_logical_op_lengths(self.len(), other.len())?;
         Ok(MutableBits::logical_xor(self, other))
     }
 
@@ -559,6 +560,42 @@ impl MutableBits {
     ///
     pub fn ends_with(&self, suffix: PyObject, py: Python) -> PyResult<bool> {
         self.inner.ends_with(suffix, py)
+    }
+
+
+    /// Rotates bit pattern to the left. Returns self.
+    ///
+    /// :param n: The number of bits to rotate by.
+    /// :param start: Start of slice to rotate. Defaults to 0.
+    /// :param end: End of slice to rotate. Defaults to len(self).
+    /// :return: self
+    ///
+    /// Raises ValueError if bits < 0.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> a.rol(2)
+    ///     MutableBits('0b1110')
+    ///
+    #[pyo3(signature = (n, start=None, end=None))]
+    pub fn rol<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        n: i64,
+        start: Option<i64>,
+        end: Option<i64>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        if slf.len() == 0 {
+            return Err(PyValueError::new_err("Cannot rotate an empty MutableBits."));
+        }
+        if n < 0 {
+            return Err(PyValueError::new_err("Cannot rotate by a negative amount."));
+        }
+
+        let (start, end) = validate_slice(slf.len(), start, end)?;
+        let n = (n % (end as i64 - start as i64)) as usize;
+        slf.inner.data[start..end].rotate_left(n);
+        Ok(slf)
     }
 
     /// Return count of total number of either zero or one bits.
