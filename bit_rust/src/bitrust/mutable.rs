@@ -562,7 +562,6 @@ impl MutableBits {
         self.inner.ends_with(suffix, py)
     }
 
-
     /// Rotates bit pattern to the left. Returns self.
     ///
     /// :param n: The number of bits to rotate by.
@@ -595,6 +594,41 @@ impl MutableBits {
         let (start, end) = validate_slice(slf.len(), start, end)?;
         let n = (n % (end as i64 - start as i64)) as usize;
         slf.inner.data[start..end].rotate_left(n);
+        Ok(slf)
+    }
+
+    /// Rotates bit pattern to the right. Returns self.
+    ///
+    /// :param n: The number of bits to rotate by.
+    /// :param start: Start of slice to rotate. Defaults to 0.
+    /// :param end: End of slice to rotate. Defaults to len(self).
+    /// :return: self
+    ///
+    /// Raises ValueError if bits < 0.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> a.ror(1)
+    ///     MutableBits('0b1101')
+    ///
+    #[pyo3(signature = (n, start=None, end=None))]
+    pub fn ror<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        n: i64,
+        start: Option<i64>,
+        end: Option<i64>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        if slf.len() == 0 {
+            return Err(PyValueError::new_err("Cannot rotate an empty MutableBits."));
+        }
+        if n < 0 {
+            return Err(PyValueError::new_err("Cannot rotate by a negative amount."));
+        }
+
+        let (start, end) = validate_slice(slf.len(), start, end)?;
+        let n = (n % (end as i64 - start as i64)) as usize;
+        slf.inner.data[start..end].rotate_right(n);
         Ok(slf)
     }
 
