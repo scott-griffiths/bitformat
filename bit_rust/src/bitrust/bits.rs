@@ -421,6 +421,51 @@ pub(crate) fn validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
     }
 }
 
+#[pyclass]
+pub struct ChunksIterator {
+    bits_object: Py<Bits>,
+    chunk_size: usize,
+    max_chunks: usize,
+    current_pos: usize,
+    chunks_generated: usize,
+}
+
+#[pymethods]
+impl ChunksIterator {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
+        slf
+    }
+
+    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<Bits>> {
+        if slf.chunks_generated >= slf.max_chunks {
+            return Ok(None);
+        }
+
+        let current_pos = slf.current_pos;
+        let chunk_size = slf.chunk_size;
+
+        let chunk = {
+            let py = slf.py();
+            let bits = slf.bits_object.borrow(py);
+            let len = bits.len();
+
+            if current_pos >= len {
+                return Ok(None);
+            }
+
+            let remaining_len = len - current_pos;
+            let chunk_len = std::cmp::min(chunk_size, remaining_len);
+
+            bits.slice(current_pos, chunk_len)
+        };
+
+        slf.current_pos += chunk.len();
+        slf.chunks_generated += 1;
+
+        Ok(Some(chunk))
+    }
+}
+
 #[pyclass(name = "BitsFindAllIterator")]
 pub struct PyBitsFindAllIterator {
     pub haystack: Py<Bits>, // Py<T> keeps the Python object alive
@@ -555,6 +600,61 @@ impl Bits {
                 length,
             },
         )
+    }
+
+    /// Return Bits generator by cutting into chunks.
+    ///
+    /// :param chunk_size: The size in bits of the chunks to generate.
+    /// :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
+    /// :return: A generator yielding Bits chunks.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> list(Bits('0b110011').chunks(2))
+    ///     [Bits('0b11'), Bits('0b00'), Bits('0b11')]
+    ///
+    #[pyo3(signature = (chunk_size, count = None))]
+    pub fn chunks(
+        slf: PyRef<'_, Self>,
+        chunk_size: i64,
+        count: Option<i64>,
+    ) -> PyResult<Py<ChunksIterator>> {
+        if chunk_size <= 0 {
+            return Err(PyValueError::new_err(
+                format!("Cannot create chunk generator - chunk_size of {chunk_size} given, but it must be > 0."),
+            ));
+        }
+        let max_chunks = match count {
+            Some(c) => {
+                if c < 0 {
+                    return Err(PyValueError::new_err(
+                        format!("Cannot create chunk generator - count of {c} given, but it must be > 0 if present.")
+                    ));
+                }
+                c as usize
+            }
+            None => usize::MAX,
+        };
+
+        let py = slf.py();
+        let iter = ChunksIterator {
+            bits_object: slf.into(),
+            chunk_size: chunk_size as usize,
+            max_chunks,
+            current_pos: 0,
+            chunks_generated: 0,
+        };
+        Py::new(py, iter)
+    }
+
+    // A bit of a hack so that the Python can use _chunks on Bits and MutableBits. Can remove later.
+    #[pyo3(signature = (chunk_size, count = None))]
+    pub fn _chunks(
+        slf: PyRef<'_, Self>,
+        chunk_size: i64,
+        count: Option<i64>,
+    ) -> PyResult<Py<ChunksIterator>> {
+        Bits::chunks(slf, chunk_size, count)
     }
 
     /// Return True if two Bits have the same binary representation.

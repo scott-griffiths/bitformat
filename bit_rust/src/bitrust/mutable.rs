@@ -1,5 +1,6 @@
 use crate::bitrust::bits::validate_logical_op_lengths;
 use crate::bitrust::helpers::validate_slice;
+use crate::bitrust::ChunksIterator;
 use crate::bitrust::{bits, helpers, str_to_bits_rust};
 use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
@@ -783,6 +784,21 @@ impl MutableBits {
 
     pub fn _set_index(&mut self, value: bool, index: i64) -> PyResult<()> {
         self._set_from_sequence(value, vec![index])
+    }
+
+    #[pyo3(signature = (chunk_size, count = None))]
+    pub fn _chunks(
+        slf: PyRef<'_, Self>,
+        chunk_size: usize,
+        count: Option<usize>,
+    ) -> PyResult<Py<ChunksIterator>> {
+        let py = slf.py();
+        let bits_instance = slf.to_bits();
+        let bits_py_obj = Py::new(py, bits_instance)?;
+        let bits_py_ref = bits_py_obj.bind(py);
+        bits_py_ref
+            .call_method1("_chunks", (chunk_size, count))?
+            .extract()
     }
 
     pub fn _set_from_slice(

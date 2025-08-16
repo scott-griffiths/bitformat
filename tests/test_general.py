@@ -1,7 +1,8 @@
 
 from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits, MutableBits
 
-from bitformat._bits import str_to_bits_rust, bits_from_any
+from bitformat._bits import bits_from_any
+from bitformat.bit_rust import str_to_bits_rust
 
 # import tomllib
 #

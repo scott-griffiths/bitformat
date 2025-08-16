@@ -851,12 +851,12 @@ class TestManyDifferentThings:
 
     def test_cut_errors(self):
         a = Bits("0b1")
-        b = a.chunks(0)
         with pytest.raises(ValueError):
-            _ = next(b)
-        b = a.chunks(1, count=-1)
+            _ = a.chunks(0)
         with pytest.raises(ValueError):
-            _ = next(b)
+            _ = a.chunks(-2)
+        with pytest.raises(ValueError):
+            _ = a.chunks(1, count=-1)
 
     def test_cut_problem(self):
         s = Bits("0x1234")

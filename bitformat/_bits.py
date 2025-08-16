@@ -9,7 +9,7 @@ from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import Bits, MutableBits, str_to_bits_rust, bits_from_any, mutable_bits_from_any
+from bitformat.bit_rust import Bits, MutableBits, bits_from_any, mutable_bits_from_any
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -141,32 +141,32 @@ are monkey-patched into those classes later. Yes, it would be more normal to use
 this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
-    def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
-        """Internal version of chunks so that it can be used on MutableBits."""
-        if count is not None and count < 0:
-            raise ValueError("Cannot generate chunks - count must be >= 0.")
-        if chunk_size <= 0:
-            raise ValueError("Cannot generate chunks - bits must be >= 0.")
-
-        length = len(self)
-        num_full_chunks = length // chunk_size
-
-        # Determine the number of full chunks to yield
-        full_chunks_to_yield = num_full_chunks
-        if count is not None:
-            full_chunks_to_yield = min(num_full_chunks, count)
-
-        # Yield all the full chunks in a tight loop
-        start = 0
-        for _ in range(full_chunks_to_yield):
-            yield self._get_slice_unchecked(start, chunk_size)
-            start += chunk_size
-
-        # Now, determine if there's one more chunk to yield.
-        # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
-        chunks_yielded = full_chunks_to_yield
-        if (count is None or chunks_yielded < count) and start < length:
-            yield self._get_slice_unchecked(start, length - start)
+    # def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
+    #     """Internal version of chunks so that it can be used on MutableBits."""
+    #     if count is not None and count < 0:
+    #         raise ValueError("Cannot generate chunks - count must be >= 0.")
+    #     if chunk_size <= 0:
+    #         raise ValueError("Cannot generate chunks - bits must be >= 0.")
+    #
+    #     length = len(self)
+    #     num_full_chunks = length // chunk_size
+    #
+    #     # Determine the number of full chunks to yield
+    #     full_chunks_to_yield = num_full_chunks
+    #     if count is not None:
+    #         full_chunks_to_yield = min(num_full_chunks, count)
+    #
+    #     # Yield all the full chunks in a tight loop
+    #     start = 0
+    #     for _ in range(full_chunks_to_yield):
+    #         yield self._get_slice_unchecked(start, chunk_size)
+    #         start += chunk_size
+    #
+    #     # Now, determine if there's one more chunk to yield.
+    #     # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
+    #     chunks_yielded = full_chunks_to_yield
+    #     if (count is None or chunks_yielded < count) and start < length:
+    #         yield self._get_slice_unchecked(start, length - start)
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
         """
@@ -625,22 +625,6 @@ class BitsMethods:
         value = random.getrandbits(n)
         return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
-    def chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
-        """
-        Return Bits generator by cutting into bits sized chunks.
-
-        :param chunk_size: The size in bits of the chunks to generate.
-        :param count: If specified, at most count items are generated. Default is to cut as many times as possible.
-        :return: A generator yielding Bits chunks.
-
-        .. code-block:: pycon
-
-            >>> list(Bits('0b110011').chunks(2))
-            [Bits('0b11'), Bits('0b00'), Bits('0b11')]
-
-        """
-        return self._chunks(chunk_size, count)
-
     def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
@@ -731,23 +715,6 @@ class BitsMethods:
 
 
 class MutableBitsMethods:
-    """
-    A mutable container of binary data.
-
-    To construct, use a builder 'from' method:
-
-    * ``MutableBits.from_bytes(b)`` - Create directly from a ``bytes`` object.
-    * ``MutableBits.from_string(s)`` - Use a formatted string.
-    * ``MutableBits.from_bools(i)`` - Convert each element in ``i`` to a bool.
-    * ``MutableBits.from_zeros(n)`` - Initialise with ``n`` zero bits.
-    * ``MutableBits.from_ones(n)`` - Initialise with ``n`` one bits.
-    * ``MutableBits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
-    * ``MutableBits.from_dtype(dtype, value)`` - Combine a data type with a value.
-    * ``MutableBits.from_joined(iterable)`` - Concatenate an iterable of objects.
-
-    Using the constructor ``MutableBits(s)`` is an alias for ``MutableBits.from_string(s)``.
-
-    """
 
     # ----- Class Methods -----
 
