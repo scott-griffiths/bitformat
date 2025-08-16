@@ -1,7 +1,8 @@
+use crate::bitrust::bits::str_to_bits_rust;
 use crate::bitrust::bits::validate_logical_op_lengths;
 use crate::bitrust::helpers::validate_slice;
-use crate::bitrust::ChunksIterator;
-use crate::bitrust::{bits, helpers, str_to_bits_rust};
+use crate::bitrust::iterator::ChunksIterator;
+use crate::bitrust::{bits, helpers};
 use crate::bitrust::{bits_from_any, Bits};
 use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
@@ -64,18 +65,6 @@ pub struct MutableBits {
 }
 
 impl BitCollection for MutableBits {
-    fn get_bit(&self, i: usize) -> bool {
-        self.inner.data[i]
-    }
-    fn to_bin(&self) -> String {
-        self.inner.to_bin()
-    }
-    fn to_oct(&self) -> Result<String, String> {
-        self.inner.to_oct()
-    }
-    fn to_hex(&self) -> Result<String, String> {
-        self.inner.to_hex()
-    }
     fn len(&self) -> usize {
         self.inner.len()
     }
@@ -133,6 +122,18 @@ impl BitCollection for MutableBits {
         Self {
             inner: self.inner.logical_xor(other),
         }
+    }
+    fn get_bit(&self, i: usize) -> bool {
+        self.inner.data[i]
+    }
+    fn to_bin(&self) -> String {
+        self.inner.to_bin()
+    }
+    fn to_oct(&self) -> Result<String, String> {
+        self.inner.to_oct()
+    }
+    fn to_hex(&self) -> Result<String, String> {
+        self.inner.to_hex()
     }
 }
 
@@ -483,9 +484,9 @@ impl MutableBits {
         // Handle slice indexing
         if let Ok(slice) = key.downcast::<PySlice>() {
             let indices = slice.indices(self.len() as isize)?;
-            let start: i64 = indices.start.try_into().unwrap();
-            let stop: i64 = indices.stop.try_into().unwrap();
-            let step: i64 = indices.step.try_into().unwrap();
+            let start: i64 = indices.start.try_into()?;
+            let stop: i64 = indices.stop.try_into()?;
+            let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
                 self._getslice(start as usize, stop as usize)?
@@ -496,9 +497,7 @@ impl MutableBits {
             return Ok(py_obj.into());
         }
 
-        Err(pyo3::exceptions::PyTypeError::new_err(
-            "Index must be an integer or a slice.",
-        ))
+        Err(PyTypeError::new_err("Index must be an integer or a slice."))
     }
 
     /// Return the MutableBits as bytes, padding with zero bits if needed.

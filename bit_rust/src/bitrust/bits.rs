@@ -1,14 +1,12 @@
-use crate::bitrust::helpers;
-use crate::bitrust::BitsBoolIterator;
+use crate::bitrust::helpers::{find_bitvec, find_bitvec_bytealigned, validate_index, BV};
+use crate::bitrust::iterator::{BitsBoolIterator, BitsFindAllIterator, ChunksIterator};
 use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
 use pyo3::conversion::IntoPyObject;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::PyBool;
-use pyo3::types::PySlice;
-use pyo3::types::PyType;
+use pyo3::types::{PyBool, PySlice, PyType};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::fmt;
 use std::num::NonZeroUsize;
@@ -43,7 +41,7 @@ pub trait BitCollection: Sized {
 
 // Define a static LRU cache.
 const BITS_CACHE_SIZE: usize = 256;
-static BITS_CACHE: Lazy<Mutex<LruCache<String, helpers::BV>>> =
+static BITS_CACHE: Lazy<Mutex<LruCache<String, BV>>> =
     Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(BITS_CACHE_SIZE).unwrap())));
 
 static DTYPE_PARSER: Lazy<Mutex<Option<PyObject>>> = Lazy::new(|| Mutex::new(None));
@@ -85,10 +83,7 @@ fn string_literal_to_bits(s: &str) -> PyResult<Bits> {
     )))
 }
 
-// ---- Exported Python helper methods ----
-
-#[pyfunction]
-pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
+pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
     // Check cache first
     {
         let mut cache = BITS_CACHE.lock().unwrap();
@@ -130,13 +125,13 @@ pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
     }
     // Combine all bits
     let result = if bits_array.is_empty() {
-        Bits::new(helpers::BV::repeat(false, 0))
+        Bits::new(BV::repeat(false, 0))
     } else if bits_array.len() == 1 {
         bits_array.remove(0)
     } else {
         //  (TODO: Use other method)
         let total_len: usize = bits_array.iter().map(|b| b.len()).sum();
-        let mut result = helpers::BV::with_capacity(total_len);
+        let mut result = BV::with_capacity(total_len);
 
         for bits in bits_array {
             result.extend_from_bitslice(&bits.data);
@@ -152,6 +147,8 @@ pub fn str_to_bits_rust(s: String) -> PyResult<Bits> {
 
     Ok(result)
 }
+
+// ---- Exported Python helper methods ----
 
 #[pyfunction]
 pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
@@ -206,7 +203,7 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
 #[derive(Clone)]
 #[pyclass(frozen, freelist = 8, module = "bitformat")]
 pub struct Bits {
-    pub(crate) data: helpers::BV,
+    pub(crate) data: BV,
 }
 
 impl BitCollection for Bits {
@@ -214,66 +211,24 @@ impl BitCollection for Bits {
         self.data.len()
     }
 
-    fn get_bit(&self, i: usize) -> bool {
-        self.data[i]
-    }
-
-    fn to_bin(&self) -> String {
-        let mut result = String::with_capacity(self.len());
-        for i in 0..self.len() {
-            result.push(if self.get_bit(i) { '1' } else { '0' });
-        }
-        result
-    }
-
-    fn to_oct(&self) -> Result<String, String> {
-        if self.len() % 3 != 0 {
-            return Err(format!(
-                "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
-                self.len()
-            ));
-        }
-        let mut result = String::with_capacity(self.len() / 3);
-        for chunk in self.data.chunks(3) {
-            let tribble = chunk.load_be::<u8>();
-            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
-            result.push(oct_char);
-        }
-        Ok(result)
-    }
-
-    fn to_hex(&self) -> Result<String, String> {
-        if self.len() % 4 != 0 {
-            return Err(format!(
-                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
-                self.len()
-            ));
-        }
-        let mut result = String::with_capacity(self.len() / 4);
-        for chunk in self.data.chunks(4) {
-            let nibble = chunk.load_be::<u8>();
-            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
-            result.push(hex_char);
-        }
-        Ok(result)
-    }
-
     fn from_zeros(length: usize) -> Self {
-        Bits::new(helpers::BV::repeat(false, length))
+        Bits::new(BV::repeat(false, length))
     }
+
     fn from_ones(length: usize) -> Self {
-        Bits::new(helpers::BV::repeat(true, length))
+        Bits::new(BV::repeat(true, length))
     }
+
     fn from_bytes(data: Vec<u8>) -> Self {
         let bits = data.view_bits::<Msb0>();
-        let bv = helpers::BV::from_bitslice(bits);
+        let bv = BV::from_bitslice(bits);
         Bits::new(bv)
     }
 
     fn from_bin(binary_string: &str) -> Result<Self, String> {
         // Ignore any leading '0b'
         let s = binary_string.strip_prefix("0b").unwrap_or(binary_string);
-        let mut b: helpers::BV = helpers::BV::with_capacity(s.len());
+        let mut b: BV = BV::with_capacity(s.len());
         for c in s.chars() {
             match c {
                 '0' => b.push(false),
@@ -290,10 +245,11 @@ impl BitCollection for Bits {
         b.set_uninitialized(false);
         Ok(Bits::new(b))
     }
+
     fn from_oct(octal_string: &str) -> Result<Self, String> {
         // Ignore any leading '0o'
         let s = octal_string.strip_prefix("0o").unwrap_or(octal_string);
-        let mut b: helpers::BV = helpers::BV::with_capacity(s.len() * 3);
+        let mut b: BV = BV::with_capacity(s.len() * 3);
         for c in s.chars() {
             match c {
                 '0' => b.extend_from_bitslice(bits![0, 0, 0]),
@@ -315,7 +271,6 @@ impl BitCollection for Bits {
         }
         Ok(Bits::new(b))
     }
-
     fn from_hex(hex: &str) -> Result<Self, String> {
         // Ignore any leading '0x'
         let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
@@ -336,12 +291,13 @@ impl BitCollection for Bits {
         Ok(Bits::new(bv))
     }
     fn from_u64(value: u64, length: usize) -> Self {
-        let mut bv = helpers::BV::repeat(false, length);
+        let mut bv = BV::repeat(false, length);
         bv.store_be(value);
         Bits::new(bv)
     }
+
     fn from_i64(value: i64, length: usize) -> Self {
-        let mut bv = helpers::BV::repeat(false, length);
+        let mut bv = BV::repeat(false, length);
         bv.store_be(value);
         Bits::new(bv)
     }
@@ -350,6 +306,7 @@ impl BitCollection for Bits {
         let result = self.data.clone() | &other.data;
         Bits::new(result)
     }
+
     fn logical_and(&self, other: &Bits) -> Self {
         debug_assert!(self.len() == other.len());
         let result = self.data.clone() & &other.data;
@@ -359,6 +316,46 @@ impl BitCollection for Bits {
         debug_assert!(self.len() == other.len());
         let result = self.data.clone() ^ &other.data;
         Bits::new(result)
+    }
+    fn get_bit(&self, i: usize) -> bool {
+        self.data[i]
+    }
+    fn to_bin(&self) -> String {
+        let mut result = String::with_capacity(self.len());
+        for i in 0..self.len() {
+            result.push(if self.get_bit(i) { '1' } else { '0' });
+        }
+        result
+    }
+    fn to_oct(&self) -> Result<String, String> {
+        if self.len() % 3 != 0 {
+            return Err(format!(
+                "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
+                self.len()
+            ));
+        }
+        let mut result = String::with_capacity(self.len() / 3);
+        for chunk in self.data.chunks(3) {
+            let tribble = chunk.load_be::<u8>();
+            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
+            result.push(oct_char);
+        }
+        Ok(result)
+    }
+    fn to_hex(&self) -> Result<String, String> {
+        if self.len() % 4 != 0 {
+            return Err(format!(
+                "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
+                self.len()
+            ));
+        }
+        let mut result = String::with_capacity(self.len() / 4);
+        for chunk in self.data.chunks(4) {
+            let nibble = chunk.load_be::<u8>();
+            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
+            result.push(hex_char);
+        }
+        Ok(result)
     }
 }
 
@@ -403,7 +400,7 @@ impl PartialEq<MutableBits> for Bits {
 // ---- Bits private helper methods. Not part of the Python interface. ----
 
 impl Bits {
-    pub(crate) fn new(bv: helpers::BV) -> Self {
+    pub(crate) fn new(bv: BV) -> Self {
         Bits { data: bv }
     }
 
@@ -418,111 +415,6 @@ pub(crate) fn validate_logical_op_lengths(a: usize, b: usize) -> PyResult<()> {
         Err(PyValueError::new_err(format!("For logical operations the lengths of both objects must match. Received lengths of {a} and {b} bits.")))
     } else {
         Ok(())
-    }
-}
-
-#[pyclass]
-pub struct ChunksIterator {
-    bits_object: Py<Bits>,
-    chunk_size: usize,
-    max_chunks: usize,
-    current_pos: usize,
-    chunks_generated: usize,
-}
-
-#[pymethods]
-impl ChunksIterator {
-    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
-        slf
-    }
-
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<Bits>> {
-        if slf.chunks_generated >= slf.max_chunks {
-            return Ok(None);
-        }
-
-        let current_pos = slf.current_pos;
-        let chunk_size = slf.chunk_size;
-
-        let chunk = {
-            let py = slf.py();
-            let bits = slf.bits_object.borrow(py);
-            let len = bits.len();
-
-            if current_pos >= len {
-                return Ok(None);
-            }
-
-            let remaining_len = len - current_pos;
-            let chunk_len = std::cmp::min(chunk_size, remaining_len);
-
-            bits.slice(current_pos, chunk_len)
-        };
-
-        slf.current_pos += chunk.len();
-        slf.chunks_generated += 1;
-
-        Ok(Some(chunk))
-    }
-}
-
-#[pyclass(name = "BitsFindAllIterator")]
-pub struct PyBitsFindAllIterator {
-    pub haystack: Py<Bits>, // Py<T> keeps the Python object alive
-    pub needle: Py<Bits>,
-    pub current_pos: usize,
-    pub byte_aligned: bool,
-    pub step: usize,
-}
-
-#[pymethods]
-impl PyBitsFindAllIterator {
-    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
-        slf
-    }
-
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<usize>> {
-        let py = slf.py();
-
-        // Read values from slf that are needed for the find logic
-        // or for updating state *after* the find.
-        let current_pos = slf.current_pos;
-        let byte_aligned = slf.byte_aligned;
-        let step = slf.step; // Needed to update slf.current_pos later
-
-        // This block limits the scope of haystack_rs and needle_rs.
-        // The immutable borrows of slf (to access slf.haystack and slf.needle)
-        // will end when this block finishes.
-        let find_result = {
-            let haystack_rs = slf.haystack.borrow(py);
-            let needle_rs = slf.needle.borrow(py);
-
-            let needle_len = needle_rs.len();
-            if needle_len == 0 {
-                // If needle is empty, stop iteration.
-                return Ok(None);
-            }
-
-            let haystack_len = haystack_rs.len();
-            if current_pos >= haystack_len || haystack_len.saturating_sub(current_pos) < needle_len
-            {
-                return Ok(None); // No space left for the needle or already past the end
-            }
-            if byte_aligned {
-                helpers::find_bitvec_bytealigned(&haystack_rs, &needle_rs, current_pos)
-            } else {
-                helpers::find_bitvec(&haystack_rs, &needle_rs, current_pos)
-            }
-        };
-
-        // Now, `slf` can be mutably accessed without conflicting with the previous borrows.
-        match find_result {
-            Some(pos) => {
-                slf.current_pos = pos + step;
-                Ok(Some(pos))
-            }
-            None => Ok(None),
-        }
     }
 }
 
@@ -692,13 +584,13 @@ impl Bits {
         slf: PyRef<'_, Self>,
         needle_obj: Py<Bits>,
         byte_aligned: bool,
-    ) -> PyResult<Py<PyBitsFindAllIterator>> {
+    ) -> PyResult<Py<BitsFindAllIterator>> {
         let py = slf.py();
         let haystack_obj: Py<Bits> = slf.into(); // Get a Py<Bits> for the haystack (self)
 
         let step = if byte_aligned { 8 } else { 1 };
 
-        let iter_obj = PyBitsFindAllIterator {
+        let iter_obj = BitsFindAllIterator {
             haystack: haystack_obj,
             needle: needle_obj,
             current_pos: 0,
@@ -792,14 +684,14 @@ impl Bits {
     #[staticmethod]
     pub fn _from_bytes_with_offset(data: Vec<u8>, offset: usize) -> Self {
         debug_assert!(offset < 8);
-        let mut bv: helpers::BV = <Bits as BitCollection>::from_bytes(data).data;
+        let mut bv: BV = <Bits as BitCollection>::from_bytes(data).data;
         bv.drain(..offset);
         Bits::new(bv)
     }
 
     #[staticmethod]
     pub fn _from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
-        let mut bv = helpers::BV::with_capacity(values.len());
+        let mut bv = BV::with_capacity(values.len());
 
         for value in values {
             let b: bool = value.extract(py)?;
@@ -826,7 +718,7 @@ impl Bits {
     #[staticmethod]
     pub fn _from_joined(bits_vec: Vec<PyRef<Self>>) -> Self {
         let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
-        let mut bv = helpers::BV::with_capacity(total_len);
+        let mut bv = BV::with_capacity(total_len);
         for bits_ref in bits_vec.iter() {
             bv.extend_from_bitslice(&bits_ref.data);
         }
@@ -841,7 +733,7 @@ impl Bits {
 
         // TODO: Is this next line right?
         let needed_bits = (self.len() + 7) & !7;
-        let mut bv = helpers::BV::with_capacity(needed_bits);
+        let mut bv = BV::with_capacity(needed_bits);
 
         let sign_bit = signed && self.data[0];
         let padding = needed_bits - self.len();
@@ -923,9 +815,9 @@ impl Bits {
 
     pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
         if bytealigned {
-            helpers::find_bitvec_bytealigned(self, b, start)
+            find_bitvec_bytealigned(self, b, start)
         } else {
-            helpers::find_bitvec(self, b, start)
+            find_bitvec(self, b, start)
         }
     }
 
@@ -1129,7 +1021,7 @@ impl Bits {
 
     /// Returns the bool value at a given bit index.
     pub fn _getindex(&self, bit_index: i64) -> PyResult<bool> {
-        let index = helpers::validate_index(bit_index, self.len())?;
+        let index = validate_index(bit_index, self.len())?;
         Ok(self.data[index])
     }
 
@@ -1145,9 +1037,9 @@ impl Bits {
         // Handle slice indexing
         if let Ok(slice) = key.downcast::<PySlice>() {
             let indices = slice.indices(self.len() as isize)?;
-            let start: i64 = indices.start.try_into().unwrap();
-            let stop: i64 = indices.stop.try_into().unwrap();
-            let step: i64 = indices.step.try_into().unwrap();
+            let start: i64 = indices.start.try_into()?;
+            let stop: i64 = indices.stop.try_into()?;
+            let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
                 self._getslice(start as usize, stop as usize)?
@@ -1158,9 +1050,7 @@ impl Bits {
             return Ok(py_obj.into());
         }
 
-        Err(pyo3::exceptions::PyTypeError::new_err(
-            "Index must be an integer or a slice.",
-        ))
+        Err(PyTypeError::new_err("Index must be an integer or a slice."))
     }
 
     pub(crate) fn _validate_shift(&self, n: i64) -> PyResult<usize> {
@@ -1186,7 +1076,7 @@ impl Bits {
         if shift >= len {
             return Ok(BitCollection::from_zeros(len));
         }
-        let mut result_data = helpers::BV::with_capacity(len);
+        let mut result_data = BV::with_capacity(len);
         result_data.extend_from_bitslice(&self.data[shift..]);
         result_data.resize(len, false);
         Ok(Self::new(result_data))
@@ -1205,7 +1095,7 @@ impl Bits {
         if shift >= len {
             return Ok(BitCollection::from_zeros(len));
         }
-        let mut result_data = helpers::BV::repeat(false, shift);
+        let mut result_data = BV::repeat(false, shift);
         result_data.extend_from_bitslice(&self.data[..len - shift]);
         Ok(Self::new(result_data))
     }

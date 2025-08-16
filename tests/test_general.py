@@ -2,7 +2,6 @@
 from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits, MutableBits
 
 from bitformat._bits import bits_from_any
-from bitformat.bit_rust import str_to_bits_rust
 
 # import tomllib
 #
@@ -52,11 +51,6 @@ def test_info_strings():
         assert len(info) > 0
         # print(f"{thing!r} : {info}")
 
-def test_rust_string_conversion():
-    s = str_to_bits_rust('0xf')
-    assert s == Bits('0xf')
-    s = str_to_bits_rust('u12=10')
-    assert s == Bits('u12=10')
 
 def test_rust_bits_creation():
     a = bits_from_any("0xf")
