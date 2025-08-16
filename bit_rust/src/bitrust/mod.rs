@@ -1,5 +1,6 @@
 mod bits;
 mod bits_tests;
+mod core;
 mod helpers;
 mod iterator;
 mod mutable;

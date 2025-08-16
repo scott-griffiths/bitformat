@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::bitrust::bits::BitCollection;
+    use crate::bitrust::core::BitCollection;
     use crate::bitrust::{Bits, MutableBits};
 
     #[test]

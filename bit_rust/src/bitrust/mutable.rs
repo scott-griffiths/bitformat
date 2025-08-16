@@ -1,10 +1,9 @@
-use crate::bitrust::bits::str_to_bits_rust;
-use crate::bitrust::bits::validate_logical_op_lengths;
-use crate::bitrust::helpers::validate_slice;
+use crate::bitrust::core::str_to_bits_rust;
+use crate::bitrust::core::validate_logical_op_lengths;
+use crate::bitrust::core::BitCollection;
+use crate::bitrust::helpers::{validate_index, validate_slice, BV};
 use crate::bitrust::iterator::ChunksIterator;
-use crate::bitrust::{bits, helpers};
 use crate::bitrust::{bits_from_any, Bits};
-use bits::BitCollection;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
 use pyo3::types::{PyBool, PySlice};
@@ -62,99 +61,6 @@ pub fn mutable_bits_from_any(any: PyObject, py: Python) -> PyResult<MutableBits>
 #[pyclass(freelist = 8, module = "bitformat")]
 pub struct MutableBits {
     pub(crate) inner: Bits,
-}
-
-impl BitCollection for MutableBits {
-    fn len(&self) -> usize {
-        self.inner.len()
-    }
-    fn from_zeros(length: usize) -> Self {
-        Self {
-            inner: <Bits as BitCollection>::from_zeros(length),
-        }
-    }
-    fn from_ones(length: usize) -> Self {
-        Self {
-            inner: <Bits as BitCollection>::from_ones(length),
-        }
-    }
-    fn from_bytes(data: Vec<u8>) -> Self {
-        Self {
-            inner: <Bits as BitCollection>::from_bytes(data),
-        }
-    }
-    fn from_bin(binary_string: &str) -> Result<Self, String> {
-        Ok(Self {
-            inner: <Bits as BitCollection>::from_bin(binary_string)?,
-        })
-    }
-    fn from_oct(oct: &str) -> Result<Self, String> {
-        Ok(Self {
-            inner: <Bits as BitCollection>::from_oct(oct)?,
-        })
-    }
-    fn from_hex(hex: &str) -> Result<Self, String> {
-        Ok(Self {
-            inner: <Bits as BitCollection>::from_hex(hex)?,
-        })
-    }
-    fn from_u64(value: u64, length: usize) -> Self {
-        Self {
-            inner: <Bits as BitCollection>::from_u64(value, length),
-        }
-    }
-    fn from_i64(value: i64, length: usize) -> Self {
-        Self {
-            inner: <Bits as BitCollection>::from_i64(value, length),
-        }
-    }
-    fn logical_or(&self, other: &Bits) -> Self {
-        Self {
-            inner: self.inner.logical_or(other),
-        }
-    }
-    fn logical_and(&self, other: &Bits) -> Self {
-        Self {
-            inner: self.inner.logical_and(other),
-        }
-    }
-    fn logical_xor(&self, other: &Bits) -> Self {
-        Self {
-            inner: self.inner.logical_xor(other),
-        }
-    }
-    fn get_bit(&self, i: usize) -> bool {
-        self.inner.data[i]
-    }
-    fn to_bin(&self) -> String {
-        self.inner.to_bin()
-    }
-    fn to_oct(&self) -> Result<String, String> {
-        self.inner.to_oct()
-    }
-    fn to_hex(&self) -> Result<String, String> {
-        self.inner.to_hex()
-    }
-}
-
-impl PartialEq for MutableBits {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner.data == other.inner.data
-    }
-}
-
-impl PartialEq<Bits> for MutableBits {
-    fn eq(&self, other: &Bits) -> bool {
-        self.inner.data == other.data
-    }
-}
-
-impl MutableBits {
-    pub fn new(bv: helpers::BV) -> Self {
-        Self {
-            inner: Bits::new(bv),
-        }
-    }
 }
 
 #[pymethods]
@@ -234,7 +140,7 @@ impl MutableBits {
         }
         let mut bytes = self.inner._slice_to_bytes(0, self.len())?;
         bytes.reverse();
-        self.inner.data = helpers::BV::from_vec(bytes);
+        self.inner.data = BV::from_vec(bytes);
         Ok(())
     }
 
@@ -371,7 +277,7 @@ impl MutableBits {
 
     #[staticmethod]
     pub fn _from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
-        let mut bv = helpers::BV::with_capacity(values.len());
+        let mut bv = BV::with_capacity(values.len());
 
         for value in values {
             let b: bool = value.extract(py)?;
@@ -431,7 +337,7 @@ impl MutableBits {
     pub fn _from_joined(py_bits_vec: Vec<PyRef<Bits>>) -> Self {
         let bits_vec: Vec<&Bits> = py_bits_vec.iter().map(|x| &**x).collect();
         let total_len: usize = bits_vec.iter().map(|b| b.len()).sum();
-        let mut bv = helpers::BV::with_capacity(total_len);
+        let mut bv = BV::with_capacity(total_len);
         for bits in bits_vec {
             bv.extend_from_bitslice(&bits.data);
         }
@@ -712,12 +618,12 @@ impl MutableBits {
             }
             Some(p) => {
                 if let Ok(pos) = p.extract::<i64>() {
-                    let pos: usize = helpers::validate_index(pos, slf.len())?;
+                    let pos: usize = validate_index(pos, slf.len())?;
                     let value = slf.inner.data[pos];
                     slf.inner.data.set(pos, !value);
                 } else if let Ok(pos_list) = p.extract::<Vec<i64>>() {
                     for pos in pos_list {
-                        let pos: usize = helpers::validate_index(pos, slf.len())?;
+                        let pos: usize = validate_index(pos, slf.len())?;
                         let value = slf.inner.data[pos];
                         slf.inner.data.set(pos, !value);
                     }
@@ -775,7 +681,7 @@ impl MutableBits {
 
     pub fn _set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
         for idx in indices {
-            let pos: usize = helpers::validate_index(idx, self.inner.len())?;
+            let pos: usize = validate_index(idx, self.inner.len())?;
             self.inner.data.set(pos, value);
         }
         Ok(())
@@ -785,6 +691,8 @@ impl MutableBits {
         self._set_from_sequence(value, vec![index])
     }
 
+    // Just redirects to the Bits._chunks method. Not public part of Python interface
+    // as it's only used internally in things lik2 pp().
     #[pyo3(signature = (chunk_size, count = None))]
     pub fn _chunks(
         slf: PyRef<'_, Self>,

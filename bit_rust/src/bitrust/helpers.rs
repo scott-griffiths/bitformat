@@ -1,6 +1,6 @@
 /// Helper functions.
 use super::*;
-use bits::BitCollection;
+use crate::bitrust::core::BitCollection;
 use bitvec::prelude::*;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::PyResult;
@@ -34,7 +34,7 @@ fn compute_lps(pattern: &BS) -> Vec<usize> {
     lps
 }
 
-pub fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
+pub(crate) fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
@@ -66,7 +66,11 @@ pub fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize
 }
 
 // The same as find_bitvec but only returns matches that are a multiple of 8.
-pub fn find_bitvec_bytealigned(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
+pub(crate) fn find_bitvec_bytealigned(
+    haystack: &Bits,
+    needle: &Bits,
+    start: usize,
+) -> Option<usize> {
     // Early return if needle is empty or longer than haystack
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
@@ -102,7 +106,7 @@ pub fn find_bitvec_bytealigned(haystack: &Bits, needle: &Bits, start: usize) -> 
     None
 }
 
-pub fn validate_index(index: i64, length: usize) -> PyResult<usize> {
+pub(crate) fn validate_index(index: i64, length: usize) -> PyResult<usize> {
     let index_p = if index < 0 {
         length as i64 + index
     } else {
@@ -116,7 +120,7 @@ pub fn validate_index(index: i64, length: usize) -> PyResult<usize> {
     Ok(index_p as usize)
 }
 
-pub fn validate_slice(
+pub(crate) fn validate_slice(
     length: usize,
     start: Option<i64>,
     end: Option<i64>,
