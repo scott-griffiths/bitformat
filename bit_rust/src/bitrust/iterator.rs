@@ -4,14 +4,14 @@ use pyo3::prelude::*;
 use pyo3::PyResult;
 
 #[pyclass]
-pub struct BitsBoolIterator {
+pub struct BoolIterator {
     pub(crate) bits: Py<Bits>,
     pub(crate) index: usize,
     pub(crate) length: usize,
 }
 
 #[pymethods]
-impl BitsBoolIterator {
+impl BoolIterator {
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
@@ -28,8 +28,8 @@ impl BitsBoolIterator {
     }
 }
 
-#[pyclass(name = "BitsFindAllIterator")]
-pub struct BitsFindAllIterator {
+#[pyclass]
+pub struct FindAllIterator {
     pub haystack: Py<Bits>, // Py<T> keeps the Python object alive
     pub needle: Py<Bits>,
     pub current_pos: usize,
@@ -38,7 +38,7 @@ pub struct BitsFindAllIterator {
 }
 
 #[pymethods]
-impl BitsFindAllIterator {
+impl FindAllIterator {
     fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
@@ -108,7 +108,6 @@ impl ChunksIterator {
         if slf.chunks_generated >= slf.max_chunks {
             return Ok(None);
         }
-
         let py = slf.py();
 
         // Create chunk data and get chunk length in a scope to limit the borrow

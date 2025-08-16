@@ -1,7 +1,7 @@
 use crate::bitrust::core::validate_logical_op_lengths;
 use crate::bitrust::core::{str_to_bits_rust, BitCollection, DTYPE_PARSER};
 use crate::bitrust::helpers::{find_bitvec, find_bitvec_bytealigned, validate_index, BV};
-use crate::bitrust::iterator::{BitsBoolIterator, BitsFindAllIterator, ChunksIterator};
+use crate::bitrust::iterator::{BoolIterator, ChunksIterator, FindAllIterator};
 use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
@@ -27,7 +27,7 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
 
     if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
-        return Ok(any_bits._clone_as_immutable());
+        return Ok(any_bits.clone());
     }
 
     if let Ok(any_mutable_bits) = any_bound.extract::<PyRef<MutableBits>>() {
@@ -133,12 +133,12 @@ impl Bits {
         format!("{}('{}')", class_name, self.__str__())
     }
 
-    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BitsBoolIterator>> {
+    fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BoolIterator>> {
         let py = slf.py();
         let length = slf.len();
         Py::new(
             py,
-            BitsBoolIterator {
+            BoolIterator {
                 bits: slf.into(),
                 index: 0,
                 length,
@@ -236,13 +236,13 @@ impl Bits {
         slf: PyRef<'_, Self>,
         needle_obj: Py<Bits>,
         byte_aligned: bool,
-    ) -> PyResult<Py<BitsFindAllIterator>> {
+    ) -> PyResult<Py<FindAllIterator>> {
         let py = slf.py();
         let haystack_obj: Py<Bits> = slf.into(); // Get a Py<Bits> for the haystack (self)
 
         let step = if byte_aligned { 8 } else { 1 };
 
-        let iter_obj = BitsFindAllIterator {
+        let iter_obj = FindAllIterator {
             haystack: haystack_obj,
             needle: needle_obj,
             current_pos: 0,
@@ -666,11 +666,6 @@ impl Bits {
         }
     }
 
-    pub fn _clone_as_immutable(&self) -> Self {
-        // TODO: The clone shouldn't have to copy the data. Use Rc internally?
-        self.clone()
-    }
-
     /// Returns the bool value at a given bit index.
     pub fn _getindex(&self, bit_index: i64) -> PyResult<bool> {
         let index = validate_index(bit_index, self.len())?;
@@ -722,7 +717,7 @@ impl Bits {
     pub fn __lshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self._validate_shift(n)?;
         if shift == 0 {
-            return Ok(self._clone_as_immutable());
+            return Ok(self.clone());
         }
         let len = self.len();
         if shift >= len {
@@ -741,7 +736,7 @@ impl Bits {
     pub fn __rshift__(&self, n: i64) -> PyResult<Self> {
         let shift = self._validate_shift(n)?;
         if shift == 0 {
-            return Ok(self._clone_as_immutable());
+            return Ok(self.clone());
         }
         let len = self.len();
         if shift >= len {
