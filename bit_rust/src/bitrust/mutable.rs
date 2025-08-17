@@ -308,31 +308,6 @@ impl MutableBits {
         }
     }
 
-    // TODO: Are these used?
-    #[staticmethod]
-    pub fn _from_bin_checked(binary_string: &str) -> PyResult<Self> {
-        match BitCollection::from_bin(binary_string) {
-            Ok(bits) => Ok(bits),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
-    }
-
-    #[staticmethod]
-    pub fn _from_hex_checked(hex: &str) -> PyResult<Self> {
-        match BitCollection::from_hex(hex) {
-            Ok(bits) => Ok(bits),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
-    }
-
-    #[staticmethod]
-    pub fn _from_oct_checked(oct: &str) -> PyResult<Self> {
-        match BitCollection::from_oct(oct) {
-            Ok(bits) => Ok(bits),
-            Err(e) => Err(PyValueError::new_err(e)),
-        }
-    }
-
     #[staticmethod]
     pub fn _from_joined(py_bits_vec: Vec<PyRef<Bits>>) -> Self {
         let bits_vec: Vec<&Bits> = py_bits_vec.iter().map(|x| &**x).collect();
@@ -475,7 +450,7 @@ impl MutableBits {
     /// :param end: End of slice to rotate. Defaults to len(self).
     /// :return: self
     ///
-    /// Raises ValueError if bits < 0.
+    /// Raises ValueError if n < 0.
     ///
     /// .. code-block:: pycon
     ///
@@ -510,7 +485,7 @@ impl MutableBits {
     /// :param end: End of slice to rotate. Defaults to len(self).
     /// :return: self
     ///
-    /// Raises ValueError if bits < 0.
+    /// Raises ValueError if n < 0.
     ///
     /// .. code-block:: pycon
     ///
@@ -692,7 +667,7 @@ impl MutableBits {
     }
 
     // Just redirects to the Bits._chunks method. Not public part of Python interface
-    // as it's only used internally in things lik2 pp().
+    // as it's only used internally in things like pp().
     #[pyo3(signature = (chunk_size, count = None))]
     pub fn _chunks(
         slf: PyRef<'_, Self>,
