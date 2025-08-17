@@ -1,6 +1,6 @@
 use crate::bitrust::core::validate_logical_op_lengths;
 use crate::bitrust::core::{str_to_bits_rust, BitCollection, DTYPE_PARSER};
-use crate::bitrust::helpers::{find_bitvec, find_bitvec_bytealigned, validate_index, BV};
+use crate::bitrust::helpers::{find_bitvec, validate_index, BV};
 use crate::bitrust::iterator::{BoolIterator, ChunksIterator, FindAllIterator};
 use crate::bitrust::MutableBits;
 use bitvec::prelude::*;
@@ -466,11 +466,7 @@ impl Bits {
     }
 
     pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
-        if bytealigned {
-            find_bitvec_bytealigned(self, b, start)
-        } else {
-            find_bitvec(self, b, start)
-        }
+        find_bitvec(self, b, start, bytealigned)
     }
 
     pub fn _rfind(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {

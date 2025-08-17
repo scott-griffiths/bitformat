@@ -34,72 +34,50 @@ fn compute_lps(pattern: &BS) -> Vec<usize> {
     lps
 }
 
-pub(crate) fn find_bitvec(haystack: &Bits, needle: &Bits, start: usize) -> Option<usize> {
-    // Early return if needle is empty or longer than haystack
-    if needle.len() == 0 || needle.len() > haystack.len() - start {
-        return None;
+pub(crate) fn find_bitvec(
+    haystack: &Bits,
+    needle: &Bits,
+    start: usize,
+    byte_aligned: bool,
+) -> Option<usize> {
+    if byte_aligned {
+        find_bitvec_impl::<true>(haystack, needle, start)
+    } else {
+        find_bitvec_impl::<false>(haystack, needle, start)
     }
-
-    let lps = compute_lps(&needle.data);
-    let mut i = start; // index for haystack
-    let mut j = 0; // index for needle
-
-    while i < haystack.len() {
-        // Match current bits
-        if needle.data[j] == haystack.data[i] {
-            i += 1;
-            j += 1;
-
-            // Check if we found a match
-            if j == needle.len() {
-                return Some(i - j);
-            }
-        } else if j != 0 {
-            // Mismatch after at least one match - use KMP to skip
-            j = lps[j - 1];
-        } else {
-            // Mismatch at first position - move forward
-            i += 1;
-        }
-    }
-    None
 }
 
-// The same as find_bitvec but only returns matches that are a multiple of 8.
-pub(crate) fn find_bitvec_bytealigned(
+#[inline]
+fn find_bitvec_impl<const BYTE_ALIGNED: bool>(
     haystack: &Bits,
     needle: &Bits,
     start: usize,
 ) -> Option<usize> {
-    // Early return if needle is empty or longer than haystack
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
     }
 
     let lps = compute_lps(&needle.data);
-    let mut i = start; // index for haystack
-    let mut j = 0; // index for needle
+    let needle_len = needle.len();
+    let mut i = start;
+    let mut j = 0;
 
     while i < haystack.len() {
-        // Match current bits
         if needle.data[j] == haystack.data[i] {
             i += 1;
             j += 1;
 
-            // Check if we found a match
-            if j == needle.len() {
-                let match_position = i - j;
-                if match_position % 8 == 0 {
-                    return Some(match_position);
+            if j == needle_len {
+                let match_pos = i - j;
+                if !BYTE_ALIGNED || (match_pos & 7) == 0 {
+                    return Some(match_pos);
                 }
-                // Not byte-aligned, continue searching
+                // Continue searching for a byte-aligned match
                 j = lps[j - 1];
             }
         } else if j != 0 {
-            // Mismatch after at least one match - use KMP to skip
             j = lps[j - 1];
         } else {
-            // Mismatch at first position - move forward
             i += 1;
         }
     }
