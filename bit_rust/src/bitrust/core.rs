@@ -1,4 +1,4 @@
-use crate::bitrust::helpers::BV;
+use crate::bitrust::helpers::{validate_index, BV};
 use crate::bitrust::{Bits, MutableBits};
 use bitvec::bits;
 use bitvec::field::BitField;
@@ -448,5 +448,13 @@ impl MutableBits {
         Self {
             inner: Bits::new(bv),
         }
+    }
+
+    pub fn _set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
+        for idx in indices {
+            let pos: usize = validate_index(idx, self.inner.len())?;
+            self.inner.data.set(pos, value);
+        }
+        Ok(())
     }
 }

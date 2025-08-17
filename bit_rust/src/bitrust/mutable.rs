@@ -696,14 +696,6 @@ impl MutableBits {
         Ok(MutableBits::new(self.inner.__rshift__(n)?.data))
     }
 
-    pub fn _set_from_sequence(&mut self, value: bool, indices: Vec<i64>) -> PyResult<()> {
-        for idx in indices {
-            let pos: usize = validate_index(idx, self.inner.len())?;
-            self.inner.data.set(pos, value);
-        }
-        Ok(())
-    }
-
     pub fn _set_index(&mut self, value: bool, index: i64) -> PyResult<()> {
         self._set_from_sequence(value, vec![index])
     }

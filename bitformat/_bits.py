@@ -141,32 +141,6 @@ are monkey-patched into those classes later. Yes, it would be more normal to use
 this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
-    # def _chunks(self, chunk_size: int, /, count: int | None = None) -> Iterator[Bits]:
-    #     """Internal version of chunks so that it can be used on MutableBits."""
-    #     if count is not None and count < 0:
-    #         raise ValueError("Cannot generate chunks - count must be >= 0.")
-    #     if chunk_size <= 0:
-    #         raise ValueError("Cannot generate chunks - bits must be >= 0.")
-    #
-    #     length = len(self)
-    #     num_full_chunks = length // chunk_size
-    #
-    #     # Determine the number of full chunks to yield
-    #     full_chunks_to_yield = num_full_chunks
-    #     if count is not None:
-    #         full_chunks_to_yield = min(num_full_chunks, count)
-    #
-    #     # Yield all the full chunks in a tight loop
-    #     start = 0
-    #     for _ in range(full_chunks_to_yield):
-    #         yield self._get_slice_unchecked(start, chunk_size)
-    #         start += chunk_size
-    #
-    #     # Now, determine if there's one more chunk to yield.
-    #     # This could be a partial chunk, or a full chunk if 'count' stopped us from yielding it in the loop above.
-    #     chunks_yielded = full_chunks_to_yield
-    #     if (count is None or chunks_yielded < count) and start < length:
-    #         yield self._get_slice_unchecked(start, length - start)
 
     def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
         """
