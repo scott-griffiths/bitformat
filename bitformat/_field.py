@@ -169,10 +169,7 @@ class Field(FieldType):
 
     @override
     def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
-        if self.name in kwargs:
-            self._set_value_with_kwargs(kwargs[self.name], {})
-        else:
-            self._set_value_with_kwargs(value, kwargs)
+        self._set_value_with_kwargs(value, kwargs)
         if self.name:
             kwargs[self.name] = self.value
 

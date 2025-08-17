@@ -780,7 +780,6 @@ def test_format_with_conditional_fields():
     fmt.pack([False, 5678])  # No name needed
     assert fmt.to_bits() == Bits.from_string('0b0, u16=5678')
 
-@pytest.mark.skip  # TODO
 def test_format_with_complex_expressions():
     """Test a format with more complex expressions"""
     fmt = Format("(width: u8, height: u8, repeat{width*height}: pixel: u8)")
@@ -892,10 +891,4 @@ def test_more_while():
     v = f.unpack(b, x=2)
     assert v[0] == [1, 255, 2]
 
-def test_pack_with_kwargs():
-    f = Format("(x: u8, y: u8, z: u8)")
-    f.pack([1, 2, 3])
-    assert f.value == [1, 2, 3]
-    f.clear()
-    f.pack([], x=4, y=5, z=6)
-    assert f.value == [4, 5, 6]
+
