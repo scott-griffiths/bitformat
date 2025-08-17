@@ -115,6 +115,9 @@ class Field(FieldType):
 
     @override
     def to_bits(self) -> Bits:
+        if self._dtype._is_padding():
+            # Return zeroed bits for padding.
+            return Bits.from_zeros(self._dtype.bit_length)
         if self._bits is None:
             raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
         return self._bits

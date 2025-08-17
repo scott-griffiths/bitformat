@@ -40,7 +40,8 @@ def test_field_consistency(dtype_kind, length, int_value):
         length *= bits_per_character
     b = Bits.from_dtype("u800", int_value)[0:length]
     f.parse(b)
-    assert f.to_bits() == b
+    if dtype_kind != DtypeKind.PAD:
+        assert f.to_bits() == b
     v = f.value
     if v is not None:
         f2.value = v
@@ -81,7 +82,11 @@ def test_field_array_consistency(dtype_kind, length, int_value, items):
 
 @given(
     dtype_kinds=st.lists(
-        st.sampled_from(sorted(Register().kind_to_def.keys(), key=lambda x: x.value)), min_size=5, max_size=5
+        st.sampled_from(
+            [k for k in sorted(Register().kind_to_def.keys(), key=lambda x: x.value) if k is not DtypeKind.PAD]
+        ),
+        min_size=5,
+        max_size=5,
     ),
     lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5),
 )

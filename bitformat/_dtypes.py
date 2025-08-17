@@ -273,6 +273,8 @@ class Dtype(abc.ABC):
     def __hash__(self) -> int:
         ...
 
+    def _is_padding(self) -> bool:
+        return False
 
 
 class DtypeSingle(Dtype):
@@ -283,13 +285,16 @@ class DtypeSingle(Dtype):
 
     """
 
-    _kind: DtypeKind
     _size: Expression
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
     _create_fn: Callable[[Any], Bits]
     _get_fn: Callable[[bitformat.Bits], Any]
+
+    @override
+    def _is_padding(self) -> bool:
+        return self.kind == DtypeKind.PAD
 
     @override
     def info(self) -> str:

@@ -7,7 +7,7 @@ from ._common import override, Indenter, Colour, validate_name
 from ._fieldtype import FieldType
 from ._pass import Pass
 from ._repeat import Repeat
-
+from ._field import Field
 
 __all__ = ["Format"]
 
@@ -105,8 +105,8 @@ class Format(FieldType):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
         value_iter = iter(values)
         for fieldtype in self._fields:
-            # For const fields (and Repeat with const fields), we don't need to use up a value
-            if fieldtype.is_const():
+            # For const fields (and Repeat with const fields), and padding we don't need to use up a value
+            if fieldtype.is_const() or (isinstance(fieldtype, Field) and fieldtype.dtype._is_padding()):
                 fieldtype._pack(None, kwargs)
                 continue
             fieldtype.clear()
@@ -163,10 +163,13 @@ class Format(FieldType):
     @override
     def _get_value(self) -> list[Any]:
         values = []
-        for field in self._fields:
+        for fieldtype in self._fields:
             try:
-                value = field._get_value()
-                values.append(value)
+                value = fieldtype._get_value()
+                if isinstance(fieldtype, Field) and fieldtype._dtype._is_padding():
+                    pass
+                else:
+                    values.append(value)
             except AttributeError:
                 pass  # This field type doesn't have values, but that's fine in this context.
         return values

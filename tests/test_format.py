@@ -382,7 +382,6 @@ def test_from_string():
     assert str(f) == str(Format(str(f)))
 
 
-@pytest.mark.skip  # TODO
 def test_recursive_from_string():
     s = "header: (u8, u4, bool,body:(u8=23, [u4; 3], bool))"
     f = FieldType.from_string(s)
@@ -767,7 +766,7 @@ def test_format_with_repeat():
     assert fmt.value[0] == 2  # count
     assert fmt.value[1] == [1, 2]  # values
 
-@pytest.mark.skip  #TODO
+@pytest.mark.skip  #TODO - needs b"ABCD" to be allowed again.
 def test_format_with_conditional_fields():
     """Test a format with conditional fields based on a flag"""
     fmt = Format("(has_name: bool, if {has_name}: name: bytes4, id: u16)")
@@ -793,7 +792,6 @@ def test_format_with_complex_expressions():
     fmt.parse(data)
     assert fmt.value == [1, 2, [1, 2]]
 
-@pytest.mark.skip  # TODO
 def test_format_with_padding():
     """Test a format with padding fields"""
     fmt = Format("(a: u4, pad4, b: u8)")
