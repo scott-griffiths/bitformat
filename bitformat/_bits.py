@@ -925,35 +925,6 @@ class MutableBitsMethods:
         self.__setitem__(slice(pos, pos), bs)
         return self
 
-    def set(self, value: Any, pos: int | Sequence[int]) -> MutableBits:
-        """Set one or many bits set to 1 or 0. Returns self.
-
-        :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
-        :param pos: Either a single bit position or an iterable of bit positions.
-        :return: self
-
-        :raises IndexError: if pos < -len(self) or pos >= len(self).
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits.from_zeros(10)
-            >>> a.set(1, 5)
-            MutableBits('0b0000010000')
-            >>> a.set(1, [-1, -2])
-            MutableBits('0b0000010011')
-            >>> a.set(0, range(8, 10))
-            MutableBits('0b0000010000')
-
-        """
-        v = True if value else False
-        if not isinstance(pos, Sequence):
-            self._set_index(v, pos)
-        elif isinstance(pos, range):
-            self._set_from_slice(v, pos.start or 0, pos.stop, pos.step or 1)
-        else:
-            self._set_from_sequence(v, pos)
-        return self
-
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> MutableBits:
         """Replaces all occurrences of old with new. Returns self.

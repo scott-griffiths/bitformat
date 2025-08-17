@@ -513,7 +513,49 @@ impl MutableBits {
         Ok(slf)
     }
 
-    /// Return count of total number of either zero or one bits.
+    /// Set one or many bits set to 1 or 0. Returns self.
+    ///
+    /// :param value: If bool(value) is True, bits are set to 1, otherwise they are set to 0.
+    /// :param pos: Either a single bit position or an iterable of bit positions.
+    /// :return: self
+    /// :raises IndexError: if pos < -len(self) or pos >= len(self).
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits.from_zeros(10)
+    ///     >>> a.set(1, 5)
+    ///     MutableBits('0b0000010000')
+    ///     >>> a.set(1, [-1, -2])
+    ///     MutableBits('0b0000010011')
+    ///     >>> a.set(0, range(8, 10))
+    ///     MutableBits('0b0000010000')
+    ///
+    pub fn set<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        value: &Bound<'_, PyAny>,
+        pos: &Bound<'_, PyAny>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        let v = value.is_truthy()?;
+
+        if let Ok(index) = pos.extract::<i64>() {
+            slf._set_index(v, index)?;
+        } else if pos.is_instance_of::<pyo3::types::PyRange>() {
+            let start = pos.getattr("start")?.extract::<Option<i64>>()?.unwrap_or(0);
+            let stop = pos.getattr("stop")?.extract::<i64>()?;
+            let step = pos.getattr("step")?.extract::<Option<i64>>()?.unwrap_or(1);
+            slf._set_from_slice(v, start, stop, step)?;
+        }
+        // Otherwise treat as a sequence
+        else {
+            // Convert to Vec<i64> if possible
+            let indices = pos.extract::<Vec<i64>>()?;
+            slf._set_from_sequence(v, indices)?;
+        }
+
+        Ok(slf)
+    }
+
+    /// Count of total number of either zero or one bits.
     ///
     /// :param value: If `bool(value)` is True, bits set to 1 are counted; otherwise, bits set to 0 are counted.
     /// :return: The count of bits set to 1 or 0.
