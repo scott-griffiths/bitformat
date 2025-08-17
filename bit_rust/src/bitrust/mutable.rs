@@ -275,17 +275,21 @@ impl MutableBits {
         Ok(BitCollection::from_ones(length as usize))
     }
 
-    #[staticmethod]
-    pub fn _from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
-        let mut bv = BV::with_capacity(values.len());
-
-        for value in values {
-            let b: bool = value.extract(py)?;
-            bv.push(b);
-        }
-        Ok(Self {
-            inner: Bits::new(bv),
-        })
+    /// Create a new instance from an iterable by converting each element to a bool.
+    ///
+    /// :param i: The iterable to convert to a :class:`MutableBits`.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_bools([False, 0, 1, "Steven"])  # binary 0011
+    ///
+    #[classmethod]
+    pub fn from_bools(
+        _cls: &Bound<'_, PyType>,
+        values: Vec<PyObject>,
+        py: Python,
+    ) -> PyResult<Self> {
+        Ok(Bits::from_bools(_cls, values, py)?.to_mutable_bits())
     }
 
     /// Create a new instance from a bytes object.

@@ -252,7 +252,7 @@ def to_bool(bs: Bits, start: int, _length: int) -> bool:
     return bs[start]
 
 def from_bool(value: bool, length: None = None) -> Bits:
-    return Bits._from_bools([bool(value)])
+    return Bits.from_bools([value])
 
 def bool_bits2chars(_: Literal[1]) -> int:
     # Bools are printed as 1 or 0, not True or False, so are one character each

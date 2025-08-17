@@ -522,20 +522,6 @@ class BitsMethods:
     # ----- Class Methods -----
 
     @classmethod
-    def from_bools(cls, i: Iterable[Any], /) -> Bits:
-        """
-        Create a new instance from an iterable by converting each element to a bool.
-
-        :param i: The iterable to convert to a :class:`Bits`.
-
-        .. code-block:: python
-
-            a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
-
-        """
-        return Bits._from_bools([bool(x) for x in i])
-
-    @classmethod
     def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits:
         """
         Create a new instance by concatenating a sequence of Bits objects.
@@ -691,20 +677,6 @@ class BitsMethods:
 class MutableBitsMethods:
 
     # ----- Class Methods -----
-
-    @classmethod
-    def from_bools(cls, i: Iterable[Any], /) -> MutableBits:
-        """
-        Create a new instance from an iterable by converting each element to a bool.
-
-        :param i: The iterable to convert to a :class:`MutableBits`.
-
-        .. code-block:: python
-
-            a = MutableBits.from_bools([False, 0, 1, "Steven"])  # binary 0011
-
-        """
-        return MutableBits._from_bools([bool(x) for x in i])
 
     @classmethod
     def from_joined(cls, sequence: Iterable[BitsType], /) -> MutableBits:

@@ -25,6 +25,9 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
 #[pyfunction]
 pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
+    if any_bound.is_none() {
+        return Ok(BitCollection::from_zeros(0));
+    }
 
     if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
         return Ok(any_bits.clone());
@@ -341,12 +344,24 @@ impl Bits {
         Bits::new(bv)
     }
 
-    #[staticmethod]
-    pub fn _from_bools(values: Vec<PyObject>, py: Python) -> PyResult<Self> {
+    /// Create a new instance from an iterable by converting each element to a bool.
+    ///
+    /// :param i: The iterable to convert to a :class:`Bits`.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits.from_bools([False, 0, 1, "Steven"])  # binary 0011
+    ///
+    #[classmethod]
+    pub fn from_bools(
+        _cls: &Bound<'_, PyType>,
+        values: Vec<PyObject>,
+        py: Python,
+    ) -> PyResult<Self> {
         let mut bv = BV::with_capacity(values.len());
 
         for value in values {
-            let b: bool = value.extract(py)?;
+            let b = value.is_truthy(py)?;
             bv.push(b);
         }
         Ok(Bits::new(bv))
