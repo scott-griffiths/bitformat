@@ -8,7 +8,7 @@ use bytemuck;
 use pyo3::conversion::IntoPyObject;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PySlice, PyType};
+use pyo3::types::{PyBool, PyByteArray, PyBytes, PyMemoryView, PySlice, PyType};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::ops::Not;
 
@@ -29,20 +29,31 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
         return Ok(BitCollection::from_zeros(0));
     }
 
+    // Is it of type Bits?
     if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
         return Ok(any_bits.clone());
     }
 
+    // Is it of type MutableBits?
     if let Ok(any_mutable_bits) = any_bound.extract::<PyRef<MutableBits>>() {
         return Ok(any_mutable_bits.to_bits());
     }
 
+    // Is it a string?
     if let Ok(any_string) = any_bound.extract::<String>() {
         return str_to_bits_rust(any_string);
     }
-    if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
-        return Ok(<Bits as BitCollection>::from_bytes(any_bytes));
+
+    // Is it a bytes, bytearray or memoryview?
+    if any_bound.is_instance_of::<PyBytes>()
+        || any_bound.is_instance_of::<PyByteArray>()
+        || any_bound.is_instance_of::<PyMemoryView>()
+    {
+        if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
+            return Ok(<Bits as BitCollection>::from_bytes(any_bytes));
+        }
     }
+
     let type_name = match any_bound.get_type().name() {
         Ok(name) => name.to_string(),
         Err(_) => "<unknown>".to_string(),
