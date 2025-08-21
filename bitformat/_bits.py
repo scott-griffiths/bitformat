@@ -522,23 +522,6 @@ class BitsMethods:
     # ----- Class Methods -----
 
     @classmethod
-    def from_joined(cls, sequence: Iterable[BitsType], /) -> Bits:
-        """
-        Create a new instance by concatenating a sequence of Bits objects.
-
-        This method concatenates a sequence of Bits objects into a single Bits object.
-
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-
-        .. code-block:: python
-
-            a = Bits.from_joined([f'u6={x}' for x in range(64)])
-            b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
-
-        """
-        return Bits._from_joined([bits_from_any(item) for item in sequence])
-
-    @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Bits :
         """
         Pack a value according to a data type or data type tuple.
@@ -677,23 +660,6 @@ class BitsMethods:
 class MutableBitsMethods:
 
     # ----- Class Methods -----
-
-    @classmethod
-    def from_joined(cls, sequence: Iterable[BitsType], /) -> MutableBits:
-        """
-        Create a new instance by concatenating a sequence of Bits objects.
-
-        This method concatenates a sequence of Bits objects into a single MutableBits object.
-
-        :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
-
-        .. code-block:: python
-
-            a = MutableBits.from_joined([f'u6={x}' for x in range(64)])
-            b = MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
-
-        """
-        return MutableBits._from_joined([bits_from_any(item) for item in sequence])
 
     @classmethod
     def from_dtype(cls, dtype: Dtype | str, value: Any, /) -> MutableBits:

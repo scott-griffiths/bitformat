@@ -209,7 +209,7 @@ class Array:
                 for s in range(start * self._item_size, stop * self._item_size, step * self._item_size):
                     d.append(self._bitstore._getslice(s, s + self._item_size).to_bits())
                 a = self.__class__(self._dtype)
-                a._bitstore = MutableBits._from_joined(d)
+                a._bitstore = MutableBits.from_joined(d)
                 return a
             else:
                 a = self.__class__(self._dtype)

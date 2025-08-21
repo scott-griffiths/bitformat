@@ -312,15 +312,24 @@ impl MutableBits {
         }
     }
 
-    #[staticmethod]
-    pub fn _from_joined(py_bits_vec: Vec<PyRef<Bits>>) -> Self {
-        let bits_vec: Vec<&Bits> = py_bits_vec.iter().map(|x| &**x).collect();
-        let total_len: usize = bits_vec.iter().map(|b| b.len()).sum();
-        let mut bv = BV::with_capacity(total_len);
-        for bits in bits_vec {
-            bv.extend_from_bitslice(&bits.data);
-        }
-        MutableBits::new(bv)
+    /// Create a new instance by concatenating a sequence of Bits objects.
+    ///
+    /// This method concatenates a sequence of Bits objects into a single MutableBits object.
+    ///
+    /// :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_joined([f'u6={x}' for x in range(64)])
+    ///     b = MutableBits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+    ///
+    #[classmethod]
+    pub fn from_joined(
+        _cls: &Bound<'_, PyType>,
+        sequence: &Bound<'_, PyAny>,
+        py: Python,
+    ) -> PyResult<Self> {
+        Ok(Bits::from_joined(_cls, sequence, py)?.to_mutable_bits())
     }
 
     pub fn _to_u64(&self, start: usize, length: usize) -> u64 {

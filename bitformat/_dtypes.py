@@ -672,7 +672,7 @@ class DtypeTuple(Dtype):
         """
         if len(values) != self.items:
             raise ValueError(f"Expected {self.items} values, but got {len(values)}.")
-        return bitformat.Bits._from_joined([dtype.pack(value) for dtype, value in zip(self._dtypes, values)])
+        return bitformat.Bits.from_joined([dtype.pack(value) for dtype, value in zip(self._dtypes, values)])
 
     @override
     @final

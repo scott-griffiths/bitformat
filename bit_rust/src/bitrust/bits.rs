@@ -372,7 +372,7 @@ impl Bits {
     #[classmethod]
     pub fn from_bools(
         _cls: &Bound<'_, PyType>,
-        values: Vec<PyObject>,
+        values: Vec<PyObject>, // TODO: Could this be a PyObject that we test for iter to make it more general?
         py: Python,
     ) -> PyResult<Self> {
         let mut bv = BV::with_capacity(values.len());
@@ -399,14 +399,40 @@ impl Bits {
         BitCollection::from_oct(oct).map_err(PyValueError::new_err)
     }
 
-    #[staticmethod]
-    pub fn _from_joined(bits_vec: Vec<PyRef<Self>>) -> Self {
-        let total_len: usize = bits_vec.iter().map(|x| x.len()).sum();
-        let mut bv = BV::with_capacity(total_len);
-        for bits_ref in bits_vec.iter() {
-            bv.extend_from_bitslice(&bits_ref.data);
+    /// Create a new instance by concatenating a sequence of Bits objects.
+    ///
+    /// This method concatenates a sequence of Bits objects into a single Bits object.
+    ///
+    /// :param sequence: A sequence to concatenate. Items can either be a Bits object, or a string or bytes-like object that could create one via the :meth:`from_string` or :meth:`from_bytes` methods.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits.from_joined([f'u6={x}' for x in range(64)])
+    ///     b = Bits.from_joined(['0x01', 'i4 = -1', b'some_bytes'])
+    ///
+    #[classmethod]
+    pub fn from_joined(
+        _cls: &Bound<'_, PyType>,
+        sequence: &Bound<'_, PyAny>,
+        py: Python,
+    ) -> PyResult<Self> {
+        // Convert each item to Bits, store, and sum total length for a single allocation.
+        let iter = sequence.try_iter()?;
+        let mut parts: Vec<Bits> = Vec::new();
+        let mut total_len: usize = 0;
+        for item in iter {
+            let obj = item?;
+            let bits = bits_from_any(obj.into(), py)?;
+            total_len += bits.len();
+            parts.push(bits);
         }
-        Bits::new(bv)
+
+        // Concatenate.
+        let mut bv = BV::with_capacity(total_len);
+        for bits in &parts {
+            bv.extend_from_bitslice(&bits.data);
+        }
+        Ok(Bits::new(bv))
     }
 
     /// Return bytes that can easily be converted to an int in Python
