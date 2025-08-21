@@ -377,39 +377,7 @@ this is a step to using the Rust classes as the base classes."""
     # ----- Special Methods -----
 
     # ----- Logical
-    def __and__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'and' between two Bits. Returns new Bits.
 
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        if bs is self:
-            return self
-        bs = bits_from_any(bs)
-        s = self._and(bs)
-        return s
-
-    def __or__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'or' between two Bits. Returns new Bits.
-
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        if bs is self:
-            return self
-        bs = bits_from_any(bs)
-        s = self._or(bs)
-        return s
-
-    def __xor__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'xor' between two Bits. Returns new Bits.
-
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        bs = bits_from_any(bs)
-        s = self._xor(bs)
-        return s
 
     def __rand__(self, bs: BitsType, /) -> Bits | MutableBits:
         """Bit-wise 'and' between two Bits. Returns new Bits.

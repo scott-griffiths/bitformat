@@ -801,6 +801,35 @@ impl Bits {
         Ok(Self::new(result_data))
     }
 
+    /// Bit-wise 'and' between two Bits. Returns new Bits.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __and__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        // TODO: Return early `if bs is self`.
+        let other = bits_from_any(bs, py)?;
+        self._and(&other)
+    }
+
+    /// Bit-wise 'or' between two Bits. Returns new Bits.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __or__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        // TODO: Return early `if bs is self`.
+        let other = bits_from_any(bs, py)?;
+        self._or(&other)
+    }
+
+    /// Bit-wise 'xor' between two Bits. Returns new Bits.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __xor__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        self._xor(&other)
+    }
+
     /// Return the instance with every bit inverted.
     ///
     /// Raises ValueError if the Bits is empty.

@@ -456,6 +456,33 @@ impl MutableBits {
         self.inner.ends_with(suffix, py)
     }
 
+    /// Bit-wise 'and' between two MutableBits. Returns new MutableBits.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __and__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        self._and(&other)
+    }
+
+    /// Bit-wise 'or' between two MutableBits. Returns new MutableBits.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __or__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        self._or(&other)
+    }
+
+    /// Bit-wise 'xor' between two MutableBits. Returns new MutableBits.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __xor__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        self._xor(&other)
+    }
+
     /// Rotates bit pattern to the left. Returns self.
     ///
     /// :param n: The number of bits to rotate by.
