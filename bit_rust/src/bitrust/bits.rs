@@ -25,9 +25,6 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
 #[pyfunction]
 pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
-    if any_bound.is_none() {
-        return Ok(BitCollection::from_zeros(0));
-    }
 
     // Is it of type Bits?
     if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
@@ -52,6 +49,15 @@ pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
         if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
             return Ok(<Bits as BitCollection>::from_bytes(any_bytes));
         }
+    }
+
+    // Is it an iterable that we can convert each element to a bool?
+    if let Ok(iter) = any_bound.try_iter() {
+        let mut bv = BV::new();
+        for item in iter {
+            bv.push(item?.is_truthy()?);
+        }
+        return Ok(Bits::new(bv));
     }
 
     let type_name = match any_bound.get_type().name() {

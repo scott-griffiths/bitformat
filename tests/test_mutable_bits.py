@@ -1008,3 +1008,22 @@ def test_logical_op_misc():
     except ValueError as e:
         assert "12" in str(e)
         assert "16" in str(e)
+
+def test_auto_conversions():
+    a = MutableBits()
+    with pytest.raises(TypeError):
+        _ = a + None
+    with pytest.raises(TypeError):
+        _ = a + True
+    with pytest.raises(TypeError):
+        _ = a + False
+    with pytest.raises(TypeError):
+        _ = a + 1
+    b = a + '0x1'
+    assert isinstance(b, MutableBits) and b == '0x1'
+    b = a + b'123'
+    assert isinstance(b, MutableBits) and b == b'123'
+    b = a + [1, 0]
+    assert isinstance(b, MutableBits) and b == '0b10'
+    b = a + (1, 0, 'steve')
+    assert isinstance(b, MutableBits) and b == '0b101'
