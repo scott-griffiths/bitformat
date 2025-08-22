@@ -1,9 +1,9 @@
-use crate::bitrust::core::str_to_bits_rust;
-use crate::bitrust::core::validate_logical_op_lengths;
-use crate::bitrust::core::BitCollection;
-use crate::bitrust::helpers::{validate_index, validate_slice, BV};
-use crate::bitrust::iterator::ChunksIterator;
-use crate::bitrust::{bits_from_any, Bits};
+use crate::bits::{bits_from_any, Bits};
+use crate::core::str_to_bits_rust;
+use crate::core::validate_logical_op_lengths;
+use crate::core::BitCollection;
+use crate::helpers::{validate_index, validate_slice, BV};
+use crate::iterator::ChunksIterator;
 use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
 use pyo3::types::{PyBool, PySlice};

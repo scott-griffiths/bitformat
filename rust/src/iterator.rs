@@ -1,5 +1,6 @@
-use crate::bitrust::core::BitCollection;
-use crate::bitrust::{helpers, Bits};
+use crate::bits::Bits;
+use crate::core::BitCollection;
+use crate::helpers;
 use pyo3::prelude::*;
 use pyo3::PyResult;
 

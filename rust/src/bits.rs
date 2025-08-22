@@ -1,8 +1,8 @@
-use crate::bitrust::core::validate_logical_op_lengths;
-use crate::bitrust::core::{str_to_bits_rust, BitCollection, DTYPE_PARSER};
-use crate::bitrust::helpers::{find_bitvec, validate_index, BV};
-use crate::bitrust::iterator::{BoolIterator, ChunksIterator, FindAllIterator};
-use crate::bitrust::MutableBits;
+use crate::core::validate_logical_op_lengths;
+use crate::core::{str_to_bits_rust, BitCollection, DTYPE_PARSER};
+use crate::helpers::{find_bitvec, validate_index, BV};
+use crate::iterator::{BoolIterator, ChunksIterator, FindAllIterator};
+use crate::mutable::MutableBits;
 use bitvec::prelude::*;
 use bytemuck;
 use pyo3::conversion::IntoPyObject;

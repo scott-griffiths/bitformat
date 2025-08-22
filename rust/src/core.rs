@@ -1,5 +1,6 @@
-use crate::bitrust::helpers::{validate_index, BV};
-use crate::bitrust::{Bits, MutableBits};
+use crate::bits::Bits;
+use crate::helpers::{validate_index, BV};
+use crate::mutable::MutableBits;
 use bitvec::bits;
 use bitvec::field::BitField;
 use bitvec::order::Msb0;

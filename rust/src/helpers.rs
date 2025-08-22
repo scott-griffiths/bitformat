@@ -1,6 +1,6 @@
 /// Helper functions.
-use super::*;
-use crate::bitrust::core::BitCollection;
+use crate::bits::Bits;
+use crate::core::BitCollection;
 use bitvec::prelude::*;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::PyResult;
