@@ -8,7 +8,7 @@ from bitformat._bits import Bits, BitsType, MutableBits
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
-from bitformat.bit_rust import bits_from_any, mutable_bits_from_any
+from bitformat.rust import bits_from_any, mutable_bits_from_any
 import operator
 import sys
 

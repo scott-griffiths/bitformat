@@ -7,7 +7,7 @@ import bitformat
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
-from bitformat.bit_rust import Bits, bits_from_any
+from bitformat.rust import Bits, bits_from_any
 
 # Things that can be converted to Bits when a Bits type is needed
 BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]

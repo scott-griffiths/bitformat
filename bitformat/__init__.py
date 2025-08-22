@@ -48,7 +48,7 @@ from ._reader import Reader
 from ._dtype_definitions import dtype_definitions
 
 # This lets us pass in a Python method for the Rust parser to use.
-from .bit_rust import set_dtype_parser
+from .rust import set_dtype_parser
 set_dtype_parser(dtype_token_to_bits)
 
 

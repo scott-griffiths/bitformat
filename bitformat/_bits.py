@@ -9,7 +9,7 @@ from typing import Union, Iterable, Any, TextIO, Iterator
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.bit_rust import Bits, MutableBits, bits_from_any, mutable_bits_from_any
+from bitformat.rust import Bits, MutableBits, bits_from_any, mutable_bits_from_any
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]

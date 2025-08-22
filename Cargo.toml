@@ -1,12 +1,12 @@
 [package]
-name = "bitformat"
+name = "bitformat_rust"
 version = "0.1.0"  # This version is not updated. The user will see the Python version.
 edition = "2021"
 
 [lib]
-name = "bit_rust"
+name = "rust"
 crate-type = ["cdylib"]
-path = "bit_rust/src/lib.rs"
+path = "rust/src/lib.rs"
 
 [dependencies]
 hex = "0.4.3"

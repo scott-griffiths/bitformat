@@ -44,7 +44,7 @@ dev = [
 
 [tool.maturin]
 python-source = "."
-module-name = "bitformat.bit_rust"
+module-name = "bitformat.rust"
 features = ["pyo3/extension-module"]
 
 [project.urls]

@@ -10,7 +10,7 @@ from typing import Any, Sequence, TextIO
 from ._options import Options
 from lark import UnexpectedInput
 import lark
-from .bit_rust import bits_from_any
+from .rust import bits_from_any
 
 __all__ = ["FieldType"]
 

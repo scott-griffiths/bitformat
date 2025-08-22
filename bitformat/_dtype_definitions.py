@@ -5,7 +5,7 @@ from typing import Literal
 from bitformat._common import DtypeKind
 from ._dtypes import DtypeDefinition, AllowedSizes
 from ._bits import Bits
-from .bit_rust import bits_from_any
+from .rust import bits_from_any
 
 
 # The definitions for each of the data types.
