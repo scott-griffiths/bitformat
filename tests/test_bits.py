@@ -807,3 +807,11 @@ def test_unpack_tuple():
     assert x == '123'
     assert y == 0
     assert z == -1
+
+def test_bool_conversion():
+    a = Bits()
+    b = Bits('0b0')
+    c = Bits('0b1')
+    assert not a
+    assert b
+    assert c

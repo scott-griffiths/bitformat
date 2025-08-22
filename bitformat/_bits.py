@@ -163,7 +163,7 @@ this is a step to using the Rust classes as the base classes."""
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         p = self._find(bs, 0, ba)
-        return None if p == -1 else p
+        return p
 
     def info(self) -> str:
         """Return a descriptive string with information about the Bits.
@@ -283,7 +283,7 @@ this is a step to using the Rust classes as the base classes."""
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         p = self._rfind(bs, 0, ba)
-        return None if p == -1 else p
+        return p
 
     def unpack(self, fmt: Dtype | str | Sequence[Dtype | str], /) -> Any | list[Any]:
         """
@@ -404,10 +404,6 @@ this is a step to using the Rust classes as the base classes."""
         return self.__xor__(bs)
 
     # ----- Conversions
-
-    def __bool__(self) -> bool:
-        """Return False if Bits is empty, otherwise return True."""
-        return len(self) != 0
 
     def __bytes__(self) -> bytes:
         return self.to_bytes()
