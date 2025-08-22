@@ -272,6 +272,7 @@ impl Bits {
         Py::new(py, iter_obj)
     }
 
+    #[inline]
     pub fn __len__(&self) -> usize {
         self.len()
     }
@@ -601,17 +602,16 @@ impl Bits {
     ///         7
     ///
     pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
-        let value = value.is_truthy(py)?;
-        // Note that using hamming::weight is about twice as fast as:
-        // self.data.count_ones()
-        // which is the way that bitvec suggests.
-        let bytes: &[u8] = bytemuck::cast_slice(self.data.as_raw_slice());
-        let count = hamming::weight(bytes) as usize;
-        if value {
-            Ok(count)
-        } else {
-            Ok(self.len() - count)
-        }
+        let count_ones = value.is_truthy(py)?;
+        let len = self.len();
+        let ones = py.allow_threads(|| {
+            // Note that using hamming::weight is about twice as fast as:
+            // self.data.count_ones()
+            // which is the way that bitvec suggests.
+            let bytes: &[u8] = bytemuck::cast_slice(self.data.as_raw_slice());
+            hamming::weight(bytes) as usize
+        });
+        Ok(if count_ones { ones } else { len - ones })
     }
 
     /// Return a slice of the current Bits.
@@ -754,6 +754,7 @@ impl Bits {
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
     }
 
+    #[inline]
     pub(crate) fn _validate_shift(&self, n: i64) -> PyResult<usize> {
         if self.len() == 0 {
             return Err(PyValueError::new_err("Cannot shift an empty Bits."));
