@@ -1027,3 +1027,14 @@ def test_auto_conversions():
     assert isinstance(b, MutableBits) and b == '0b10'
     b = a + (1, 0, 'steve')
     assert isinstance(b, MutableBits) and b == '0b101'
+
+def test_clear():
+    a = MutableBits()
+    a.clear()
+    assert a == MutableBits()
+    assert not a
+    a += '0b1'
+    assert a
+    a.clear()
+    assert not a
+    assert a == MutableBits()

@@ -138,7 +138,7 @@ impl Bits {
 
     /// Return string representations for printing.
     pub fn __str__(&self) -> String {
-        if self.len() == 0 {
+        if self.is_empty() {
             return "".to_string();
         }
         match self.to_hex() {
@@ -438,7 +438,7 @@ impl Bits {
 
     /// Return bytes that can easily be converted to an int in Python
     pub fn _to_int_byte_data(&self, signed: bool) -> Vec<u8> {
-        if self.len() == 0 {
+        if self.is_empty() {
             return Vec::new();
         }
 
@@ -756,7 +756,7 @@ impl Bits {
 
     #[inline]
     pub(crate) fn _validate_shift(&self, n: i64) -> PyResult<usize> {
-        if self.len() == 0 {
+        if self.is_empty() {
             return Err(PyValueError::new_err("Cannot shift an empty Bits."));
         }
         if n < 0 {

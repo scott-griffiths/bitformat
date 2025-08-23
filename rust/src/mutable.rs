@@ -574,7 +574,7 @@ impl MutableBits {
         start: Option<i64>,
         end: Option<i64>,
     ) -> PyResult<PyRefMut<'a, Self>> {
-        if slf.len() == 0 {
+        if slf.is_empty() {
             return Err(PyValueError::new_err("Cannot rotate an empty MutableBits."));
         }
         if n < 0 {
@@ -609,7 +609,7 @@ impl MutableBits {
         start: Option<i64>,
         end: Option<i64>,
     ) -> PyResult<PyRefMut<'a, Self>> {
-        if slf.len() == 0 {
+        if slf.is_empty() {
             return Err(PyValueError::new_err("Cannot rotate an empty MutableBits."));
         }
         if n < 0 {
@@ -884,6 +884,32 @@ impl MutableBits {
     pub fn _as_immutable(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
         Bits::new(data)
+    }
+
+    /// Clear all bits, making the MutableBits empty.
+    ///
+    /// This doesn't change the allocated capacity.
+    ///
+    pub fn clear(&mut self) {
+        self.inner.data.clear();
+    }
+
+    /// Return the number of bits the MutableBits can hold without reallocating.
+    ///
+    /// It can be helpful as a performance optimization to reserve enough capacity before
+    /// constructing a large MutableBits incrementally. See also :meth:`reserve`.
+    ///
+    pub fn capacity(&self) -> usize {
+        self.inner.data.capacity()
+    }
+
+    /// Reserve capacity for at least additional more bits to be appended to the MutableBits.
+    ///
+    /// It can be helpful as a performance optimization to reserve enough capacity before
+    /// constructing a large MutableBits incrementally. See also :meth:`capacity`.
+    ///
+    pub fn reserve(&mut self, additional: usize) {
+        self.inner.data.reserve(additional);
     }
 
     /// Append bits to the end of the current MutableBits in-place.

@@ -532,6 +532,8 @@ class BitsMethods:
         value = random.getrandbits(n)
         return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
+    # TODO: Shouldn't we have an rfind_all too?
+
     def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 

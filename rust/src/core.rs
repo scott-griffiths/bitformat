@@ -17,6 +17,7 @@ use std::sync::Mutex;
 // Trait used for commonality between the Bits and MutableBits structs.
 pub(crate) trait BitCollection: Sized {
     fn len(&self) -> usize;
+    fn is_empty(&self) -> bool;
     fn from_zeros(length: usize) -> Self;
     fn from_ones(length: usize) -> Self;
     fn from_bytes(data: Vec<u8>) -> Self;
@@ -149,6 +150,10 @@ pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
 impl BitCollection for Bits {
     fn len(&self) -> usize {
         self.data.len()
+    }
+
+    fn is_empty(&self) -> bool {
+        self.data.is_empty()
     }
 
     fn from_zeros(length: usize) -> Self {
@@ -302,6 +307,9 @@ impl BitCollection for Bits {
 impl BitCollection for MutableBits {
     fn len(&self) -> usize {
         self.inner.len()
+    }
+    fn is_empty(&self) -> bool {
+        self.inner.is_empty()
     }
     fn from_zeros(length: usize) -> Self {
         Self {
