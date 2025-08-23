@@ -80,7 +80,7 @@ Format creation and parsing:
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported, with no arbitrary restrictions on length.
 * Data is always stored as a contiguous array of bits.
-* The core is written in Rust for efficiency.
+* The core is written in Rust for maximum performance.
 
 > [!NOTE]
 > To see what has been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
