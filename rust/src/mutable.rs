@@ -8,13 +8,13 @@ use pyo3::exceptions::{PyIndexError, PyTypeError, PyValueError};
 use pyo3::prelude::{PyAnyMethods, PyTypeMethods};
 use pyo3::types::{PyBool, PySlice};
 use pyo3::types::{PySliceMethods, PyType};
-use pyo3::{pyclass, pymethods, PyObject, PyRef, PyResult, Python};
+use pyo3::{pyclass, pymethods, PyRef, PyResult, Python};
 use pyo3::{pyfunction, PyRefMut};
 use pyo3::{Bound, IntoPyObject, Py, PyAny};
 use std::ops::Not;
 
 #[pyfunction]
-pub fn mutable_bits_from_any(any: PyObject, py: Python) -> PyResult<MutableBits> {
+pub fn mutable_bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<MutableBits> {
     let any_bound = any.bind(py);
 
     if let Ok(any_bits) = any_bound.extract::<PyRef<Bits>>() {
@@ -115,7 +115,7 @@ impl MutableBits {
     /// >>> MutableBits('0xf2') == '0b11110010'
     /// True
     ///
-    pub fn __eq__(&self, other: PyObject, py: Python) -> PyResult<bool> {
+    pub fn __eq__(&self, other: Py<PyAny>, py: Python) -> PyResult<bool> {
         let other_bits = bits_from_any(other, py)?;
         Ok(self.inner.data == other_bits.data)
     }
@@ -286,7 +286,7 @@ impl MutableBits {
     #[classmethod]
     pub fn from_bools(
         _cls: &Bound<'_, PyType>,
-        values: Vec<PyObject>,
+        values: Vec<Py<PyAny>>,
         py: Python,
     ) -> PyResult<Self> {
         Ok(Bits::from_bools(_cls, values, py)?.to_mutable_bits())
@@ -366,7 +366,7 @@ impl MutableBits {
             .map(|bits| MutableBits { inner: bits })
     }
 
-    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         let py = key.py();
         // Handle integer indexing
         if let Ok(index) = key.extract::<i64>() {
@@ -393,6 +393,75 @@ impl MutableBits {
 
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
     }
+
+    // pub fn __setitem__(
+    //     &mut self,
+    //     key: &Bound<'_, PyAny>,
+    //     value: Py<PyAny>,
+    //     py: Python,
+    // ) -> PyResult<()> {
+    //     let length = self.len();
+    //     if let Ok(mut index) = key.extract::<i64>() {
+    //         if index < 0 {
+    //             index += length as i64;
+    //         }
+    //         if index < 0 || index >= length as i64 {
+    //             return Err(PyIndexError::new_err(format!(
+    //                 "Bit index {index} out of range for length {length}"
+    //             )));
+    //         }
+    //         self._set_index(value.is_truthy(py)?, index)?;
+    //         return Ok(());
+    //     }
+    //     if let Ok(slice) = key.downcast::<PySlice>() {
+    //         let indices = slice.indices(length as isize)?;
+    //         let start: i64 = indices.start.try_into()?;
+    //         let stop: i64 = indices.stop.try_into()?;
+    //         let step: i64 = indices.step.try_into()?;
+    //         if step != 1 {
+    //             return Err(PyValueError::new_err(
+    //                 "Cannot set bits with a step other than 1",
+    //             ));
+    //         }
+    //         // TODO: Need to guard against value being self
+    //
+    //         let bs = bits_from_any(value, py)?;
+    //
+    //         self._set_slice(start as usize, stop as usize, &bs)?;
+    //         return Ok(());
+    //     }
+    //     Err(PyTypeError::new_err("Index must be an integer or a slice."))
+    // }
+
+    ///     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
+    //         """Set a bit or a slice of bits.
+    //
+    //         :param key: The index or slice to set.
+    //         :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
+    //         :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
+    //         :raises IndexError: If the index is out of range.
+    //
+    //         Examples:
+    //             >>> b = MutableBits('0b0000')
+    //             >>> b[1] = True
+    //             >>> b.bin
+    //             '0100'
+    //             >>> b[1:3] = '0b11111'
+    //             >>> b.bin
+    //             '0111110'
+    //         """
+    //         if isinstance(key, numbers.Integral):
+    //             if key < 0:
+    //                 key += len(self)
+    //             if not 0 <= key < len(self):
+    //                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
+    //             self._set_index(bool(value), key)
+    //         else:
+    //             start, stop, step = key.indices(len(self))
+    //             if step != 1:
+    //                 raise ValueError("Cannot set bits with a step other than 1")
+    //             bs = bits_from_any(value)
+    //             self._set_slice(start, stop, bs)
 
     /// Return the MutableBits as bytes, padding with zero bits if needed.
     ///
@@ -436,7 +505,7 @@ impl MutableBits {
     ///     >>> MutableBits('0b101100').starts_with('0b100')
     ///     False
     ///
-    pub fn starts_with(&self, prefix: PyObject, py: Python) -> PyResult<bool> {
+    pub fn starts_with(&self, prefix: Py<PyAny>, py: Python) -> PyResult<bool> {
         self.inner.starts_with(prefix, py)
     }
 
@@ -452,7 +521,7 @@ impl MutableBits {
     ///     >>> MutableBits('0b101100').ends_with('0b101')
     ///     False
     ///
-    pub fn ends_with(&self, suffix: PyObject, py: Python) -> PyResult<bool> {
+    pub fn ends_with(&self, suffix: Py<PyAny>, py: Python) -> PyResult<bool> {
         self.inner.ends_with(suffix, py)
     }
 
@@ -460,7 +529,7 @@ impl MutableBits {
     ///
     /// Raises ValueError if the two MutableBits have differing lengths.
     ///
-    pub fn __and__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __and__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let other = bits_from_any(bs, py)?;
         self._and(&other)
     }
@@ -469,7 +538,7 @@ impl MutableBits {
     ///
     /// Raises ValueError if the two MutableBits have differing lengths.
     ///
-    pub fn __or__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __or__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let other = bits_from_any(bs, py)?;
         self._or(&other)
     }
@@ -478,7 +547,7 @@ impl MutableBits {
     ///
     /// Raises ValueError if the two MutableBits have differing lengths.
     ///
-    pub fn __xor__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __xor__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let other = bits_from_any(bs, py)?;
         self._xor(&other)
     }
@@ -605,7 +674,7 @@ impl MutableBits {
     ///     >>> MutableBits('0xef').count(1)
     ///     7
     ///
-    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+    pub fn count(&self, value: Py<PyAny>, py: Python) -> PyResult<usize> {
         self.inner.count(value, py)
     }
 
@@ -830,7 +899,7 @@ impl MutableBits {
     ///
     pub fn append<'a>(
         mut slf: PyRefMut<'a, Self>,
-        bs: PyObject,
+        bs: Py<PyAny>,
         py: Python<'_>,
     ) -> PyResult<PyRefMut<'a, Self>> {
         // Check if bs is the same object as slf
@@ -863,7 +932,7 @@ impl MutableBits {
     ///
     pub fn prepend<'a>(
         mut slf: PyRefMut<'a, Self>,
-        bs: PyObject,
+        bs: Py<PyAny>,
         py: Python<'_>,
     ) -> PyResult<PyRefMut<'a, Self>> {
         let self_data = std::mem::take(&mut slf.inner.data);

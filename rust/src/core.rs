@@ -9,8 +9,7 @@ use bitvec::view::BitView;
 use lru::LruCache;
 use once_cell::sync::Lazy;
 use pyo3::exceptions::PyValueError;
-use pyo3::types::PyAnyMethods;
-use pyo3::{PyObject, PyRef, PyResult, Python};
+use pyo3::prelude::*;
 use std::fmt;
 use std::num::NonZeroUsize;
 use std::sync::Mutex;
@@ -43,7 +42,7 @@ const BITS_CACHE_SIZE: usize = 256;
 static BITS_CACHE: Lazy<Mutex<LruCache<String, BV>>> =
     Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(BITS_CACHE_SIZE).unwrap())));
 
-pub(crate) static DTYPE_PARSER: Lazy<Mutex<Option<PyObject>>> = Lazy::new(|| Mutex::new(None));
+pub(crate) static DTYPE_PARSER: Lazy<Mutex<Option<Py<PyAny>>>> = Lazy::new(|| Mutex::new(None));
 
 fn split_tokens(s: String) -> Vec<String> {
     // Remove whitespace

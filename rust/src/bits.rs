@@ -15,7 +15,7 @@ use std::ops::Not;
 // ---- Exported Python helper methods ----
 
 #[pyfunction]
-pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
+pub fn set_dtype_parser(dtype_parser: Py<PyAny>) -> PyResult<()> {
     // Store the Python object directly - no conversion needed
     let mut parser_guard = DTYPE_PARSER.lock().unwrap();
     *parser_guard = Some(dtype_parser);
@@ -23,7 +23,7 @@ pub fn set_dtype_parser(dtype_parser: PyObject) -> PyResult<()> {
 }
 
 #[pyfunction]
-pub fn bits_from_any(any: PyObject, py: Python) -> PyResult<Bits> {
+pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
     let any_bound = any.bind(py);
 
     // Is it of type Bits?
@@ -228,7 +228,7 @@ impl Bits {
     /// >>> Bits('0b1110') == '0xe'
     /// True
     ///
-    pub fn __eq__(&self, other: PyObject, py: Python) -> bool {
+    pub fn __eq__(&self, other: Py<PyAny>, py: Python) -> bool {
         // TODO: This risks creating copies of Bits or MutableBits when they're not needed.
         bits_from_any(other, py).map_or(false, |b| self.data == b.data)
     }
@@ -373,7 +373,7 @@ impl Bits {
     #[classmethod]
     pub fn from_bools(
         _cls: &Bound<'_, PyType>,
-        values: Vec<PyObject>, // TODO: Could this be a PyObject that we test for iter to make it more general?
+        values: Vec<Py<PyAny>>, // TODO: Could this be a Py<PyAny> that we test for iter to make it more general?
         py: Python,
     ) -> PyResult<Self> {
         let mut bv = BV::with_capacity(values.len());
@@ -561,7 +561,7 @@ impl Bits {
     ///     >>> Bits('0b101100').starts_with('0b100')
     ///     False
     ///
-    pub fn starts_with(&self, prefix: PyObject, py: Python) -> PyResult<bool> {
+    pub fn starts_with(&self, prefix: Py<PyAny>, py: Python) -> PyResult<bool> {
         let prefix = bits_from_any(prefix, py)?;
         if prefix.len() <= self.len() {
             Ok(prefix == self._get_slice_unchecked(0, prefix.len()))
@@ -582,7 +582,7 @@ impl Bits {
     ///     >>> Bits('0b101100').ends_with('0b101')
     ///     False
     ///
-    pub fn ends_with(&self, suffix: PyObject, py: Python) -> PyResult<bool> {
+    pub fn ends_with(&self, suffix: Py<PyAny>, py: Python) -> PyResult<bool> {
         let suffix = bits_from_any(suffix, py)?;
         if suffix.len() <= self.len() {
             Ok(suffix == self._get_slice_unchecked(self.len() - suffix.len(), suffix.len()))
@@ -601,7 +601,7 @@ impl Bits {
     ///         >>> Bits('0xef').count(1)
     ///         7
     ///
-    pub fn count(&self, value: PyObject, py: Python) -> PyResult<usize> {
+    pub fn count(&self, value: Py<PyAny>, py: Python) -> PyResult<usize> {
         let count_ones = value.is_truthy(py)?;
         let len = self.len();
         let ones = py.allow_threads(|| {
@@ -726,7 +726,7 @@ impl Bits {
         Ok(self.data[index])
     }
 
-    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<PyObject> {
+    pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         let py = key.py();
         // Handle integer indexing
         if let Ok(index) = key.extract::<i64>() {
@@ -806,7 +806,7 @@ impl Bits {
     ///
     /// Raises ValueError if the two Bits have differing lengths.
     ///
-    pub fn __and__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __and__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         // TODO: Return early `if bs is self`.
         let other = bits_from_any(bs, py)?;
         self._and(&other)
@@ -816,7 +816,7 @@ impl Bits {
     ///
     /// Raises ValueError if the two Bits have differing lengths.
     ///
-    pub fn __or__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __or__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         // TODO: Return early `if bs is self`.
         let other = bits_from_any(bs, py)?;
         self._or(&other)
@@ -826,7 +826,7 @@ impl Bits {
     ///
     /// Raises ValueError if the two Bits have differing lengths.
     ///
-    pub fn __xor__(&self, bs: PyObject, py: Python) -> PyResult<Self> {
+    pub fn __xor__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let other = bits_from_any(bs, py)?;
         self._xor(&other)
     }
