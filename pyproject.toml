@@ -43,7 +43,7 @@ dev = [
 [tool.maturin]
 python-source = "."
 module-name = "bitformat.rust"
-features = ["pyo3/extension-module"]
+features = ["pyo3/extension-module", "pyo3/abi3-py311"]
 
 [project.urls]
 homepage = "https://github.com/scott-griffiths/bitformat"
