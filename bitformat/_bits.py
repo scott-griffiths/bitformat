@@ -716,19 +716,6 @@ class MutableBitsMethods:
         self.append(bs)
         return self
 
-    def __delitem__(self, key: int | slice) -> None:
-        if isinstance(key, numbers.Integral):
-            if key < 0:
-                key += len(self)
-            if not 0 <= key < len(self):
-                raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self._set_slice(key, key + 1, Bits.from_zeros(0))
-        else:
-            start, stop, step = key.indices(len(self))
-            if step != 1:
-                raise ValueError("Cannot delete bits with a step other than 1")
-            self._set_slice(start, stop, Bits.from_zeros(0))
-
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
         # Check if the method exists in Bits
@@ -738,7 +725,7 @@ class MutableBitsMethods:
                 f"Did you mean to use the Bits class? Or you could replace '.{name}(...)' with '.to_bits().{name}(...)'."
             )
 
-        # Default behavior
+        # Default behaviour
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
     def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:

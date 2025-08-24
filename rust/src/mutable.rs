@@ -416,7 +416,6 @@ impl MutableBits {
         value: Py<PyAny>,
         py: Python,
     ) -> PyResult<()> {
-        let py = slf.py();
         let length = slf.len();
         if let Ok(mut index) = key.extract::<i64>() {
             if index < 0 {
@@ -448,6 +447,36 @@ impl MutableBits {
             };
 
             slf._set_slice(start as usize, stop as usize, &bs)?;
+            return Ok(());
+        }
+        Err(PyTypeError::new_err("Index must be an integer or a slice."))
+    }
+
+    pub fn __delitem__(&mut self, key: &Bound<'_, PyAny>) -> PyResult<()> {
+        let length = self.len();
+        if let Ok(mut index) = key.extract::<i64>() {
+            if index < 0 {
+                index += length as i64;
+            }
+            if index < 0 || index >= length as i64 {
+                return Err(PyIndexError::new_err(format!(
+                    "Bit index {index} out of range for length {length}"
+                )));
+            }
+            self.inner.data.remove(index as usize);
+            return Ok(());
+        }
+        if let Ok(slice) = key.downcast::<PySlice>() {
+            let indices = slice.indices(length as isize)?;
+            let start: i64 = indices.start.try_into()?;
+            let stop: i64 = indices.stop.try_into()?;
+            let step: i64 = indices.step.try_into()?;
+            if step != 1 {
+                return Err(PyValueError::new_err(
+                    "Cannot delete bits with a step other than 1",
+                ));
+            }
+            self.inner.data.drain(start as usize..stop as usize);
             return Ok(());
         }
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
