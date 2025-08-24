@@ -12,6 +12,7 @@ The new methods are:
 
 * :meth:`~MutableBits.append`
 * :meth:`~MutableBits.byte_swap`
+* :meth:`~MutableBits.clear`
 * :meth:`~MutableBits.insert`
 * :meth:`~MutableBits.invert`
 * :meth:`~MutableBits.prepend`
@@ -25,7 +26,9 @@ Some methods from :class:`Bits` that return a generator are not allowed as the u
 while the generator is still live. For example the :meth:`Bits.find_all` method is not available on ``MutableBits``, but you can use
 ``.to_bits().find_all()`` instead.
 
-You can switch between :class:`MutableBits` and :class:`Bits` using the :meth:`MutableBits.to_bits` and :meth:`Bits.to_mutable_bits` methods.
+You can switch between :class:`MutableBits` and :class:`Bits` using the :meth:`MutableBits.to_bits` and :meth:`Bits.to_mutable_bits` methods.f
+
+The :meth:`~MutableBits.reserve` and :meth:`~MutableBits.capacity` methods can be used to manage the capacity of the :class:`MutableBits` to avoid unneccesary reallocations, but their use is purely for performance optimization.
 
 ----
 

@@ -1038,3 +1038,14 @@ def test_clear():
     a.clear()
     assert not a
     assert a == MutableBits()
+
+def test_reserve():
+    a = MutableBits()
+    assert a.capacity() == 0
+    a.reserve(10)
+    assert a.capacity() >= 10
+    a += MutableBits.from_random(1000000)
+    b4 = a.capacity()
+    assert b4 >= 1000000
+    a.clear()
+    assert a.capacity() == b4

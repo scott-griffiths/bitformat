@@ -888,13 +888,17 @@ impl MutableBits {
 
     /// Clear all bits, making the MutableBits empty.
     ///
-    /// This doesn't change the allocated capacity.
+    /// This doesn't change the allocated capacity, so won't free up any memory.
     ///
     pub fn clear(&mut self) {
         self.inner.data.clear();
     }
 
-    /// Return the number of bits the MutableBits can hold without reallocating.
+    /// Return the number of bits the MutableBits can hold without reallocating memory.
+    ///
+    /// The capacity is always equal to or greater than the current length of the MutableBits.
+    /// If the length ever exceeds the capacity then memory will have to be reallocated, and the
+    /// capacity will increase.
     ///
     /// It can be helpful as a performance optimization to reserve enough capacity before
     /// constructing a large MutableBits incrementally. See also :meth:`reserve`.
@@ -903,10 +907,13 @@ impl MutableBits {
         self.inner.data.capacity()
     }
 
-    /// Reserve capacity for at least additional more bits to be appended to the MutableBits.
+    /// Reserve memory for at least `additional` more bits to be appended to the MutableBits.
     ///
-    /// It can be helpful as a performance optimization to reserve enough capacity before
-    /// constructing a large MutableBits incrementally. See also :meth:`capacity`.
+    /// This can be helpful as a performance optimization to avoid multiple memory reallocations when
+    /// constructing a large MutableBits incrementally. If enough memory is already reserved then
+    /// this method will have no effect. See also :meth:`capacity`.
+    ///
+    /// :param additional: The number of bits that can be appended without any further memory reallocations.
     ///
     pub fn reserve(&mut self, additional: usize) {
         self.inner.data.reserve(additional);

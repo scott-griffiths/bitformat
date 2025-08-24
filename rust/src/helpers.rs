@@ -4,9 +4,6 @@ use crate::core::BitCollection;
 use bitvec::prelude::*;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::PyResult;
-// The choice of size is interesting. Can choose u8, u16, u32, u64.
-// Also can choose Lsb0 or Msb0.
-// Not sure of all the performance implications yet.
 pub type BV = BitVec<u8, Msb0>;
 pub type BS = BitSlice<u8, Msb0>;
 

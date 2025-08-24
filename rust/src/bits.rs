@@ -468,7 +468,7 @@ impl Bits {
             return Vec::new();
         }
 
-        let mut bv = BitVec::<u8, Msb0>::with_capacity(self.len());
+        let mut bv = BV::with_capacity(self.len());
         bv.extend_from_bitslice(&self.data);
         let new_len = (bv.len() + 7) & !7;
         bv.resize(new_len, false);
@@ -485,7 +485,7 @@ impl Bits {
         if length == 0 {
             return Ok(Vec::new());
         }
-        let mut bv = BitVec::<u8, Msb0>::with_capacity(length);
+        let mut bv = BV::with_capacity(length);
         bv.extend_from_bitslice(&self.data[start..start + length]);
         Ok(bv.into_vec())
     }
