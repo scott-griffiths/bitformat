@@ -766,14 +766,13 @@ def test_format_with_repeat():
     assert fmt.value[0] == 2  # count
     assert fmt.value[1] == [1, 2]  # values
 
-@pytest.mark.skip  #TODO - needs b"ABCD" to be allowed again.
 def test_format_with_conditional_fields():
     """Test a format with conditional fields based on a flag"""
     fmt = Format("(has_name: bool, if {has_name}: name: bytes4, id: u16)")
 
     # Test with name (has_name=True)
     fmt.pack([True, b"ABCD", 1234])
-    assert fmt.to_bits() == Bits.from_string("0b1, b'ABCD', u16=1234")
+    assert fmt.to_bits() == Bits('0b1') + b'ABCD' + 'u16 = 1234'
 
     # Test without name (has_name=False)
     fmt.pack([False, 5678])  # No name needed
