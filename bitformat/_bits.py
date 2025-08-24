@@ -532,7 +532,30 @@ class BitsMethods:
         value = random.getrandbits(n)
         return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
-    # TODO: Shouldn't we have an rfind_all too?
+    def rfind_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
+        """Find all occurrences of bs starting at the end. Return generator of bit positions.
+
+        :param bs: The Bits to find.
+        :param count: The maximum number of occurrences to find.
+        :param byte_aligned: If True, the Bits will only be found on byte boundaries.
+        :return: A generator yielding bit positions.
+
+        Raises ValueError if bs is empty, if start < 0, if end > len(self) or
+        if end < start.
+
+        All occurrences of bs are found, even if they overlap.
+
+        Note that this method is not available for :class:`MutableBits` as its value could change while the
+        generator is still active. For that case you should convert to a :class:`Bits` first with :meth:`MutableBits.to_bits`.
+
+        .. code-block:: pycon
+
+            >>> list(Bits('0b10111011').rfind_all('0b11'))
+            [6, 3, 2]
+
+        """
+        # TODO: This is only a (working) placeholder.
+        return (p for p in reversed(list(self.find_all(bs, count, byte_aligned))))
 
     def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.

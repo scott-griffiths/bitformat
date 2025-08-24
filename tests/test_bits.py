@@ -815,3 +815,12 @@ def test_bool_conversion():
     assert not a
     assert b
     assert c
+
+def test_rfind_all():
+    a = Bits('0b0001011')
+    g = a.rfind_all('0b1')
+    assert next(g) == 6
+    assert next(g) == 5
+    assert next(g) == 3
+    with pytest.raises(StopIteration):
+        _ = next(g)
