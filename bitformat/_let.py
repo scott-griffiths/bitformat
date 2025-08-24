@@ -54,12 +54,13 @@ class Let(FieldType):
         return 0
 
     @override
-    def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Any, kwargs: dict[str, Any]) -> bool:
         try:
             x = self._expr.evaluate(**kwargs)
         except ExpressionError as e:
             raise ValueError(f"Cannot evaluate expression: {e}")
         kwargs[self._name] = x
+        return False  # Doesn't consume value
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

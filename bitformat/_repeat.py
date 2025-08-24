@@ -128,7 +128,10 @@ class Repeat(FieldType):
         return pos - startbit
 
     @override
-    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> bool:
+        if not isinstance(values, Sequence):
+            raise TypeError(f"A Repeat field needs a Sequence to pack, but received '{values}' of type {type(values)}. "
+                            f"To pack a single item, make a single item list instead.")
         self._bits_list = []
         if self._concrete_count is None:
             try:
@@ -141,11 +144,13 @@ class Repeat(FieldType):
                 raise ValueError("Values passed to Repeat will be unused as the field is constant.")
             # It's just a const value repeated.
             self._bits_list = [self.field.to_bits()] * self._concrete_count
-            return
+            return True
 
         for i in range(self._concrete_count):
             self.field._pack(values[i], kwargs)
             self._bits_list.append(self.field.to_bits())
+
+        return True  # TODO: Should return False if it doesn't use up all the values.
 
     @override
     def _copy(self) -> Repeat:
@@ -217,5 +222,5 @@ class Repeat(FieldType):
             value = Expression.from_string(value)
         elif isinstance(value, int):
             value = Expression.from_int(value)
-        self._count = value
         self.clear()
+        self._count = value

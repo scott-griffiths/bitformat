@@ -43,8 +43,8 @@ class Pass(FieldType):
         return 0
 
     @override
-    def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
-        pass
+    def _pack(self, value: Any, kwargs: dict[str, Any]) -> bool:
+        return False
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

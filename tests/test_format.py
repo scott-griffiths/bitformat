@@ -827,7 +827,6 @@ def test_format_with_dynamic_dtype():
     fmt.pack([3, True])
     assert fmt.to_bits() == Bits.from_string("0b111")
 
-@pytest.mark.skip  # TODO
 def test_format_with_expressions_in_if_condition():
     """Test a format with expressions in if condition that reference other fields"""
     fmt = Format("(flags: u8, len: u8, if {flags & 0x01 != 0}: opt1: u8, if {flags & 0x02 != 0}: opt2: u16)")

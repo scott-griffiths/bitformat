@@ -86,12 +86,12 @@ class If(FieldType):
             return then_len
 
     @override
-    def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Any, kwargs: dict[str, Any]) -> bool:
         self.condition_value = self.condition.evaluate(**kwargs)
         if self.condition_value:
-            _ = self.then_._pack(value, kwargs)
+            return self.then_._pack(value, kwargs)
         else:
-            _ = self.else_._pack(value, kwargs)
+            return self.else_._pack(value, kwargs)
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

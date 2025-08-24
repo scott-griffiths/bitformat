@@ -171,10 +171,11 @@ class Field(FieldType):
         return len(self._bits)
 
     @override
-    def _pack(self, value: Any, kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Any, kwargs: dict[str, Any]) -> bool:
         self._set_value_with_kwargs(value, kwargs)
         if self.name:
             kwargs[self.name] = self.value
+        return True
 
     @override
     def _get_value(self) -> Any | None:

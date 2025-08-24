@@ -110,7 +110,7 @@ class FieldType(abc.ABC):
         """
         if kwargs is None:
             kwargs = {}
-        self._pack(values, kwargs)
+        _ = self._pack(values, kwargs)
         return self.to_bits()
 
     @final
@@ -186,10 +186,11 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _pack(self, value: Any | Sequence[Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, value: Any | Sequence[Any], kwargs: dict[str, Any]) -> bool:
         """
         Build the field from the values list, starting at index.
 
+        Returns True if it consumed `value`, False otherwise
         """
         ...
 

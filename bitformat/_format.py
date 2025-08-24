@@ -100,27 +100,38 @@ class Format(FieldType):
         return sum(f.bit_length for f in self._fields)
 
     @override
-    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> bool:
         if not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
         value_iter = iter(values)
+        consumed_all_values = False
+        need_next_value = True
         for fieldtype in self._fields:
             # For const fields (and Repeat with const fields), and padding we don't need to use up a value
             if fieldtype.is_const() or (isinstance(fieldtype, Field) and fieldtype.dtype._is_padding()):
-                fieldtype._pack(None, kwargs)
+                _ = fieldtype._pack(None, kwargs)
                 continue
             fieldtype.clear()
             if isinstance(fieldtype, Repeat) and fieldtype.field.is_const():
-                fieldtype._pack([], kwargs)
+                _ = fieldtype._pack([], kwargs)
                 continue
             try:
-                next_value = next(value_iter)
+                if need_next_value:
+                    next_value = next(value_iter)
             except StopIteration:
                 # No more values left to pack, but there may still be some constant fields
-                fieldtype._pack([], kwargs)
+                consumed_all_values = True
+                _ = fieldtype._pack(None, kwargs)
                 continue
             else:
-                fieldtype._pack(next_value, kwargs)
+                need_next_value = fieldtype._pack(next_value, kwargs)
+        if consumed_all_values:
+            return True
+        try:
+            _ = next(value_iter)
+        except StopIteration:
+            return True
+        return False  # Didn't use up all of values
 
     @override
     def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:

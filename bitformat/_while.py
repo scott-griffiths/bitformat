@@ -99,7 +99,7 @@ class While(FieldType):
         return pos - startbit
 
     @override
-    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> None:
+    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> bool:
         self._bits_list = []
         self._values_list = []
         value_iter = iter(values)
@@ -108,6 +108,11 @@ class While(FieldType):
             self.field._pack(value, kwargs)
             self._bits_list.append(self.field.to_bits())
             self._values_list.extend(value)
+        try:
+            next(value_iter)
+        except StopIteration:
+            return False
+        return True
 
     @override
     def _copy(self) -> While:
