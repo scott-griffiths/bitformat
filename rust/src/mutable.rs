@@ -394,74 +394,64 @@ impl MutableBits {
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
     }
 
-    // pub fn __setitem__(
-    //     &mut self,
-    //     key: &Bound<'_, PyAny>,
-    //     value: Py<PyAny>,
-    //     py: Python,
-    // ) -> PyResult<()> {
-    //     let length = self.len();
-    //     if let Ok(mut index) = key.extract::<i64>() {
-    //         if index < 0 {
-    //             index += length as i64;
-    //         }
-    //         if index < 0 || index >= length as i64 {
-    //             return Err(PyIndexError::new_err(format!(
-    //                 "Bit index {index} out of range for length {length}"
-    //             )));
-    //         }
-    //         self._set_index(value.is_truthy(py)?, index)?;
-    //         return Ok(());
-    //     }
-    //     if let Ok(slice) = key.downcast::<PySlice>() {
-    //         let indices = slice.indices(length as isize)?;
-    //         let start: i64 = indices.start.try_into()?;
-    //         let stop: i64 = indices.stop.try_into()?;
-    //         let step: i64 = indices.step.try_into()?;
-    //         if step != 1 {
-    //             return Err(PyValueError::new_err(
-    //                 "Cannot set bits with a step other than 1",
-    //             ));
-    //         }
-    //         // TODO: Need to guard against value being self
-    //
-    //         let bs = bits_from_any(value, py)?;
-    //
-    //         self._set_slice(start as usize, stop as usize, &bs)?;
-    //         return Ok(());
-    //     }
-    //     Err(PyTypeError::new_err("Index must be an integer or a slice."))
-    // }
+    /// Set a bit or a slice of bits.
+    ///
+    /// :param key: The index or slice to set.
+    /// :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
+    /// :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
+    /// :raises IndexError: If the index is out of range.
+    ///
+    /// Examples:
+    ///     >>> b = MutableBits('0b0000')
+    ///     >>> b[1] = True
+    ///     >>> b.bin
+    ///     '0100'
+    ///     >>> b[1:3] = '0b11111'
+    ///     >>> b.bin
+    ///     '0111110'
+    ///
+    pub fn __setitem__(
+        mut slf: PyRefMut<'_, Self>,
+        key: &Bound<'_, PyAny>,
+        value: Py<PyAny>,
+        py: Python,
+    ) -> PyResult<()> {
+        let py = slf.py();
+        let length = slf.len();
+        if let Ok(mut index) = key.extract::<i64>() {
+            if index < 0 {
+                index += length as i64;
+            }
+            if index < 0 || index >= length as i64 {
+                return Err(PyIndexError::new_err(format!(
+                    "Bit index {index} out of range for length {length}"
+                )));
+            }
+            slf._set_index(value.is_truthy(py)?, index)?;
+            return Ok(());
+        }
+        if let Ok(slice) = key.downcast::<PySlice>() {
+            let indices = slice.indices(length as isize)?;
+            let start: i64 = indices.start.try_into()?;
+            let stop: i64 = indices.stop.try_into()?;
+            let step: i64 = indices.step.try_into()?;
+            if step != 1 {
+                return Err(PyValueError::new_err(
+                    "Cannot set bits with a step other than 1",
+                ));
+            }
+            // Need to guard against value being self
+            let bs = if value.as_ptr() == slf.as_ptr() {
+                MutableBits::new(slf.inner.data.clone())._as_immutable()
+            } else {
+                bits_from_any(value, py)?
+            };
 
-    ///     def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
-    //         """Set a bit or a slice of bits.
-    //
-    //         :param key: The index or slice to set.
-    //         :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
-    //         :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
-    //         :raises IndexError: If the index is out of range.
-    //
-    //         Examples:
-    //             >>> b = MutableBits('0b0000')
-    //             >>> b[1] = True
-    //             >>> b.bin
-    //             '0100'
-    //             >>> b[1:3] = '0b11111'
-    //             >>> b.bin
-    //             '0111110'
-    //         """
-    //         if isinstance(key, numbers.Integral):
-    //             if key < 0:
-    //                 key += len(self)
-    //             if not 0 <= key < len(self):
-    //                 raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-    //             self._set_index(bool(value), key)
-    //         else:
-    //             start, stop, step = key.indices(len(self))
-    //             if step != 1:
-    //                 raise ValueError("Cannot set bits with a step other than 1")
-    //             bs = bits_from_any(value)
-    //             self._set_slice(start, stop, bs)
+            slf._set_slice(start as usize, stop as usize, &bs)?;
+            return Ok(());
+        }
+        Err(PyTypeError::new_err("Index must be an integer or a slice."))
+    }
 
     /// Return the MutableBits as bytes, padding with zero bits if needed.
     ///

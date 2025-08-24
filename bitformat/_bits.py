@@ -716,36 +716,6 @@ class MutableBitsMethods:
         self.append(bs)
         return self
 
-    def __setitem__(self, key: int | slice, value: bool | BitsType) -> None:
-        """Set a bit or a slice of bits.
-
-        :param key: The index or slice to set.
-        :param value: For a single index, a boolean value. For a slice, anything that can be converted to Bits.
-        :raises ValueError: If the slice has a step other than 1, or if the length of the value doesn't match the slice.
-        :raises IndexError: If the index is out of range.
-
-        Examples:
-            >>> b = MutableBits('0b0000')
-            >>> b[1] = True
-            >>> b.bin
-            '0100'
-            >>> b[1:3] = '0b11111'
-            >>> b.bin
-            '0111110'
-        """
-        if isinstance(key, numbers.Integral):
-            if key < 0:
-                key += len(self)
-            if not 0 <= key < len(self):
-                raise IndexError(f"Bit index {key} out of range for length {len(self)}")
-            self._set_index(bool(value), key)
-        else:
-            start, stop, step = key.indices(len(self))
-            if step != 1:
-                raise ValueError("Cannot set bits with a step other than 1")
-            bs = bits_from_any(value)
-            self._set_slice(start, stop, bs)
-
     def __delitem__(self, key: int | slice) -> None:
         if isinstance(key, numbers.Integral):
             if key < 0:
