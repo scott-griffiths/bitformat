@@ -975,6 +975,54 @@ impl MutableBits {
         Ok(slf)
     }
 
+    /// Inserts another Bits or MutableBits at bit position pos. Returns self.
+    ///
+    /// :param pos: The bit position to insert at.
+    /// :param bs: The Bits to insert.
+    /// :return: self
+    ///
+    /// Raises ValueError if pos < 0 or pos > len(self).
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> a.insert(2, '0b00')
+    ///     MutableBits('0b100011')
+    ///
+    pub fn insert<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        mut pos: i64,
+        bs: Py<PyAny>,
+        py: Python<'_>,
+    ) -> PyResult<PyRefMut<'a, Self>> {
+        // Check for self assignment
+        let bs = if bs.as_ptr() == slf.as_ptr() {
+            MutableBits::new(slf.inner.data.clone())
+        } else {
+            mutable_bits_from_any(bs, py)?
+        };
+        if bs.len() == 0 {
+            return Ok(slf);
+        }
+        if pos < 0 {
+            pos += slf.len() as i64;
+        }
+        // Keep Python insert behaviour. Clips to start and end.
+        if pos < 0 {
+            pos = 0;
+        } else if pos > slf.len() as i64 {
+            pos = slf.len() as i64;
+        }
+        if bs.len() == 1 {
+            slf.inner.data.insert(pos as usize, bs.inner.data[0]);
+            return Ok(slf);
+        }
+        let tail = slf.inner.data.split_off(pos as usize);
+        slf.inner.data.extend_from_bitslice(&bs.inner.data);
+        slf.inner.data.extend_from_bitslice(&tail);
+        Ok(slf)
+    }
+
     /// Shift bits to the left in-place.
     ///
     /// :param n: The number of bits to shift. Must be >= 0.

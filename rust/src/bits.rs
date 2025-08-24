@@ -373,7 +373,7 @@ impl Bits {
     #[classmethod]
     pub fn from_bools(
         _cls: &Bound<'_, PyType>,
-        values: Vec<Py<PyAny>>, // TODO: Could this be a Py<PyAny> that we test for iter to make it more general?
+        values: Vec<Py<PyAny>>,
         py: Python,
     ) -> PyResult<Self> {
         let mut bv = BV::with_capacity(values.len());

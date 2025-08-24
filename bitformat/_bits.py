@@ -807,25 +807,6 @@ class MutableBitsMethods:
         self[:] = x
         return self
 
-    def insert(self, pos: int, bs: BitsType, /) -> MutableBits:
-        """Inserts another Bits or MutableBits at bit position pos. Returns self.
-
-        :param pos: The bit position to insert at.
-        :param bs: The Bits to insert.
-        :return: self
-
-        Raises ValueError if pos < 0 or pos > len(self).
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0b1011')
-            >>> a.insert(2, '0b00')
-            MutableBits('0b100011')
-
-        """
-        self.__setitem__(slice(pos, pos), bs)
-        return self
-
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> MutableBits:
         """Replaces all occurrences of old with new. Returns self.
