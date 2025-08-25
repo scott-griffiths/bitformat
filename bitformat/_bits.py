@@ -437,7 +437,7 @@ this is a step to using the Rust classes as the base classes."""
         """
         if n < 0:
             raise ValueError("Cannot multiply by a negative integer.")
-        mutable = MutableBits.from_zeros(0)
+        mutable = MutableBits()
 
         if isinstance(self, Bits):
             for _ in range(n):
@@ -701,20 +701,7 @@ class MutableBitsMethods:
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
         raise TypeError("MutableBits objects are not iterable. "
-                        "You can use .to_bits() to convert to a Bits object that does support iteration.")
-
-    def __add__(self, bs: BitsType, /) -> MutableBits:
-        """Concatenate Bits and return a new Bits."""
-        bs = bits_from_any(bs)
-        x = self.__copy__()
-        x.append(bs)
-        return x
-
-    def __iadd__(self, bs: BitsType, /) -> MutableBits:
-        """Concatenate Bits in-place."""
-        bs = bits_from_any(bs)
-        self.append(bs)
-        return self
+                        "You can use .as_bits() to convert to a Bits object that does support iteration.")
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
@@ -798,7 +785,7 @@ class MutableBitsMethods:
         starting_points: list[int] = []
         if byte_aligned:
             start += (8 - start % 8) % 8
-        for x in self[start:end].to_bits().find_all(old, byte_aligned=byte_aligned):
+        for x in self[start:end].as_bits().find_all(old, byte_aligned=byte_aligned):
             x += start
             if not starting_points:
                 starting_points.append(x)
@@ -809,7 +796,7 @@ class MutableBitsMethods:
                 break
         if not starting_points:
             return self
-        original = self.to_bits()
+        original = self.as_bits()
         replacement_list = [original._getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new_bits)

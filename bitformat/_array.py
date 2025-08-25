@@ -123,7 +123,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBits.from_zeros(0)
+        x._bitstore = MutableBits()
         x.extend(iterable)
         return x
 

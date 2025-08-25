@@ -961,6 +961,33 @@ impl MutableBits {
         self.inner.data.reserve(additional);
     }
 
+    /// Concatenate Bits and return a new Bits.
+    pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let bs = bits_from_any(bs, py)?;
+        let mut new_data = self.inner.data.clone();
+        new_data.extend_from_bitslice(&bs.data);
+        Ok(MutableBits::new(new_data))
+    }
+
+    /// Concatenate Bits in-place.
+    pub fn __iadd__<'a>(
+        mut slf: PyRefMut<'a, Self>,
+        bs: Py<PyAny>,
+        py: Python<'_>,
+    ) -> PyResult<()> {
+        // Check if bs is the same object as slf
+        if bs.as_ptr() == slf.as_ptr() {
+            // If bs is slf, clone inner bits first then append
+            let bits_clone = slf.inner.data.clone();
+            slf.inner.data.extend_from_bitslice(&bits_clone);
+        } else {
+            // Normal case - convert bs to Bits and append
+            let bs = bits_from_any(bs, py)?;
+            slf.inner.data.extend_from_bitslice(&bs.data);
+        }
+        Ok(())
+    }
+
     /// Append bits to the end of the current MutableBits in-place.
     ///
     /// :param bs: The bits to append.

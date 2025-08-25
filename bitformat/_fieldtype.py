@@ -91,7 +91,7 @@ class FieldType(abc.ABC):
         :param b: The bits to parse.
         :return: The number of bits used.
         """
-        b = bits_from_any(b) if b is not None else Bits.from_zeros(0)
+        b = bits_from_any(b) if b is not None else Bits()
         self.clear()
         try:
             return self._parse(b, 0, kwargs)
