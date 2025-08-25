@@ -644,7 +644,7 @@ class Array:
                 mutablebits_slice._iand(value)
             elif op == operator.ior:
                 mutablebits_slice._ior(value)
-            self._bitstore._set_slice(start, start + self._item_size, mutablebits_slice._as_immutable())
+            self._bitstore._set_slice(start, start + self._item_size, mutablebits_slice.as_bits())
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:

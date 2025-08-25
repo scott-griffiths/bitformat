@@ -442,7 +442,7 @@ this is a step to using the Rust classes as the base classes."""
         if isinstance(self, Bits):
             for _ in range(n):
                 mutable.append(self)
-            return mutable._as_immutable()
+            return mutable.as_bits()
         else:
             b = self.to_bits()
             for _ in range(n):
@@ -454,7 +454,7 @@ this is a step to using the Rust classes as the base classes."""
         bs = mutable_bits_from_any(bs)
         bs.append(self)
         if isinstance(self, Bits):
-            x = bs._as_immutable()
+            x = bs.as_bits()
         else:
             x = bs
         return x
@@ -596,7 +596,7 @@ class BitsMethods:
         bs = bits_from_any(bs)
         x = self.to_mutable_bits()
         x.append(bs)
-        x = x._as_immutable()
+        x = x.as_bits()
         return x
 
     def __hash__(self) -> int:

@@ -157,15 +157,9 @@ impl MutableBits {
             // This is an overwrite, so no need to move data around.
             return self._overwrite(start, value);
         }
-        let data = std::mem::take(&mut self.inner.data);
-        let start_slice = data[..start].to_bitvec();
-        let end_slice = data[end..].to_bitvec();
-
-        let mut new_data = start_slice;
-        new_data.extend(&value.data);
-        new_data.extend(end_slice);
-
-        self.inner.data = new_data;
+        self.inner
+            .data
+            .splice(start..end, value.data.iter().by_vals());
         Ok(())
     }
 
@@ -441,7 +435,7 @@ impl MutableBits {
             }
             // Need to guard against value being self
             let bs = if value.as_ptr() == slf.as_ptr() {
-                MutableBits::new(slf.inner.data.clone())._as_immutable()
+                MutableBits::new(slf.inner.data.clone()).as_bits()
             } else {
                 bits_from_any(value, py)?
             };
@@ -893,14 +887,43 @@ impl MutableBits {
         MutableBits::new(self.inner.data.clone())
     }
 
-    /// Create and return an immutable copy of the MutableBits as Bits instance.
+    /// Create and return a Bits instance from a copy of the MutableBits data.
+    ///
+    /// This copies the underlying binary data, giving a new independent Bits object.
+    /// If you no longer need the MutableBits, consider using :meth:`as_bits` instead to avoid the copy.
+    ///
+    /// :return: A new Bits instance with the same bit data.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> b = a.to_bits()
+    ///     >>> a
+    ///     MutableBits('0b1011')
+    ///     >>> b
+    ///     Bits('0b1101')
+    ///
     pub fn to_bits(&self) -> Bits {
         Bits::new(self.inner.data.clone())
     }
 
-    // TODO: Should this be part of the API? Is it useful in Python?
-    /// Convert to immutable Bits - without cloning the data.
-    pub fn _as_immutable(&mut self) -> Bits {
+    /// Create and return a Bits instance by moving the MutableBits data.
+    ///
+    /// The data is moved to the new Bits, so this MutableBits will be empty after the operation.
+    /// This is more efficient than :meth:`to_bits` if you no longer need the MutableBits.
+    ///
+    /// :return: A Bits instance with the same bit data.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0b1011')
+    ///     >>> b = a.as_bits()
+    ///     >>> a
+    ///     MutableBits()
+    ///     >>> b
+    ///     Bits('0b1101')
+    ///
+    pub fn as_bits(&mut self) -> Bits {
         let data = std::mem::take(&mut self.inner.data);
         Bits::new(data)
     }
@@ -955,21 +978,17 @@ impl MutableBits {
         py: Python<'_>,
     ) -> PyResult<PyRefMut<'a, Self>> {
         // Check if bs is the same object as slf
-        // let pointless = slf.clone();
-        // let slf_obj = pointless.into_pyobject(py)?;
-        // if bs.is(&slf_obj) {
-        //     // If bs is slf, clone inner bits first then append
-        //     let bits_clone = slf.inner.clone();
-        //     slf.inner.data.extend(bits_clone.data);
-        // } else {
-        // Normal case - convert bs to Bits and append
-        let bs = bits_from_any(bs, py)?;
-        slf.inner.data.extend(bs.data);
-        // }
+        if bs.as_ptr() == slf.as_ptr() {
+            // If bs is slf, clone inner bits first then append
+            let bits_clone = slf.inner.data.clone();
+            slf.inner.data.extend_from_bitslice(&bits_clone);
+        } else {
+            // Normal case - convert bs to Bits and append
+            let bs = bits_from_any(bs, py)?;
+            slf.inner.data.extend_from_bitslice(&bs.data);
+        }
         Ok(slf)
     }
-
-    // TODO: append and prepend don't work if used with themselves. They need a 'if bs is self' check.
 
     ///Prepend bits to the beginning of the current MutableBits in-place.
     ///
@@ -987,10 +1006,21 @@ impl MutableBits {
         bs: Py<PyAny>,
         py: Python<'_>,
     ) -> PyResult<PyRefMut<'a, Self>> {
-        let self_data = std::mem::take(&mut slf.inner.data);
-        let mut new_data = mutable_bits_from_any(bs, py)?;
-        new_data.inner.data.extend(self_data);
-        slf.inner.data = new_data.inner.data;
+        // Check for self-prepending
+        if bs.as_ptr() == slf.as_ptr() {
+            let bits_clone = slf.inner.data.clone();
+            let mut new_data = bits_clone;
+            new_data.extend_from_bitslice(&slf.inner.data);
+            slf.inner.data = new_data;
+        } else {
+            let to_prepend = bits_from_any(bs, py)?;
+            if to_prepend.is_empty() {
+                return Ok(slf);
+            }
+            let mut new_data = to_prepend.data;
+            new_data.extend_from_bitslice(&slf.inner.data);
+            slf.inner.data = new_data;
+        }
         Ok(slf)
     }
 

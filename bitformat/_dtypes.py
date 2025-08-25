@@ -361,7 +361,7 @@ class DtypeSingle(Dtype):
             bs = x._set_fn(v, length=x._bit_length)
             mutable = bs.to_mutable_bits()  # TODO: Do we really need to clone here?
             mutable.byte_swap()
-            return mutable._as_immutable()
+            return mutable.as_bits()
         x._create_fn = create_bits_le if little_endian else create_bits
         return x
 
@@ -939,7 +939,7 @@ class Register:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
                 c = b.__copy__()  # TODO: Not sure we really need a copy here.
                 c.byte_swap()
-                return definition.get_fn(c._as_immutable(), 0, len(b))
+                return definition.get_fn(c.as_bits(), 0, len(b))
 
             fget_ne_bits = fget_le_bits if byteorder == "little" else fget_be
             fget_ne_mutable_bits = fget_le_mutable_bits if byteorder == "little" else fget_be
