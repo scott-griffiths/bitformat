@@ -1,5 +1,15 @@
 # Release Notes
 
+### ???: version 0.7.
+
+* Added `MutableBits.as_bits()` to complement `MutableBits.to_bits()`. Rather than copying the data, `as_bits` moves it for better efficiency, leaving the original `MutableBits` empty.
+
+* New `MutableBits.reserve()` and `capacity()` methods to help avoid memory reallocation when constructing a large `MutableBits`.
+
+* Added `Bits.rfind_all()` to complement the forwards version.
+
+* Performance improvements and bug fixes.
+
 ### August 2025: version 0.6.
 
 * Moved endianness modifier to the end of dtype strings. So it's now `f64_le` instead of `f_le64` for example.

@@ -69,7 +69,7 @@ impl MutableBits {
     #[pyo3(signature = (s = None))]
     pub fn py_new(s: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
         let Some(s) = s else {
-            return Ok(BitCollection::from_zeros(0));
+            return Ok(BitCollection::empty());
         };
         if let Ok(string_s) = s.extract::<String>() {
             return str_to_bits_rust(string_s).map(|bits| bits.to_mutable_bits());

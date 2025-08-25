@@ -18,6 +18,7 @@ use std::sync::Mutex;
 pub(crate) trait BitCollection: Sized {
     fn len(&self) -> usize;
     fn is_empty(&self) -> bool;
+    fn empty() -> Self;
     fn from_zeros(length: usize) -> Self;
     fn from_ones(length: usize) -> Self;
     fn from_bytes(data: Vec<u8>) -> Self;
@@ -154,6 +155,10 @@ impl BitCollection for Bits {
 
     fn is_empty(&self) -> bool {
         self.data.is_empty()
+    }
+
+    fn empty() -> Self {
+        Bits::new(BV::new())
     }
 
     fn from_zeros(length: usize) -> Self {
@@ -311,6 +316,13 @@ impl BitCollection for MutableBits {
     fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
+
+    fn empty() -> Self {
+        Self {
+            inner: <Bits as BitCollection>::empty(),
+        }
+    }
+
     fn from_zeros(length: usize) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_zeros(length),

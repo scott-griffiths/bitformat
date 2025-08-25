@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
-    use crate::bitrust::core::BitCollection;
-    use crate::bitrust::{Bits, MutableBits};
+    use crate::core::BitCollection;
+    use crate::{Bits, MutableBits};
 
     #[test]
     fn from_bytes() {
@@ -48,7 +48,7 @@ mod tests {
         let bits = <Bits as BitCollection>::from_zeros(9);
         assert_eq!(*bits.to_bytes(), vec![0, 0]);
         assert_eq!(bits.len(), 9);
-        let bits = <Bits as BitCollection>::from_zeros(0);
+        let bits = <Bits as BitCollection>::empty();
         assert_eq!(bits.len(), 0);
     }
 
@@ -413,7 +413,7 @@ mod tests {
 
     #[test]
     fn empty_data_operations() {
-        let empty_mutable = <MutableBits as BitCollection>::from_zeros(0);
+        let empty_mutable = <MutableBits as BitCollection>::empty();
 
         assert_eq!(empty_mutable.len(), 0);
         assert!(!empty_mutable.any());

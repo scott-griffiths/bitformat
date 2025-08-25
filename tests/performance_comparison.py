@@ -107,17 +107,18 @@ def test_primes_bitformat():
     for i in range(2, math.ceil(math.sqrt(limit))):
         if is_prime[i]:
             is_prime.set(False, range(i * i, limit, i))
-    twin_primes = len(list(is_prime.to_bits().find_all('0b101')))
+    twin_primes = len(list(is_prime.as_bits().find_all('0b101')))
     assert twin_primes == 239101
     return twin_primes
 
 def test_token_parsing_mutating_bitformat():
     b = bitformat.MutableBits()
+    b.reserve(10000*200)
     for i in range(10000):
-        b.append("u12=244, f32=0.4")
-        b.append("0x3e44f, 0b11011, 0o75523")
-        b.append(bitformat.Bits.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]))
-        b.append(bitformat.Bits.from_zeros(104))
+        b += "u12=244, f32=0.4"
+        b += "0x3e44f, 0b11011, 0o75523"
+        b += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]
+        b += bitformat.Bits.from_zeros(104)
     return b
 
 def test_token_parsing_mutating_bitstring():

@@ -97,7 +97,7 @@ impl Bits {
     #[pyo3(signature = (s = None))]
     pub fn py_new(s: Option<&Bound<'_, PyAny>>) -> PyResult<Self> {
         let Some(s) = s else {
-            return Ok(BitCollection::from_zeros(0));
+            return Ok(BitCollection::empty());
         };
         if let Ok(string_s) = s.extract::<String>() {
             return str_to_bits_rust(string_s);
@@ -617,7 +617,7 @@ impl Bits {
     /// Return a slice of the current Bits.
     pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
         if start_bit >= end_bit {
-            return Ok(BitCollection::from_zeros(0));
+            return Ok(BitCollection::empty());
         }
         assert!(start_bit < end_bit);
         if end_bit > self.len() {
@@ -648,7 +648,7 @@ impl Bits {
         }
         if step > 0 {
             if start_bit >= end_bit {
-                return Ok(BitCollection::from_zeros(0));
+                return Ok(BitCollection::empty());
             }
             if end_bit as usize > self.len() {
                 return Err(PyValueError::new_err(
@@ -663,7 +663,7 @@ impl Bits {
             ))
         } else {
             if start_bit <= end_bit || start_bit == -1 {
-                return Ok(BitCollection::from_zeros(0));
+                return Ok(BitCollection::empty());
             }
             if start_bit as usize > self.len() {
                 return Err(PyValueError::new_err(
