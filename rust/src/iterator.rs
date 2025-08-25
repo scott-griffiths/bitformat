@@ -92,6 +92,7 @@ pub struct ChunksIterator {
     pub(crate) max_chunks: usize,
     pub(crate) current_pos: usize,
     pub(crate) chunks_generated: usize,
+    pub(crate) bits_len: usize,
 }
 
 #[pymethods]
@@ -101,36 +102,30 @@ impl ChunksIterator {
     }
 
     fn __next__(mut slf: PyRefMut<'_, Self>) -> PyResult<Option<Bits>> {
-        // Early exit conditions
-        if slf.chunks_generated >= slf.max_chunks {
+        if slf.chunks_generated >= slf.max_chunks || slf.current_pos >= slf.bits_len {
             return Ok(None);
         }
-        let py = slf.py();
 
-        // Create chunk data and get chunk length in a scope to limit the borrow
-        let (chunk, chunk_len) = {
-            let bits = slf.bits_object.borrow(py);
-            let bits_len = bits.len();
+        let chunk_size = slf.chunk_size;
+        let start = slf.current_pos;
+        let remaining = slf.bits_len - start;
+        let take = if remaining > chunk_size {
+            chunk_size
+        } else {
+            remaining
+        };
+        let end = start + take;
 
-            // Early return if we've reached the end
-            if slf.current_pos >= bits_len {
-                return Ok(None);
-            }
-
-            // Get a chunk directly using bitvec's chunks method
-            if let Some(chunk_slice) = bits.data[slf.current_pos..].chunks(slf.chunk_size).next() {
-                let chunk_len = chunk_slice.len();
-                (Bits::new(chunk_slice.to_bitvec()), chunk_len)
-            } else {
-                // This should not happen given our check above, but just in case
-                return Ok(None);
-            }
+        // Borrow only long enough to copy out the bits slice
+        let chunk_bits = {
+            let bits = slf.bits_object.borrow(slf.py());
+            let slice = &bits.data[start..end];
+            Bits::new(slice.to_bitvec())
         };
 
-        // Now we can safely update the position after the borrow is dropped
-        slf.current_pos += chunk_len;
+        slf.current_pos = end;
         slf.chunks_generated += 1;
 
-        Ok(Some(chunk))
+        Ok(Some(chunk_bits))
     }
 }

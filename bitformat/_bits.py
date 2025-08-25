@@ -671,8 +671,7 @@ class MutableBitsMethods:
             xt = dtype.pack(value)
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
-        # TODO: clone here shouldn't be needed.
-        return xt.to_mutable_bits()
+        return xt._as_mutable_bits()
 
     @classmethod
     def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:

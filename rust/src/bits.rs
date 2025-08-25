@@ -85,7 +85,7 @@ pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
 ///     Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
 ///
 #[derive(Clone)]
-#[pyclass(frozen, freelist = 8, module = "bitformat")]
+#[pyclass(freelist = 8, module = "bitformat")]
 pub struct Bits {
     pub(crate) data: BV,
 }
@@ -201,12 +201,14 @@ impl Bits {
         };
 
         let py = slf.py();
+        let bits_len = slf.len();
         let iter = ChunksIterator {
             bits_object: slf.into(),
             chunk_size: chunk_size as usize,
             max_chunks,
             current_pos: 0,
             chunks_generated: 0,
+            bits_len,
         };
         Py::new(py, iter)
     }
@@ -717,6 +719,17 @@ impl Bits {
     pub fn to_mutable_bits(&self) -> MutableBits {
         MutableBits {
             inner: Bits::new(self.data.clone()),
+        }
+    }
+
+    /// Move the bitvec out, leaving this Bits empty.
+    /// Only to be done as part of MutableBits construction
+    /// when the transient Bits isn't visible externally.
+    /// Definitely not part of public interface!
+    pub fn _as_mutable_bits(mut slf: PyRefMut<Self>) -> MutableBits {
+        let data = std::mem::take(&mut slf.data);
+        MutableBits {
+            inner: Bits::new(data),
         }
     }
 

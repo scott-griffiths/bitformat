@@ -144,23 +144,19 @@ impl MutableBits {
         Ok(())
     }
 
-    pub fn _overwrite(&mut self, start: usize, value: &Bits) -> PyResult<()> {
-        if start + value.len() > self.len() {
-            return Err(PyIndexError::new_err("Slice out of bounds"));
-        }
+    pub fn _overwrite(&mut self, start: usize, value: &Bits) {
         self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
-        Ok(())
     }
 
-    pub fn _set_slice(&mut self, start: usize, end: usize, value: &Bits) -> PyResult<()> {
+    pub fn _set_slice(&mut self, start: usize, end: usize, value: &Bits) {
         if end - start == value.len() {
             // This is an overwrite, so no need to move data around.
-            return self._overwrite(start, value);
+            self._overwrite(start, value);
+        } else {
+            self.inner
+                .data
+                .splice(start..end, value.data.iter().by_vals());
         }
-        self.inner
-            .data
-            .splice(start..end, value.data.iter().by_vals());
-        Ok(())
     }
 
     pub fn _ixor(&mut self, other: &MutableBits) -> PyResult<()> {
@@ -440,7 +436,7 @@ impl MutableBits {
                 bits_from_any(value, py)?
             };
 
-            slf._set_slice(start as usize, stop as usize, &bs)?;
+            slf._set_slice(start as usize, stop as usize, &bs);
             return Ok(());
         }
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
