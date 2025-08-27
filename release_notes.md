@@ -1,6 +1,6 @@
 # Release Notes
 
-### ???: version 0.7.
+### August 2025: version 0.7.
 
 * Added `MutableBits.as_bits()` to complement `MutableBits.to_bits()`. Rather than copying the data, `as_bits` moves it for better efficiency, leaving the original `MutableBits` empty.
 
