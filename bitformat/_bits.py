@@ -5,7 +5,7 @@ import random
 import sys
 import io
 from ast import literal_eval
-from typing import Union, Iterable, Any, TextIO, Iterator
+from typing import Union, Iterable, Any, TextIO
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
@@ -623,7 +623,6 @@ class BitsMethods:
                 f"'{self.__class__.__name__}' object has no attribute '{name}'. "
                 f"Did you mean to use the MutableBits class? Or you could replace '.{name}(...)' with '.to_mutable_bits().{name}(...)'."
             )
-
         # Default behavior
         raise AttributeError(
             f"'{self.__class__.__name__}' object has no attribute '{name}'"
@@ -692,7 +691,7 @@ class MutableBitsMethods:
     def __iter__(self):
         """Iterating over the bits is not supported for this mutable type."""
         raise TypeError("MutableBits objects are not iterable. "
-                        "You can use .as_bits() to convert to a Bits object that does support iteration.")
+                        "You can use .to_bits() to convert to a Bits object that does support iteration.")
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""

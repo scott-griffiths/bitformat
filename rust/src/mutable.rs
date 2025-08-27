@@ -1,5 +1,5 @@
 use crate::bits::{bits_from_any, Bits};
-use crate::core::str_to_bits_rust;
+use crate::core::str_to_bits;
 use crate::core::validate_logical_op_lengths;
 use crate::core::BitCollection;
 use crate::helpers::{validate_index, validate_slice, BV};
@@ -26,7 +26,7 @@ pub fn mutable_bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<MutableBits
     }
 
     if let Ok(any_string) = any_bound.extract::<String>() {
-        let bits = str_to_bits_rust(any_string)?;
+        let bits = str_to_bits(any_string)?;
         return Ok(bits.to_mutable_bits());
     }
     if let Ok(any_bytes) = any_bound.extract::<Vec<u8>>() {
@@ -72,7 +72,7 @@ impl MutableBits {
             return Ok(BitCollection::empty());
         };
         if let Ok(string_s) = s.extract::<String>() {
-            return str_to_bits_rust(string_s).map(|bits| bits.to_mutable_bits());
+            return str_to_bits(string_s).map(|bits| bits.to_mutable_bits());
         }
 
         // If it's not a string, build a more helpful error message.
@@ -222,7 +222,7 @@ impl MutableBits {
     ///     a = MutableBits("0xff01")  # MutableBits(s) is equivalent to MutableBits.from_string(s)
     #[classmethod]
     pub fn from_string(_cls: &Bound<'_, PyType>, s: String) -> PyResult<Self> {
-        str_to_bits_rust(s).map(|bits| bits.to_mutable_bits())
+        str_to_bits(s).map(|bits| bits.to_mutable_bits())
     }
 
     /// Create a new instance with all bits set to zero.

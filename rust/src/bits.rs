@@ -1,5 +1,5 @@
 use crate::core::validate_logical_op_lengths;
-use crate::core::{str_to_bits_rust, BitCollection, DTYPE_PARSER};
+use crate::core::{str_to_bits, BitCollection, DTYPE_PARSER};
 use crate::helpers::{find_bitvec, validate_index, BV};
 use crate::iterator::{BoolIterator, ChunksIterator, FindAllIterator};
 use crate::mutable::MutableBits;
@@ -38,7 +38,7 @@ pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
 
     // Is it a string?
     if let Ok(any_string) = any_bound.extract::<String>() {
-        return str_to_bits_rust(any_string);
+        return str_to_bits(any_string);
     }
 
     // Is it a bytes, bytearray or memoryview?
@@ -100,7 +100,7 @@ impl Bits {
             return Ok(BitCollection::empty());
         };
         if let Ok(string_s) = s.extract::<String>() {
-            return str_to_bits_rust(string_s);
+            return str_to_bits(string_s);
         }
 
         // If it's not a string, build a more helpful error message.
@@ -231,6 +231,10 @@ impl Bits {
     /// True
     ///
     pub fn __eq__(&self, other: Py<PyAny>, py: Python) -> bool {
+        let obj = other.bind(py);
+        if let Ok(b) = obj.extract::<PyRef<Bits>>() {
+            return self.data == b.data;
+        }
         // TODO: This risks creating copies of Bits or MutableBits when they're not needed.
         bits_from_any(other, py).map_or(false, |b| self.data == b.data)
     }
@@ -320,7 +324,7 @@ impl Bits {
     ///
     #[classmethod]
     pub fn from_string(_cls: &Bound<'_, PyType>, s: String) -> PyResult<Self> {
-        str_to_bits_rust(s)
+        str_to_bits(s)
     }
 
     /// Create a new instance with all bits set to one.

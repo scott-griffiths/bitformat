@@ -40,13 +40,13 @@ pub(crate) trait BitCollection: Sized {
 // ---- Rust-only helper methods ----
 
 // Define a static LRU cache.
-const BITS_CACHE_SIZE: usize = 256;
+const BITS_CACHE_SIZE: usize = 1024;
 static BITS_CACHE: Lazy<Mutex<LruCache<String, BV>>> =
     Lazy::new(|| Mutex::new(LruCache::new(NonZeroUsize::new(BITS_CACHE_SIZE).unwrap())));
 
 pub(crate) static DTYPE_PARSER: Lazy<Mutex<Option<Py<PyAny>>>> = Lazy::new(|| Mutex::new(None));
 
-fn split_tokens(s: String) -> Vec<String> {
+fn split_tokens(s: &String) -> Vec<String> {
     // Remove whitespace
     let s: String = s.chars().filter(|c| !c.is_whitespace()).collect();
     let mut tokens = Vec::new();
@@ -83,7 +83,7 @@ fn string_literal_to_bits(s: &str) -> PyResult<Bits> {
     )))
 }
 
-pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
+pub(crate) fn str_to_bits(s: String) -> PyResult<Bits> {
     // Check cache first
     {
         let mut cache = BITS_CACHE.lock().unwrap();
@@ -91,8 +91,9 @@ pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
             return Ok(Bits::new(cached_data.clone()));
         }
     }
-    let tokens = split_tokens(s.clone());
+    let tokens = split_tokens(&s);
     let mut bits_array = Vec::<Bits>::new();
+    let mut total_bit_length = 0;
 
     for token in tokens {
         if token.is_empty() {
@@ -117,26 +118,25 @@ pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
                     let result = dtype_parser.call1((token.clone(),))?;
                     // Convert result
                     let bits_ref = result.extract::<PyRef<Bits>>()?;
-                    bits_array.push(Bits::new(bits_ref.data.clone()));
+                    let new_bits = Bits::new(bits_ref.data.clone());
+                    total_bit_length += new_bits.len();
+                    bits_array.push(new_bits);
                     Ok(())
                 })?; // Propagate any Python errors
             }
         }
     }
+    if bits_array.is_empty() {
+        return Ok(BitCollection::empty());
+    }
     // Combine all bits
-    let result = if bits_array.is_empty() {
-        Bits::new(BV::repeat(false, 0))
-    } else if bits_array.len() == 1 {
-        bits_array.remove(0)
+    let result = if bits_array.len() == 1 {
+        bits_array.pop().unwrap()
     } else {
-        //  (TODO: Use other method)
-        let total_len: usize = bits_array.iter().map(|b| b.len()).sum();
-        let mut result = BV::with_capacity(total_len);
-
+        let mut result = BV::with_capacity(total_bit_length);
         for bits in bits_array {
             result.extend_from_bitslice(&bits.data);
         }
-
         Bits::new(result)
     };
     // Update cache with new result
@@ -144,7 +144,6 @@ pub(crate) fn str_to_bits_rust(s: String) -> PyResult<Bits> {
         let mut cache = BITS_CACHE.lock().unwrap();
         cache.put(s, result.data.clone());
     }
-
     Ok(result)
 }
 
