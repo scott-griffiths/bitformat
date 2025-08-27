@@ -85,7 +85,7 @@ pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
 ///     Using the constructor ``Bits(s)`` is an alias for ``Bits.from_string(s)``.
 ///
 #[derive(Clone)]
-#[pyclass(freelist = 8, module = "bitformat")]
+#[pyclass(module = "bitformat")]
 pub struct Bits {
     pub(crate) data: BV,
 }
@@ -813,6 +813,14 @@ impl Bits {
         let mut result_data = BV::repeat(false, shift);
         result_data.extend_from_bitslice(&self.data[..len - shift]);
         Ok(Self::new(result_data))
+    }
+
+    /// Concatenates two Bits and return a newly constructed Bits.
+    pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let bs = bits_from_any(bs, py)?;
+        let mut data = self.data.clone();
+        data.extend_from_bitslice(&bs.data[..]);
+        Ok(Bits::new(data))
     }
 
     /// Bit-wise 'and' between two Bits. Returns new Bits.

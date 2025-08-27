@@ -591,14 +591,6 @@ class BitsMethods:
             yield i
         return
 
-    def __add__(self, bs: BitsType, /) -> Bits:
-        """Concatenate Bits and return a new Bits."""
-        bs = bits_from_any(bs)
-        x = self.to_mutable_bits()
-        x.append(bs)
-        x = x.as_bits()
-        return x
-
     def __hash__(self) -> int:
         """Return an integer hash of the object."""
         # Only requirement is that equal Bits should return the same hash.
