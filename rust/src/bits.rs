@@ -150,7 +150,11 @@ impl Bits {
     /// Return representation that could be used to recreate the instance.
     pub fn __repr__(&self, py: Python) -> String {
         let class_name = py.get_type::<Self>().name().unwrap();
-        format!("{}('{}')", class_name, self.__str__())
+        if self.is_empty() {
+            format!("{}()", class_name)
+        } else {
+            format!("{}('{}')", class_name, self.__str__())
+        }
     }
 
     fn __iter__(slf: PyRef<'_, Self>) -> PyResult<Py<BoolIterator>> {
@@ -235,8 +239,13 @@ impl Bits {
         if let Ok(b) = obj.extract::<PyRef<Bits>>() {
             return self.data == b.data;
         }
-        // TODO: This risks creating copies of Bits or MutableBits when they're not needed.
-        bits_from_any(other, py).map_or(false, |b| self.data == b.data)
+        if let Ok(b) = obj.extract::<PyRef<MutableBits>>() {
+            return self.data == b.inner.data;
+        }
+        match bits_from_any(other, py) {
+            Ok(b) => self.data == b.data,
+            Err(_) => false,
+        }
     }
 
     #[staticmethod]

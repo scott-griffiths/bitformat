@@ -824,3 +824,11 @@ def test_rfind_all():
     assert next(g) == 3
     with pytest.raises(StopIteration):
         _ = next(g)
+
+def test_repr():
+    a = Bits()
+    assert repr(a) == "Bits()"
+    a = Bits('')
+    assert repr(a) == "Bits()"
+    a = Bits(" 0b 1")
+    assert repr(a) == "Bits('0b1')"

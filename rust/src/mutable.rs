@@ -115,9 +115,18 @@ impl MutableBits {
     /// >>> MutableBits('0xf2') == '0b11110010'
     /// True
     ///
-    pub fn __eq__(&self, other: Py<PyAny>, py: Python) -> PyResult<bool> {
-        let other_bits = bits_from_any(other, py)?;
-        Ok(self.inner.data == other_bits.data)
+    pub fn __eq__(&self, other: Py<PyAny>, py: Python) -> bool {
+        let obj = other.bind(py);
+        if let Ok(b) = obj.extract::<PyRef<Bits>>() {
+            return self.inner.data == b.data;
+        }
+        if let Ok(b) = obj.extract::<PyRef<MutableBits>>() {
+            return self.inner.data == b.inner.data;
+        }
+        match bits_from_any(other, py) {
+            Ok(b) => self.inner.data == b.data,
+            Err(_) => false,
+        }
     }
 
     /// Return string representations for printing.
@@ -128,7 +137,11 @@ impl MutableBits {
     /// Return representation that could be used to recreate the instance.
     pub fn __repr__(&self, py: Python) -> String {
         let class_name = py.get_type::<Self>().name().unwrap();
-        format!("{}('{}')", class_name, self.__str__())
+        if self.is_empty() {
+            format!("{}()", class_name)
+        } else {
+            format!("{}('{}')", class_name, self.__str__())
+        }
     }
 
     pub fn _byte_swap(&mut self) -> PyResult<()> {
@@ -908,6 +921,8 @@ impl MutableBits {
     /// The data is moved to the new Bits, so this MutableBits will be empty after the operation.
     /// This is more efficient than :meth:`to_bits` if you no longer need the MutableBits.
     ///
+    /// It will try to reclaim any excess memory capacity that the MutableBits may have had.
+    ///
     /// :return: A Bits instance with the same bit data.
     ///
     /// .. code-block:: pycon
@@ -920,7 +935,8 @@ impl MutableBits {
     ///     Bits('0b1101')
     ///
     pub fn as_bits(&mut self) -> Bits {
-        let data = std::mem::take(&mut self.inner.data);
+        let mut data = std::mem::take(&mut self.inner.data);
+        data.shrink_to_fit();
         Bits::new(data)
     }
 
