@@ -887,4 +887,9 @@ def test_more_while():
     v = f.unpack(b, x=2)
     assert v[0] == [1, 255, 2]
 
-
+def test_appending_fields():
+    f = Format()
+    f += "x: u8"
+    assert f.parse('0x10') == 8
+    x_value = f['x'].value
+    assert x_value == 0x10

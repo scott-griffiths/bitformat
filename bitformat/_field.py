@@ -153,16 +153,16 @@ class Field(FieldType):
                 expected_value = self._dtype.unpack(self._bits)
                 actual_value = self._dtype.unpack(value)
                 raise ValueError(f"Read value '{actual_value}' when const value '{expected_value}' was expected.")
-            return len(self._bits)
-        try:
-            self._concrete_dtype = self._dtype.evaluate(**vars_)
-        except ExpressionError:
-            raise ValueError(f"Can't parse Field '{self}' as the dtype cannot be evaluated with kwargs {vars_}")
-        if self._concrete_dtype.bit_length is not None and len(b) - startbit < self._concrete_dtype.bit_length:
-            raise ValueError(f"Field '{str(self)}' needs {self._concrete_dtype.bit_length} bits to parse, but {len(b) - startbit} were available.")
-        # Deal with a stretchy dtype
-        dtype_length = self._dtype.evaluate(**vars_).bit_length
-        self._bits = b[startbit : startbit + dtype_length] if dtype_length is not None else b[startbit:]
+        else:
+            try:
+                self._concrete_dtype = self._dtype.evaluate(**vars_)
+            except ExpressionError:
+                raise ValueError(f"Can't parse Field '{self}' as the dtype cannot be evaluated with kwargs {vars_}")
+            if self._concrete_dtype.bit_length is not None and len(b) - startbit < self._concrete_dtype.bit_length:
+                raise ValueError(f"Field '{str(self)}' needs {self._concrete_dtype.bit_length} bits to parse, but {len(b) - startbit} were available.")
+            # Deal with a stretchy dtype
+            dtype_length = self._dtype.evaluate(**vars_).bit_length
+            self._bits = b[startbit : startbit + dtype_length] if dtype_length is not None else b[startbit:]
         if self.name != "":
             if self._bits is None:
                 vars_[self.name] = None

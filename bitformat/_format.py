@@ -139,11 +139,6 @@ class Format(FieldType):
         pos = startbit
         for fieldtype in self._fields:
             pos += fieldtype._parse(b, pos, self.vars)
-            if fieldtype.name:
-                # We only be store values that can be reused. So not things like other Formats or Bits.
-                x = fieldtype._get_value()
-                if isinstance(x, (int, float, str)):
-                    self.vars[fieldtype.name] = x
         return pos - startbit
 
     @override
@@ -283,9 +278,10 @@ class Format(FieldType):
     def __iadd__(self, other: FieldType | str) -> Format:
         if isinstance(other, str):
             other = FieldType.from_string(other)
+        field_copy = copy.copy(other)
         if other.name != "":
-            self._field_names[other.name] = other
-        self._fields.append(copy.copy(other))
+            self._field_names[other.name] = field_copy
+        self._fields.append(field_copy)
         return self
 
     def __copy__(self) -> Format:
