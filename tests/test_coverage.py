@@ -387,7 +387,7 @@ class TestEndiannesssEdgeCases:
         native_endian = Bits.from_dtype("u16_ne", value)
         
         # They should be different (unless native happens to match one)
-        if sys.byteorder == 'big':
+        if sys.byteorder is Endianness.BIG:
             assert big_endian == native_endian
         else:
             assert little_endian == native_endian

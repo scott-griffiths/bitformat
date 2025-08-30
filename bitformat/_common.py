@@ -345,12 +345,15 @@ class Endianness(Enum):
     UNSPECIFIED = ""  # doc: Unspecified byte order.
 
     def __str__(self) -> str:
-        return {
-            Endianness.BIG: "big-endian",
-            Endianness.LITTLE: "little-endian",
-            Endianness.NATIVE: "native-endian",
-            Endianness.UNSPECIFIED: "",
-        }[self]
+        if self is Endianness.BIG:
+            return "big-endian"
+        if self is Endianness.LITTLE:
+            return "little-endian"
+        if self is Endianness.NATIVE:
+            return "native-endian"
+        if self is Endianness.UNSPECIFIED:
+            return ""
+        raise TypeError("Unknown Endianness value")
 
 def validate_name(name: str) -> str:
     """As names can be used as part of evaluated Expressions we restrict them for safety reasons."""
@@ -367,8 +370,13 @@ def validate_name(name: str) -> str:
 
 
 # The byte order of the system, used for the 'native' endianness modifiers ('_ne').
-# If you'd like to emulate a different native endianness, you can set this to 'little' or 'big'.
-byteorder: str = sys.byteorder
+# If you'd like to emulate a different native endianness, you can set this a different Endianness.
+
+if sys.byteorder == "little":
+    byteorder = Endianness.LITTLE
+else:
+    assert sys.byteorder == "big"
+    byteorder = Endianness.BIG
 
 
 _lark_file_path = os.path.join(os.path.dirname(__file__), "bitformat_grammar.lark")

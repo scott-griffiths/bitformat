@@ -339,7 +339,7 @@ class DtypeSingle(Dtype):
             else:
                 x._bit_length = x._size.const_value * definition.bits_per_character
         little_endian = (endianness is Endianness.LITTLE or
-                     (endianness is Endianness.NATIVE and bitformat.byteorder == "little"))
+                     (endianness is Endianness.NATIVE and bitformat.byteorder is Endianness.LITTLE))
         x._endianness = endianness
 
         if little_endian:
@@ -941,8 +941,8 @@ class Register:
                 c.byte_swap()
                 return definition.get_fn(c.as_bits(), 0, len(b))
 
-            fget_ne_bits = fget_le_bits if byteorder == "little" else fget_be
-            fget_ne_mutable_bits = fget_le_mutable_bits if byteorder == "little" else fget_be
+            fget_ne_bits = fget_le_bits if byteorder is Endianness.LITTLE else fget_be
+            fget_ne_mutable_bits = fget_le_mutable_bits if byteorder is Endianness.LITTLE else fget_be
 
             for modifier, fget, desc in [("_le", fget_le_bits, "little-endian"),
                                          ("_be", fget_be, "big-endian"),
