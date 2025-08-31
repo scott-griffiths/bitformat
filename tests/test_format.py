@@ -311,7 +311,7 @@ def test_repeat_with_const_expression():
     assert f.to_bits() == "i9=3, 0x070707"
 
 def test_repeat_with_bits():
-    f = Repeat.from_params(3, "bits=0xab")
+    f = Repeat.from_params(3, "const bits=0xab")
     f.pack([])
     b = f.to_bits()
     assert b == "0xababab"
@@ -599,7 +599,7 @@ def test_wrong_arguments():
     f.clear()
     with pytest.raises(TypeError):
         f.pack(1)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         f.pack([1])
 
 def test_slicing_fields():

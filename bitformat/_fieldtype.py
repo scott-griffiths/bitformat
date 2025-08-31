@@ -41,7 +41,10 @@ class FieldTypeTransformer(DtypeTransformer):
 
     @staticmethod
     def repeat(items) -> 'Repeat':
-        return fieldtype_classes['Repeat'].from_params(items[0], items[1])
+        count = items[0]
+        field = items[1]
+        value = items[2]
+        return fieldtype_classes['Repeat'].from_params(count, field, value)
 
     @staticmethod
     def while_(items) -> 'While':

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ._fieldtype import FieldType
 from ._common import override, Indenter, Expression, ExpressionError
-from typing import Sequence, Any
+from typing import Sequence, Any, Iterable
 from ._bits import Bits
 
 __all__ = ["Repeat"]
@@ -20,12 +20,13 @@ class Repeat(FieldType):
 
     @classmethod
     @override
-    def from_params(cls, count: int | str | Expression, fieldtype: FieldType | str) -> Repeat:
+    def from_params(cls, count: int | str | Expression, fieldtype: FieldType | str, value: Iterable[Any] | None = None) -> Repeat:
         """
         Create a Repeat instance.
 
         :param count: An Expression or int giving the number of repetitions to do.
         :param fieldtype: The FieldType to repeat.
+        :param value: The list of values to assign to the FieldType.
         :return: The Repeat instance.
         """
         x = super().__new__(cls)
@@ -46,6 +47,8 @@ class Repeat(FieldType):
         elif not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid field of type {type(fieldtype)}.")
         x.field = fieldtype
+        if value is not None:
+            x.value = value
         return x
 
     @override
@@ -113,6 +116,8 @@ class Repeat(FieldType):
     def _repr(self) -> str:
         s = f"Repeat.from_params({self._count!r}, "
         s += self.field._repr()
+        if self.value is not None:
+            s += f", {self.value}"
         s += ")"
         return s
 
@@ -128,9 +133,9 @@ class Repeat(FieldType):
         return pos - startbit
 
     @override
-    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> bool:
-        if not isinstance(values, Sequence):
-            raise TypeError(f"A Repeat field needs a Sequence to pack, but received '{values}' of type {type(values)}. "
+    def _pack(self, value: Sequence[Any], kwargs: dict[str, Any]) -> bool:
+        if not isinstance(value, Sequence):
+            raise TypeError(f"A Repeat field needs a Sequence to pack, but received '{value}' of type {type(value)}. "
                             f"To pack a single item, make a single item list instead.")
         self._bits_list = []
         if self._concrete_count is None:
@@ -139,18 +144,8 @@ class Repeat(FieldType):
             except ExpressionError as e:
                 raise ValueError(f"Cannot evaluate count for Repeat field: {e}")
 
-        if self.field.value is not None:
-            if len(values) > 0:
-                raise ValueError("Values passed to Repeat will be unused as the field is constant.")
-            # It's just a const value repeated.
-            self._bits_list = [self.field.to_bits()] * self._concrete_count
-            return True
-
-        for i in range(self._concrete_count):
-            self.field._pack(values[i], kwargs)
-            self._bits_list.append(self.field.to_bits())
-
-        return True  # TODO: Should return False if it doesn't use up all the values.
+        self._set_value_with_kwargs(value, kwargs)
+        return True
 
     @override
     def _copy(self) -> Repeat:
@@ -181,8 +176,15 @@ class Repeat(FieldType):
         return [self.field.unpack(bits) for bits in self._bits_list]
 
     @override
-    def _set_value_with_kwargs(self, val: list[Any], kwargs: dict[str, Any]) -> None:
-        self._values = val
+    def _set_value_with_kwargs(self, value: list[Any], kwargs: dict[str, Any]) -> None:
+        value_iter = iter(value)
+        for i in range(self._concrete_count):
+            try:
+                next_value = next(value_iter)
+            except StopIteration:
+                next_value = None
+            self.field._pack(next_value, kwargs)
+            self._bits_list.append(self.field.to_bits())
 
     @override
     def __eq__(self, other) -> bool:

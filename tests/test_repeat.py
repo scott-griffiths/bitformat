@@ -67,3 +67,13 @@ def test_pack_errors():
     r = Repeat("repeat {x}: u8")
     with pytest.raises(ValueError):
         r.pack([1, 2, 3])
+
+def test_not_using_all_values():
+    f = Format("(repeat {3}: u8, u8)")
+    _ = repr(f)
+    g = Format("(repeat {3}: u8 = [1, 2, 3], u8 = 4)")
+    f.pack([[1, 2, 3], 4])
+    assert f == g
+    assert f.to_bits() == '0x01020304'
+    f.clear()
+    f.pack([[1, 2, 3], 5])

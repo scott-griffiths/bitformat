@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools
+
 from ._bits import Bits
 from typing import Sequence, Any, Iterable, Self
 import copy
@@ -100,10 +102,13 @@ class Format(FieldType):
         return sum(f.bit_length for f in self._fields)
 
     @override
-    def _pack(self, values: Sequence[Any], kwargs: dict[str, Any]) -> bool:
-        if not isinstance(values, Sequence):
+    def _pack(self, values: Sequence[Any] | None, kwargs: dict[str, Any]) -> bool:
+        if values is not None and not isinstance(values, Sequence):
             raise TypeError(f"Format.pack needs a sequence to pack, but received {type(values)}.")
-        value_iter = iter(values)
+        if values is None:
+            value_iter = itertools.repeat(None)
+        else:
+            value_iter = iter(values)
         consumed_all_values = False
         need_next_value = True
         for fieldtype in self._fields:
