@@ -71,9 +71,27 @@ def test_pack_errors():
 def test_not_using_all_values():
     f = Format("(repeat {3}: u8, u8)")
     _ = repr(f)
-    g = Format("(repeat {3}: u8 = [1, 2, 3], u8 = 4)")
+    s = "(repeat {3}: u8 = [1, 2, 3], u8 = 4)"
+    g = Format(s)
+    r1 = Repeat.from_params(3, 'u8', [1, 2, 3])
+    r2 = Repeat.from_string("repeat{3}: u8 = [1, 2, 3]")
+    assert r1.value == [1, 2, 3]
+    assert r2.value == [1, 2, 3]
+
+    gp = Format.from_params([r1, 'u8'])
+    assert gp[0].value == [1, 2, 3]
     f.pack([[1, 2, 3], 4])
+    assert f[0].value == [1, 2, 3]
+    assert g[0].value == [1, 2, 3]
     assert f == g
+    assert str(f) == str(g)
     assert f.to_bits() == '0x01020304'
     f.clear()
     f.pack([[1, 2, 3], 5])
+
+def test_thing():
+    r = Repeat.from_params(1, 'u16', [7])
+    x = repr(r)
+    assert x == "Repeat.from_params(Expression('1'), 'u16', [7])"
+    x = repr(r)
+    assert x == "Repeat.from_params(Expression('1'), 'u16', [7])"

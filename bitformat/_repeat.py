@@ -26,7 +26,7 @@ class Repeat(FieldType):
 
         :param count: An Expression or int giving the number of repetitions to do.
         :param fieldtype: The FieldType to repeat.
-        :param value: The list of values to assign to the FieldType.
+        :param value: The list of values for the FieldType, one for each repetition.
         :return: The Repeat instance.
         """
         x = super().__new__(cls)
@@ -46,6 +46,9 @@ class Repeat(FieldType):
             fieldtype = FieldType.from_string(fieldtype)
         elif not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid field of type {type(fieldtype)}.")
+        if not(fieldtype.value is None or (isinstance(fieldtype.value, Sequence) and all(x is None for x in fieldtype.value))):
+            if not fieldtype.is_const():
+                raise ValueError(f"Non-const Fieldtypes used inside a Repeat must not have a value set. Received '{fieldtype}'.")
         x.field = fieldtype
         if value is not None:
             x.value = value
@@ -76,7 +79,8 @@ class Repeat(FieldType):
         .. code-block:: python
 
             r1 = Repeat.from_string('repeat {5}: u8')
-            r2 = Repeat.from_string('repeat {x + 1}: (bool, f64)')
+            r2 = Repeat.from_string('repeat {3}: f32 = [0.0, 13.5, -5.05]')
+            r3 = Repeat.from_string('repeat {x + 1}: (bool, f64)')
 
         """
         x = super().from_string(s)
@@ -149,7 +153,7 @@ class Repeat(FieldType):
 
     @override
     def _copy(self) -> Repeat:
-        x = self.__class__.from_params(self._count, self.field._copy())
+        x = self.__class__.from_params(self._count, self.field._copy(), self.value)
         return x
 
     @override
@@ -173,7 +177,9 @@ class Repeat(FieldType):
     def _get_value(self) -> list[Any] | None:
         if not self._bits_list:
             return None
-        return [self.field.unpack(bits) for bits in self._bits_list]
+        values = [self.field.unpack(bits) for bits in self._bits_list]
+        self.field.clear()
+        return values
 
     @override
     def _set_value_with_kwargs(self, value: list[Any], kwargs: dict[str, Any]) -> None:
@@ -185,6 +191,7 @@ class Repeat(FieldType):
                 next_value = None
             self.field._pack(next_value, kwargs)
             self._bits_list.append(self.field.to_bits())
+            self.field.clear()
 
     @override
     def __eq__(self, other) -> bool:

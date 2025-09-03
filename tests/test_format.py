@@ -315,7 +315,7 @@ def test_repeat_with_bits():
     f.pack([])
     b = f.to_bits()
     assert b == "0xababab"
-    f2 = Repeat.from_params(2, Field.from_bits(b))
+    f2 = Repeat.from_params(2, Field.from_bits(b, const=True))
     f2.pack([])
     b2 = f2.to_bits()
     assert b2 == "0xabababababab"
