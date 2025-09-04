@@ -913,12 +913,18 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         kind = definition.kind
         cls.kind_to_def[kind] = definition
-        def fget(obj):
-            return definition.get_fn(obj, 0, len(obj))
-        setattr(bitformat.Bits, kind.value, property(fget=fget,
+
+        def fget_bitwise(b):
+            return definition.get_fn(b, 0, len(b))
+
+        setattr(bitformat.Bits, kind.value, property(fget=fget_bitwise,
                                                      doc=f"The Bits as {definition.description}. Read only."))
-        setattr(bitformat.MutableBits, kind.value, property(fget=fget,
-                                                     doc=f"The MutableBits as {definition.description}. Read only."))
+
+        def fset_bitwise(b, val):
+            b[:] = definition.set_fn(val, length=len(b))
+
+        setattr(bitformat.MutableBits, kind.value, property(fget=fget_bitwise, fset=fset_bitwise,
+                                                            doc=f"The MutableBits as {definition.description}. Read and write."))
 
         if definition.endianness_variants:
 
@@ -927,34 +933,46 @@ class Register:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
                 return definition.get_fn(b, 0, len(b))
 
-            def fget_le_bits(b):
+            def fget_le(b):
                 if len(b) % 8 != 0:
                     raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
                 mutable_b = b.to_mutable_bits()
                 mutable_b.byte_swap()
                 return definition.get_fn(mutable_b.to_bits(), 0, len(b))
 
-            def fget_le_mutable_bits(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                c = b.__copy__()  # TODO: Not sure we really need a copy here.
-                c.byte_swap()
-                return definition.get_fn(c.as_bits(), 0, len(b))
+            fget_ne = fget_le if byteorder is Endianness.LITTLE else fget_be
 
-            fget_ne_bits = fget_le_bits if byteorder is Endianness.LITTLE else fget_be
-            fget_ne_mutable_bits = fget_le_mutable_bits if byteorder is Endianness.LITTLE else fget_be
-
-            for modifier, fget, desc in [("_le", fget_le_bits, "little-endian"),
+            for modifier, fget, desc in [("_le", fget_le, "little-endian"),
                                          ("_be", fget_be, "big-endian"),
-                                         ("_ne", fget_ne_bits, f"native-endian (i.e. {byteorder}-endian)")]:
+                                         ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
                 doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
                 setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))
 
-            for modifier, fget, desc in [("_le", fget_le_mutable_bits, "little-endian"),
-                                         ("_be", fget_be, "big-endian"),
-                                         ("_ne", fget_ne_mutable_bits, f"native-endian (i.e. {byteorder}-endian)")]:
-                doc = f"The MutableBits as {definition.description} in {desc} byte order. Read only."
-                setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, doc=doc))
+            def fget_le_mut(b):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
+                c = b.__copy__()
+                c.byte_swap()
+                return definition.get_fn(c.as_bits(), 0, len(b))
+
+            def fset_le(b, v):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer when setting non whole-byte data. Got length of {len(b)} bits.")
+                b[:] = definition.set_fn(v, len(b)).to_mutable_bits().byte_swap()
+
+            def fset_be(b, v):
+                if len(b) % 8 != 0:
+                    raise ValueError(f"Cannot use endianness modifer when setting non whole-byte data. Got length of {len(b)} bits.")
+                b[:] = definition.set_fn(v, len(b))
+
+            fget_ne_mut = fget_le_mut if byteorder is Endianness.LITTLE else fget_be
+            fset_ne = fset_le if byteorder is Endianness.LITTLE else fset_be
+
+            for modifier, fget, fset, desc in [("_le", fget_le_mut, fset_le, "little-endian"),
+                                               ("_be", fget_be, fset_be, "big-endian"),
+                                               ("_ne", fget_ne_mut, fset_ne, f"native-endian (i.e. {byteorder}-endian)")]:
+                doc = f"The MutableBits as {definition.description} in {desc} byte order. Read and write."
+                setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, fset=fset, doc=doc))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)

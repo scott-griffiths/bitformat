@@ -1049,3 +1049,15 @@ def test_reserve():
     assert b4 >= 1000000
     a.clear()
     assert a.capacity() == b4
+
+def test_assigning_by_properties():
+    a = MutableBits.from_zeros(64)
+    a.i = -1
+    assert a == MutableBits.from_ones(64)
+    a.f_le = -0.25
+    assert a.f_le == -0.25
+    assert len(a) == 64
+    a.u_be = 123
+    assert a.u_be == 123
+    a.i_ne = 55
+    assert a.i_ne == 55
