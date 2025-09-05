@@ -893,3 +893,9 @@ def test_appending_fields():
     assert f.parse('0x10') == 8
     x_value = f['x'].value
     assert x_value == 0x10
+
+def test_string_value():
+    f = Format("(x: const hex4 = dead, if {x == 'dead'}: u8)")
+    b = MutableBits('0xdeadff')
+    f.parse(b)
+    assert f.value == ['dead', 255]

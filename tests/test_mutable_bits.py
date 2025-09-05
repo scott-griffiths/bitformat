@@ -1061,3 +1061,10 @@ def test_assigning_by_properties():
     assert a.u_be == 123
     a.i_ne = 55
     assert a.i_ne == 55
+
+def test_insert_slice():
+    a = MutableBits('0xff')
+    a[0:0] = '0xab'
+    assert a == '0xabff'
+    a[0:0] = a
+    assert a == '0xabffabff'

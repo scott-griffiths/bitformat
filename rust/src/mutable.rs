@@ -448,8 +448,14 @@ impl MutableBits {
             } else {
                 bits_from_any(value, py)?
             };
+            if start == stop {
+                let tail = slf.inner.data.split_off(start as usize);
+                slf.inner.data.extend_from_bitslice(&bs.data);
+                slf.inner.data.extend_from_bitslice(&tail);
+            } else {
+                slf._set_slice(start as usize, stop as usize, &bs);
+            }
 
-            slf._set_slice(start as usize, stop as usize, &bs);
             return Ok(());
         }
         Err(PyTypeError::new_err("Index must be an integer or a slice."))

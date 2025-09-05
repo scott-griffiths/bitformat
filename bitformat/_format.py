@@ -93,7 +93,7 @@ class Format(FieldType):
         """
         x = super().from_string(s)
         if not isinstance(x, Format):
-            raise ValueError(f'Can\'t parse Format field from "{s}". Instead got "{x!r}".')
+            raise ValueError(f'Can\'t parse a Format field from "{s}". This looks like a {type(x)}.')
         return x
 
     @override

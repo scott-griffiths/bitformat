@@ -152,7 +152,7 @@ class Field(FieldType):
             if value != self._bits:
                 expected_value = self._dtype.unpack(self._bits)
                 actual_value = self._dtype.unpack(value)
-                raise ValueError(f"Read value '{actual_value}' when const value '{expected_value}' was expected.")
+                raise ValueError(f"Read value '{actual_value}' which doesn't match value expected in const field '{self}'.")
         else:
             try:
                 self._concrete_dtype = self._dtype.evaluate(**vars_)

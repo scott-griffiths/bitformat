@@ -46,7 +46,7 @@ class Repeat(FieldType):
             fieldtype = FieldType.from_string(fieldtype)
         elif not isinstance(fieldtype, FieldType):
             raise ValueError(f"Invalid field of type {type(fieldtype)}.")
-        if not(fieldtype.value is None or (isinstance(fieldtype.value, Sequence) and all(x is None for x in fieldtype.value))):
+        if not (fieldtype.value is None or (isinstance(fieldtype.value, Sequence) and all(x is None for x in fieldtype.value))):
             if not fieldtype.is_const():
                 raise ValueError(f"Non-const Fieldtypes used inside a Repeat must not have a value set. Received '{fieldtype}'.")
         x.field = fieldtype
