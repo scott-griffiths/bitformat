@@ -4,6 +4,7 @@
 
 * Allowing property setters for `MutableBits`. So for example you can now write `b.u = 34` to set the unsigned int
   interpretation of `b` to 34 (for whatever length `b` currently has).
+* Slice assignments / deletion are more capable, so you can set slices with a step not equal to 1, for example.
 
 ### August 2025: version 0.7.
 

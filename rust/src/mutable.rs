@@ -433,27 +433,60 @@ impl MutableBits {
             return Ok(());
         }
         if let Ok(slice) = key.downcast::<PySlice>() {
-            let indices = slice.indices(length as isize)?;
-            let start: i64 = indices.start.try_into()?;
-            let stop: i64 = indices.stop.try_into()?;
-            let step: i64 = indices.step.try_into()?;
-            if step != 1 {
-                return Err(PyValueError::new_err(
-                    "Cannot set bits with a step other than 1",
-                ));
-            }
             // Need to guard against value being self
             let bs = if value.as_ptr() == slf.as_ptr() {
                 MutableBits::new(slf.inner.data.clone()).as_bits()
             } else {
                 bits_from_any(value, py)?
             };
-            if start == stop {
-                let tail = slf.inner.data.split_off(start as usize);
-                slf.inner.data.extend_from_bitslice(&bs.data);
-                slf.inner.data.extend_from_bitslice(&tail);
+
+            let indices = slice.indices(length as isize)?;
+            let start: i64 = indices.start.try_into()?;
+            let stop: i64 = indices.stop.try_into()?;
+            let step: i64 = indices.step.try_into()?;
+
+            if step == 1 {
+                if start == stop {
+                    let tail = slf.inner.data.split_off(start as usize);
+                    slf.inner.data.extend_from_bitslice(&bs.data);
+                    slf.inner.data.extend_from_bitslice(&tail);
+                } else {
+                    slf._set_slice(start as usize, stop as usize, &bs);
+                }
+                return Ok(());
+            }
+            if step == 0 {
+                return Err(PyValueError::new_err("The step in __setitem__ must not be zero."));
+            }
+            // Compute target indices in the natural slice order (respecting step sign).
+            let mut positions: Vec<usize> = Vec::new();
+            if step > 0 {
+                let mut i = start;
+                while i < stop {
+                    positions.push(i as usize);
+                    i += step;
+                }
             } else {
-                slf._set_slice(start as usize, stop as usize, &bs);
+                let mut i = start;
+                while i > stop {
+                    positions.push(i as usize);
+                    i += step; // step < 0
+                }
+            }
+
+            // Enforce equal sizes.
+            if bs.len() != positions.len() {
+                return Err(PyValueError::new_err(format!(
+                    "Attempt to assign sequence of size {} to extended slice of size {}",
+                    bs.len(),
+                    positions.len()
+                )));
+            }
+
+            // Assign element-wise.
+            for (k, &pos) in positions.iter().enumerate() {
+                let v = bs.data[k];
+                slf.inner.data.set(pos, v);
             }
 
             return Ok(());
@@ -480,12 +513,35 @@ impl MutableBits {
             let start: i64 = indices.start.try_into()?;
             let stop: i64 = indices.stop.try_into()?;
             let step: i64 = indices.step.try_into()?;
-            if step != 1 {
-                return Err(PyValueError::new_err(
-                    "Cannot delete bits with a step other than 1",
-                ));
+            if step == 1 {
+                if stop > start {
+                    self.inner.data.drain(start as usize..stop as usize);
+                }
+            } else {
+                // Collect indices to remove, then remove from highest to lowest.
+                let mut to_remove: Vec<usize> = if step > 0 {
+                    let mut v = Vec::new();
+                    let mut i = start;
+                    while i < stop {
+                        v.push(i as usize);
+                        i += step;
+                    }
+                    v
+                } else {
+                    let mut v = Vec::new();
+                    let mut i = start;
+                    while i > stop {
+                        v.push(i as usize);
+                        i += step; // step < 0
+                    }
+                    v
+                };
+
+                to_remove.sort();
+                for i in to_remove.into_iter().rev() {
+                    self.inner.data.remove(i);
+                }
             }
-            self.inner.data.drain(start as usize..stop as usize);
             return Ok(());
         }
         Err(PyTypeError::new_err("Index must be an integer or a slice."))
@@ -862,9 +918,11 @@ impl MutableBits {
         step: i64,
     ) -> PyResult<()> {
         let len = self.inner.len() as i64;
+        if len == 0 {
+            return Ok(());
+        }
         let mut positive_start = if start < 0 { start + len } else { start };
         let mut positive_stop = if stop < 0 { stop + len } else { stop };
-
         if positive_start < 0 || positive_start >= len {
             return Err(PyIndexError::new_err("Start of slice out of bounds."));
         }

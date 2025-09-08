@@ -189,8 +189,10 @@ def test_delitem_slice():
 def test_delitem_with_step():
     # Test slices with step
     a = MutableBits('0b101010')
+    del a[::2]  # Delete every other bit
+    assert a == '0b000'
     with pytest.raises(ValueError):
-        del a[::2]  # Delete every other bit
+        del a[::0]
 
 
 def test_delitem_edge_cases():
@@ -1068,3 +1070,13 @@ def test_insert_slice():
     assert a == '0xabff'
     a[0:0] = a
     assert a == '0xabffabff'
+
+def test_del_ranges():
+    a = MutableBits.from_zeros(10)
+    del a[5:3]
+    assert len(a) == 10
+
+def test_set_item_with_step():
+    a = MutableBits('0b000000')
+    a[::2] = '0b110'
+    assert a == '0b101000'

@@ -5,6 +5,7 @@ import sys
 import bitformat
 from bitformat import Bits, Dtype, DtypeTuple, MutableBits
 import math
+import copy
 
 sys.path.insert(0, "..")
 
@@ -37,6 +38,11 @@ class TestNoPosAttribute:
         s = s.replace("0b1", "0b11")
         assert s == "0b011"
 
+    def test_delete(self):
+        s = MutableBits('0b000000001')
+        del s[-1:]
+        assert s == '0b00000000'
+
     def test_insert(self):
         s = MutableBits.from_string("0b00")
         s = s.insert(1, "0xf")
@@ -65,9 +71,8 @@ class TestNoPosAttribute:
         assert t == "0b10"
 
     def test_rol(self):
-        s = Bits.from_string("0b0001")
-        t = s.to_mutable_bits().rol(1)
-        assert s == "0b0001"
+        s = MutableBits("0b0001")
+        t = s.rol(1)
         assert t == "0b0010"
 
     def test_ror(self):
@@ -76,6 +81,23 @@ class TestNoPosAttribute:
         assert s == "0b1000"
         assert t == "0b0100"
 
+    def test_set_item(self):
+        s = MutableBits('0b000100')
+        s[4:5] = '0xf'
+        assert s == '0b000111110'
+        s[0:1] = [1]
+        assert s == '0b100111110'
+        s[5:5] = MutableBits()
+        assert s == '0b100111110'
+
+    def test_adding_nonsense(self):
+        a = MutableBits.from_bools([0])
+        with pytest.raises(ValueError):
+            a += '3'
+        with pytest.raises(ValueError):
+            a += 'se'
+        with pytest.raises(ValueError):
+            a += 'float:32'
 
 class Testbyte_aligned:
     def test_not_byte_aligned(self):
@@ -103,6 +125,148 @@ class Testbyte_aligned:
         bitformat.Options().byte_aligned = False
 
 
+class TestSliceAssignment:
+
+    def test_slice_assignment_single_bit(self):
+        a = MutableBits('0b000')
+        a[2] = '0b1'
+        assert a.bin == '001'
+        a[0] = MutableBits('0b1')
+        assert a.bin == '101'
+        a[-1] = 0
+        assert a.bin == '100'
+        a[-3] = 0
+        assert a.bin == '000'
+
+    def test_slice_assignment_single_bit_errors(self):
+        a = MutableBits('0b000')
+        with pytest.raises(IndexError):
+            a[-4] = 1
+        with pytest.raises(IndexError):
+            a[3] = 1
+
+    def test_slice_assignment_muliple_bits(self):
+        a = MutableBits('0b0')
+        a[0:1] = '0b110'
+        assert a.bin == '110'
+        a[0:1] = '0b000'
+        assert a.bin == '00010'
+        a[0:3] = '0b111'
+        assert a.bin == '11110'
+        a[-2:] = '0b011'
+        assert a.bin == '111011'
+        a[:] = '0x12345'
+        assert a.hex == '12345'
+        a[:] = ''
+        assert not a
+
+    def test_slice_assignment_multiple_bits_errors(self):
+        a = MutableBits()
+        with pytest.raises(IndexError):
+            a[0] = '0b00'
+        a += '0b1'
+        a[0:2] = '0b11'
+        assert a == '0b11'
+
+    def test_del_slice_step(self):
+        a = MutableBits.from_dtype('bin', '100111101001001110110100101')
+        del a[::2]
+        assert a.bin == '0110010101100'
+        del a[3:9:3]
+        assert a.bin == '01101101100'
+        del a[2:7:1]
+        assert a.bin == '011100'
+        del a[::99]
+        assert a.bin == '11100'
+        del a[::1]
+        assert a.bin == ''
+
+    def test_del_slice_negative_step(self):
+        a = MutableBits('0b0001011101101100100110000001')
+        del a[5:23:-3]
+        assert a.bin == '0001011101101100100110000001'
+        del a[25:3:-3]
+        assert a.bin == '00011101010000100001'
+        del a[:6:-7]
+        assert a.bin == '000111010100010000'
+        del a[15::-2]
+        assert a.bin == '0010000000'
+        del a[::-1]
+        assert a.bin == ''
+
+    def test_del_slice_negative_end(self):
+        a = MutableBits('0b01001000100001')
+        del a[:-5]
+        assert a == '0b00001'
+        a = MutableBits('0b01001000100001')
+        del a[-11:-5]
+        assert a == '0b01000001'
+
+    def test_del_slice_errors(self):
+        a = MutableBits.from_zeros(10)
+        del a[5:3]
+        assert a == Bits.from_zeros(10)
+        del a[3:5:-1]
+        assert a == Bits.from_zeros(10)
+
+    def test_del_single_element(self):
+        a = MutableBits('0b0010011')
+        del a[-1]
+        assert a.bin == '001001'
+        del a[2]
+        assert a.bin == '00001'
+        with pytest.raises(IndexError):
+            del a[5]
+
+    def test_set_slice_step(self):
+        a = MutableBits.from_dtype('bin', '0000000000')
+        a[::2] = '0b11111'
+        assert a.bin == '1010101010'
+        a[4:9:3] = [0, 0]
+        assert a.bin == '1010001010'
+        a[7:3:-1] = [1, 1, 1, 0]
+        assert a.bin == '1010011110'
+        a[7:1:-2] = [0, 0, 1]
+        assert a.bin == '1011001010'
+        a[::-5] = [1, 1]
+        assert a.bin == '1011101011'
+        a[::-1] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 1]
+        assert a.bin == '1000000000'
+
+    def test_set_slice_step_with_int(self):
+        a = MutableBits.from_zeros(9)
+        with pytest.raises(TypeError):
+            a[5:8] = -1
+
+    def test_set_slice_errors(self):
+        a = MutableBits.from_zeros(8)
+        with pytest.raises(ValueError):
+            a[::3] = [1]
+
+        class A(object):
+            pass
+
+        with pytest.raises(TypeError):
+            a[1:2] = A()
+        with pytest.raises(ValueError):
+            a[1:4:-1] = [1, 2]
+
+# TODO: Should we allow subclassing or now?
+# class TestSubclassing:
+#
+#     def test_is_instance(self):
+#         class SubBits(MutableBits):
+#             pass
+#
+#         a = SubBits()
+#         assert isinstance(a, SubBits)
+#
+#     def test_class_type(self):
+#         class SubBits(MutableBits):
+#             pass
+#
+#         assert SubBits().__class__ == SubBits
+
 def test_adding():
     a = Bits.from_string("0b0")
     b = Bits.from_string("0b11")
@@ -110,6 +274,17 @@ def test_adding():
     assert c == "0b011"
     assert a == "0b0"
     assert b == "0b11"
+
+
+def test_copy_method():
+    s = Bits.from_zeros(9000)
+    t = copy.copy(s)
+    assert s == t
+    assert s is t
+    s = s.to_mutable_bits()
+    t = copy.copy(s)
+    assert s == t
+    assert s is not t
 
 
 class TestRepr:
