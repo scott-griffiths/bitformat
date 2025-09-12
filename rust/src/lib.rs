@@ -16,3 +16,7 @@ fn rust(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(mutable::mutable_bits_from_any, m)?)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod mutable_test;
+mod bits_tests;

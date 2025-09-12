@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::bitrust::core::BitCollection;
-    use crate::bitrust::{Bits, MutableBits};
+    use crate::core::BitCollection;
+    use crate::bits::Bits;
+    use crate::mutable::MutableBits;
 
     #[test]
     fn test_set_and_get_index() {
@@ -16,7 +17,7 @@ mod tests {
     fn test_set_slice() {
         let mut mb = <MutableBits as BitCollection>::from_zeros(6);
         let br = <Bits as BitCollection>::from_ones(2);
-        mb._set_slice(2, 4, &br).unwrap();
+        mb._set_slice(2, 4, &br);
         assert_eq!(mb.to_bin(), "001100");
     }
 
@@ -24,7 +25,7 @@ mod tests {
     fn test_overwrite_slice() {
         let mut mb = <MutableBits as BitCollection>::from_zeros(6);
         let br = <Bits as BitCollection>::from_ones(2);
-        mb._set_slice(2, 4, &br).unwrap();
+        mb._set_slice(2, 4, &br);
         assert_eq!(mb.to_bin(), "001100");
     }
 

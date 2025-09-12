@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
     use crate::core::BitCollection;
-    use crate::{Bits, MutableBits};
+    use crate::bits::Bits;
+    use crate::mutable::MutableBits;
 
     #[test]
     fn from_bytes() {
@@ -135,7 +136,7 @@ mod tests {
     fn test_set_mutable_slice() {
         let mut a = MutableBits::from_hex("0011223344").unwrap();
         let b = Bits::from_hex("ff").unwrap();
-        a._set_slice(8, 16, &b).unwrap();
+        a._set_slice(8, 16, &b);
         assert_eq!(a.to_hex().unwrap(), "00ff223344");
     }
 
@@ -407,7 +408,7 @@ mod tests {
 
         let mut m = MutableBits::new(pattern1.inner.data);
 
-        m._set_slice(0, 2, &pattern2).unwrap();
+        m._set_slice(0, 2, &pattern2);
         assert_eq!(m.to_bin(), "001100");
     }
 
@@ -442,13 +443,13 @@ mod tests {
         let mut m = MutableBits::from_bin("00000000").unwrap();
         let pattern = Bits::from_bin("1111").unwrap();
 
-        m._set_slice(2, 6, &pattern).unwrap();
+        m._set_slice(2, 6, &pattern);
         assert_eq!(m.to_bin(), "00111100");
 
-        m._set_slice(0, 2, &pattern).unwrap();
+        m._set_slice(0, 2, &pattern);
         assert_eq!(m.to_bin(), "1111111100");
 
-        m._set_slice(6, 8, &pattern).unwrap();
+        m._set_slice(6, 8, &pattern);
         assert_eq!(m.to_bin(), "111111111100");
     }
 
@@ -458,7 +459,7 @@ mod tests {
         let mut mutable = MutableBits::new(original.data);
         mutable._set_index(false, 0).unwrap();
         mutable._set_index(true, 1).unwrap();
-        let result = mutable._as_immutable();
+        let result = mutable.as_bits();
 
         assert_eq!(result.to_bin(), "011010");
     }
