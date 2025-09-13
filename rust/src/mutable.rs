@@ -166,9 +166,18 @@ impl MutableBits {
             // This is an overwrite, so no need to move data around.
             self._overwrite(start, value);
         } else {
-            self.inner
-                .data
-                .splice(start..end, value.data.iter().by_vals());
+
+            if start == end {
+                // Not sure why but splice doesn't work for this case, so we do it explicitly
+                let tail = self.inner.data.split_off(start as usize);
+                self.inner.data.extend_from_bitslice(&value.data);
+                self.inner.data.extend_from_bitslice(&tail);
+            } else {
+                self.inner
+                    .data
+                    .splice(start..end, value.data.iter().by_vals());
+            }
+
         }
     }
 
@@ -435,7 +444,7 @@ impl MutableBits {
         if let Ok(slice) = key.downcast::<PySlice>() {
             // Need to guard against value being self
             let bs = if value.as_ptr() == slf.as_ptr() {
-                MutableBits::new(slf.inner.data.clone()).as_bits()
+                Bits::new(slf.inner.data.clone())
             } else {
                 bits_from_any(value, py)?
             };
@@ -446,13 +455,9 @@ impl MutableBits {
             let step: i64 = indices.step.try_into()?;
 
             if step == 1 {
-                if start == stop {
-                    let tail = slf.inner.data.split_off(start as usize);
-                    slf.inner.data.extend_from_bitslice(&bs.data);
-                    slf.inner.data.extend_from_bitslice(&tail);
-                } else {
-                    slf._set_slice(start as usize, stop as usize, &bs);
-                }
+                debug_assert!(start >= 0);
+                debug_assert!(stop >= 0);
+                slf._set_slice(start as usize, stop as usize, &bs);
                 return Ok(());
             }
             if step == 0 {
@@ -461,12 +466,15 @@ impl MutableBits {
             // Compute target indices in the natural slice order (respecting step sign).
             let mut positions: Vec<usize> = Vec::new();
             if step > 0 {
+                debug_assert!(start >= 0);
+                debug_assert!(stop >= 0);
                 let mut i = start;
                 while i < stop {
                     positions.push(i as usize);
                     i += step;
                 }
             } else {
+                // TODO: with a negative step I think start or stop could be -1.
                 let mut i = start;
                 while i > stop {
                     positions.push(i as usize);
