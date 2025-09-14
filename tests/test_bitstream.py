@@ -1421,3 +1421,8 @@ def test_mutable_freeze():
     a.set(1, -1)
     assert a == '0x0001'
     assert b.hex == '0000'
+
+def test_del_unavailability():
+    a = Bits('0xff')
+    with pytest.raises(TypeError):
+        del a[:]

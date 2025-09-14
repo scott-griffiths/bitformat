@@ -8,7 +8,7 @@ use bytemuck;
 use pyo3::conversion::IntoPyObject;
 use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyByteArray, PyBytes, PyMemoryView, PySlice, PyType};
+use pyo3::types::{PyBool, PyByteArray, PyBytes, PyMemoryView, PySlice, PyType, PyInt, PyTuple, PyList};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::ops::Not;
 
@@ -119,10 +119,10 @@ impl Bits {
             || s.is_instance_of::<PyMemoryView>()
         {
             err.push_str("You can use 'Bits.from_bytes()' instead.");
-        } else if s.is_instance_of::<pyo3::types::PyInt>() {
+        } else if s.is_instance_of::<PyInt>() {
             err.push_str("Perhaps you want to use 'Bits.from_zeros()', 'Bits.from_ones()' or 'Bits.from_random()'?");
-        } else if s.is_instance_of::<pyo3::types::PyTuple>()
-            || s.is_instance_of::<pyo3::types::PyList>()
+        } else if s.is_instance_of::<PyTuple>()
+            || s.is_instance_of::<PyList>()
         {
             err.push_str(
                 "Perhaps you want to use 'Bits.from_joined()' or 'Bits.from_bools()' instead?",
@@ -938,6 +938,18 @@ impl Bits {
             bv.extend_from_bitslice(&self.data);
         }
         Ok(Bits::new(bv))
+    }
+
+    pub fn __setitem__(&self, _key: Py<PyAny>, _value: Py<PyAny>) -> PyResult<()> {
+        Err(PyTypeError::new_err(
+            "Bits objects do not support item assignment. Did you mean to use the MutableBits class? Call to_mutable_bits() to convert to a MutableBits."
+        ))
+    }
+
+    pub fn __delitem__(&self, _key: Py<PyAny>) -> PyResult<()> {
+        Err(PyTypeError::new_err(
+            "Bits objects do not support item deletion. Did you mean to use the MutableBits class? Call to_mutable_bits() to convert to a MutableBits."
+        ))
     }
 
 }

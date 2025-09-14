@@ -535,14 +535,6 @@ class BitsMethods:
             end = self._get_slice_unchecked(length - 800, 800)
             return hash(((start + end).to_bytes(), length))
 
-    def __setitem__(self, key, value):
-        raise TypeError(f"'{self.__class__.__name__}' object does not support item assignment. "
-        f"Did you mean to use the MutableBits class? Or you could call to_mutable_bits() to convert to a MutableBits.")
-
-    def __delitem__(self, key):
-        raise TypeError(f"'{self.__class__.__name__}' object does not support item deletion. "
-        f"Did you mean to use the MutableBits class? Or you could call to_mutable_bits() to convert to a MutableBits.")
-
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in MutableBits."""
         # Check if the method exists in MutableBits
