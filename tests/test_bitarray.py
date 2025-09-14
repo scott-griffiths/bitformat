@@ -306,13 +306,19 @@ class TestNewProperties:
         a = Bits.from_bytes(b"hello")
         assert a.bytes == b"hello"
 
-    def test_conversion_to_bytes(self):
-        a = Bits.from_string("0x41424344, 0b1")
-        b = bytes(a)
-        assert b == b"ABCD\x80"
-        a = Bits()
-        assert bytes(a) == b""
+def test_bits_conversion_to_bytes():
+    a = Bits.from_string("0x41424344, 0b1")
+    b = bytes(a)
+    assert b == b"ABCD\x80"
+    a = Bits()
+    assert bytes(a) == b""
 
+def test_mutable_bits_conversion_to_bytes():
+    a = MutableBits('0x0001')
+    b = bytes(a)
+    assert b == b'\x00\x01'
+    b = bytes(MutableBits())
+    assert b == b''
 
 class TestBFloats:
     @pytest.mark.skip

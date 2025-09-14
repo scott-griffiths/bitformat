@@ -374,11 +374,6 @@ this is a step to using the Rust classes as the base classes."""
             stream.write(line_fmt)
         return
 
-    # ----- Conversions
-
-    def __bytes__(self) -> bytes:
-        return self.to_bytes()
-
     # ----- Operators
 
     def __mul__(self: Bits, n: int, /) -> Bits:

@@ -911,4 +911,9 @@ impl Bits {
             data: self.data.clone().not(),
         })
     }
+
+    pub fn __bytes__(&self) -> Vec<u8> {
+        self.to_bytes()
+    }
+
 }

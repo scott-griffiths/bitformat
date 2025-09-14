@@ -1255,4 +1255,8 @@ impl MutableBits {
         slf.inner.data.shift_right(shift);
         Ok(())
     }
+
+    pub fn __bytes__(&self) -> Vec<u8> {
+        self.inner.to_bytes()
+    }
 }

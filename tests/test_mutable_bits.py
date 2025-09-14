@@ -1080,3 +1080,8 @@ def test_set_item_with_step():
     a = MutableBits('0b000000')
     a[::2] = '0b110'
     assert a == '0b101000'
+
+def test_iter():
+    a = MutableBits('0b110')
+    with pytest.raises(TypeError):
+        _ = [bool(q) for q in a]
