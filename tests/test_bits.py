@@ -832,3 +832,15 @@ def test_repr():
     assert repr(a) == "Bits()"
     a = Bits(" 0b 1")
     assert repr(a) == "Bits('0b1')"
+
+def test_bits_not_orderable():
+    a = Bits.from_string("0b0")
+    b = Bits.from_string("0b1")
+    with pytest.raises(TypeError):
+        _ = a < b
+    with pytest.raises(TypeError):
+        _ = a <= b
+    with pytest.raises(TypeError):
+        _ = a > b
+    with pytest.raises(TypeError):
+        _ = a >= b

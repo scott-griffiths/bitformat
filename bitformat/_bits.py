@@ -379,24 +379,6 @@ this is a step to using the Rust classes as the base classes."""
     def __bytes__(self) -> bytes:
         return self.to_bytes()
 
-    # ----- Comparisons
-
-    def __ge__(self, other: Any, /) -> bool:
-        # Bits can't really be ordered.
-        return NotImplemented
-
-    def __gt__(self, other: Any, /) -> bool:
-        # Bits can't really be ordered.
-        return NotImplemented
-
-    def __le__(self, other: Any, /) -> bool:
-        # Bits can't really be ordered.
-        return NotImplemented
-
-    def __lt__(self, other: Any, /) -> bool:
-        # Bits can't really be ordered.
-        return NotImplemented
-
     # ----- Operators
 
     def __mul__(self: Bits, n: int, /) -> Bits:
