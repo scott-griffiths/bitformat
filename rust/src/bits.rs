@@ -865,6 +865,40 @@ impl Bits {
         self._xor(&other)
     }
 
+    /// Reverse bit-wise 'and' between two Bits. Returns new Bits.
+    ///
+    /// This method is used when the RHS is a Bits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __rand__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        other._and(&self)
+    }
+
+    /// Reverse bit-wise 'or' between two Bits. Returns new Bits.
+    ///
+    /// This method is used when the RHS is a Bits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __ror__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        other._or(&self)
+    }
+
+    /// Reverse bit-wise 'xor' between two Bits. Returns new Bits.
+    ///
+    /// This method is used when the RHS is a Bits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two Bits have differing lengths.
+    ///
+    pub fn __rxor__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = bits_from_any(bs, py)?;
+        other._xor(&self)
+    }
+
+
     /// Return the instance with every bit inverted.
     ///
     /// Raises ValueError if the Bits is empty.

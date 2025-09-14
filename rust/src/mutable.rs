@@ -644,6 +644,39 @@ impl MutableBits {
         self._xor(&other)
     }
 
+    /// Reverse bit-wise 'and' between two MutableBits. Returns new MutableBits.
+    ///
+    /// This method is used when the RHS is a MutableBits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __rand__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = mutable_bits_from_any(bs, py)?;
+        other._and(&self.inner)
+    }
+
+    /// Reverse bit-wise 'or' between two MutableBits. Returns new MutableBits.
+    ///
+    /// This method is used when the RHS is a MutableBits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __ror__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = mutable_bits_from_any(bs, py)?;
+        other._or(&self.inner)
+    }
+
+    /// Reverse bit-wise 'xor' between two MutableBits. Returns new MutableBits.
+    ///
+    /// This method is used when the RHS is a MutableBits and the LHS is not, but can be converted to one.
+    ///
+    /// Raises ValueError if the two MutableBits have differing lengths.
+    ///
+    pub fn __rxor__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let other = mutable_bits_from_any(bs, py)?;
+        other._xor(&self.inner)
+    }
+
     /// Rotates bit pattern to the left. Returns self.
     ///
     /// :param n: The number of bits to rotate by.

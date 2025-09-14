@@ -695,6 +695,14 @@ class TestBitWise:
         a = "0o707" ^ Bits("0o777")
         assert a.oct == "070"
 
+def test_mutable_bitwise():
+    a = '0xf0' & MutableBits('0x0f')
+    assert a == '0x00'
+    a = '0xf0' | MutableBits('0x0f')
+    assert a == '0xff'
+    a = '0xf0' & MutableBits('0x0f')
+    assert a == '0x00'
+
 
 class TestManyDifferentThings:
     def test_find_byte_aligned_with_bits(self):

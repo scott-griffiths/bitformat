@@ -162,7 +162,7 @@ this is a step to using the Rust classes as the base classes."""
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        p = self._find(bs, 0, ba)
+        p = self._find(bs, 0, bytealigned=ba)
         return p
 
     def info(self) -> str:
@@ -373,35 +373,6 @@ this is a step to using the Rust classes as the base classes."""
             line_fmt = offset_str + fb1 + fb2 + "\n"
             stream.write(line_fmt)
         return
-
-    # ----- Special Methods -----
-
-    # ----- Logical
-
-
-    def __rand__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'and' between two Bits. Returns new Bits.
-
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        return self.__and__(bs)
-
-    def __ror__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'or' between two Bits. Returns new Bits.
-
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        return self.__or__(bs)
-
-    def __rxor__(self, bs: BitsType, /) -> Bits | MutableBits:
-        """Bit-wise 'xor' between two Bits. Returns new Bits.
-
-        Raises ValueError if the two Bits have differing lengths.
-
-        """
-        return self.__xor__(bs)
 
     # ----- Conversions
 
