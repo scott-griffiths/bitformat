@@ -103,7 +103,7 @@ pub(crate) fn str_to_bits(s: String) -> PyResult<Bits> {
             Ok(bits) => bits_array.push(bits),
             Err(_) => {
                 // Call out to the Python dtype parser - see if it can handle it.
-                Python::with_gil(|py| -> PyResult<()> {
+                Python::attach(|py| -> PyResult<()> {
                     // Only access the parser inside this scope
                     let parser_guard = DTYPE_PARSER.lock().unwrap();
                     let parser = match &*parser_guard {

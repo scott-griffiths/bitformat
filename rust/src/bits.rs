@@ -619,7 +619,7 @@ impl Bits {
     pub fn count(&self, value: Py<PyAny>, py: Python) -> PyResult<usize> {
         let count_ones = value.is_truthy(py)?;
         let len = self.len();
-        let ones = py.allow_threads(|| {
+        let ones = py.detach(|| {
             // Note that using hamming::weight is about twice as fast as:
             // self.data.count_ones()
             // which is the way that bitvec suggests.
