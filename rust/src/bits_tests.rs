@@ -290,9 +290,9 @@ mod tests {
     fn test_eq() {
         let a = Bits::from_bin("1100").unwrap();
         let b = Bits::from_bin("1100").unwrap();
-        assert!(a == b);
+        assert_eq!(a, b);
         let c = Bits::from_bin("1010").unwrap();
-        assert!(a != c);
+        assert_ne!(a, c);
     }
 
     #[test]

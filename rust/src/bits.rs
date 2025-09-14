@@ -114,9 +114,9 @@ impl Bits {
             err.push_str(
                 "You can use the 'to_bits()' method on the `MutableBits` instance instead.",
             );
-        } else if s.is_instance_of::<pyo3::types::PyBytes>()
-            || s.is_instance_of::<pyo3::types::PyByteArray>()
-            || s.is_instance_of::<pyo3::types::PyMemoryView>()
+        } else if s.is_instance_of::<PyBytes>()
+            || s.is_instance_of::<PyByteArray>()
+            || s.is_instance_of::<PyMemoryView>()
         {
             err.push_str("You can use 'Bits.from_bytes()' instead.");
         } else if s.is_instance_of::<pyo3::types::PyInt>() {
@@ -914,6 +914,30 @@ impl Bits {
 
     pub fn __bytes__(&self) -> Vec<u8> {
         self.to_bytes()
+    }
+
+    /// Return new Bits consisting of n concatenations of self.
+    ///
+    /// Called for expression of the form 'a = b*3'.
+    ///
+    /// n -- The number of concatenations. Must be >= 0.
+    ///
+    pub fn __mul__(&self, n: i64) -> PyResult<Self> {
+        if n < 0 {
+            return Err(PyValueError::new_err("Cannot multiply by a negative integer."))
+        }
+        let n = n as usize;
+        let len = self.len();
+        if n == 0 || len == 0 {
+            return Ok(BitCollection::empty());
+        }
+        let mut bv = BV::with_capacity(len * n);
+        bv.extend_from_bitslice(&self.data);
+        // TODO: This could be done more efficiently with doubling.
+        for _ in 1..n {
+            bv.extend_from_bitslice(&self.data);
+        }
+        Ok(Bits::new(bv))
     }
 
 }

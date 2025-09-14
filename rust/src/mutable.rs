@@ -166,10 +166,9 @@ impl MutableBits {
             // This is an overwrite, so no need to move data around.
             self._overwrite(start, value);
         } else {
-
             if start == end {
                 // Not sure why but splice doesn't work for this case, so we do it explicitly
-                let tail = self.inner.data.split_off(start as usize);
+                let tail = self.inner.data.split_off(start);
                 self.inner.data.extend_from_bitslice(&value.data);
                 self.inner.data.extend_from_bitslice(&tail);
             } else {
@@ -177,7 +176,6 @@ impl MutableBits {
                     .data
                     .splice(start..end, value.data.iter().by_vals());
             }
-
         }
     }
 
@@ -1258,5 +1256,16 @@ impl MutableBits {
 
     pub fn __bytes__(&self) -> Vec<u8> {
         self.inner.to_bytes()
+    }
+
+    /// Return new MutableBits consisting of n concatenations of self.
+    ///
+    /// Called for expression of the form 'a = b*3'.
+    ///
+    /// n -- The number of concatenations. Must be >= 0.
+    ///
+    pub fn __mul__(&self, n: i64) -> PyResult<Self> {
+        let x = self.inner.__mul__(n)?;
+        Ok(MutableBits::new(x.data))
     }
 }

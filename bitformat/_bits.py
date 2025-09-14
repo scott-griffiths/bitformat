@@ -376,27 +376,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Operators
 
-    def __mul__(self: Bits, n: int, /) -> Bits:
-        """Return new Bits consisting of n concatenations of self.
-
-        Called for expression of the form 'a = b*3'.
-        n -- The number of concatenations. Must be >= 0.
-
-        """
-        if n < 0:
-            raise ValueError("Cannot multiply by a negative integer.")
-        mutable = MutableBits()
-
-        if isinstance(self, Bits):
-            for _ in range(n):
-                mutable.append(self)
-            return mutable.as_bits()
-        else:
-            b = self.to_bits()
-            for _ in range(n):
-                mutable.append(b)
-            return mutable
-
     def __radd__(self: Bits, bs: BitsType, /) -> Bits:
         """Concatenate Bits and return a new Bits."""
         bs = mutable_bits_from_any(bs)
@@ -411,6 +390,7 @@ this is a step to using the Rust classes as the base classes."""
         """Return Bits consisting of n concatenations of self.
 
         Called for expressions of the form 'a = 3*b'.
+
         n -- The number of concatenations. Must be >= 0.
 
         """
