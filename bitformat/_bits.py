@@ -374,18 +374,6 @@ this is a step to using the Rust classes as the base classes."""
             stream.write(line_fmt)
         return
 
-    # ----- Operators
-
-    def __rmul__(self: Bits, n: int, /) -> Bits:
-        """Return Bits consisting of n concatenations of self.
-
-        Called for expressions of the form 'a = 3*b'.
-
-        n -- The number of concatenations. Must be >= 0.
-
-        """
-        return self.__mul__(n)
-
     # ----- Other
 
     def __contains__(self, bs: BitsType, /) -> bool:

@@ -1276,6 +1276,16 @@ impl MutableBits {
         Ok(MutableBits::new(x.data))
     }
 
+    /// Return MutableBits consisting of n concatenations of self.
+    ///
+    /// Called for expressions of the form 'a = 3*b'.
+    ///
+    /// n -- The number of concatenations. Must be >= 0.
+    ///
+    pub fn __rmul__(&self, n: i64) -> PyResult<Self> {
+        self.__mul__(n)
+    }
+
     pub fn __iter__(&self) -> PyResult<()> {
         Err(PyTypeError::new_err(
             "MutableBits objects are not iterable. You can use .to_bits() or .as_bits() to convert to a Bits object that does support iteration."

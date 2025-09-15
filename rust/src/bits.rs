@@ -948,6 +948,16 @@ impl Bits {
         Ok(Bits::new(bv))
     }
 
+    /// Return Bits consisting of n concatenations of self.
+    ///
+    /// Called for expressions of the form 'a = 3*b'.
+    ///
+    /// n -- The number of concatenations. Must be >= 0.
+    ///
+    pub fn __rmul__(&self, n: i64) -> PyResult<Self> {
+        self.__mul__(n)
+    }
+
     pub fn __setitem__(&self, _key: Py<PyAny>, _value: Py<PyAny>) -> PyResult<()> {
         Err(PyTypeError::new_err(
             "Bits objects do not support item assignment. Did you mean to use the MutableBits class? Call to_mutable_bits() to convert to a MutableBits."
