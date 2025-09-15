@@ -1268,4 +1268,11 @@ impl MutableBits {
         let x = self.inner.__mul__(n)?;
         Ok(MutableBits::new(x.data))
     }
+
+    pub fn __iter__(&self) -> PyResult<()> {
+        Err(PyTypeError::new_err(
+            "MutableBits objects are not iterable. You can use .to_bits() or .as_bits() to convert to a Bits object that does support iteration."
+        ))
+    }
+
 }

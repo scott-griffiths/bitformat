@@ -608,11 +608,6 @@ class MutableBitsMethods:
         value = random.getrandbits(n)
         return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
-    def __iter__(self):
-        """Iterating over the bits is not supported for this mutable type."""
-        raise TypeError("MutableBits objects are not iterable. "
-                        "You can use .to_bits() to convert to a Bits object that does support iteration.")
-
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""
         # Check if the method exists in Bits
