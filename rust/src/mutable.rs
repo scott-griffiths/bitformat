@@ -1076,12 +1076,19 @@ impl MutableBits {
         self.inner.data.reserve(additional);
     }
 
-    /// Concatenate Bits and return a new Bits.
+    /// Concatenate MutableBits and return a new MutableBits.
     pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let bs = bits_from_any(bs, py)?;
         let mut new_data = self.inner.data.clone();
         new_data.extend_from_bitslice(&bs.data);
         Ok(MutableBits::new(new_data))
+    }
+
+    /// Concatenate MutableBits and return a new MutableBits.
+    pub fn __radd__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let mut bs = mutable_bits_from_any(bs, py)?;
+        bs.inner.data.extend_from_bitslice(&self.inner.data);
+        Ok(bs)
     }
 
     /// Concatenate Bits in-place.

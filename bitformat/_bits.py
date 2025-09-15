@@ -376,16 +376,6 @@ this is a step to using the Rust classes as the base classes."""
 
     # ----- Operators
 
-    def __radd__(self: Bits, bs: BitsType, /) -> Bits:
-        """Concatenate Bits and return a new Bits."""
-        bs = mutable_bits_from_any(bs)
-        bs.append(self)
-        if isinstance(self, Bits):
-            x = bs.as_bits()
-        else:
-            x = bs
-        return x
-
     def __rmul__(self: Bits, n: int, /) -> Bits:
         """Return Bits consisting of n concatenations of self.
 

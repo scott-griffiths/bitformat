@@ -1,3 +1,4 @@
+use crate::mutable::mutable_bits_from_any;
 use crate::core::validate_logical_op_lengths;
 use crate::core::{str_to_bits, BitCollection, DTYPE_PARSER};
 use crate::helpers::{find_bitvec, validate_index, BV};
@@ -832,8 +833,15 @@ impl Bits {
     pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let bs = bits_from_any(bs, py)?;
         let mut data = self.data.clone();
-        data.extend_from_bitslice(&bs.data[..]);
+        data.extend_from_bitslice(&bs.data);
         Ok(Bits::new(data))
+    }
+
+    /// Concatenates two Bits and return a newly constructed Bits.
+    pub fn __radd__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
+        let mut bs = mutable_bits_from_any(bs, py)?;
+        bs.inner.data.extend_from_bitslice(&self.data);
+        Ok(Bits::new(bs.inner.data))
     }
 
     /// Bit-wise 'and' between two Bits. Returns new Bits.
