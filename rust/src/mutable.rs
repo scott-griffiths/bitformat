@@ -901,6 +901,52 @@ impl MutableBits {
         slf
     }
 
+    /// Change the byte endianness in-place. Returns self.
+    ///
+    /// The whole of the MutableBits will be byte-swapped. It must be a multiple
+    /// of byte_length long.
+    ///
+    /// :param byte_length: An int giving the number of bytes in each swap.
+    /// :return: self
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> a = MutableBits('0x12345678')
+    ///     >>> a.byte_swap(2)
+    ///     MutableBits('0x34127856')
+    ///
+    #[pyo3(signature = (byte_length = None))]
+    pub fn byte_swap(mut slf: PyRefMut<'_, Self>, byte_length: Option<i64>) -> PyResult<PyRefMut<'_, Self>> {
+        let len = slf.len();
+        if len % 8 != 0 {
+            return Err(PyValueError::new_err(format!("Bit length must be an multiple of 8 to use byte_swap (got length of {len} bits). This error can also be caused by using an endianness modifier on non-whole byte data.")));
+        }
+        let byte_length = byte_length.unwrap_or((len as i64) / 8);
+        if byte_length == 0 && len == 0 {
+            return Ok(slf);
+        }
+        if byte_length <= 0 {
+            return Err(PyValueError::new_err(format!("Need a positive byte length for byte_swap. Received '{byte_length}'.")));
+        }
+        let byte_length = byte_length as usize;
+        let self_byte_length = len / 8;
+        if self_byte_length % byte_length != 0 {
+            return Err(PyValueError::new_err(format!("The MutableBits to byte_swap is {self_byte_length} bytes long, but it needs to be a multiple of {byte_length} bytes.")));
+        }
+        let mut bv = BV::with_capacity(len);
+        let chunk_length = byte_length*8;
+        for startbit in (0..len).step_by(chunk_length) {
+            let chunk = slf.inner._get_slice_unchecked(startbit, chunk_length);
+            // Reverse the bytes in this chunk and append.
+            let mut bytes = chunk.to_bytes();
+            bytes.reverse();
+            let tmp = BV::from_vec(bytes);
+             bv.extend_from_bitslice(&tmp);
+        }
+        slf.inner.data = bv;
+        Ok(slf)
+    }
+
     /// Return the instance with every bit inverted.
     ///
     /// Raises ValueError if the MutableBits is empty.

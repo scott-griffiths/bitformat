@@ -598,41 +598,6 @@ class MutableBitsMethods:
         # Default behaviour
         raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
 
-    def byte_swap(self, byte_length: int | None = None, /) -> MutableBits:
-        """Change the byte endianness in-place. Returns self.
-
-        The whole of the MutableBits will be byte-swapped. It must be a multiple
-        of byte_length long.
-
-        :param byte_length: An int giving the number of bytes in each swap.
-        :return: self
-
-        .. code-block:: pycon
-
-            >>> a = MutableBits('0x12345678')
-            >>> a.byte_swap(2)
-            MutableBits('0x34127856')
-
-        """
-        if len(self) % 8 != 0:
-            raise ValueError(f"Bit length must be an multiple of 8 to use byte_swap (got length of {len(self)} bits). "
-                             "This error can also be caused by using an endianness modifier on non-whole byte data.")
-        if byte_length is None:
-            if len(self) == 0:
-                return MutableBits()
-            byte_length = len(self) // 8
-        if byte_length <= 0:
-            raise ValueError(f"Need a positive definite byte length for byte_swap. Received '{byte_length}'.")
-        if len(self) % (byte_length * 8) != 0:
-            raise ValueError(f"The MutableBits to byte_swap is {len(self) // 8} bytes long, "
-                             f"but it needs to be a multiple of {byte_length} bytes.")
-        chunks = []
-        for startbit in range(0, len(self), byte_length * 8):
-            x = self._get_slice_unchecked(startbit, byte_length * 8).to_bytes()
-            chunks.append(MutableBits.from_bytes(x[::-1]))
-        x = MutableBits.from_joined(chunks)
-        self[:] = x
-        return self
 
     def replace(self, old: BitsType, new: BitsType, /, start: int | None = None, end: int | None = None,
                 count: int | None = None, byte_aligned: bool | None = None) -> MutableBits:

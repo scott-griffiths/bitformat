@@ -1340,7 +1340,7 @@ class TestBugs:
             s.byte_swap(-1)
         with pytest.raises(TypeError):
             s.byte_swap([-1])
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             s.byte_swap(5.4)
 
     def test_unicode(self):
