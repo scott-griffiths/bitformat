@@ -919,31 +919,32 @@ impl MutableBits {
     pub fn byte_swap(mut slf: PyRefMut<'_, Self>, byte_length: Option<i64>) -> PyResult<PyRefMut<'_, Self>> {
         let len = slf.len();
         if len % 8 != 0 {
-            return Err(PyValueError::new_err(format!("Bit length must be an multiple of 8 to use byte_swap (got length of {len} bits). This error can also be caused by using an endianness modifier on non-whole byte data.")));
+            return Err(PyValueError::new_err(format!(
+                "Bit length must be an multiple of 8 to use byte_swap (got length of {len} bits). This error can also be caused by using an endianness modifier on non-whole byte data."
+            )));
         }
         let byte_length = byte_length.unwrap_or((len as i64) / 8);
         if byte_length == 0 && len == 0 {
             return Ok(slf);
         }
         if byte_length <= 0 {
-            return Err(PyValueError::new_err(format!("Need a positive byte length for byte_swap. Received '{byte_length}'.")));
+            return Err(PyValueError::new_err(format!(
+                "Need a positive byte length for byte_swap. Received '{byte_length}'."
+            )));
         }
         let byte_length = byte_length as usize;
         let self_byte_length = len / 8;
         if self_byte_length % byte_length != 0 {
-            return Err(PyValueError::new_err(format!("The MutableBits to byte_swap is {self_byte_length} bytes long, but it needs to be a multiple of {byte_length} bytes.")));
+            return Err(PyValueError::new_err(format!(
+                "The MutableBits to byte_swap is {self_byte_length} bytes long, but it needs to be a multiple of {byte_length} bytes."
+            )));
         }
-        let mut bv = BV::with_capacity(len);
-        let chunk_length = byte_length*8;
-        for startbit in (0..len).step_by(chunk_length) {
-            let chunk = slf.inner._get_slice_unchecked(startbit, chunk_length);
-            // Reverse the bytes in this chunk and append.
-            let mut bytes = chunk.to_bytes();
-            bytes.reverse();
-            let tmp = BV::from_vec(bytes);
-             bv.extend_from_bitslice(&tmp);
+
+        let mut bytes = slf.inner._slice_to_bytes(0, len)?;
+        for chunk in bytes.chunks_mut(byte_length) {
+            chunk.reverse();
         }
-        slf.inner.data = bv;
+        slf.inner.data = BV::from_vec(bytes);
         Ok(slf)
     }
 
