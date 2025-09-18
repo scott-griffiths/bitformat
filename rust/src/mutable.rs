@@ -385,12 +385,6 @@ impl MutableBits {
             .map(|bits| MutableBits { inner: bits })
     }
 
-    pub fn _get_slice_unchecked(&self, start_bit: usize, length: usize) -> Self {
-        MutableBits {
-            inner: self.inner._get_slice_unchecked(start_bit, length),
-        }
-    }
-
     pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
         self.inner
             ._getslice_with_step(start_bit, end_bit, step)

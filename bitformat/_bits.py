@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import numbers
-import random
 import sys
 import io
 from ast import literal_eval
@@ -9,7 +7,7 @@ from typing import Union, Iterable, Any, TextIO
 from bitformat._dtypes import Dtype, DtypeSingle, Register, DtypeTuple, DtypeArray
 from bitformat._common import Colour, DtypeKind
 from bitformat._options import Options
-from bitformat.rust import Bits, MutableBits, bits_from_any, mutable_bits_from_any
+from bitformat.rust import Bits, MutableBits, bits_from_any
 from collections.abc import Sequence
 
 __all__ = ["Bits", "MutableBits", "BitsType"]
@@ -485,8 +483,8 @@ class BitsMethods:
         else:
             # We can't in general hash the whole Bits (it could take hours!)
             # So instead take some bits from the start and end.
-            start = self._get_slice_unchecked(0, 800)
-            end = self._get_slice_unchecked(length - 800, 800)
+            start = self._getslice(0, 800)
+            end = self._getslice(length - 800, 800)
             return hash(((start + end).to_bytes(), length))
 
     def __getattr__(self, name):
