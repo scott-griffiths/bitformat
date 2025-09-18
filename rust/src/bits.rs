@@ -12,6 +12,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyByteArray, PyBytes, PyMemoryView, PySlice, PyType, PyInt, PyTuple, PyList};
 use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::ops::Not;
+use rand::{RngCore, SeedableRng};
+use rand::rngs::StdRng;
 
 // ---- Exported Python helper methods ----
 
@@ -398,6 +400,44 @@ impl Bits {
             let b = value.is_truthy(py)?;
             bv.push(b);
         }
+        Ok(Bits::new(bv))
+    }
+
+    /// Create a new instance with all bits pseudo-randomly set.
+    ///
+    /// :param length: The number of bits. Must be positive.
+    /// :param seed: An optional seed as a bytes or bytearray.
+    /// :return: A newly constructed ``Bits`` with random data.
+    ///
+    /// Note that this uses a pseudo-random number generator and so
+    /// might not suitable for cryptographic or other more serious purposes.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = Bits.from_random(1000000)  # A million random bits
+    ///     b = Bits.from_random(100, b'a_seed')
+    ///
+    #[classmethod]
+    #[pyo3(signature = (length, seed=None))]
+    pub fn from_random(_cls: &Bound<'_, PyType>, length: i64, seed: Option<Vec<u8>>) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        let length = length as usize;
+        if length == 0 {
+            return Ok(BitCollection::empty());
+        }
+        let seed_arr = crate::helpers::process_seed(seed);
+        let mut rng = StdRng::from_seed(seed_arr);
+
+        let num_bytes = (length + 7) / 8;
+        let mut data = vec![0u8; num_bytes];
+        rng.fill_bytes(&mut data);
+        let mut bv = BV::from_vec(data);
+        bv.truncate(length);
         Ok(Bits::new(bv))
     }
 

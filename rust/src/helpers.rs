@@ -4,6 +4,10 @@ use crate::core::BitCollection;
 use bitvec::prelude::*;
 use pyo3::exceptions::{PyIndexError, PyValueError};
 use pyo3::PyResult;
+use rand::RngCore;
+use sha2::Sha256;
+use sha2::Digest;
+
 pub type BV = BitVec<u8, Msb0>;
 pub type BS = BitSlice<u8, Msb0>;
 
@@ -115,4 +119,22 @@ pub(crate) fn validate_slice(
         )));
     }
     Ok((start as usize, end as usize))
+}
+
+pub(crate) fn process_seed(seed: Option<Vec<u8>>) -> [u8; 32] {
+    match seed {
+        None => {
+            let mut seed_arr = [0u8; 32];
+            rand::rng().fill_bytes(&mut seed_arr);
+            seed_arr
+        }
+        Some(seed_bytes) => {
+            let mut hasher = Sha256::new();
+            hasher.update(&seed_bytes);
+            let digest = hasher.finalize();
+            let mut seed_arr = [0u8; 32];
+            seed_arr.copy_from_slice(&digest);
+            seed_arr
+        }
+    }
 }

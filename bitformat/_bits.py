@@ -414,30 +414,6 @@ class BitsMethods:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         return xt
 
-    @classmethod
-    def from_random(cls, n: int, /, seed: int | None = None) -> Bits:
-        """
-        Create a new instance with all bits pseudo-randomly set.
-
-        :param n: The number of bits. Must be positive.
-        :param seed: An optional seed.
-        :return: A newly constructed ``Bits`` with random data.
-
-        Note that this uses Python's pseudo-random number generator and so is
-        not suitable for cryptographic or other more serious purposes.
-
-        .. code-block:: python
-
-            a = Bits.from_random(1000000)  # A million random bits
-
-        """
-        if n == 0:
-            return cls()
-        if seed is not None:
-            random.seed(seed)
-        value = random.getrandbits(n)
-        return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
-
     def rfind_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs starting at the end. Return generator of bit positions.
 
@@ -561,30 +537,6 @@ class MutableBitsMethods:
         except (ValueError, TypeError) as e:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         return xt._as_mutable_bits()
-
-    @classmethod
-    def from_random(cls, n: int, /, seed: int | None = None) -> MutableBits:
-        """
-        Create a new instance with all bits pseudo-randomly set.
-
-        :param n: The number of bits. Must be positive.
-        :param seed: An optional seed.
-        :return: A newly constructed ``MutableBits`` with randomly data.
-
-        Note that this uses Python's pseudo-random number generator and so is
-        not suitable for cryptographic or other more serious purposes.
-
-        .. code-block:: python
-
-            a = MutableBits.from_random(1000000)  # A million random bits
-
-        """
-        if n == 0:
-            return cls()
-        if seed is not None:
-            random.seed(seed)
-        value = random.getrandbits(n)
-        return cls.from_dtype(DtypeSingle.from_params(DtypeKind.UINT, n), value)
 
     def __getattr__(self, name):
         """Catch attribute errors and provide helpful messages for methods that exist in Bits."""

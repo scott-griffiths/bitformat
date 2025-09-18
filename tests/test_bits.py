@@ -720,10 +720,12 @@ def test_from_random():
     assert a == Bits()
     a = Bits.from_random(1)
     assert a == '0b1' or a == '0b0'
-    a = Bits.from_random(10000, 12)
-    b = Bits.from_random(10000, 12)
+    a = Bits.from_random(10000, b'a_seed')
+    b = Bits.from_random(10000, b'a_seed')
     assert a == b
-    c = MutableBits.from_random(10000, 12)
+    b = Bits.from_random(10000, b'a different seed this time - quite long to test if this makes a difference or not. It shouldnt really, but who knows?')
+    assert a != b
+    c = MutableBits.from_random(10000, b'a_seed')
     assert a == c
 
 def test_unpacking_array_dtype_with_no_length():

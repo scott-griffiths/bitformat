@@ -302,6 +302,27 @@ impl MutableBits {
         Ok(Bits::from_bools(_cls, values, py)?.to_mutable_bits())
     }
 
+    /// Create a new instance with all bits pseudo-randomly set.
+    ///
+    /// :param length: The number of bits. Must be positive.
+    /// :param seed: An optional seed as a bytes or bytearray.
+    /// :return: A newly constructed ``MutableBits`` with random data.
+    ///
+    /// Note that this uses a pseudo-random number generator and so
+    /// might not suitable for cryptographic or other more serious purposes.
+    ///
+    /// .. code-block:: python
+    ///
+    ///     a = MutableBits.from_random(1000000)  # A million random bits
+    ///     b = MutableBits.from_random(100, b'a_seed')
+    ///
+    #[classmethod]
+    #[pyo3(signature = (length, seed=None))]
+    pub fn from_random(_cls: &Bound<'_, PyType>, length: i64, seed: Option<Vec<u8>>) -> PyResult<Self> {
+        Ok(Bits::from_random(_cls, length, seed)?.to_mutable_bits())
+    }
+
+
     /// Create a new instance from a bytes object.
     ///
     /// :param b: The bytes object to convert to a :class:`MutableBits`.
