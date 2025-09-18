@@ -672,17 +672,16 @@ impl Bits {
     }
 
     /// Return a slice of the current Bits.
-    pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
-        if start_bit >= end_bit {
+    pub fn _getslice(&self, start_bit: usize, length: usize) -> PyResult<Self> {
+        if length == 0 {
             return Ok(BitCollection::empty());
         }
-        debug_assert!(start_bit < end_bit);
-        if end_bit > self.len() {
+        if start_bit + length > self.len() {
             return Err(PyValueError::new_err(
                 "End bit of the slice goes past the end of the Bits.",
             ));
         }
-        Ok(self.slice(start_bit, end_bit - start_bit))
+        Ok(self.slice(start_bit, length))
     }
 
     pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
@@ -807,7 +806,7 @@ impl Bits {
             let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
-                self._getslice(start as usize, stop as usize)?
+                self._getslice(start as usize, if stop > start {(stop - start) as usize} else {0})?
             } else {
                 self._getslice_with_step(start, stop, step)?
             };

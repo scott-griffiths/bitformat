@@ -148,8 +148,8 @@ class Array:
     def bits(self, value: BitsType) -> None:
         self._bitstore = mutable_bits_from_any(value)
 
-    def _get_bit_slice(self, start: int, stop: int) -> MutableBits:
-        return self._bitstore._getslice(start, stop)
+    def _get_bit_slice(self, start: int, length: int) -> MutableBits:
+        return self._bitstore._getslice(start, length)
 
     @property
     def item_size(self) -> int:
@@ -163,7 +163,7 @@ class Array:
         trailing_bit_length = bitstore_length % self._item_size
         if trailing_bit_length == 0:
             return Bits()
-        return self._get_bit_slice(bitstore_length - trailing_bit_length, bitstore_length).to_bits()
+        return self._get_bit_slice(bitstore_length - trailing_bit_length, trailing_bit_length).to_bits()
 
     @property
     def dtype(self) -> Dtype:
@@ -207,20 +207,20 @@ class Array:
             if step != 1:
                 d = []
                 for s in range(start * self._item_size, stop * self._item_size, step * self._item_size):
-                    d.append(self._bitstore._getslice(s, s + self._item_size).to_bits())
+                    d.append(self._get_bit_slice(s, self._item_size).to_bits())
                 a = self.__class__(self._dtype)
                 a._bitstore = MutableBits.from_joined(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
-                a._bitstore = self._bitstore._getslice(start * self._item_size, stop * self._item_size)
+                a._bitstore = self._get_bit_slice(start * self._item_size, (stop - start) * self._item_size)
                 return a
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            return self._dtype.unpack(self._get_bit_slice(self._item_size * key, self._item_size * (key + 1)))
+            return self._dtype.unpack(self._get_bit_slice(self._item_size * key, self._item_size))
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[ElementType], /) -> None: ...
@@ -260,8 +260,7 @@ class Array:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             if step == 1:
-                self._bitstore = MutableBits.from_joined([self._bitstore._getslice(0, start * self._item_size).to_bits(),
-                                               self._bitstore._getslice(stop * self._item_size, len(self._bitstore)).to_bits()])
+                del self._bitstore[start * self._item_size:stop * self._item_size]
                 return
             # We need to delete from the end or the earlier positions will change
             r = (
@@ -270,16 +269,14 @@ class Array:
                 else range(start, stop, step)
             )
             for s in r:
-                self._bitstore = MutableBits.from_joined([self._bitstore._getslice(0, s * self._item_size).to_bits(),
-                                               self._bitstore._getslice((s + 1) * self._item_size, len(self._bitstore)).to_bits()])
+                del self._bitstore[s * self._item_size:(s + 1) * self._item_size]
         else:
             if key < 0:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError
             start = self._item_size * key
-            self._bitstore = MutableBits.from_joined([self._bitstore._getslice(0, start).to_bits(),
-                                           self._bitstore._getslice(start + self._item_size, len(self._bitstore)).to_bits()])
+            del self._bitstore[start:start + self._item_size]
 
     def __repr__(self) -> str:
         bitstore_length = len(self._bitstore)
@@ -338,7 +335,7 @@ class Array:
                 dtype = DtypeSingle.from_params(dtype.kind, self.dtype.size)
         l = []
         for start in range(0, len(self._bitstore) - dtype.bit_length + 1, dtype.bit_length):
-            b = self._bitstore._getslice(start, start + dtype.bit_length)
+            b = self._get_bit_slice(start, dtype.bit_length)
             l.append(dtype.unpack(b))
         return l
 
@@ -396,9 +393,10 @@ class Array:
             pos += len(self)
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
-        self._bitstore = MutableBits.from_joined([self._bitstore._getslice(0, pos * self._item_size).to_bits(),
+        bitpos = pos * self._item_size
+        self._bitstore = MutableBits.from_joined([self._get_bit_slice(0, bitpos).to_bits(),
                                        v,
-                                       self._bitstore._getslice(pos * self._item_size, len(self._bitstore)).to_bits()])
+                                       self._get_bit_slice(bitpos, len(self._bitstore) - bitpos).to_bits()])
         return self
 
     def pop(self, pos: int = -1, /) -> ElementType:
@@ -473,7 +471,7 @@ class Array:
         if trailing_bit_length != 0:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._bitstore)} bits) "
                              f"is not a multiple of the format length ({self._item_size} bits).")
-        self._bitstore = MutableBits.from_joined([self._get_bit_slice(s - self._item_size, s)
+        self._bitstore = MutableBits.from_joined([self._get_bit_slice(s - self._item_size, self._item_size)
                                            for s in range(len(self._bitstore), 0, -self._item_size)])
         return self
 
@@ -534,7 +532,7 @@ class Array:
         data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
         stream.write("]")
         if trailing_bit_length != 0:
-            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._bitstore) - trailing_bit_length, len(self._bitstore)).unpack("bin"))
+            stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._bitstore) - trailing_bit_length, trailing_bit_length).unpack("bin"))
         stream.write("\n")
 
     def equals(self, other: Any, /) -> bool:
@@ -584,7 +582,7 @@ class Array:
                 return op(a)
 
         for i in range(len(self)):
-            b = self._bitstore._getslice(self._item_size * i, self._item_size * (i + 1))
+            b = self._get_bit_slice(self._item_size * i, self._item_size)
             v = self._dtype.unpack(b)
             try:
                 new_data += new_array._dtype.pack(partial_op(v))
@@ -608,7 +606,7 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            b = self._bitstore._getslice(self._item_size * i, self._item_size * (i + 1))
+            b = self._get_bit_slice(self._item_size * i, self._item_size)
             v = self._dtype.unpack(b)
             try:
                 new_data += self._dtype.pack(op(v, value))
@@ -637,7 +635,7 @@ class Array:
             raise ValueError(f"Bitwise op {op} needs a Bits of length {self._item_size} to match "
                              f"format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self._item_size, self._item_size):
-            mutablebits_slice = self._bitstore._getslice(start, start + self._item_size)
+            mutablebits_slice = self._get_bit_slice(start, self._item_size)
             if op == operator.ixor:
                 mutablebits_slice._ixor(value)
             elif op == operator.iand:
@@ -664,8 +662,8 @@ class Array:
         failures = index = 0
         msg = ""
         for i in range(len(self)):
-            a_bits = self._bitstore._getslice(self._item_size * i, self._item_size * (i + 1))
-            b_bits = other._bitstore._getslice(other._item_size * i, other._item_size * (i + 1))
+            a_bits = self._get_bit_slice(self._item_size * i, self._item_size)
+            b_bits = other._get_bit_slice(other._item_size * i, other._item_size)
             a = self._dtype.unpack(a_bits)
             b = other._dtype.unpack(b_bits)
             try:

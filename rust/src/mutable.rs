@@ -379,9 +379,9 @@ impl MutableBits {
         self.inner._getindex(bit_index)
     }
 
-    pub fn _getslice(&self, start_bit: usize, end_bit: usize) -> PyResult<Self> {
+    pub fn _getslice(&self, start_bit: usize, length: usize) -> PyResult<Self> {
         self.inner
-            ._getslice(start_bit, end_bit)
+            ._getslice(start_bit, length)
             .map(|bits| MutableBits { inner: bits })
     }
 
@@ -408,7 +408,7 @@ impl MutableBits {
             let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
-                self._getslice(start as usize, stop as usize)?
+                self._getslice(start as usize, (stop - start) as usize)?
             } else {
                 self._getslice_with_step(start, stop, step)?
             };

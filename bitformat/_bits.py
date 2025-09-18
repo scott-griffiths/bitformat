@@ -598,10 +598,10 @@ class MutableBitsMethods:
         replacement_list = [original._getslice(0, starting_points[0])]
         for i in range(len(starting_points) - 1):
             replacement_list.append(new_bits)
-            replacement_list.append(original._getslice(starting_points[i] + len(old_bits), starting_points[i + 1]))
+            replacement_list.append(original._getslice(starting_points[i] + len(old_bits), starting_points[i + 1] - starting_points[i] - len(old_bits)))
         # Final replacement
         replacement_list.append(new_bits)
-        replacement_list.append(original._getslice(starting_points[-1] + len(old_bits), len(original)))
+        replacement_list.append(original._getslice(starting_points[-1] + len(old_bits), len(original) - starting_points[-1] - len(old_bits)))
         self[:] = MutableBits.from_joined(replacement_list)
         return self
 

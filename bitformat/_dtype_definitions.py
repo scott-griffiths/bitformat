@@ -23,7 +23,7 @@ def to_u(bs: Bits, start: int, length: int) -> int:
         return bs._to_u64(start, length)
     else:
         # Longer stores are unlikely in practice - this method is slower.
-        bs = bs._getslice(start, start + length)
+        bs = bs._getslice(start, length)
         return int.from_bytes(bs._to_int_byte_data(False), byteorder="big", signed=False)
 
 def from_u(u: int, length: int) -> Bits:
@@ -70,7 +70,7 @@ def to_i(bs: Bits, start: int, length: int) -> int:
         return bs._to_i64(start, length)
     else:
         # Longer store are unlikely in practice - this method is slower.
-        bs = bs._getslice(start, start + length)
+        bs = bs._getslice(start, length)
         return int.from_bytes(bs._to_int_byte_data(True), byteorder="big", signed=True)
 
 def from_i(i: int, length: int) -> Bits:
@@ -224,7 +224,7 @@ f_defn = DtypeDefinition(DtypeKind.FLOAT,
 
 def to_bits(bs: Bits, start: int, length: int) -> Bits:
     """Just return as a Bits."""
-    return bs._getslice(start, start + length)
+    return bs._getslice(start, length)
 
 def from_bits(bs: BitsType, length: None = None) -> Bits:
     return bits_from_any(bs)
