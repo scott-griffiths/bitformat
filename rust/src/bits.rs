@@ -524,8 +524,7 @@ impl Bits {
             return Vec::new();
         }
 
-        let mut bv = BV::with_capacity(self.len());
-        bv.extend_from_bitslice(&self.data);
+        let mut bv = self.data.clone();
         let new_len = (bv.len() + 7) & !7;
         bv.resize(new_len, false);
         bv.into_vec()
@@ -619,8 +618,9 @@ impl Bits {
     ///
     pub fn starts_with(&self, prefix: Py<PyAny>, py: Python) -> PyResult<bool> {
         let prefix = bits_from_any(prefix, py)?;
-        if prefix.len() <= self.len() {
-            Ok(prefix == self._get_slice_unchecked(0, prefix.len()))
+        let n = prefix.len();
+        if n <= self.len() {
+            Ok(&prefix.data == &self.data[..n])
         } else {
             Ok(false)
         }
@@ -640,8 +640,9 @@ impl Bits {
     ///
     pub fn ends_with(&self, suffix: Py<PyAny>, py: Python) -> PyResult<bool> {
         let suffix = bits_from_any(suffix, py)?;
-        if suffix.len() <= self.len() {
-            Ok(suffix == self._get_slice_unchecked(self.len() - suffix.len(), suffix.len()))
+        let n = suffix.len();
+        if n <= self.len() {
+            Ok(&suffix.data == &self.data[self.len() - n..])
         } else {
             Ok(false)
         }
@@ -675,7 +676,7 @@ impl Bits {
         if start_bit >= end_bit {
             return Ok(BitCollection::empty());
         }
-        assert!(start_bit < end_bit);
+        debug_assert!(start_bit < end_bit);
         if end_bit > self.len() {
             return Err(PyValueError::new_err(
                 "End bit of the slice goes past the end of the Bits.",
@@ -872,7 +873,8 @@ impl Bits {
     /// Concatenates two Bits and return a newly constructed Bits.
     pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let bs = bits_from_any(bs, py)?;
-        let mut data = self.data.clone();
+        let mut data = BV::with_capacity(self.len() + bs.len());
+        data.extend_from_bitslice(&self.data);
         data.extend_from_bitslice(&bs.data);
         Ok(Bits::new(data))
     }

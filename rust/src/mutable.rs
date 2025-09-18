@@ -78,7 +78,7 @@ impl MutableBits {
         // If it's not a string, build a more helpful error message.
         let type_name = s.get_type().name()?;
         let mut err = format!(
-            "Expected a str for Bits constructor, but received a {}. ",
+            "Expected a str for MutableBits constructor, but received a {}. ",
             type_name
         );
 
@@ -1147,9 +1147,10 @@ impl MutableBits {
     /// Concatenate MutableBits and return a new MutableBits.
     pub fn __add__(&self, bs: Py<PyAny>, py: Python) -> PyResult<Self> {
         let bs = bits_from_any(bs, py)?;
-        let mut new_data = self.inner.data.clone();
-        new_data.extend_from_bitslice(&bs.data);
-        Ok(MutableBits::new(new_data))
+        let mut data = BV::with_capacity(self.len() + bs.len());
+        data.extend_from_bitslice(&self.inner.data);
+        data.extend_from_bitslice(&bs.data);
+        Ok(MutableBits::new(data))
     }
 
     /// Concatenate MutableBits and return a new MutableBits.
@@ -1225,8 +1226,7 @@ impl MutableBits {
     ) -> PyResult<PyRefMut<'a, Self>> {
         // Check for self-prepending
         if bs.as_ptr() == slf.as_ptr() {
-            let bits_clone = slf.inner.data.clone();
-            let mut new_data = bits_clone;
+            let mut new_data = slf.inner.data.clone();
             new_data.extend_from_bitslice(&slf.inner.data);
             slf.inner.data = new_data;
         } else {
