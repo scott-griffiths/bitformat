@@ -394,9 +394,7 @@ class Array:
         pos = min(pos, len(self))  # Inserting beyond len of Array inserts at the end (copying standard behaviour)
         v = self._create_element(x)
         bitpos = pos * self._item_size
-        self._bitstore = MutableBits.from_joined([self._get_bit_slice(0, bitpos).to_bits(),
-                                       v,
-                                       self._get_bit_slice(bitpos, len(self._bitstore) - bitpos).to_bits()])
+        self._bitstore[bitpos:bitpos] = v
         return self
 
     def pop(self, pos: int = -1, /) -> ElementType:
