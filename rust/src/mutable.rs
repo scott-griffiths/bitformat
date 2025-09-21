@@ -50,9 +50,9 @@ pub fn mutable_bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<MutableBits
 ///     * ``MutableBits.from_bytes(b)`` - Create directly from a ``bytes`` object.
 ///     * ``MutableBits.from_string(s)`` - Use a formatted string.
 ///     * ``MutableBits.from_bools(i)`` - Convert each element in ``i`` to a bool.
-///     * ``MutableBits.from_zeros(n)`` - Initialise with ``n`` zero bits.
-///     * ``MutableBits.from_ones(n)`` - Initialise with ``n`` one bits.
-///     * ``MutableBits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+///     * ``MutableBits.from_zeros(length)`` - Initialise with ``length`` '0' bits.
+///     * ``MutableBits.from_ones(length)`` - Initialise with ``length`` '1' bits.
+///     * ``MutableBits.from_random(length, [seed])`` - Initialise with ``length`` pseudo-randomly set bits.
 ///     * ``MutableBits.from_dtype(dtype, value)`` - Combine a data type with a value.
 ///     * ``MutableBits.from_joined(iterable)`` - Concatenate an iterable of objects.
 ///
@@ -247,7 +247,7 @@ impl MutableBits {
 
     /// Create a new instance with all bits set to zero.
     ///
-    /// :param n: The number of bits.
+    /// :param length: The number of bits to set.
     /// :return: A MutableBits object with all bits set to zero.
     ///
     /// .. code-block:: python
@@ -267,7 +267,7 @@ impl MutableBits {
 
     /// Create a new instance with all bits set to one.
     ///
-    /// :param n: The number of bits.
+    /// :param length: The number of bits to set.
     ///
     /// .. code-block:: pycon
     ///
@@ -304,7 +304,7 @@ impl MutableBits {
 
     /// Create a new instance with all bits pseudo-randomly set.
     ///
-    /// :param length: The number of bits. Must be positive.
+    /// :param length: The number of bits to set. Must be positive.
     /// :param seed: An optional seed as a bytes or bytearray.
     /// :return: A newly constructed ``MutableBits`` with random data.
     ///

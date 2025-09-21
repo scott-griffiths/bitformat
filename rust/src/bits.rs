@@ -79,9 +79,9 @@ pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
 ///     * ``Bits.from_bytes(b)`` - Create directly from a ``bytes`` object.
 ///     * ``Bits.from_string(s)`` - Use a formatted string.
 ///     * ``Bits.from_bools(i)`` - Convert each element in ``i`` to a bool.
-///     * ``Bits.from_zeros(n)`` - Initialise with ``n`` zero bits.
-///     * ``Bits.from_ones(n)`` - Initialise with ``n`` one bits.
-///     * ``Bits.from_random(n, [seed])`` - Initialise with ``n`` pseudo-randomly set bits.
+///     * ``Bits.from_zeros(length)`` - Initialise with ``length`` '0' bits.
+///     * ``Bits.from_ones(length)`` - Initialise with ``length`` '1' bits.
+///     * ``Bits.from_random(length, [seed])`` - Initialise with ``length`` pseudo-randomly set bits.
 ///     * ``Bits.from_dtype(dtype, value)`` - Combine a data type with a value.
 ///     * ``Bits.from_joined(iterable)`` - Concatenate an iterable of objects.
 ///
@@ -295,9 +295,9 @@ impl Bits {
         self.len()
     }
 
-    /// Create a new instance with all bits set to zero.
+    /// Create a new instance with all bits set to '0'.
     ///
-    /// :param n: The number of bits.
+    /// :param length: The number of bits to set.
     /// :return: A Bits object with all bits set to zero.
     ///
     /// .. code-block:: python
@@ -313,6 +313,26 @@ impl Bits {
             )));
         }
         Ok(BitCollection::from_zeros(length as usize))
+    }
+
+    /// Create a new instance with all bits set to '1'.
+    ///
+    /// :param length: The number of bits to set.
+    ///
+    /// .. code-block:: pycon
+    ///
+    ///     >>> Bits.from_ones(5)
+    ///     Bits('0b11111')
+    ///
+    #[classmethod]
+    pub fn from_ones(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
+        if length < 0 {
+            return Err(PyValueError::new_err(format!(
+                "Negative bit length given: {}.",
+                length
+            )));
+        }
+        Ok(BitCollection::from_ones(length as usize))
     }
 
     /// Create a new instance from a formatted string.
@@ -337,26 +357,6 @@ impl Bits {
     #[classmethod]
     pub fn from_string(_cls: &Bound<'_, PyType>, s: String) -> PyResult<Self> {
         str_to_bits(s)
-    }
-
-    /// Create a new instance with all bits set to one.
-    ///
-    /// :param n: The number of bits.
-    ///
-    /// .. code-block:: pycon
-    ///
-    ///     >>> Bits.from_ones(5)
-    ///     Bits('0b11111')
-    ///
-    #[classmethod]
-    pub fn from_ones(_cls: &Bound<'_, PyType>, length: i64) -> PyResult<Self> {
-        if length < 0 {
-            return Err(PyValueError::new_err(format!(
-                "Negative bit length given: {}.",
-                length
-            )));
-        }
-        Ok(BitCollection::from_ones(length as usize))
     }
 
     /// Create a new instance from a bytes object.
@@ -405,7 +405,7 @@ impl Bits {
 
     /// Create a new instance with all bits pseudo-randomly set.
     ///
-    /// :param length: The number of bits. Must be positive.
+    /// :param length: The number of bits to set. Must be positive.
     /// :param seed: An optional seed as a bytes or bytearray.
     /// :return: A newly constructed ``Bits`` with random data.
     ///
