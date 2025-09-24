@@ -19,9 +19,6 @@ _unprintable.extend(range(0x7F, 0xFF))  # DEL char + non-ASCII
 # Things that can be converted to Bits or MutableBits.
 BitsType = Union["Bits", "MutableBits", str, bytearray, bytes, memoryview]
 
-# The size of various caches used to improve performance
-CACHE_SIZE = 256
-
 
 def _validate_slice(length: int, start: int | None, end: int | None) -> tuple[int, int]:
     """Validate start and end and return them as positive bit positions."""

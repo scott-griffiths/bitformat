@@ -371,9 +371,6 @@ mod tests {
 
         let slice1 = m._getslice(2, 6).unwrap();
         assert_eq!(slice1.to_bin(), "0010");
-
-        let slice2 = m._getslice_with_step(0, 8, 2).unwrap();
-        assert_eq!(slice2.to_bin(), "1011");
     }
 
     #[test]

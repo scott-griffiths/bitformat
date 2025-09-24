@@ -63,6 +63,14 @@ pub struct MutableBits {
     pub(crate) inner: Bits,
 }
 
+impl MutableBits {
+    fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
+        self.inner
+            ._getslice_with_step(start_bit, end_bit, step)
+            .map(|bits| MutableBits { inner: bits })
+    }
+}
+
 #[pymethods]
 impl MutableBits {
     #[new]
@@ -144,18 +152,7 @@ impl MutableBits {
         }
     }
 
-    pub fn _byte_swap(&mut self) -> PyResult<()> {
-        if self.inner.data.len() % 8 != 0 {
-            return Err(PyValueError::new_err(format!(
-                "Cannot use byte_swap as not a whole number of bytes ({} bits long).",
-                self.inner.data.len()
-            )));
-        }
-        let mut bytes = self.inner._slice_to_bytes(0, self.len())?;
-        bytes.reverse();
-        self.inner.data = BV::from_vec(bytes);
-        Ok(())
-    }
+
 
     pub fn _overwrite(&mut self, start: usize, value: &Bits) {
         self.inner.data[start..start + value.len()].copy_from_bitslice(&value.data);
@@ -382,12 +379,6 @@ impl MutableBits {
     pub fn _getslice(&self, start_bit: usize, length: usize) -> PyResult<Self> {
         self.inner
             ._getslice(start_bit, length)
-            .map(|bits| MutableBits { inner: bits })
-    }
-
-    pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
-        self.inner
-            ._getslice_with_step(start_bit, end_bit, step)
             .map(|bits| MutableBits { inner: bits })
     }
 

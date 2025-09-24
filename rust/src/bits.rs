@@ -93,6 +93,60 @@ pub struct Bits {
     pub(crate) data: BV,
 }
 
+impl Bits {
+    pub(crate) fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
+        if step == 0 {
+            return Err(PyValueError::new_err("Slice step cannot be zero."));
+        }
+        // Note that a start_bit or end_bit of -1 means to stop at the beginning when using a negative step.
+        // Otherwise they should both be positive indices.
+        debug_assert!(start_bit >= -1);
+        debug_assert!(end_bit >= -1);
+        debug_assert!(step != 0);
+        if start_bit < -1 || end_bit < -1 {
+            return Err(PyValueError::new_err(
+                "Indices less than -1 are not valid values.",
+            ));
+        }
+        if step > 0 {
+            if start_bit >= end_bit {
+                return Ok(BitCollection::empty());
+            }
+            if end_bit as usize > self.len() {
+                return Err(PyValueError::new_err(
+                    "Slice end goes past the end of the Bits.",
+                ));
+            }
+            Ok(Bits::new(
+                self.data[start_bit as usize..end_bit as usize]
+                    .iter()
+                    .step_by(step as usize)
+                    .collect(),
+            ))
+        } else {
+            if start_bit <= end_bit || start_bit == -1 {
+                return Ok(BitCollection::empty());
+            }
+            if start_bit as usize > self.len() {
+                return Err(PyValueError::new_err(
+                    "Slice start bit is past the end of the Bits.",
+                ));
+            }
+            // For negative step, the end_bit is inclusive, but the start_bit is exclusive.
+            debug_assert!(step < 0);
+            let adjusted_end_bit = (end_bit + 1) as usize;
+            Ok(Bits::new(
+                self.data[adjusted_end_bit..=start_bit as usize]
+                    .iter()
+                    .rev()
+                    .step_by(-step as usize)
+                    .collect(),
+            ))
+        }
+    }
+}
+
+
 /// Public Python-facing methods.
 #[pymethods]
 impl Bits {
@@ -684,57 +738,6 @@ impl Bits {
         Ok(self.slice(start_bit, length))
     }
 
-    pub fn _getslice_with_step(&self, start_bit: i64, end_bit: i64, step: i64) -> PyResult<Self> {
-        if step == 0 {
-            return Err(PyValueError::new_err("Slice step cannot be zero."));
-        }
-        // Note that a start_bit or end_bit of -1 means to stop at the beginning when using a negative step.
-        // Otherwise they should both be positive indices.
-        debug_assert!(start_bit >= -1);
-        debug_assert!(end_bit >= -1);
-        debug_assert!(step != 0);
-        if start_bit < -1 || end_bit < -1 {
-            return Err(PyValueError::new_err(
-                "Indices less than -1 are not valid values.",
-            ));
-        }
-        if step > 0 {
-            if start_bit >= end_bit {
-                return Ok(BitCollection::empty());
-            }
-            if end_bit as usize > self.len() {
-                return Err(PyValueError::new_err(
-                    "Slice end goes past the end of the Bits.",
-                ));
-            }
-            Ok(Bits::new(
-                self.data[start_bit as usize..end_bit as usize]
-                    .iter()
-                    .step_by(step as usize)
-                    .collect(),
-            ))
-        } else {
-            if start_bit <= end_bit || start_bit == -1 {
-                return Ok(BitCollection::empty());
-            }
-            if start_bit as usize > self.len() {
-                return Err(PyValueError::new_err(
-                    "Slice start bit is past the end of the Bits.",
-                ));
-            }
-            // For negative step, the end_bit is inclusive, but the start_bit is exclusive.
-            debug_assert!(step < 0);
-            let adjusted_end_bit = (end_bit + 1) as usize;
-            Ok(Bits::new(
-                self.data[adjusted_end_bit..=start_bit as usize]
-                    .iter()
-                    .rev()
-                    .step_by(-step as usize)
-                    .collect(),
-            ))
-        }
-    }
-
     /// Return True if all bits are equal to 1, otherwise return False.
     ///
     /// :return: ``True`` if all bits are 1, otherwise ``False``.
@@ -806,7 +809,7 @@ impl Bits {
             let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
-                self._getslice(start as usize, if stop > start {(stop - start) as usize} else {0})?
+                self._getslice(start as usize, if stop > start { (stop - start) as usize } else { 0 })?
             } else {
                 self._getslice_with_step(start, stop, step)?
             };
@@ -1006,5 +1009,4 @@ impl Bits {
             "Bits objects do not support item deletion. Did you mean to use the MutableBits class? Call to_mutable_bits() to convert to a MutableBits."
         ))
     }
-
 }
