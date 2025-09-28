@@ -42,4 +42,13 @@ mod tests {
             .unwrap();
         assert_eq!(mb1.to_bin(), "0000");
     }
+
+    #[test]
+    fn test_unusual_slice_setting() {
+    let mut mb = MutableBits::from_hex("0x12345678").unwrap();
+    let zeros = <Bits as BitCollection>::from_zeros(8);
+    mb._set_slice(0 , 8, &zeros);
+    assert_eq!(mb.to_hex().unwrap(), "00345678");
+    }
+
 }

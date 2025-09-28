@@ -169,9 +169,10 @@ impl MutableBits {
                 self.inner.data.extend_from_bitslice(&value.data);
                 self.inner.data.extend_from_bitslice(&tail);
             } else {
-                self.inner
-                    .data
-                    .splice(start..end, value.data.iter().by_vals());
+                let tail = self.inner.data.split_off(end);
+                self.inner.data.truncate(start);
+                self.inner.data.extend_from_bitslice(&value.data);
+                self.inner.data.extend_from_bitslice(&tail);
             }
         }
     }
@@ -399,7 +400,12 @@ impl MutableBits {
             let step: i64 = indices.step.try_into()?;
 
             let result = if step == 1 {
-                self._getslice(start as usize, (stop - start) as usize)?
+                if start < stop {
+                    self._getslice(start as usize, (stop - start) as usize)?
+                } else {
+                    MutableBits::empty()
+                }
+
             } else {
                 self._getslice_with_step(start, stop, step)?
             };
