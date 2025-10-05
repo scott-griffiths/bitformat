@@ -175,8 +175,8 @@ impl BitCollection for Bits {
     }
 
     fn from_bin(binary_string: &str) -> Result<Self, String> {
-        // Ignore any leading '0b'
-        let s = binary_string.strip_prefix("0b").unwrap_or(binary_string);
+        // Ignore any leading '0b' or '0B'
+        let s = binary_string.strip_prefix("0b").or_else(|| binary_string.strip_prefix("0B")).unwrap_or(binary_string);
         let mut b: BV = BV::with_capacity(s.len());
         for c in s.chars() {
             match c {
@@ -197,7 +197,7 @@ impl BitCollection for Bits {
 
     fn from_oct(octal_string: &str) -> Result<Self, String> {
         // Ignore any leading '0o'
-        let s = octal_string.strip_prefix("0o").unwrap_or(octal_string);
+        let s = octal_string.strip_prefix("0o").or_else(|| octal_string.strip_prefix("0O")).unwrap_or(octal_string);
         let mut b: BV = BV::with_capacity(s.len() * 3);
         for c in s.chars() {
             match c {
@@ -222,7 +222,7 @@ impl BitCollection for Bits {
     }
     fn from_hex(hex: &str) -> Result<Self, String> {
         // Ignore any leading '0x'
-        let mut new_hex = hex.strip_prefix("0x").unwrap_or(hex).to_string();
+        let mut new_hex = hex.strip_prefix("0x").or_else(|| hex.strip_prefix("0X")).unwrap_or(hex).to_string();
         // Remove any underscores or whitespace characters
         new_hex.retain(|c| c != '_' && !c.is_whitespace());
         let is_odd_length: bool = new_hex.len() % 2 != 0;

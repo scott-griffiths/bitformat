@@ -804,7 +804,7 @@ def test_conversion_to_long_ints():
 #     assert a.to_bytes() == b'ABC'
 
 def test_unpack_tuple():
-    a = Bits('0x12300ff')
+    a = Bits('0X 123 00ff')
     x, y, z = a.unpack(('hex3', 'u8', 'i'))
     assert x == '123'
     assert y == 0
@@ -819,7 +819,7 @@ def test_bool_conversion():
     assert c
 
 def test_rfind_all():
-    a = Bits('0b0001011')
+    a = Bits(' 0 B 0 0 01011')
     g = a.rfind_all('0b1')
     assert next(g) == 6
     assert next(g) == 5
