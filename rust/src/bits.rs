@@ -577,11 +577,31 @@ impl Bits {
         if self.data.is_empty() {
             return Vec::new();
         }
+        let len_bits = self.len();
+        match self.data.as_bitslice().domain() {
+            // Fast path: element-aligned and length is a multiple of 8
+            bitvec::domain::Domain::Region { head: None, body, tail: None } => {
+                // Already byte-aligned; copy the bytes directly.
+                body.to_vec()
+            }
 
-        let mut bv = self.data.clone();
-        let new_len = (bv.len() + 7) & !7;
-        bv.resize(new_len, false);
-        bv.into_vec()
+            // Aligned but not a multiple of 8: clone and pad to the next byte
+            bitvec::domain::Domain::Region { head: None, .. } => {
+                let mut bv = self.data.clone();
+                let new_len = (len_bits + 7) & !7;
+                bv.resize(new_len, false);
+                bv.into_vec()
+            }
+
+            // Misaligned: repack by extending from the bitslice, then pad
+            _ => {
+                let mut bv = BV::with_capacity(len_bits);
+                bv.extend_from_bitslice(&self.data);
+                let new_len = (len_bits + 7) & !7;
+                bv.resize(new_len, false);
+                bv.into_vec()
+            }
+        }
     }
 
     pub fn _slice_to_bytes(&self, start: usize, length: usize) -> PyResult<Vec<u8>> {
