@@ -1085,3 +1085,9 @@ def test_iter():
     a = MutableBits('0b110')
     with pytest.raises(TypeError):
         _ = [bool(q) for q in a]
+
+def test_to_bytes_bug():
+    a = MutableBits.from_string('0xff')
+    b = a[2:]
+    c = b.to_bytes()
+    assert c == b'\xfc'

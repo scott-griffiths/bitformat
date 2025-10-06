@@ -70,17 +70,14 @@ fn split_tokens(s: &String) -> Vec<String> {
 }
 
 fn string_literal_to_bits(s: &str) -> PyResult<Bits> {
-    if s.starts_with("0x") {
-        return Bits::_from_hex(s);
-    } else if s.starts_with("0o") {
-        return Bits::_from_oct(s);
-    } else if s.starts_with("0b") {
-        return Bits::_from_bin(s);
+    match s.get(0..2).map(|p| p.to_ascii_lowercase()).as_deref() {
+        Some("0b") => Ok(Bits::_from_bin(s)?),
+        Some("0x") => Ok(Bits::_from_hex(s)?),
+        Some("0o") => Ok(Bits::_from_oct(s)?),
+        _ => Err(PyValueError::new_err(format!(
+            "Can't parse token '{s}'. Did you mean to prefix with '0x', '0b' or '0o'?"
+        )))
     }
-
-    Err(PyValueError::new_err(format!(
-        "Can't parse token '{s}'. Did you mean to prefix with '0x', '0b' or '0o'?"
-    )))
 }
 
 pub(crate) fn str_to_bits(s: String) -> PyResult<Bits> {

@@ -1,5 +1,10 @@
 # Release Notes
 
+### October 2025: version 0.8.1
+
+* Fix to `to_bytes()` which was giving the wrong results for some cases that we're byte aligned at the start.
+* Allowing uppercase `'0B'`, `'0X'` and `'0O'` prefixes for binary, hex and octal strings.
+
 ### September 2025: version 0.8.
 
 * Allowing property setters for `MutableBits`. So for example you can now write `b.u = 34` to set the unsigned int
