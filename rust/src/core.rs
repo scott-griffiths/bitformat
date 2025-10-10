@@ -145,32 +145,39 @@ pub(crate) fn str_to_bits(s: String) -> PyResult<Bits> {
 }
 
 impl BitCollection for Bits {
+    #[inline]
     fn len(&self) -> usize {
         self.data.len()
     }
 
+    #[inline]
     fn is_empty(&self) -> bool {
         self.data.is_empty()
     }
 
+    #[inline]
     fn empty() -> Self {
         Bits::new(BV::new())
     }
 
+    #[inline]
     fn from_zeros(length: usize) -> Self {
         Bits::new(BV::repeat(false, length))
     }
 
+    #[inline]
     fn from_ones(length: usize) -> Self {
         Bits::new(BV::repeat(true, length))
     }
 
+    #[inline]
     fn from_bytes(data: Vec<u8>) -> Self {
         let bits = data.view_bits::<Msb0>();
         let bv = BV::from_bitslice(bits);
         Bits::new(bv)
     }
 
+    #[inline]
     fn from_bin(binary_string: &str) -> Result<Self, String> {
         // Ignore any leading '0b' or '0B'
         let s = binary_string.strip_prefix("0b").or_else(|| binary_string.strip_prefix("0B")).unwrap_or(binary_string);
@@ -192,6 +199,7 @@ impl BitCollection for Bits {
         Ok(Bits::new(b))
     }
 
+    #[inline]
     fn from_oct(octal_string: &str) -> Result<Self, String> {
         // Ignore any leading '0o'
         let s = octal_string.strip_prefix("0o").or_else(|| octal_string.strip_prefix("0O")).unwrap_or(octal_string);
@@ -217,6 +225,8 @@ impl BitCollection for Bits {
         }
         Ok(Bits::new(b))
     }
+
+    #[inline]
     fn from_hex(hex: &str) -> Result<Self, String> {
         // Ignore any leading '0x'
         let mut new_hex = hex.strip_prefix("0x").or_else(|| hex.strip_prefix("0X")).unwrap_or(hex).to_string();
@@ -236,36 +246,48 @@ impl BitCollection for Bits {
         }
         Ok(Bits::new(bv))
     }
+
+    #[inline]
     fn from_u64(value: u64, length: usize) -> Self {
         let mut bv = BV::repeat(false, length);
         bv.store_be(value);
         Bits::new(bv)
     }
 
+    #[inline]
     fn from_i64(value: i64, length: usize) -> Self {
         let mut bv = BV::repeat(false, length);
         bv.store_be(value);
         Bits::new(bv)
     }
+
+    #[inline]
     fn logical_or(&self, other: &Bits) -> Self {
         debug_assert!(self.len() == other.len());
         let result = self.data.clone() | &other.data;
         Bits::new(result)
     }
 
+    #[inline]
     fn logical_and(&self, other: &Bits) -> Self {
         debug_assert!(self.len() == other.len());
         let result = self.data.clone() & &other.data;
         Bits::new(result)
     }
+
+    #[inline]
     fn logical_xor(&self, other: &Bits) -> Self {
         debug_assert!(self.len() == other.len());
         let result = self.data.clone() ^ &other.data;
         Bits::new(result)
     }
+
+    #[inline]
     fn get_bit(&self, i: usize) -> bool {
         self.data[i]
     }
+
+    #[inline]
     fn to_bin(&self) -> String {
         let mut result = String::with_capacity(self.len());
         for i in 0..self.len() {
@@ -273,6 +295,8 @@ impl BitCollection for Bits {
         }
         result
     }
+
+    #[inline]
     fn to_oct(&self) -> Result<String, String> {
         if self.len() % 3 != 0 {
             return Err(format!(
@@ -288,6 +312,8 @@ impl BitCollection for Bits {
         }
         Ok(result)
     }
+
+    #[inline]
     fn to_hex(&self) -> Result<String, String> {
         if self.len() % 4 != 0 {
             return Err(format!(
@@ -306,83 +332,117 @@ impl BitCollection for Bits {
 }
 
 impl BitCollection for MutableBits {
+
+    #[inline]
     fn len(&self) -> usize {
         self.inner.len()
     }
+
+    #[inline]
     fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
 
+    #[inline]
     fn empty() -> Self {
         Self {
             inner: <Bits as BitCollection>::empty(),
         }
     }
 
+    #[inline]
     fn from_zeros(length: usize) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_zeros(length),
         }
     }
+
+    #[inline]
     fn from_ones(length: usize) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_ones(length),
         }
     }
+
+    #[inline]
     fn from_bytes(data: Vec<u8>) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_bytes(data),
         }
     }
+
+    #[inline]
     fn from_bin(binary_string: &str) -> Result<Self, String> {
         Ok(Self {
             inner: <Bits as BitCollection>::from_bin(binary_string)?,
         })
     }
+
+    #[inline]
     fn from_oct(oct: &str) -> Result<Self, String> {
         Ok(Self {
             inner: <Bits as BitCollection>::from_oct(oct)?,
         })
     }
+
+    #[inline]
     fn from_hex(hex: &str) -> Result<Self, String> {
         Ok(Self {
             inner: <Bits as BitCollection>::from_hex(hex)?,
         })
     }
+
+    #[inline]
     fn from_u64(value: u64, length: usize) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_u64(value, length),
         }
     }
+
+    #[inline]
     fn from_i64(value: i64, length: usize) -> Self {
         Self {
             inner: <Bits as BitCollection>::from_i64(value, length),
         }
     }
+
+    #[inline]
     fn logical_or(&self, other: &Bits) -> Self {
         Self {
             inner: self.inner.logical_or(other),
         }
     }
+
+    #[inline]
     fn logical_and(&self, other: &Bits) -> Self {
         Self {
             inner: self.inner.logical_and(other),
         }
     }
+
+    #[inline]
     fn logical_xor(&self, other: &Bits) -> Self {
         Self {
             inner: self.inner.logical_xor(other),
         }
     }
+
+    #[inline]
     fn get_bit(&self, i: usize) -> bool {
         self.inner.data[i]
     }
+
+    #[inline]
     fn to_bin(&self) -> String {
         self.inner.to_bin()
     }
+
+    #[inline]
     fn to_oct(&self) -> Result<String, String> {
         self.inner.to_oct()
     }
+
+    #[inline]
     fn to_hex(&self) -> Result<String, String> {
         self.inner.to_hex()
     }
@@ -415,24 +475,28 @@ impl fmt::Debug for Bits {
 }
 
 impl PartialEq for Bits {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.data == other.data
     }
 }
 
 impl PartialEq<MutableBits> for Bits {
+    #[inline]
     fn eq(&self, other: &MutableBits) -> bool {
         self.data == other.inner.data
     }
 }
 
 impl PartialEq for MutableBits {
+    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.inner.data == other.inner.data
     }
 }
 
 impl PartialEq<Bits> for MutableBits {
+    #[inline]
     fn eq(&self, other: &Bits) -> bool {
         self.inner.data == other.data
     }

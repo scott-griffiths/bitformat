@@ -422,6 +422,7 @@ impl Bits {
     /// a = Bits.from_bytes(b"some_bytes_maybe_from_a_file")
     ///
     #[classmethod]
+    #[inline]
     pub fn from_bytes(_cls: &Bound<'_, PyType>, data: Vec<u8>) -> Self {
         BitCollection::from_bytes(data)
     }
@@ -769,6 +770,7 @@ impl Bits {
     ///     >>> Bits('0b1011').all()
     ///     False
     ///
+    #[inline]
     pub fn all(&self) -> bool {
         self.data.all()
     }
@@ -784,6 +786,7 @@ impl Bits {
     ///     >>> Bits('0b1000').any()
     ///     True
     ///
+    #[inline]
     pub fn any(&self) -> bool {
         self.data.any()
     }
@@ -807,11 +810,13 @@ impl Bits {
     }
 
     /// Returns the bool value at a given bit index.
+    #[inline]
     pub fn _getindex(&self, bit_index: i64) -> PyResult<bool> {
         let index = validate_index(bit_index, self.len())?;
         Ok(self.data[index])
     }
 
+    #[inline]
     pub fn __getitem__(&self, key: &Bound<'_, PyAny>) -> PyResult<Py<PyAny>> {
         let py = key.py();
         // Handle integer indexing
