@@ -500,7 +500,7 @@ class TestHypothesisPropertyBasedEdgeCases:
         
         # Should be able to unpack back to original values
         recovered = result.unpack([f"u8"] * len(byte_values))
-        assert recovered == byte_values
+        assert recovered == tuple(byte_values)
         
     @given(st.binary(min_size=1, max_size=50))
     @settings(max_examples=30)

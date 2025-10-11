@@ -155,6 +155,11 @@ class Dtype(abc.ABC):
         """Unpacks a Bits, returning number of bits unpacked as first element of tuple"""
         ...
 
+    @abc.abstractmethod
+    def _unpack_no_checks(self, b: Bits | MutableBits) -> Any | tuple[Any]:
+        """Unpacks the whole of a Bits, without checks on length or type."""
+        ...
+
     def unpack(self, b: BitsType, /):
         """Unpack a Bits to find its value.
 
@@ -409,6 +414,11 @@ class DtypeSingle(Dtype):
 
     @override
     @final
+    def _unpack_no_checks(self, b: Bits | MutableBits) -> Any | tuple[Any]:
+        return self._get_fn(b, 0, len(b))
+
+    @override
+    @final
     def has_known_size(self) -> bool:
         return self._size.has_const_value and self._size.const_value is not None
 
@@ -544,6 +554,14 @@ class DtypeArray(Dtype):
             self._dtype_single.unpack(b[i * self._dtype_single.bit_length : (i + 1) * self._dtype_single.bit_length])
             for i in range(items)
         )
+
+    @override
+    @final
+    def _unpack_no_checks(self, b: Bits | MutableBits) -> tuple[Any]:
+        if isinstance(b, bitformat.MutableBits):
+            b = b.to_bits()
+        return tuple(self._dtype_single._unpack_no_checks(c) for c in b.chunks(self._dtype_single.bit_length, count=self.items))
+
 
     @override
     @final
@@ -704,6 +722,25 @@ class DtypeTuple(Dtype):
                     vals.append(x)
                 pos += dtype.bit_length
         return pos, tuple(vals)
+
+    @override
+    @final
+    def _unpack_no_checks(self, b: Bits | MutableBits) -> tuple[Any]:
+        pos = 0
+        vals = []
+        for i, dtype in enumerate(self._dtypes):
+            if i == self._dynamic_index:
+                dynamic_length = len(b) - self._bit_length
+                vals.append(dtype.unpack(b[pos : pos + dynamic_length]))
+                pos += dynamic_length
+            else:
+                x = dtype.unpack(b[pos : pos + dtype.bit_length])
+                if x is not None:  # Padding could unpack as None
+                    vals.append(x)
+                pos += dtype.bit_length
+        return tuple(vals)
+
+
 
     @override
     @final

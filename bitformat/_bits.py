@@ -262,8 +262,7 @@ this is a step to using the Rust classes as the base classes."""
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
         :return: The bit position if found, or None if not found.
 
-        Raises ValueError if bs is empty, if start < 0, if end > len(self) or
-        if end < start.
+        Raises ValueError if bs is empty.
 
         .. code-block:: pycon
 
@@ -280,7 +279,7 @@ this is a step to using the Rust classes as the base classes."""
         p = self._rfind(bs, 0, ba)
         return p
 
-    def unpack(self, fmt: Dtype | str | Sequence[Dtype | str], /) -> Any | list[Any]:
+    def unpack(self, dtype: Dtype | str | Sequence[Dtype | str], /, start: int | None = None, end: int | None = None) -> Any | list[Any]:
         """
         Interpret the Bits as a given data type or list of data types.
 
@@ -288,7 +287,9 @@ this is a step to using the Rust classes as the base classes."""
         A single Dtype with no length can be used to interpret the whole Bits - in this common case properties
         are provided as a shortcut. For example instead of ``b.unpack('bin')`` you can use ``b.bin``.
 
-        :param fmt: The data type or sequence of data types to interpret the Bits as.
+        :param dtype: The data type used to interpret the Bits.
+        :param start: The starting bit position. Defaults to 0.
+        :param end: The end position. Defaults to len(self).
         :return: The interpreted value(s).
 
         .. code-block:: pycon
@@ -304,12 +305,32 @@ this is a step to using the Rust classes as the base classes."""
             -559038737
 
         """
-        if isinstance(fmt, str):
-            fmt = Dtype.from_string(fmt)
-        elif isinstance(fmt, Sequence):
-            d = DtypeTuple.from_params(fmt)
-            return list(d.unpack(self))
-        return fmt.unpack(self)
+        if isinstance(dtype, str):
+            dtype = Dtype.from_string(dtype)
+        elif isinstance(dtype, Sequence):
+            dtype = DtypeTuple.from_params(dtype)
+        dtype = dtype.evaluate()
+
+        if start is None and end is None:
+            # If we have a known bit_length then try to unpack that much.
+            if dtype.bit_length is not None:
+                if dtype.bit_length == len(self):
+                    return dtype._unpack_no_checks(self)
+                elif dtype.bit_length < len(self):
+                    return dtype._unpack_no_checks(self[:dtype.bit_length])
+                else:
+                    raise ValueError(f"Not enough bits to unpack the requested Dtype. {len(self)} bits are available but {dtype} needs {dtype.bit_length} bits.")
+            elif isinstance(dtype, DtypeArray) and dtype._dtype_single.bit_length is not None:
+                # For DtypeArray, unpack as many items as possible
+                assert dtype.items is None
+                if dtype._dtype_single.bit_length < len(self):
+                    return dtype._unpack_no_checks(self[:len(self) - (len(self) % dtype._dtype_single.bit_length)])
+                else:
+                    raise ValueError(f"Not enough bits to unpack the requested Dtype. {len(self)} bits are available but {dtype} needs at least {dtype._dtype_single.bit_length} bits.")
+            else:
+                return dtype._unpack_no_checks(self)
+        start, end = _validate_slice(len(self), start, end)
+        return dtype.unpack(self[start:end])
 
     # ----- Private Methods -----
 

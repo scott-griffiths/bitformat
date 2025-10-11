@@ -220,7 +220,7 @@ class Array:
                 key += len(self)
             if key < 0 or key >= len(self):
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
-            return self._dtype.unpack(self._get_bit_slice(self._item_size * key, self._item_size))
+            return self._get_bit_slice(self._item_size * key, self._item_size).unpack(self._dtype)
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[ElementType], /) -> None: ...

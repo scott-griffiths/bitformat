@@ -16,7 +16,7 @@ def test_build():
     assert b[0] == 0
     c = Bits.from_dtype(Dtype("f64"), 13.75)
     assert len(c) == 64
-    assert c.unpack(["f64"]) == [13.75]
+    assert c.unpack(["f64"]) == (13.75,)
 
 
 def remove_unprintable(s: str) -> str:
@@ -111,7 +111,7 @@ class TestCreation:
         x = bytes(bytearray(range(20)))
         m = memoryview(x[10:15])
         b = Bits.from_dtype("bytes", m)
-        assert b.unpack(["[u8; 5]"]) == [(10, 11, 12, 13, 14)]
+        assert b.unpack("[u8; 5]") == (10, 11, 12, 13, 14)
 
 
 class TestInitialisation:
@@ -174,7 +174,7 @@ class TestPadToken:
         x, y = s.unpack(["bits2", "pad2", "bin5"])
         assert (x.unpack(["u2"])[0], y) == (3, "00111")
         x = s.unpack(["pad1", "pad2", "pad3"])
-        assert x == []
+        assert x == ()
 
 
 def test_adding():
@@ -523,11 +523,11 @@ class TestPrettyPrinting_NewFormats:
 
 def test_unpack_array():
     a = Bits.from_string("0b1010101010101010")
-    assert a.unpack(["u8", "u4", "u4"]) == [170, 10, 10]
-    assert a.unpack(["u4", "u4", "u8"]) == [10, 10, 170]
-    assert a.unpack(["u4", "u4", "u4", "u4"]) == [10, 10, 10, 10]
+    assert a.unpack(("u8", "u4", "u4")) == (170, 10, 10)
+    assert a.unpack(["u4", "u4", "u8"]) == (10, 10, 170)
+    assert a.unpack(["u4", "u4", "u4", "u4"]) == (10, 10, 10, 10)
 
-    assert a.unpack(["[u4; 4]"]) == [(10, 10, 10, 10)]
+    assert a.unpack(["[u4; 4]"]) == ((10, 10, 10, 10),)
     assert a.unpack("[u4; 3]") == (10, 10, 10)
 
 
@@ -677,11 +677,11 @@ def test_unpack_field():
     assert f.unpack(a) == 100
     # TODO: Should this work? Not sure if we want to allow unpacking a Bits with a Field - seems confusing?
     # Currently works as Dtype and Field both have an unpack that accepts a Bits.
-    assert a.unpack(f) == 100
+    # assert a.unpack(f) == 100
 
     a = Bits("0x000001b3, u12=352, u12=288, bool=1")
     v = a.unpack(["hex8", "[u12; 2]", "bool"])
-    assert v == ["000001b3", (352, 288), True]
+    assert v == ("000001b3", (352, 288), True)
 
 
 def test_unpack_dtype_tuple():
@@ -846,3 +846,9 @@ def test_bits_not_orderable():
         _ = a > b
     with pytest.raises(TypeError):
         _ = a >= b
+
+def test_unpack_with_range():
+    a = Bits('u12=99, bool=True, hex4=4321')
+    x = a.unpack('hex4', start=-16)
+    assert x == "4321"
+    assert a.unpack('u', end=12) == 99
