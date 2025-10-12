@@ -1270,19 +1270,19 @@ class TestBugs:
 
         # find_all
         s = Bits("0x1234151f")
-        li = list(s[-15:].find_all("0x1"))
-        assert li == [7]
-        li = list(s[-16:].find_all("0x1", byte_aligned=True))
-        assert li == [0, 8]
-        li = list(s[:-5].find_all("0x1", byte_aligned=True))
+        li = list(s.find_all("0x1", start=-15))
+        assert li == [24]
+        li = list(s.find_all("0x1", start=-16, byte_aligned=True))
+        assert li == [16, 24]
+        li = list(s.find_all("0x1", end=-5, byte_aligned=True))
         assert li == [0, 16]
-        li = list(s[:-4].find_all("0x1", byte_aligned=True))
+        li = list(s.find_all("0x1", end=-4, byte_aligned=True))
         assert li == [0, 16, 24]
 
         # rfind
-        found = s[:-1].rfind("0x1f")
+        found = (s.rfind("0x1f", end=-1))
         assert found is None
-        found = s[-31:].rfind("0x12")
+        found = s.rfind("0x12", start=-31)
         assert found is None
 
         # chunks

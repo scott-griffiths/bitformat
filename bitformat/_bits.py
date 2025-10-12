@@ -265,8 +265,8 @@ this is a step to using the Rust classes as the base classes."""
 
 
         :param bs: The Bits to find.
-        :param start: The starting bit position. Defaults to 0.
-        :param end: The end position. Defaults to len(self).
+        :param start: The starting bit position of the slice to search. Defaults to 0.
+        :param end: The end bit position of the slice to search. Defaults to len(self).
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
         :return: The bit position if found, or None if not found.
 
@@ -439,10 +439,13 @@ class BitsMethods:
             raise ValueError(f"Can't pack a value of {value} with a Dtype '{dtype}': {str(e)}")
         return xt
 
-    def rfind_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
+    def rfind_all(self, bs: BitsType, start: int | None = None, end: int | None = None,
+                  count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs starting at the end. Return generator of bit positions.
 
         :param bs: The Bits to find.
+        :param start: The starting bit position of the slice to search. Defaults to 0.
+        :param end: The end bit position of the slice to search. Defaults to len(self).
         :param count: The maximum number of occurrences to find.
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
         :return: A generator yielding bit positions.
@@ -462,12 +465,15 @@ class BitsMethods:
 
         """
         # TODO: This is only a (working) placeholder.
-        return (p for p in reversed(list(self.find_all(bs, count, byte_aligned))))
+        return (p for p in reversed(list(self.find_all(bs, count, start, end, byte_aligned))))
 
-    def find_all(self, bs: BitsType, count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
+    def find_all(self, bs: BitsType, start: int | None = None, end: int | None = None,
+                 count: int | None = None, byte_aligned: bool | None = None) -> Iterable[int]:
         """Find all occurrences of bs. Return generator of bit positions.
 
         :param bs: The Bits to find.
+        :param start: The starting bit position of the slice to search. Defaults to 0.
+        :param end: The end bit position of the slice to search. Defaults to len(self).
         :param count: The maximum number of occurrences to find.
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
         :return: A generator yielding bit positions.
@@ -489,9 +495,10 @@ class BitsMethods:
         if count is not None and count < 0:
             raise ValueError("In find_all, count must be >= 0.")
         bs = bits_from_any(bs)
+        start, end = _validate_slice(len(self), start, end)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         c = 0
-        for i in self._findall(bs, ba):
+        for i in self._findall(bs, start, end, ba):
             if count is not None and c >= count:
                 return
             c += 1

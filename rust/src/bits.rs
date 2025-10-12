@@ -323,23 +323,27 @@ impl Bits {
         self.data[start..start + length].load_be::<i64>()
     }
 
-    #[pyo3(signature = (needle_obj, byte_aligned=false))]
+    #[pyo3(signature = (needle_obj, start=None, end=None, byte_aligned=false))]
     pub fn _findall(
         slf: PyRef<'_, Self>,
         needle_obj: Py<Bits>,
+        start: Option<usize>,
+        end: Option<usize>,
         byte_aligned: bool,
     ) -> PyResult<Py<FindAllIterator>> {
         let py = slf.py();
         let haystack_obj: Py<Bits> = slf.into(); // Get a Py<Bits> for the haystack (self)
 
         let step = if byte_aligned { 8 } else { 1 };
-
+        let start = start.unwrap_or(0);
         let iter_obj = FindAllIterator {
             haystack: haystack_obj,
             needle: needle_obj,
-            current_pos: 0,
+            start,
+            end,
             byte_aligned,
             step,
+            current_pos: start,
         };
         Py::new(py, iter_obj)
     }
