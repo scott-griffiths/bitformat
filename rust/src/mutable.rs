@@ -843,12 +843,12 @@ impl MutableBits {
         self.inner.any()
     }
 
-    pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner._find(b, start, bytealigned)
+    pub fn _find(&self, b: &Bits, start: usize, end: usize, bytealigned: bool) -> Option<usize> {
+        self.inner._find(b, start, end, bytealigned)
     }
 
-    pub fn _rfind(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
-        self.inner._rfind(b, start, bytealigned)
+    pub fn _rfind(&self, b: &Bits, start: usize, end: usize, bytealigned: bool) -> Option<usize> {
+        self.inner._rfind(b, start, end, bytealigned)
     }
 
     /// Return the MutableBits with one or many bits inverted between 0 and 1.

@@ -654,16 +654,20 @@ impl Bits {
         Ok(Bits::new(result))
     }
 
-    pub fn _find(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
-        find_bitvec(self, b, start, bytealigned)
+    pub fn _find(&self, b: &Bits, start: usize, end: usize, bytealigned: bool) -> Option<usize> {
+        debug_assert!(end >= start);
+        debug_assert!(end <= self.len());
+        find_bitvec(self, b, start, end, bytealigned)
     }
 
-    pub fn _rfind(&self, b: &Bits, start: usize, bytealigned: bool) -> Option<usize> {
-        if b.len() + start > self.len() {
+    pub fn _rfind(&self, b: &Bits, start: usize, end: usize, bytealigned: bool) -> Option<usize> {
+        debug_assert!(end >= start);
+        debug_assert!(end <= self.len());
+        if b.len() + start > end {
             return None;
         }
         let step = if bytealigned { 8 } else { 1 };
-        let mut pos = self.len() - b.len();
+        let mut pos = end - b.len();
         if bytealigned {
             pos = pos / 8 * 8;
         }

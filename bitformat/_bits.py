@@ -137,13 +137,15 @@ this is a step to using the Rust classes as the base classes."""
     # ----- Instance Methods -----
 
 
-    def find(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
+    def find(self, bs: BitsType, /, start: int | None = None, end: int | None = None, byte_aligned: bool | None = None) -> int | None:
         """
         Find first occurrence of substring bs.
 
         Returns the bit position if found, or None if not found.
 
         :param bs: The Bits to find.
+        :param start: The starting bit position. Defaults to 0.
+        :param end: The end position. Defaults to len(self).
         :param byte_aligned: If ``True``, the Bits will only be found on byte boundaries.
         :return: The bit position if found, or None if not found.
 
@@ -154,10 +156,11 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         bs = bits_from_any(bs)
+        start, end = _validate_slice(len(self), start, end)
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
-        p = self._find(bs, 0, bytealigned=ba)
+        p = self._find(bs, start, end, bytealigned=ba)
         return p
 
     def info(self) -> str:
@@ -253,12 +256,17 @@ this is a step to using the Rust classes as the base classes."""
         stream.write(output_stream.getvalue())
         return
 
-    def rfind(self, bs: BitsType, /, byte_aligned: bool | None = None) -> int | None:
+    def rfind(self, bs: BitsType, /, start: int | None = None, end: int | None = None, byte_aligned: bool | None = None) -> int | None:
         """Find final occurrence of substring bs.
 
-        Returns a the bit position if found, or None if not found.
+        Returns the bit position if found, or None if not found.
+        Note that `start` and `end` define a slice in the usual way, so the
+        occurrence of `bs` closest to the `end` posistion will be found.
+
 
         :param bs: The Bits to find.
+        :param start: The starting bit position. Defaults to 0.
+        :param end: The end position. Defaults to len(self).
         :param byte_aligned: If True, the Bits will only be found on byte boundaries.
         :return: The bit position if found, or None if not found.
 
@@ -273,10 +281,11 @@ this is a step to using the Rust classes as the base classes."""
 
         """
         bs = bits_from_any(bs)
+        start, end = _validate_slice(len(self), start, end)
         ba = Options().byte_aligned if byte_aligned is None else byte_aligned
         if len(bs) == 0:
             raise ValueError("Cannot find an empty Bits.")
-        p = self._rfind(bs, 0, ba)
+        p = self._rfind(bs, start, end, ba)
         return p
 
     def unpack(self, dtype: Dtype | str | Sequence[Dtype | str], /, start: int | None = None, end: int | None = None) -> Any | list[Any]:

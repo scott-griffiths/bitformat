@@ -39,12 +39,15 @@ pub(crate) fn find_bitvec(
     haystack: &Bits,
     needle: &Bits,
     start: usize,
+    end: usize,
     byte_aligned: bool,
 ) -> Option<usize> {
+    debug_assert!(end >= start);
+    debug_assert!(end <= haystack.len());
     if byte_aligned {
-        find_bitvec_impl::<true>(haystack, needle, start)
+        find_bitvec_impl::<true>(haystack, needle, start, end)
     } else {
-        find_bitvec_impl::<false>(haystack, needle, start)
+        find_bitvec_impl::<false>(haystack, needle, start, end)
     }
 }
 
@@ -53,6 +56,7 @@ fn find_bitvec_impl<const BYTE_ALIGNED: bool>(
     haystack: &Bits,
     needle: &Bits,
     start: usize,
+    end: usize,
 ) -> Option<usize> {
     if needle.len() == 0 || needle.len() > haystack.len() - start {
         return None;
@@ -63,7 +67,7 @@ fn find_bitvec_impl<const BYTE_ALIGNED: bool>(
     let mut i = start;
     let mut j = 0;
 
-    while i < haystack.len() {
+    while i < end {
         if needle.data[j] == haystack.data[i] {
             i += 1;
             j += 1;

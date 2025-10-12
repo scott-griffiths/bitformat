@@ -95,21 +95,21 @@ mod tests {
     fn test_find() {
         let b1 = <Bits as BitCollection>::from_zeros(10);
         let b2 = <Bits as BitCollection>::from_ones(2);
-        assert_eq!(b1._find(&b2, 0, false), None);
+        assert_eq!(b1._find(&b2, 0, b1.len(), false), None);
         let b3 = Bits::from_bin("00001110").unwrap();
         let b4 = Bits::from_bin("01").unwrap();
-        assert_eq!(b3._find(&b4, 0, false), Some(3));
-        assert_eq!(b3._find(&b4, 2, false), Some(3));
+        assert_eq!(b3._find(&b4, 0, b3.len(), false), Some(3));
+        assert_eq!(b3._find(&b4, 2, b3.len(), false), Some(3));
 
         let s = Bits::from_bin("0000110110000").unwrap();
         let f = Bits::from_bin("11011").unwrap();
-        let p = s._find(&f, 0, false).unwrap();
+        let p = s._find(&f, 0, s.len(), false).unwrap();
         assert_eq!(p, 4);
 
         let s = Bits::from_hex("010203040102ff").unwrap();
         // assert s.find("0x05", bytealigned=True) is None
         let f = Bits::from_hex("02").unwrap();
-        let p = s._find(&f, 0, true);
+        let p = s._find(&f, 0, s.len(), true);
         assert_eq!(p, Some(8));
     }
 
@@ -117,8 +117,8 @@ mod tests {
     fn test_rfind() {
         let b1 = Bits::from_hex("00780f0").unwrap();
         let b2 = Bits::from_bin("1111").unwrap();
-        assert_eq!(b1._rfind(&b2, 0, false), Some(20));
-        assert_eq!(b1._find(&b2, 0, false), Some(9));
+        assert_eq!(b1._rfind(&b2, 0, b1.len(), false), Some(20));
+        assert_eq!(b1._find(&b2, 0, b1.len(), false), Some(9));
     }
 
     #[test]
@@ -378,9 +378,9 @@ mod tests {
         let haystack = MutableBits::from_bin("00110011").unwrap();
         let needle = Bits::from_bin("11").unwrap();
 
-        assert_eq!(haystack._find(&needle, 0, false), Some(2));
-        assert_eq!(haystack._find(&needle, 3, false), Some(6));
-        assert_eq!(haystack._rfind(&needle, 0, false), Some(6));
+        assert_eq!(haystack._find(&needle, 0, haystack.len(), false), Some(2));
+        assert_eq!(haystack._find(&needle, 3, haystack.len(), false), Some(6));
+        assert_eq!(haystack._rfind(&needle, 0, haystack.len(),false), Some(6));
     }
 
     #[test]
