@@ -14,6 +14,7 @@ use pyo3::{pyclass, pymethods, PyRef, PyResult};
 use std::ops::Not;
 use rand::{RngCore, SeedableRng};
 use rand::rngs::StdRng;
+use once_cell::sync::OnceCell;
 
 // ---- Exported Python helper methods ----
 
@@ -91,6 +92,9 @@ pub fn bits_from_any(any: Py<PyAny>, py: Python) -> PyResult<Bits> {
 #[pyclass(module = "bitformat")]
 pub struct Bits {
     pub(crate) data: BV,
+    pub(crate) bin_cache: OnceCell<String>,
+    pub(crate) oct_cache: OnceCell<String>,
+    pub(crate) hex_cache: OnceCell<String>,
 }
 
 impl Bits {
@@ -988,8 +992,11 @@ impl Bits {
         if self.data.is_empty() {
             return Err(PyValueError::new_err("Cannot invert empty Bits."));
         }
-        Ok(Bits {
+        Ok(Bits { // TODO: Why is this initialising directly?
             data: self.data.clone().not(),
+            bin_cache: OnceCell::new(),
+            oct_cache: OnceCell::new(),
+            hex_cache: OnceCell::new(),
         })
     }
 

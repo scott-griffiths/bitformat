@@ -7,7 +7,7 @@ use bitvec::order::Msb0;
 use bitvec::prelude::Lsb0;
 use bitvec::view::BitView;
 use lru::LruCache;
-use once_cell::sync::Lazy;
+use once_cell::sync::{Lazy, OnceCell};
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 use std::fmt;
@@ -289,11 +289,13 @@ impl BitCollection for Bits {
 
     #[inline]
     fn to_bin(&self) -> String {
-        let mut result = String::with_capacity(self.len());
-        for i in 0..self.len() {
-            result.push(if self.get_bit(i) { '1' } else { '0' });
-        }
-        result
+        self.bin_cache.get_or_init(|| {
+            let mut result = String::with_capacity(self.len());
+            for i in 0..self.len() {
+                result.push(if self.get_bit(i) { '1' } else { '0' });
+            }
+            result
+        }).clone()
     }
 
     #[inline]
@@ -304,13 +306,15 @@ impl BitCollection for Bits {
                 self.len()
             ));
         }
-        let mut result = String::with_capacity(self.len() / 3);
-        for chunk in self.data.chunks(3) {
-            let tribble = chunk.load_be::<u8>();
-            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
-            result.push(oct_char);
-        }
-        Ok(result)
+        Ok(self.oct_cache.get_or_init(|| {
+            let mut result = String::with_capacity(self.len() / 3);
+            for chunk in self.data.chunks(3) {
+                let tribble = chunk.load_be::<u8>();
+                let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
+                result.push(oct_char);
+            }
+            result
+        }).clone())
     }
 
     #[inline]
@@ -321,13 +325,16 @@ impl BitCollection for Bits {
                 self.len()
             ));
         }
-        let mut result = String::with_capacity(self.len() / 4);
-        for chunk in self.data.chunks(4) {
-            let nibble = chunk.load_be::<u8>();
-            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
-            result.push(hex_char);
-        }
-        Ok(result)
+        Ok(self.hex_cache.get_or_init(|| {
+            let mut result = String::with_capacity(self.len() / 4);
+            for chunk in self.data.chunks(4) {
+                let nibble = chunk.load_be::<u8>();
+                let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
+                result.push(hex_char);
+            }
+            result
+        }).clone())
+
     }
 }
 
@@ -506,7 +513,12 @@ impl PartialEq<Bits> for MutableBits {
 
 impl Bits {
     pub(crate) fn new(bv: BV) -> Self {
-        Bits { data: bv }
+        Bits {
+            data: bv,
+            bin_cache: OnceCell::new(),
+            oct_cache: OnceCell::new(),
+            hex_cache: OnceCell::new(),
+        }
     }
 
     /// Slice used internally without bounds checking.
