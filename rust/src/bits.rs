@@ -992,12 +992,7 @@ impl Bits {
         if self.data.is_empty() {
             return Err(PyValueError::new_err("Cannot invert empty Bits."));
         }
-        Ok(Bits { // TODO: Why is this initialising directly?
-            data: self.data.clone().not(),
-            bin_cache: OnceCell::new(),
-            oct_cache: OnceCell::new(),
-            hex_cache: OnceCell::new(),
-        })
+        Ok(Bits::new(self.data.clone().not()))
     }
 
     pub fn __bytes__(&self) -> Vec<u8> {

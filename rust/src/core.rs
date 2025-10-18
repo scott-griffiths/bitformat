@@ -289,50 +289,46 @@ impl BitCollection for Bits {
 
     #[inline]
     fn to_bin(&self) -> String {
+        if self.len() > 64 {
+            return self.build_bin_string();
+        }
         self.bin_cache.get_or_init(|| {
-            let mut result = String::with_capacity(self.len());
-            for i in 0..self.len() {
-                result.push(if self.get_bit(i) { '1' } else { '0' });
-            }
-            result
+            self.build_bin_string()
         }).clone()
     }
 
+
     #[inline]
     fn to_oct(&self) -> Result<String, String> {
-        if self.len() % 3 != 0 {
+        let len = self.len();
+        if len % 3 != 0 {
             return Err(format!(
                 "Cannot interpret as octal - length of {} is not a multiple of 3 bits.",
-                self.len()
+                len
             ));
         }
+        if len > 64 {
+            return Ok(self.build_oct_string());
+        }
         Ok(self.oct_cache.get_or_init(|| {
-            let mut result = String::with_capacity(self.len() / 3);
-            for chunk in self.data.chunks(3) {
-                let tribble = chunk.load_be::<u8>();
-                let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
-                result.push(oct_char);
-            }
-            result
+            self.build_oct_string()
         }).clone())
     }
 
     #[inline]
     fn to_hex(&self) -> Result<String, String> {
-        if self.len() % 4 != 0 {
+        let len = self.len();
+        if len % 4 != 0 {
             return Err(format!(
                 "Cannot interpret as hex - length of {} is not a multiple of 4 bits.",
-                self.len()
+                len
             ));
         }
+        if len > 64 {
+            return Ok(self.build_hex_string());
+        }
         Ok(self.hex_cache.get_or_init(|| {
-            let mut result = String::with_capacity(self.len() / 4);
-            for chunk in self.data.chunks(4) {
-                let nibble = chunk.load_be::<u8>();
-                let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
-                result.push(hex_char);
-            }
-            result
+            self.build_hex_string()
         }).clone())
 
     }
@@ -524,6 +520,39 @@ impl Bits {
     /// Slice used internally without bounds checking.
     pub(crate) fn slice(&self, start_bit: usize, length: usize) -> Self {
         Bits::new(self.data[start_bit..start_bit + length].to_bitvec())
+    }
+
+    #[inline]
+    fn build_bin_string(&self) -> String {
+        let mut s = String::with_capacity(self.len());
+        for i in 0..self.len() {
+            s.push(if self.get_bit(i) { '1' } else { '0' });
+        }
+        s
+    }
+
+    #[inline]
+    fn build_oct_string(&self) -> String {
+        debug_assert!(self.len() % 3 == 0);
+        let mut s = String::with_capacity(self.len() / 3);
+        for chunk in self.data.chunks(3) {
+            let tribble = chunk.load_be::<u8>();
+            let oct_char = std::char::from_digit(tribble as u32, 8).unwrap();
+            s.push(oct_char);
+        }
+        s
+    }
+
+    #[inline]
+    fn build_hex_string(&self) -> String {
+        debug_assert!(self.len() % 4 == 0);
+        let mut s = String::with_capacity(self.len() / 4);
+        for chunk in self.data.chunks(4) {
+            let nibble = chunk.load_be::<u8>();
+            let hex_char = std::char::from_digit(nibble as u32, 16).unwrap();
+            s.push(hex_char);
+        }
+        s
     }
 }
 
