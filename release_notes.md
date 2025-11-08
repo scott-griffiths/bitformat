@@ -1,5 +1,10 @@
 # Release Notes
 
+### November 2025; version 0.9.
+
+* Allowing upper-case 0B, 0X and 0O prefixes as they are allowable in Python.
+* Internal changes to make integration with bitstring easier.
+
 ### October 2025: version 0.8.1
 
 * Fix to `to_bytes()` which was giving the wrong results for some cases that we're byte aligned at the start.
