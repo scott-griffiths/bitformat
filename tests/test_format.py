@@ -104,7 +104,7 @@ class TestCreation:
         assert f.name == "header"
         f.pack([352])
         assert f.to_tibs() == tibs_of("0x000001b3", ("u12", 352), ("u12", 288), "0b1")
-        _ = Format.from_params([f, "bytes5"], "main")
+        _ = Format.from_params([f, "bytes40"], "main")
 
     def test_stretchy_token_at_start(self):
         with pytest.raises(ValueError):
@@ -240,7 +240,7 @@ def test_example_from_docs():
     assert f.parse(b) == 19  # Number of parsed bits
     assert f["y"].value == 987
 
-    # f = Format("(sync_byte: const hex2 = 0xff,"
+    # f = Format("(sync_byte: const hex8 = 0xff,"
     #            "items: u16,"
     #            "flags: [bool ; {items + 1} ],"
     #            "repeat {items + 1}: "
@@ -276,13 +276,13 @@ class TestMethods:
         assert f == g
 
     def test_get_item(self):
-        f = Format.from_params(["f16=7", "bool", "bytes5", "pop :u100  = 144"])
+        f = Format.from_params(["f16=7", "bool", "bytes40", "pop :u100  = 144"])
         assert f[0].value == 7
         assert f[1].value is None
         assert f["pop"].value == 144
 
     def test_set_item(self):
-        f = Format.from_params(["const f16=7", "bool", "bytes5", "pop : u100 = 144"])
+        f = Format.from_params(["const f16=7", "bool", "bytes40", "pop : u100 = 144"])
         with pytest.raises(ValueError):
             f[0].value = 2
         f["pop"].value = 999999
@@ -310,9 +310,9 @@ def test_format_get_and_set():
 
 
 def test_repeating_from_expression():
-    f = Format.from_params(["x: u8", Repeat.from_params(Expression("{2*x}"), "hex1")], "my_little_format")
+    f = Format.from_params(["x: u8", Repeat.from_params(Expression("{2*x}"), "hex4")], "my_little_format")
     f.pack([2, ["a", "b", "c", "d"]])
-    assert f.to_tibs() == tibs_of(("u8", 2), ("hex1", "a"), ("hex1", "b"), ("hex1", "c"), ("hex1", "d"))
+    assert f.to_tibs() == tibs_of(("u8", 2), ("hex4", "a"), ("hex4", "b"), ("hex4", "c"), ("hex4", "d"))
 
 def test_if_with_const_value():
     f = Format('(if {False}: const u8=255 else: const u8=0)')
@@ -411,7 +411,7 @@ def test_recursive_from_string():
 
 
 def test_interesting_types_from_string():
-    s = "  (const f32= -3.75e2 , _fred : bytes4 = b'abc\x04',) "
+    s = "  (const f32= -3.75e2 , _fred : bytes32 = b'abc\x04',) "
     f = Format.from_string(s)
     assert f[0].value == -375
     assert f["_fred"].value == b"abc\x04"
@@ -473,7 +473,7 @@ def test_construction_by_appending():
 
 f_str = """
 sequence_header: (
-    sequence_header_code: const hex8 = 0x000001b3,
+    sequence_header_code: const hex32 = 0x000001b3,
     horizontal_size_value: u12,
     vertical_size_value: u12 ,
     aspect_ratio_information: u4,
@@ -522,7 +522,7 @@ def test_stretchy_field():
 
 
 def test_repeated_field_copy():
-    i = Field("hex4 = abcd")
+    i = Field("hex16 = abcd")
     f = Format.from_params([i, i])
     assert f[0].value == "abcd"
     assert f[1].value == "abcd"
@@ -783,7 +783,7 @@ def test_format_with_repeat():
 
 def test_format_with_conditional_fields():
     """Test a format with conditional fields based on a flag"""
-    fmt = Format("(has_name: bool, if {has_name}: name: bytes4, id: u16)")
+    fmt = Format("(has_name: bool, if {has_name}: name: bytes32, id: u16)")
 
     # Test with name (has_name=True)
     fmt.pack([True, b"ABCD", 1234])
@@ -910,7 +910,7 @@ def test_appending_fields():
     assert x_value == 0x10
 
 def test_string_value():
-    f = Format("(x: const hex4 = dead, if {x == 'dead'}: u8)")
+    f = Format("(x: const hex16 = dead, if {x == 'dead'}: u8)")
     b = Mutibs('0xdeadff')
     f.parse(b)
     assert f.value == ['dead', 255]

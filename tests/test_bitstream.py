@@ -3,7 +3,7 @@ from bitformat import Reader, Tibs
 
 def test_tibs_literals_and_dtype_packing_are_joined_explicitly():
     b = Tibs.from_joined(["0b1", Tibs.from_dtype("u7", 5), Tibs.from_dtype("i9", -99), "0x47"])
-    assert b.unpack("(bool, u7, i9, hex2)") == (True, 5, -99, "47")
+    assert b.unpack("(bool, u7, i9, hex8)") == (True, 5, -99, "47")
 
 
 def test_find_all_uses_tibs_native_list_semantics():
@@ -14,8 +14,8 @@ def test_find_all_uses_tibs_native_list_semantics():
 
 def test_reader_accepts_tibs():
     r = Reader(Tibs.from_bytes(b"hello"))
-    assert r.read("hex2") == "68"
-    assert r.read("bytes2") == b"el"
+    assert r.read("hex8") == "68"
+    assert r.read("bytes16") == b"el"
     assert r.pos == 24
 
 

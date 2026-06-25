@@ -129,7 +129,7 @@ class Dtype(abc.ABC):
 
         * ``'u12'``: A DtypeSingle representing an unsigned 12-bit integer.
         * ``'[i6; 5]'``: A DtypeArray of 5 signed 6-bit integers.
-        * ``'(bool, hex4, f16)'``: A DtypeTuple of a boolean, a 4-char hex value and a 16-bit float.
+        * ``'(bool, hex16, f16)'``: A DtypeTuple of a boolean, a 16-bit hex value and a 16-bit float.
 
         As a shortcut the ``Dtype`` constructor can be used directly with a token string.
 
@@ -185,8 +185,8 @@ class Dtype(abc.ABC):
             12
             >>> Dtype('[u12; 5]').bit_length
             60
-            >>> Dtype('(hex5, bool)').bit_length
-            21
+            >>> Dtype('(hex16, bool)').bit_length
+            17
             >>> Dtype('i').bit_length
             None
 
@@ -304,11 +304,7 @@ class DtypeSingle(Dtype):
     @override
     def info(self) -> str:
         if self.bit_length is not None:
-            bpc = self._definition.bits_per_character
-            if bpc is not None and bpc != 1:
-                len_str = f"{self.bit_length} bit ({self.size} characters)"
-            else:
-                len_str = f"{self.bit_length} bit"
+            len_str = f"{self.bit_length} bit"
         elif self._size.is_none():
             len_str = "variable length"
         else:
@@ -339,10 +335,7 @@ class DtypeSingle(Dtype):
         x._size = size
         x._bit_length = None
         if x._size.has_const_value and x._size.const_value is not None:
-            if definition.bits_per_character is None:
-                x._bit_length = x._size.const_value
-            else:
-                x._bit_length = x._size.const_value * definition.bits_per_character
+            x._bit_length = x._size.const_value
         little_endian = (endianness is Endianness.LITTLE or
                      (endianness is Endianness.NATIVE and bitformat.byteorder is Endianness.LITTLE))
         x._endianness = endianness
@@ -847,7 +840,6 @@ class DtypeDefinition:
                  allowed_sizes: AllowedSizes,
                  set_fn: Callable = None, get_fn: Callable = None,
                  return_type: Any = Any, is_signed: bool = False, bitlength2chars_fn=None,
-                 bits_per_character: int | None = None,
                  endianness_variants: bool = False):
         self.kind = kind
         self.description = description
@@ -855,7 +847,6 @@ class DtypeDefinition:
         self.allowed_sizes = allowed_sizes
         self.return_type = return_type
         self.is_signed = is_signed
-        self.bits_per_character = bits_per_character
         self.endianness_variants = endianness_variants
         self.set_fn = set_fn
 
@@ -872,15 +863,6 @@ class DtypeDefinition:
             self.get_fn = allowed_size_checked_get_fn
         else:
             self.get_fn = get_fn
-
-        if bits_per_character is not None:
-            if bitlength2chars_fn is not None:
-                raise ValueError("You shouldn't specify both a bits_per_character and a bitlength2chars_fn.")
-
-            def bitlength2chars_fn(x):
-                if x is None:
-                    return 0
-                return x // bits_per_character
 
         self.bitlength2chars_fn = bitlength2chars_fn
 
@@ -919,8 +901,7 @@ class DtypeDefinition:
              f"short_description='{self.short_description}'",
              f"return_type={self.return_type.__name__}",
              f"is_signed={self.is_signed}",
-             f"allowed_sizes={self.allowed_sizes!s}",
-             f"bits_per_character={self.bits_per_character})"]
+             f"allowed_sizes={self.allowed_sizes!s})"]
         return ", ".join(s)
 
 
@@ -992,14 +973,14 @@ class Register:
 
     def __repr__(self) -> str:
         s = [
-            f"{'key':<12}:{'kind':^12}{'signed':^8}{'allowed_sizes':^16}{'bits_per_character':^12}{'return_type':<13}"
+            f"{'key':<12}:{'kind':^12}{'signed':^8}{'allowed_sizes':^16}{'return_type':<13}"
         ]
-        s.append("-" * 72)
+        s.append("-" * 60)
         for key in self.kind_to_def:
             m = self.kind_to_def[key]
             allowed = "" if not m.allowed_sizes else m.allowed_sizes
             ret = "None" if m.return_type is None else m.return_type.__name__
             s.append(
-                f"{key:<12}:{m.kind:>12}{m.is_signed:^8}{allowed!s:^16}{m.bits_per_character:^12}{ret:<13} # {m.description}"
+                f"{key:<12}:{m.kind:>12}{m.is_signed:^8}{allowed!s:^16}{ret:<13} # {m.description}"
             )
         return "\n".join(s)

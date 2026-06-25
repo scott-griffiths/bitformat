@@ -148,13 +148,13 @@ class TestBasicFunctionality:
 
 
 def test_len():
-    a = Dtype("bytes2")
+    a = Dtype("bytes16")
     assert isinstance(a, DtypeSingle)
-    assert a.size == 2
+    assert a.size == 16
     assert a.bit_length == 16
-    a = Dtype("[bytes1; 2]")
+    a = Dtype("[bytes8; 2]")
     assert isinstance(a, DtypeArray)
-    assert a.size == 1
+    assert a.size == 8
     assert a.items == 2
     assert a.bit_length == 16
     a = DtypeSingle("u8")
@@ -166,8 +166,8 @@ def test_len():
     a = DtypeSingle("bool")
     assert a.size == 1
     assert a.bit_length == 1
-    a = DtypeSingle("bytes4")
-    assert a.size == 4
+    a = DtypeSingle("bytes32")
+    assert a.size == 32
     assert a.bit_length == 32
     a = DtypeSingle("f")
     assert a.size == Expression('{None}')
@@ -177,12 +177,12 @@ def test_len():
     assert a.size == 8
     assert a.bit_length == 24
     assert a.items == 3
-    a = DtypeArray("[bytes3;]")
-    assert a.size == 3
+    a = DtypeArray("[bytes24;]")
+    assert a.size == 24
     assert a.bit_length is None
     assert a.items is None
-    a = DtypeArray("[bytes3; 4]")
-    assert a.size == 3
+    a = DtypeArray("[bytes24; 4]")
+    assert a.size == 24
     assert a.bit_length == 96
     assert a.items == 4
     a = Dtype("(u8, f16, bool)")
@@ -299,7 +299,7 @@ def test_str():
     assert repr(a) == "DtypeSingle('u8_le')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
     # nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Tibs._set_u, Tibs._get_u)
-    # s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=(), bits_per_character=None)"
+    # s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=())"
     # assert str(nt) == s
     # assert repr(nt) == s
 
@@ -421,7 +421,7 @@ def test_dtype_single_invalid_endianness():
     with pytest.raises(ValueError):
         Dtype("u7_le") # Endianness only for whole bytes
     with pytest.raises(ValueError):
-        Dtype("bytes2_le") # Bytes type does not support endianness
+        Dtype("bytes16_le") # Bytes type does not support endianness
 
 def test_dtype_single_pack_invalid_value():
     d = Dtype("u8")
@@ -461,7 +461,7 @@ def test_dtype_single_info():
     assert "32 bit" in info_str
     assert "float" in info_str
     assert "big-endian" in info_str # Based on current DtypeSingle.info() for f32_be
-    d_bytes = Dtype("bytes5")
+    d_bytes = Dtype("bytes40")
     info_str_bytes = d_bytes.info()
     assert "40 bit (5 characters)" in info_str_bytes
     assert "bytes" in info_str_bytes
@@ -531,7 +531,7 @@ def test_dtype_tuple_various_configs():
     test_cases = [
         ("(u4, bool)", (0xf, True), 5, 2),
         ("(i8, f16, u1)", (-10, 2.5, 0), 8 + 16 + 1, 3),
-        ("([u4;2], bytes1)", ([1,2], b"z"), 8+8, 2)
+        ("([u4;2], bytes8)", ([1,2], b"z"), 8+8, 2)
     ]
     for dtype_str, val, blen, num_items in test_cases:
         d = Dtype(dtype_str)

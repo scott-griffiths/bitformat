@@ -39,7 +39,7 @@ class TestCreation:
         assert a[-1] == 7
 
     def test_creation_from_bytes_explicit(self):
-        a = Array.from_bytes("hex2", b"ABCD")
+        a = Array.from_bytes("hex8", b"ABCD")
         assert a[0] == "41"
         assert a[1] == "42"
         assert a[2] == "43"
@@ -99,7 +99,7 @@ class TestCreation:
         b = Array("bin3", ["111", "000", "111"])
         assert len(b) == 3
         assert b.bits == "0b111000111"
-        b.dtype = "hex1"
+        b.dtype = "hex4"
         assert len(b) == 2
         with pytest.raises(ValueError):
             b.append("f")
@@ -212,8 +212,8 @@ class TestArrayMethods:
         assert not c.equals(array.array("B", [1, 3]))
 
     def test_equals_with_trailing_bits(self):
-        a = Array("hex1", ["a", "b", "c", "d", "e", "f"])
-        c = Array.from_tibs("hex1", Tibs.from_string("0xabcdef, 0b11"))
+        a = Array("hex4", ["a", "b", "c", "d", "e", "f"])
+        c = Array.from_tibs("hex4", Tibs.from_string("0xabcdef, 0b11"))
         assert a.to_list() == c.to_list()
         assert a != c
         a = Array.from_tibs(a.dtype, a.bits + "0b11")
@@ -225,7 +225,7 @@ class TestArrayMethods:
         a[0] = 1
         assert a[0] is True
 
-        b = Array("hex3")
+        b = Array("hex12")
         with pytest.raises(ValueError):
             b.append("12")
         b.append("123")
@@ -285,7 +285,7 @@ class TestArrayMethods:
         assert a.to_list() == ap.to_list()
 
     def test_insert(self):
-        a = Array("hex3", ["abc", "def"])
+        a = Array("hex12", ["abc", "def"])
         assert a.bits.hex == "abcdef"
         a.insert(0, "000")
         assert a.bits.hex == "000abcdef"
@@ -303,7 +303,7 @@ class TestArrayMethods:
             a.insert(2, "ab")
 
     def test_pop(self):
-        a = Array("oct2", ["33", "21", "11", "76"])
+        a = Array("oct6", ["33", "21", "11", "76"])
         with pytest.raises(IndexError):
             _ = a.pop(4)
         assert len(a) == 4
@@ -475,10 +475,10 @@ class TestArrayMethods:
     #                                         " 0: c040 3f80 4000\n" \
     #                                         "]\n"
     #         a.bits += '0b110'
-    #         a.dtype='hex4'
+    #         a.dtype='hex16'
     #         s = io.StringIO()
     #         a.pp(stream=s)
-    #         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex4', length=3, item_size=16 bits, total data size=7 bytes> [
+    #         assert remove_unprintable(s.getvalue()) ==  """<Array dtype='hex16', length=3, item_size=16 bits, total data size=7 bytes> [
     #  0: c040 3f80 4000
     # ] + trailing_bits = 0b110\n"""
 
@@ -636,7 +636,7 @@ class TestArrayOperations:
     #     assert b.unpack() == [-4, -2.5, -9, -0.25]
 
     def test_in_place_or(self):
-        a = Array("hex3")
+        a = Array("hex12")
         a.append("f0f")
         a.extend(["000", "111"])
         a |= "0x00f"
@@ -645,7 +645,7 @@ class TestArrayOperations:
             a |= 12
 
     def test_xor(self):
-        a = Array("hex2", ["00", "ff", "aa"])
+        a = Array("hex8", ["00", "ff", "aa"])
         b = a ^ "0xff"
         assert a.to_list() == ["00", "ff", "aa"]
         assert b.to_list() == ["ff", "00", "55"]
@@ -757,7 +757,7 @@ class TestSameSizeArrayOperations:
         b.append(0)
         c = a + b
         assert c.to_list() == [9, 102, 1000]
-        a.dtype = "hex4"
+        a.dtype = "hex16"
         with pytest.raises(ValueError):
             _ = a + b
 
@@ -874,15 +874,15 @@ class TestMisc:
             a[-5] = 100.0
 
     def test_bytes(self):
-        a = Array.from_zeros("bytes8", 5)
+        a = Array.from_zeros("bytes64", 5)
         assert a.bits == b"\x00" * 40
 
-        b = Array.from_zeros("bytes1", 5)
+        b = Array.from_zeros("bytes8", 5)
         assert b.bits == b"\x00" * 5
 
     def test_bytes_trailing_bits(self):
         b = Tibs("0x000000, 0b111")
-        a = Array.from_tibs("bytes1", b)
+        a = Array.from_tibs("bytes8", b)
         assert a.trailing_bits == "0b111"
 
     def test_operation_with_bool(self):

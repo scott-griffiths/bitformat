@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import math
 import sys
 from ast import literal_eval
 from collections.abc import Sequence
@@ -34,6 +35,14 @@ def _chars_per_dtype(dtype: Dtype, bits_per_group: int) -> int:
         return Register().kind_to_def[dtype.kind].bitlength2chars_fn(bits_per_group)
     assert isinstance(dtype, DtypeTuple)
     return sum(_chars_per_dtype(d, bits_per_group) for d in dtype) + 2 + 2 * (dtype.items - 1)
+
+
+def _default_pp_group_bits(dtype: Dtype) -> int:
+    if isinstance(dtype, DtypeArray):
+        dtype = dtype._dtype_single
+    if isinstance(dtype, DtypeSingle):
+        return {DtypeKind.BIN: 8, DtypeKind.HEX: 8, DtypeKind.OCT: 12, DtypeKind.BYTES: 32}.get(dtype.kind, 0)
+    return 0
 
 
 def _format_tibs(bits: Tibs | Mutibs, bits_per_group: int, sep: str, dtype: Dtype, colour_start: str,
@@ -81,16 +90,15 @@ def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     if bits_per_group == 0:
         has_length_in_fmt = False
         if dtype2 is None:
-            bits_per_group = {"bin": 8, "hex": 8, "oct": 12, "bytes": 32}.get(dtype1.kind.value, 0)
+            bits_per_group = _default_pp_group_bits(dtype1)
             if bits_per_group == 0:
                 raise ValueError(f"No length or default length available for pp() dtype '{dtype1}'.")
         else:
-            try:
-                bits_per_group = 2 * dtype1._definition.bits_per_character * dtype2._definition.bits_per_character
-            except ValueError:
+            default1 = _default_pp_group_bits(dtype1)
+            default2 = _default_pp_group_bits(dtype2)
+            if not default1 or not default2:
                 raise ValueError(f"Can't find a default bit_length to use for pp() format with dtypes '{dtype1}' and '{dtype2}'.")
-            if bits_per_group >= 24:
-                bits_per_group //= 2
+            bits_per_group = math.lcm(default1, default2)
     return bits_per_group, has_length_in_fmt
 
 

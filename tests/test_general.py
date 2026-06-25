@@ -19,7 +19,7 @@ def test_info_strings():
         DtypeSingle("u8"),
         DtypeSingle("bool"),
         DtypeSingle("bits8"),
-        DtypeSingle("bytes4"),
+        DtypeSingle("bytes32"),
         DtypeSingle("f32"),
         DtypeSingle("i"),
         DtypeSingle("u{x + 1}"),
@@ -35,14 +35,14 @@ def test_info_strings():
 
         Field("u8"),
         Field("bool"),
-        Field("name: bytes4"),
+        Field("name: bytes32"),
         Field("x: [f32; ]"),
 
         If("if {x > 0}: u8 else: i8"),
 
         Repeat("repeat {3}: [u8; 3]"),
 
-        Format("my_format: (header: hex2 = 0x47, flag: bool, if {flag}: data: [u8; 6] else: data: bool, f32)"),
+        Format("my_format: (header: hex8 = 0x47, flag: bool, if {flag}: data: [u8; 6] else: data: bool, f32)"),
     ]
     for thing in things_with_info:
         info = thing.info()

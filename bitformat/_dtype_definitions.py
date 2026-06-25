@@ -127,6 +127,19 @@ def from_bytes(data: bytearray | bytes | list, length: None = None) -> Tibs:
     return Tibs.from_bytes(bytes(data))
 
 
+def bin_bits2chars(bit_length: int) -> int:
+    return bit_length
+
+def oct_bits2chars(bit_length: int) -> int:
+    return (bit_length + 2) // 3
+
+def hex_bits2chars(bit_length: int) -> int:
+    return (bit_length + 3) // 4
+
+def bytes_bits2chars(bit_length: int) -> int:
+    return (bit_length + 7) // 8
+
+
 bin_defn = DtypeDefinition(DtypeKind.BIN,
                            "a binary string",
                            "binary string",
@@ -135,7 +148,7 @@ bin_defn = DtypeDefinition(DtypeKind.BIN,
                            to_bin,
                            str,
                            False,
-                           bits_per_character=1)
+                           bin_bits2chars)
 oct_defn = DtypeDefinition(DtypeKind.OCT,
                            "an octal string",
                            "octal string",
@@ -144,7 +157,7 @@ oct_defn = DtypeDefinition(DtypeKind.OCT,
                            to_oct,
                            str,
                            False,
-                           bits_per_character=3)
+                           oct_bits2chars)
 hex_defn = DtypeDefinition(DtypeKind.HEX,
                            "a hexadecimal string",
                            "hex string",
@@ -153,7 +166,7 @@ hex_defn = DtypeDefinition(DtypeKind.HEX,
                            to_hex,
                            str,
                            False,
-                           bits_per_character=4)
+                           hex_bits2chars)
 bytes_defn = DtypeDefinition(DtypeKind.BYTES,
                              "a bytes object",
                              "bytes",
@@ -162,7 +175,7 @@ bytes_defn = DtypeDefinition(DtypeKind.BYTES,
                              to_bytes,
                              bytes,
                              False,
-                             bits_per_character=8)
+                             bytes_bits2chars)
 
 
 # ----- Float types -----

@@ -32,8 +32,8 @@ def test_read():
 
 def test_peek():
     r = Reader(Tibs("0xff000001"))
-    assert r.peek('hex2') == 'ff'
-    assert r.peek(Dtype('hex2')) == 'ff'
+    assert r.peek('hex8') == 'ff'
+    assert r.peek(Dtype('hex8')) == 'ff'
     assert r.pos == 0
     r.pos = len(r) - 1
     assert r.peek(1) == '0b1'
@@ -44,7 +44,7 @@ def test_peek():
 def test_parse():
     r = Reader(Tibs.from_bytes(b"hello_world"))
     r.pos = 6 * 8
-    f = Field("bytes3")
+    f = Field("bytes24")
     assert r.parse(f) == 24
     assert f.value == b"wor"
     r.parse(g := Field("bool"))
@@ -54,7 +54,7 @@ def test_parse():
 
 def test_read_tuple():
     r = Reader(Tibs('0x00ffff'))
-    x = r.peek(DtypeTuple('(hex3, u4)'))
+    x = r.peek(DtypeTuple('(hex12, u4)'))
     assert x == ('00f', 15)
     x = r.read('(u8, bool, bool)')
     assert x == (0, True, True)

@@ -17,6 +17,12 @@ def get_allowed_length(dtype_kind, length):
     return length
 
 
+def get_compatible_length(dtype_kind, length):
+    length = get_allowed_length(dtype_kind, length)
+    alignment = {DtypeKind.OCT: 3, DtypeKind.HEX: 4, DtypeKind.BYTES: 8}.get(dtype_kind, 1)
+    return alignment * max(1, math.ceil(length / alignment))
+
+
 def compare_fields(f, f2):
     if isinstance(f.value, float) and math.isnan(f.value):
         assert math.isnan(f2.value)
@@ -29,15 +35,11 @@ def compare_fields(f, f2):
     int_value=st.integers(0, 2**800 - 1),
 )
 def test_field_consistency(dtype_kind, length, int_value):
-    length = get_allowed_length(dtype_kind, length)
+    length = get_compatible_length(dtype_kind, length)
     f = Field.from_params(DtypeSingle.from_params(dtype_kind, length))
     f2 = Field.from_string(str(f))
     compare_fields(f, f2)
 
-    # Create some bits of the right length
-    bits_per_character = Register().kind_to_def[dtype_kind].bits_per_character
-    if bits_per_character is not None:
-        length *= bits_per_character
     b = Tibs.from_dtype("u800", int_value)[0:length]
     f.parse(b)
     if dtype_kind != DtypeKind.PAD:
@@ -60,16 +62,12 @@ def test_field_consistency(dtype_kind, length, int_value):
     items=st.integers(1, 4),
 )
 def test_field_array_consistency(dtype_kind, length, int_value, items):
-    length = get_allowed_length(dtype_kind, length)
+    length = get_compatible_length(dtype_kind, length)
 
     f = Field.from_params(DtypeArray.from_params(dtype_kind, length, items))
     f2 = Field.from_string(str(f))
     assert f == f2
 
-    # Create some bits of the right length
-    bits_per_character = Register().kind_to_def[dtype_kind].bits_per_character
-    if bits_per_character is not None:
-        length *= bits_per_character
     b = Tibs.from_dtype("u320", int_value)[0: length * items]
     f.parse(b)
     assert f.to_tibs() == b
@@ -91,32 +89,15 @@ def test_field_array_consistency(dtype_kind, length, int_value, items):
     lengths=st.lists(st.integers(1, 5), min_size=5, max_size=5),
 )
 def test_format_consistency(dtype_kinds, lengths):
-    bits_per_characters = [
-        Register().kind_to_def[dtype_kind].bits_per_character
-        for dtype_kind in dtype_kinds
-    ]
-    bits_per_characters = [b if b is not None else 1 for b in bits_per_characters]
     als = []
-    for al, length in zip(
-        [
-            Register().kind_to_def[dtype_kinds].allowed_sizes
-            for dtype_kinds in dtype_kinds
-        ],
-        lengths,
-    ):
-        if al.sizes:
-            if al.sizes[-1] is Ellipsis:
-                als.append(al.sizes[1] * length)
-            else:
-                als.append(al.sizes[length % len(al.sizes)])
-        else:
-            als.append(length)
+    for dtype_kind, length in zip(dtype_kinds, lengths):
+        als.append(get_compatible_length(dtype_kind, length))
 
-    zipped = list(zip(dtype_kinds, als, bits_per_characters))
+    zipped = list(zip(dtype_kinds, als))
     for i in range(6):
         dtypes = [
-            DtypeSingle.from_params(dtype_kind, length * bits_per_character)
-            for dtype_kind, length, bits_per_character in zipped[:i]
+            DtypeSingle.from_params(dtype_kind, length)
+            for dtype_kind, length in zipped[:i]
         ]
         f = Format.from_params([Field.from_params(dtype) for dtype in dtypes])
         f2 = f

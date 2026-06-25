@@ -10,11 +10,11 @@ import string
 
 class TestCreation:
     def test_creation_from_dtype(self):
-        d = DtypeSingle.from_params(DtypeKind.BYTES, 2)
-        assert d.size == 2
+        d = DtypeSingle.from_params(DtypeKind.BYTES, 16)
+        assert d.size == 16
         assert d.bit_length == 16
 
-        ds = [Dtype.from_string(x) for x in ["bytes3", "u9", "i4", "f32", "bits11"]]
+        ds = [Dtype.from_string(x) for x in ["bytes24", "u9", "i4", "f32", "bits11"]]
         for d in ds:
             f = Field.from_params(d)
             assert f.dtype == d
@@ -104,7 +104,7 @@ class TestBuilding:
         f = Field("i4")
         f.pack(-8)
         assert f.to_tibs() == "0x8"
-        f = Field("bytes3")
+        f = Field("bytes24")
         f.pack(b"abc")
         assert f.to_tibs() == "0x616263"
         f = Field("bits11")
@@ -163,9 +163,9 @@ def test_creation():
 
 
 def test_creation_with_bytes_string():
-    f = Field.from_string('bytes3 = b"abc"')
+    f = Field.from_string('bytes24 = b"abc"')
     assert f.value == b"abc"
-    f = Field('const bytes3 = b"abc"')
+    f = Field('const bytes24 = b"abc"')
     assert f.is_const() is True
     assert f.value == b"abc"
 

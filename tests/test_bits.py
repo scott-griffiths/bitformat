@@ -24,7 +24,7 @@ def test_unpack_with_range():
     b = Tibs.from_joined([Tibs.from_dtype("u12", 99), Tibs.from_dtype("bool", True), Tibs("0x4321")])
     assert b.unpack("u12", 0, 12) == 99
     assert b.unpack("bool", 12, 13) is True
-    assert b.unpack("hex4", 13) == "4321"
+    assert b.unpack("hex16", 13) == "4321"
 
 
 def test_info_and_pp_methods_are_patched_on_tibs():

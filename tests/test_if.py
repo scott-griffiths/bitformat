@@ -59,7 +59,7 @@ def test_if_str():
 
 def test_slightly_more_complex_things():
     f = Format("""my_format: (
-        header: hex2 = 0x47,
+        header: hex8 = 0x47,
         flag: bool,
         if {flag}:
             data: [u8; 6]

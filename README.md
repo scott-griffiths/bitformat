@@ -142,10 +142,12 @@ Some example data type strings are:
 * `'i32_le'` - a 32 bit little-endian signed integer.
 * `'f64'` - a 64 bit IEEE float. Lengths of 16, 32 and 64 are supported.
 * `'bool'` - a single bit boolean value.
-* `'bytes10'` - a 10 byte sequence.
+* `'bytes80'` - an 80 bit / 10 byte sequence.
 * `'hex'` - a hexadecimal string.
 * `'bin'` - a binary string.
 * `'[u8; 40]'` - an array of 40 unsigned 8 bit integers.
+
+Length suffixes are always in bits, including display-oriented dtypes such as `hex`, `oct`, and `bytes`.
 
 Byte endianness for floating point and integer data types is specified with `_le`, `_be` and `_ne` suffixes to the base type. 
 

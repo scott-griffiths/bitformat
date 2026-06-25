@@ -161,7 +161,7 @@ class TestArrayEdgeCases:
         original_bits = array.to_tibs()
         
         # Convert to different compatible dtypes
-        compatible_dtypes = ["bits8", "hex2"]  # Same bit width
+        compatible_dtypes = ["bits8", "hex8"]  # Same bit width
         
         for new_dtype in compatible_dtypes:
             array.dtype = new_dtype
@@ -243,7 +243,7 @@ class TestDtypeEdgeCases:
             "i128", 
             "f16",
             "bool",
-            "bytes1",
+            "bytes8",
             "hex",
             "bin",
         ]
