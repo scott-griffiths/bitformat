@@ -24,7 +24,7 @@ from hypothesis import Verbosity
 # with its Rust dependencies. In a proper CI environment, these should work.
 try:
     from bitformat import (
-        Bits, MutableBits, Array, Format, Field, Dtype, DtypeSingle, DtypeArray, 
+        Tibs, Mutibs, Array, Format, Field, Dtype, DtypeSingle, DtypeArray, 
         DtypeTuple, Endianness, DtypeKind
     )
     from bitformat._common import Expression, ExpressionError
@@ -35,25 +35,25 @@ except ImportError as e:
 
 
 class TestBitsEdgeCases:
-    """Test edge cases for Bits class."""
+    """Test edge cases for Tibs class."""
     
     def test_empty_bits_operations(self):
-        """Test operations on empty Bits objects."""
-        empty = Bits()
+        """Test operations on empty Tibs objects."""
+        empty = Tibs()
         assert len(empty) == 0
         assert empty.hex == ""
         assert empty.bin == ""
         assert empty.bytes == b""
         
         # Concatenation with empty should work
-        non_empty = Bits("0x42")
+        non_empty = Tibs("0x42")
         assert empty + non_empty == non_empty
         assert non_empty + empty == non_empty
         
     def test_single_bit_operations(self):
-        """Test operations on single-bit Bits objects."""
-        zero_bit = Bits("0b0")
-        one_bit = Bits("0b1")
+        """Test operations on single-bit Tibs objects."""
+        zero_bit = Tibs("0b0")
+        one_bit = Tibs("0b1")
         
         assert len(zero_bit) == 1
         assert len(one_bit) == 1
@@ -73,7 +73,7 @@ class TestBitsEdgeCases:
             assume(bit_width <= 128)  # Keep test reasonable
             
         dtype_str = f"u{bit_width}"
-        bits = Bits.from_dtype(dtype_str, value)
+        bits = Tibs.from_dtype(dtype_str, value)
         recovered = bits.unpack([dtype_str])[0]
         assert recovered == value, f"Failed roundtrip for {value} with {dtype_str}"
         
@@ -86,7 +86,7 @@ class TestBitsEdgeCases:
             
         dtype_str = f"i{bit_width}"
         try:
-            bits = Bits.from_dtype(dtype_str, value)
+            bits = Tibs.from_dtype(dtype_str, value)
             recovered = bits.unpack([dtype_str])[0]
             assert recovered == value
         except ValueError as e:
@@ -99,24 +99,25 @@ class TestBitsEdgeCases:
     @given(st.binary(min_size=0, max_size=1000))
     def test_bytes_roundtrip_edge_cases(self, data):
         """Test bytes roundtrip with various edge cases."""
-        bits = Bits.from_bytes(data)
+        bits = Tibs.from_bytes(data)
         recovered = bits.bytes
         assert recovered == data
         
         # Test with partial byte handling
         if len(data) > 0:
             # Add some extra bits and check behavior
-            extra_bits = Bits("0b101")
+            extra_bits = Tibs("0b101")
             combined = bits + extra_bits
-            
-            # The bytes should include the partial byte
-            combined_bytes = combined.to_bytes()
+
+            with pytest.raises(ValueError):
+                combined.to_bytes()
+            combined_bytes = (combined + Tibs.from_zeros(-len(combined) % 8)).to_bytes()
             assert len(combined_bytes) == len(data) + 1  # Extra bits pad to full byte
             
     def test_bit_manipulation_edge_cases(self):
         """Test edge cases in bit manipulation."""
         # Test setting bits at boundaries
-        bits = MutableBits("0x00")
+        bits = Mutibs("0x00")
         
         # Test first and last bit
         bits[0] = 1
@@ -126,8 +127,8 @@ class TestBitsEdgeCases:
         assert bits == "0x81"
         
         # Test extending with bit operations
-        bits = MutableBits("0b1")
-        bits.append("0b0")
+        bits = Mutibs("0b1")
+        bits.extend("0b0")
         assert bits == "0b10"
         assert len(bits) == 2
 
@@ -157,7 +158,7 @@ class TestArrayEdgeCases:
     def test_array_dtype_conversion_edge_cases(self, values):
         """Test edge cases in array dtype conversions."""
         array = Array("u8", values)
-        original_bits = array.to_bits()
+        original_bits = array.to_tibs()
         
         # Convert to different compatible dtypes
         compatible_dtypes = ["bits8", "hex2"]  # Same bit width
@@ -165,7 +166,7 @@ class TestArrayEdgeCases:
         for new_dtype in compatible_dtypes:
             array.dtype = new_dtype
             # Should preserve the underlying bits
-            assert array.to_bits() == original_bits
+            assert array.to_tibs() == original_bits
             
         # POSSIBLE FAILING TEST: Converting back might not preserve exact values
         # due to different interpretation of the same bits
@@ -382,9 +383,9 @@ class TestEndiannesssEdgeCases:
         value = 0x1234
         
         # Test different endianness formats
-        big_endian = Bits.from_dtype("u16_be", value)
-        little_endian = Bits.from_dtype("u16_le", value)
-        native_endian = Bits.from_dtype("u16_ne", value)
+        big_endian = Tibs.from_dtype("u16_be", value)
+        little_endian = Tibs.from_dtype("u16_le", value)
+        native_endian = Tibs.from_dtype("u16_ne", value)
         
         # They should be different (unless native happens to match one)
         if sys.byteorder is Endianness.BIG:
@@ -409,7 +410,7 @@ class TestEndiannesssEdgeCases:
                     continue
                     
                 dtype_str = f"u{size}{endian}"
-                bits = Bits.from_dtype(dtype_str, value)
+                bits = Tibs.from_dtype(dtype_str, value)
                 recovered = bits.unpack([dtype_str])[0]
                 assert recovered == value
 
@@ -420,11 +421,11 @@ class TestErrorConditionsAndBoundaries:
     def test_memory_efficiency_edge_cases(self):
         """Test memory-related edge cases."""
         # Very long bit strings
-        long_bits = Bits("0b" + "1" * 10000)
+        long_bits = Tibs("0b" + "1" * 10000)
         assert len(long_bits) == 10000
         
         # Operations on long bit strings
-        long_bits2 = Bits("0b" + "0" * 10000)
+        long_bits2 = Tibs("0b" + "0" * 10000)
         combined = long_bits + long_bits2
         assert len(combined) == 20000
         
@@ -437,18 +438,18 @@ class TestErrorConditionsAndBoundaries:
         ]
         
         for hex_str in hex_cases:
-            bits = Bits(hex_str)
+            bits = Tibs(hex_str)
             assert bits.hex.lower() == "ff"
             
         # Test binary strings with whitespace
         bin_with_whitespace = "0b1010 0101"
-        bits = Bits(bin_with_whitespace)
+        bits = Tibs(bin_with_whitespace)
         assert bits.bin == "10100101"
         
     def test_type_conversion_edge_cases(self):
         """Test edge cases in type conversions."""
         # Converting between incompatible types
-        bits = Bits("0x42")
+        bits = Tibs("0x42")
         
         # Should work
         as_int = bits.unpack(["u8"])[0]
@@ -474,7 +475,7 @@ class TestHypothesisPropertyBasedEdgeCases:
         
         dtype_str = f"u{bit_width}"
         try:
-            bits = Bits.from_dtype(dtype_str, value)
+            bits = Tibs.from_dtype(dtype_str, value)
             recovered = bits.unpack([dtype_str])[0]
             assert recovered == value, f"Roundtrip failed for {value} with {bit_width} bits"
         except ValueError:
@@ -488,10 +489,10 @@ class TestHypothesisPropertyBasedEdgeCases:
         if not byte_values:
             return
             
-        bits_list = [Bits.from_dtype("u8", val) for val in byte_values]
+        bits_list = [Tibs.from_dtype("u8", val) for val in byte_values]
         
         # Concatenate all
-        result = Bits()
+        result = Tibs()
         for bits in bits_list:
             result = result + bits
             
@@ -506,7 +507,7 @@ class TestHypothesisPropertyBasedEdgeCases:
     @settings(max_examples=30)
     def test_bytes_conversion_property(self, data):
         """Property: bytes -> bits -> bytes should be identity."""
-        bits = Bits.from_bytes(data)
+        bits = Tibs.from_bytes(data)
         recovered = bits.bytes
         assert recovered == data
         
@@ -521,7 +522,7 @@ class TestImplementationSpecificEdgeCases:
     def test_bit_rust_integration_edge_cases(self):
         """Test edge cases in the Rust/Python integration."""
         # Test that Python/Rust boundary works correctly
-        bits = Bits("0x42")
+        bits = Tibs("0x42")
         
         # Operations that might cross the boundary
         concatenated = bits + bits + bits
@@ -536,7 +537,7 @@ class TestImplementationSpecificEdgeCases:
         # Create many objects to test memory management
         objects = []
         for i in range(1000):
-            obj = Bits.from_dtype("u16", i % 65536)
+            obj = Tibs.from_dtype("u16", i % 65536)
             objects.append(obj)
             
         # All should still be valid
@@ -546,12 +547,12 @@ class TestImplementationSpecificEdgeCases:
         """Basic tests that might reveal thread safety issues."""
         # This doesn't test actual threading, but tests operations that
         # might be problematic if not thread-safe
-        bits = Bits("0x42")
+        bits = Tibs("0x42")
         
         # Multiple simultaneous operations
         results = []
         for i in range(100):
-            result = bits + Bits.from_dtype("u8", i % 256)
+            result = bits + Tibs.from_dtype("u8", i % 256)
             results.append(result)
             
         # All should be different but valid
@@ -576,7 +577,7 @@ class TestAdvancedHypothesisStrategies:
             if bit_width <= 64:  # Keep reasonable
                 dtype_str = f"u{bit_width}"
                 try:
-                    bits = Bits.from_dtype(dtype_str, value)
+                    bits = Tibs.from_dtype(dtype_str, value)
                     recovered = bits.unpack([dtype_str])[0]
                     assert recovered == value
                 except ValueError:
@@ -642,7 +643,7 @@ class TestUnicodeAndEncodingEdgeCases:
         for case in unicode_hex_cases:
             try:
                 # Most of these should fail unless specifically handled
-                bits = Bits(case)
+                bits = Tibs(case)
                 # If it succeeds, should be valid
                 assert len(bits) % 4 == 0  # Hex should be multiple of 4 bits
             except (ValueError, UnicodeError):
@@ -662,7 +663,7 @@ class TestUnicodeAndEncodingEdgeCases:
         
         for case in binary_cases:
             try:
-                bits = Bits(case)
+                bits = Tibs(case)
                 # If successful, should be valid binary
                 assert all(c in '01' for c in bits.bin)
             except ValueError:
@@ -687,12 +688,12 @@ class TestFloatingPointEdgeCases:
         
         for pattern in special_patterns:
             try:
-                bits = Bits(pattern)
+                bits = Tibs(pattern)
                 if len(bits) == 32:  # Right size for f32
                     value = bits.unpack(["f32"])[0]
                     
                     # Should be able to round-trip back
-                    bits2 = Bits.from_dtype("f32", value)
+                    bits2 = Tibs.from_dtype("f32", value)
                     
                     # For special values, bit pattern might not be identical
                     # but the values should be equivalent

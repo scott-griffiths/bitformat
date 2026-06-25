@@ -3,7 +3,7 @@ from __future__ import annotations
 from ._fieldtype import FieldType
 from ._common import override, Indenter, Expression, ExpressionError
 from typing import Any
-from ._bits import Bits
+from ._bits import Tibs
 
 __all__ = ["Let"]
 
@@ -63,7 +63,7 @@ class Let(FieldType):
         return False  # Doesn't consume value
 
     @override
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         try:
             x = self._expr.evaluate(**vars_)
         except ExpressionError as e:
@@ -102,9 +102,9 @@ class Let(FieldType):
         return f"Let({self._name!r}, {self._expr!r})"
 
     @override
-    def to_bits(self) -> Bits:
-        """Returns an empty :class:`Bits`."""
-        return Bits()
+    def to_tibs(self) -> Tibs:
+        """Returns an empty :class:`Tibs`."""
+        return Tibs()
 
     @override
     def has_dynamic_size(self) -> bool:

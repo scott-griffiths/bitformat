@@ -2,7 +2,7 @@ name: Publish
 
 on:
   workflow_run:
-    workflows: [Test]
+    workflows: [Build]
     types: [completed]
 
 jobs:
@@ -58,6 +58,7 @@ jobs:
         with:
           workflow: build.yml
           workflow_conclusion: success
+          name: packages
           path: artifacts
 
       - name: Prepare distribution files

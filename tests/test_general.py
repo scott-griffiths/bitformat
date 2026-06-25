@@ -1,7 +1,7 @@
 
-from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Bits, MutableBits
+from bitformat import Format, If, Repeat, FieldType, Field, DtypeSingle, Dtype, DtypeTuple, DtypeArray, Tibs, Mutibs
 
-from bitformat._bits import bits_from_any
+from bitformat._bits import tibs_from_any
 
 # import tomllib
 #
@@ -53,11 +53,11 @@ def test_info_strings():
 
 
 def test_rust_bits_creation():
-    a = bits_from_any("0xf")
-    assert a == Bits('0xf')
-    b = bits_from_any(b'123')
-    assert b == Bits.from_bytes(b'123')
-    b = b.to_mutable_bits()
-    c = bits_from_any(b)
-    assert c == Bits.from_bytes(b'123')
-    assert type(b) == MutableBits
+    a = tibs_from_any("0xf")
+    assert a == Tibs('0xf')
+    b = tibs_from_any(b'123')
+    assert b == Tibs.from_bytes(b'123')
+    b = b.to_mutibs()
+    c = tibs_from_any(b)
+    assert c == Tibs.from_bytes(b'123')
+    assert type(b) == Mutibs

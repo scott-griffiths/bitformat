@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from bitformat import Format, DtypeSingle, DtypeArray, Bits, Field, Register
+from bitformat import Format, DtypeSingle, DtypeArray, Tibs, Field, Register
 from bitformat._common import DtypeKind
 from hypothesis import given
 import hypothesis.strategies as st
@@ -38,17 +38,17 @@ def test_field_consistency(dtype_kind, length, int_value):
     bits_per_character = Register().kind_to_def[dtype_kind].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
-    b = Bits.from_dtype("u800", int_value)[0:length]
+    b = Tibs.from_dtype("u800", int_value)[0:length]
     f.parse(b)
     if dtype_kind != DtypeKind.PAD:
-        assert f.to_bits() == b
+        assert f.to_tibs() == b
     v = f.value
     if v is not None:
         f2.value = v
     else:
         f2.clear()
     if dtype_kind is not DtypeKind.PAD and not (isinstance(v, float) and math.isnan(v)):
-        assert f.to_bits() == f2.to_bits()
+        assert f.to_tibs() == f2.to_tibs()
         f3 = eval(repr(f))
         compare_fields(f, f3)
 
@@ -70,13 +70,13 @@ def test_field_array_consistency(dtype_kind, length, int_value, items):
     bits_per_character = Register().kind_to_def[dtype_kind].bits_per_character
     if bits_per_character is not None:
         length *= bits_per_character
-    b = Bits.from_dtype("u320", int_value)[0: length * items]
+    b = Tibs.from_dtype("u320", int_value)[0: length * items]
     f.parse(b)
-    assert f.to_bits() == b
+    assert f.to_tibs() == b
     if not isinstance(f.value[0], float) and f.dtype.kind is not DtypeKind.PAD:
         # Can't compare NaN or pad
         f2.pack(f.value)
-        assert f.to_bits() == f2.to_bits()
+        assert f.to_tibs() == f2.to_tibs()
         assert f.value == f2.value
 
 
@@ -122,6 +122,6 @@ def test_format_consistency(dtype_kinds, lengths):
         f2 = f
         assert f == f2
         # Create some bits of the right length
-        b = Bits.from_ones(f.bit_length)
+        b = Tibs.from_ones(f.bit_length)
         f.parse(b)
-        assert f.to_bits() == b
+        assert f.to_tibs() == b

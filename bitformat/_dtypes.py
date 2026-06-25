@@ -7,10 +7,10 @@ import bitformat
 from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
-from bitformat.rust import Bits, bits_from_any
+from bitformat._tibs import Mutibs, Tibs, TibsLike, tibs_from_any
 
-# Things that can be converted to Bits when a Bits type is needed
-BitsType = Union["Bits", str, Iterable[Any], bytearray, bytes, memoryview]
+# Things that can be converted to Tibs when a Tibs type is needed
+TibsLike = Union["Tibs", "Mutibs", str, Iterable[Any], bytearray, bytes, memoryview]
 
 __all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register", "DtypeTransformer"]
 
@@ -142,8 +142,8 @@ class Dtype(abc.ABC):
             raise ValueError(f"Error parsing dtype '{s}': {e}")
 
     @abc.abstractmethod
-    def pack(self, value: Any, /) -> bitformat.Bits:
-        """Create and return a new Bits from a value.
+    def pack(self, value: Any, /) -> bitformat.Tibs:
+        """Create and return a new Tibs from a value.
 
         The value parameter should be of a type appropriate to the data type.
 
@@ -151,19 +151,19 @@ class Dtype(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _unpack(self, b: BitsType, /) -> tuple[int, Any]:
-        """Unpacks a Bits, returning number of bits unpacked as first element of tuple"""
+    def _unpack(self, b: TibsLike, /) -> tuple[int, Any]:
+        """Unpacks a Tibs, returning number of bits unpacked as first element of tuple"""
         ...
 
     @abc.abstractmethod
-    def _unpack_no_checks(self, b: Bits | MutableBits) -> Any | tuple[Any]:
-        """Unpacks the whole of a Bits, without checks on length or type."""
+    def _unpack_no_checks(self, b: Tibs | Mutibs) -> Any | tuple[Any]:
+        """Unpacks the whole of a Tibs, without checks on length or type."""
         ...
 
-    def unpack(self, b: BitsType, /):
-        """Unpack a Bits to find its value.
+    def unpack(self, b: TibsLike, /):
+        """Unpack a Tibs to find its value.
 
-        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+        The b parameter should be a Tibs of the appropriate length, or an object that can be converted to a Tibs.
 
         """
         return self._unpack(b)[1]  # We only return the values, not the number of bits unpacked.
@@ -294,8 +294,8 @@ class DtypeSingle(Dtype):
     _bit_length: int | None
     _definition: DtypeDefinition
     _endianness: Endianness
-    _create_fn: Callable[[Any], Bits]
-    _get_fn: Callable[[bitformat.Bits], Any]
+    _create_fn: Callable[[Any], Tibs]
+    _get_fn: Callable[[bitformat.Tibs], Any]
 
     @override
     def _is_padding(self) -> bool:
@@ -349,10 +349,9 @@ class DtypeSingle(Dtype):
 
         if little_endian:
             def get_fn_le(bits, start, length):
-                # TODO: Should take slice here
-                mutable_b = bits.to_mutable_bits()
+                mutable_b = tibs_from_any(bits)[start:start + length].to_mutibs()
                 mutable_b.byte_swap()
-                return definition.get_fn(mutable_b.to_bits(), start, length)
+                return definition.get_fn(mutable_b.to_tibs(), 0, length)
             x._get_fn = get_fn_le
         else:
             x._get_fn = definition.get_fn
@@ -364,9 +363,9 @@ class DtypeSingle(Dtype):
 
         def create_bits_le(v):
             bs = x._set_fn(v, length=x._bit_length)
-            mutable = bs.to_mutable_bits()  # TODO: Do we really need to clone here?
+            mutable = bs.to_mutibs()
             mutable.byte_swap()
-            return mutable.as_bits()
+            return mutable.to_tibs()
         x._create_fn = create_bits_le if little_endian else create_bits
         return x
 
@@ -386,8 +385,8 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def pack(self, value: Any, /) -> bitformat.Bits:
-        """Create and return a new Bits from a value.
+    def pack(self, value: Any, /) -> bitformat.Tibs:
+        """Create and return a new Tibs from a value.
 
         The value parameter should be of a type appropriate to the data type.
 
@@ -400,8 +399,8 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def _unpack(self, b: BitsType, /) -> tuple[int, Any | tuple[Any]]:
-        b = bits_from_any(b)
+    def _unpack(self, b: TibsLike, /) -> tuple[int, Any | tuple[Any]]:
+        b = tibs_from_any(b)
         if self._size.is_none():
             # Try to unpack everything
             return len(b), self._get_fn(b, 0, len(b))
@@ -414,7 +413,7 @@ class DtypeSingle(Dtype):
 
     @override
     @final
-    def _unpack_no_checks(self, b: Bits | MutableBits) -> Any | tuple[Any]:
+    def _unpack_no_checks(self, b: Tibs | Mutibs) -> Any | tuple[Any]:
         return self._get_fn(b, 0, len(b))
 
     @override
@@ -522,24 +521,24 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def pack(self, value: Any, /) -> bitformat.Bits:
-        """Create and return a new Bits from a value.
+    def pack(self, value: Any, /) -> bitformat.Tibs:
+        """Create and return a new Tibs from a value.
 
         The value parameter should be of a type appropriate to the data type.
 
         """
-        if isinstance(value, bitformat.Bits):
+        if isinstance(value, bitformat.Tibs):
             if len(value) != self.bit_length:
                 raise ValueError(f"Expected {self.bit_length} bits, but got {len(value)} bits.")
             return value
         if not self._items.is_none() and len(value) != self._items:
             raise ValueError(f"Expected {self._items} items, but got {len(value)}.")
-        return Bits.from_joined(self._dtype_single._create_fn(v) for v in value)
+        return Tibs.from_joined(self._dtype_single._create_fn(v) for v in value)
 
     @override
     @final
-    def _unpack(self, b: BitsType, /) -> tuple[int, Any | tuple[Any]]:
-        b = bits_from_any(b)
+    def _unpack(self, b: TibsLike, /) -> tuple[int, Any | tuple[Any]]:
+        b = tibs_from_any(b)
         if self.items is not None and self.bit_length is not None and self.bit_length > len(b):
             raise ValueError(f"{self!r} is {self.bit_length} bits long, but only {len(b)} bits are available.")
         items = self._items.evaluate()
@@ -557,9 +556,9 @@ class DtypeArray(Dtype):
 
     @override
     @final
-    def _unpack_no_checks(self, b: Bits | MutableBits) -> tuple[Any]:
-        if isinstance(b, bitformat.MutableBits):
-            b = b.to_bits()
+    def _unpack_no_checks(self, b: Tibs | Mutibs) -> tuple[Any]:
+        if isinstance(b, bitformat.Mutibs):
+            b = b.to_tibs()
         return tuple(self._dtype_single._unpack_no_checks(c) for c in b.chunks(self._dtype_single.bit_length, count=self.items))
 
 
@@ -682,27 +681,27 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def pack(self, values: Sequence[Any]) -> bitformat.Bits:
-        """Create and return a new Bits from a value.
+    def pack(self, values: Sequence[Any]) -> bitformat.Tibs:
+        """Create and return a new Tibs from a value.
 
         The value parameter should be of a type appropriate to the data type.
 
         """
         if len(values) != self.items:
             raise ValueError(f"Expected {self.items} values, but got {len(values)}.")
-        return bitformat.Bits.from_joined([dtype.pack(value) for dtype, value in zip(self._dtypes, values)])
+        return bitformat.Tibs.from_joined([dtype.pack(value) for dtype, value in zip(self._dtypes, values)])
 
     @override
     @final
-    def _unpack(self, b: bitformat.Bits | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[int, tuple[tuple[Any] | Any]]:
-        """Unpack a Bits to find its value.
+    def _unpack(self, b: bitformat.Tibs | str | Iterable[Any] | bytearray | bytes | memoryview, /) -> tuple[int, tuple[tuple[Any] | Any]]:
+        """Unpack a Tibs to find its value.
 
-        The b parameter should be a Bits of the appropriate length, or an object that can be converted to a Bits.
+        The b parameter should be a Tibs of the appropriate length, or an object that can be converted to a Tibs.
 
         """
         if self._bit_length is None:
             raise ValueError(f"{self!r} doesn't have a well defined size, so cannot be unpacked. Perhaps try parse() instead?")
-        b = bits_from_any(b)
+        b = tibs_from_any(b)
 
         if self._bit_length > len(b):
             if self._dynamic_index is not None:
@@ -725,7 +724,7 @@ class DtypeTuple(Dtype):
 
     @override
     @final
-    def _unpack_no_checks(self, b: Bits | MutableBits) -> tuple[Any]:
+    def _unpack_no_checks(self, b: Tibs | Mutibs) -> tuple[Any]:
         pos = 0
         vals = []
         for i, dtype in enumerate(self._dtypes):
@@ -950,66 +949,20 @@ class Register:
     def add_dtype(cls, definition: DtypeDefinition):
         kind = definition.kind
         cls.kind_to_def[kind] = definition
+        if kind not in {DtypeKind.BOOL, DtypeKind.BITS}:
+            return
 
         def fget_bitwise(b):
             return definition.get_fn(b, 0, len(b))
 
-        setattr(bitformat.Bits, kind.value, property(fget=fget_bitwise,
-                                                     doc=f"The Bits as {definition.description}. Read only."))
+        setattr(bitformat.Tibs, kind.value, property(fget=fget_bitwise,
+                                                     doc=f"The Tibs as {definition.description}. Read only."))
 
         def fset_bitwise(b, val):
             b[:] = definition.set_fn(val, length=len(b))
 
-        setattr(bitformat.MutableBits, kind.value, property(fget=fget_bitwise, fset=fset_bitwise,
-                                                            doc=f"The MutableBits as {definition.description}. Read and write."))
-
-        if definition.endianness_variants:
-
-            def fget_be(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                return definition.get_fn(b, 0, len(b))
-
-            def fget_le(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                mutable_b = b.to_mutable_bits()
-                mutable_b.byte_swap()
-                return definition.get_fn(mutable_b.to_bits(), 0, len(b))
-
-            fget_ne = fget_le if byteorder is Endianness.LITTLE else fget_be
-
-            for modifier, fget, desc in [("_le", fget_le, "little-endian"),
-                                         ("_be", fget_be, "big-endian"),
-                                         ("_ne", fget_ne, f"native-endian (i.e. {byteorder}-endian)")]:
-                doc = f"The Bits as {definition.description} in {desc} byte order. Read only."
-                setattr(bitformat.Bits, kind.value + modifier, property(fget=fget, doc=doc))
-
-            def fget_le_mut(b):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer for non whole-byte data. Got length of {len(b)} bits.")
-                c = b.__copy__()
-                c.byte_swap()
-                return definition.get_fn(c.as_bits(), 0, len(b))
-
-            def fset_le(b, v):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer when setting non whole-byte data. Got length of {len(b)} bits.")
-                b[:] = definition.set_fn(v, len(b)).to_mutable_bits().byte_swap()
-
-            def fset_be(b, v):
-                if len(b) % 8 != 0:
-                    raise ValueError(f"Cannot use endianness modifer when setting non whole-byte data. Got length of {len(b)} bits.")
-                b[:] = definition.set_fn(v, len(b))
-
-            fget_ne_mut = fget_le_mut if byteorder is Endianness.LITTLE else fget_be
-            fset_ne = fset_le if byteorder is Endianness.LITTLE else fset_be
-
-            for modifier, fget, fset, desc in [("_le", fget_le_mut, fset_le, "little-endian"),
-                                               ("_be", fget_be, fset_be, "big-endian"),
-                                               ("_ne", fget_ne_mut, fset_ne, f"native-endian (i.e. {byteorder}-endian)")]:
-                doc = f"The MutableBits as {definition.description} in {desc} byte order. Read and write."
-                setattr(bitformat.MutableBits, kind.value + modifier, property(fget=fget, fset=fset, doc=doc))
+        setattr(bitformat.Mutibs, kind.value, property(fget=fget_bitwise, fset=fset_bitwise,
+                                                            doc=f"The Mutibs as {definition.description}. Read and write."))
 
     @classmethod
     @functools.lru_cache(CACHE_SIZE)

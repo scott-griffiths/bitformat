@@ -27,21 +27,23 @@ Here are a few code snippets to whet the appetite. If anything here looks useful
 
 Creating and manipulating bits:
 ```python
-    >>> from bitformat import MutableBits, Format, Array
-    >>> b = MutableBits('0x123')
+    >>> from bitformat import Mutibs, Format, Array
+    >>> b = Mutibs('0x123')
     >>> b += '0b110'
     >>> b.replace('0b11', '0xf')
-    MutableBits('0b0001001000111111110')
+    2
+    >>> b
+    Mutibs('0b0001001000111111110')
     >>> b.unpack('(u15, [bool;])')
     (2335, (True, True, True, False))
-    >>> list(b.to_bits().find_all('0b10'))
+    >>> list(b.to_tibs().find_all('0b10'))
     [3, 6, 17]
 ```
 
 Arrays of bits of a single data type:
 
 ```python
-    >>> a = Array.from_bits('i5', '0xfeed5')
+    >>> a = Array.from_tibs('i5', '0xfeed5')
     >>> a
     Array('i5', [-1, -5, -10, -11])
     >>> a + 10
@@ -76,11 +78,11 @@ Format creation and parsing:
 ----
 
 ## Features
-* The `Bits` and `MutableBits` classes represent sequences of binary data of arbitrary length. They provide methods for creating, modifying and interpreting the data.
+* The `Tibs` and `Mutibs` classes represent sequences of binary data of arbitrary length. They provide methods for creating, modifying and interpreting the data.
 * The `Format` class provides a way to define a binary format using a simple and flexible syntax.
 * A wide array of data types is supported, with no arbitrary restrictions on length.
 * Data is always stored as a contiguous array of bits.
-* The core is written in Rust for maximum performance.
+* Bit storage and core operations are provided by the `tibs` Python package.
 
 > [!NOTE]
 > To see what has been added, improved or fixed, and also to see what's coming in the next version, see the [release notes](https://github.com/scott-griffiths/bitformat/blob/main/release_notes.md).
@@ -97,23 +99,23 @@ which gives a quick introduction to the library and some worked examples.
 
 ## Some Examples
 
-### Creating some Bits
+### Creating some Tibs
 
-A variety of constructor methods are available to create `Bits`, including from binary, hexadecimal or octal strings, formatted strings, byte literals and iterables.
+A variety of constructor methods are available to create `Tibs`, including from binary, hexadecimal or octal strings, byte literals, iterables and bitformat data types.
 
 ```python
 >>> from bitformat import *
 
->>> a = Bits('0b1010')  # Create from a binary string
->>> b = Bits('u12 = 54')  # Create from a formatted string.
->>> c = Bits.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
->>> d = Bits.from_dtype('f16', -0.75)  # Pack a value into a data type.
->>> e = Bits.from_joined([a, b, c, d])  # The best way to join lots of bits together.
+>>> a = Tibs('0b1010')  # Create from a binary string
+>>> b = Tibs.from_dtype('u12', 54)  # Pack a value into a data type.
+>>> c = Tibs.from_bytes(b'\x01\x02\x03')  # Create from a bytes or bytearray object.
+>>> d = Tibs.from_dtype('f16', -0.75)
+>>> e = Tibs.from_joined([a, b, c, d])  # The best way to join lots of bits together.
 ```
 
-### Interpreting those Bits
+### Interpreting those Tibs
 
-Although the examples above were created from a variety of data types, the `Bits` instance doesn't retain any knowledge of how it was created - it's just a sequence of bits.
+Although the examples above were created from a variety of data types, the `Tibs` instance doesn't retain any knowledge of how it was created - it's just a sequence of bits.
 You can therefore interpret them however you'd like:
 
 ```python
@@ -128,7 +130,7 @@ b'\xba\x00'
 ```
 
 The `unpack` method is available as a general-case way to unpack the bits into a single or multiple data types.
-If you only want to unpack to a single data type you can use properties of the `Bits` as a short-cut.
+If you only want to unpack to a single data type you can use properties of the `Tibs` as a short-cut.
 
 ### Data types
 
@@ -149,22 +151,22 @@ Byte endianness for floating point and integer data types is specified with `_le
 
 ### Bit operations
 
-An extensive set of operations are available to query `Bits` or to create new ones. For example:
+An extensive set of operations are available to query `Tibs` or to create new ones. For example:
 
 ```python
 >>> a + b  # Concatenation
-Bits('0xa036')
+Tibs('0xa036')
 >>> c.find('0b11')  # Returns found bit position
 22
->>> b.replace('0b1', '0xfe')
-Bits('0x03fbf9fdfc')
+>>> b.replaced('0b1', '0xfe')
+Tibs('0x03fbf9fdfc')
 >>> b[0:10] | d[2:12]  # Slicing and logical operators
-Bits('0b1110101101')
+Tibs('0b1110101101')
 ```
 
 ### Arrays
 
-An `Array` class is provided which stores a contiguous sequence of `Bits` of the same data type.
+An `Array` class is provided which stores a contiguous sequence of `Tibs` of the same data type.
 This is similar to the `array` type in the standard module of the same name, but it's not restricted to just a dozen or so types.
 
 ```python
@@ -175,8 +177,8 @@ This is similar to the `array` type in the standard module of the same name, but
 >>> r.dtype = 'u6'  # You can freely change the data type
 >>> r
 Array('u6', [5, 47, 55, 60, 45])
->>> r.to_bits()
-Bits('0b000101101111110111111100101101')
+>>> r.to_tibs()
+Tibs('0b000101101111110111111100101101')
 ```
 
 ### A `Format` example
@@ -193,17 +195,17 @@ The `Format` class can be used to give structure to bits, as well as storing the
     flags: [bool; 4] = (True, False, True, False)
 )
 >>> f['height'].value /= 2
->>> f.to_bits()
-Bits('0x140078a')
->>> f.to_bits() == 'u12=320, u12=120, 0b1010'
+>>> f.to_tibs()
+Tibs('0x140078a')
+>>> f.to_tibs() == Tibs.from_joined([Tibs.from_dtype('u12', 320), Tibs.from_dtype('u12', 120), Tibs('0b1010')])
 True
 ```
 
 The `Format` and its fields can optionally have names (the `Format` above is unnamed, but its fields are named).
-In this example the `pack` method was used with appropriate values, which then returned a `Bits` object.
+In this example the `pack` method was used with appropriate values, which then returned a `Tibs` object.
 The `Format` now contains all the interpreted values, which can be easily accessed and modified.
 
-The final line in the example above demonstrates how new `Bits` objects can be created when needed by promoting other types, in this case the formatted string is promoted to a `Bits` object before the comparison is made.
+The final line in the example above demonstrates how new `Tibs` objects can be created from bitformat data types and joined with tibs literals.
 
 The `Format` can be used symmetrically to both create and parse binary data:
 

@@ -56,7 +56,7 @@ def test_small_ints_bitformat():
 
 
 def test_cutting_bitstring():
-    s = bitstring.Bits('0xef1356a6200b3, 0b0')
+    s = bitstring.Tibs('0xef1356a6200b3, 0b0')
     s *= 6000
     c = 0
     for triplet in s.cut(3):
@@ -65,7 +65,7 @@ def test_cutting_bitstring():
     return c
 
 def test_cutting_bitformat():
-    s = bitformat.Bits('0xef1356a6200b3, 0b0')
+    s = bitformat.Tibs('0xef1356a6200b3, 0b0')
     s *= 6000
     c = 0
     for triplet in s.chunks(3):
@@ -100,25 +100,25 @@ def test_primes_bitarray():
 
 def test_primes_bitformat():
     limit = 50_000_000
-    is_prime = bitformat.MutableBits.from_ones(limit)
+    is_prime = bitformat.Mutibs.from_ones(limit)
     # Manually set 0 and 1 to be not prime.
     is_prime.set(False, [0, 1])
     # For every other integer, if it's set as prime then unset all of its multiples
     for i in range(2, math.ceil(math.sqrt(limit))):
         if is_prime[i]:
             is_prime.set(False, range(i * i, limit, i))
-    twin_primes = len(list(is_prime.as_bits().find_all('0b101')))
+    twin_primes = len(list(is_prime.as_tibs().find_all('0b101')))
     assert twin_primes == 239101
     return twin_primes
 
 def test_token_parsing_mutating_bitformat():
-    b = bitformat.MutableBits()
+    b = bitformat.Mutibs()
     b.reserve(10000*200)
     for i in range(10000):
         b += "u12=244, f32=0.4"
         b += "0x3e44f, 0b11011, 0o75523"
         b += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]
-        b += bitformat.Bits.from_zeros(104)
+        b += bitformat.Tibs.from_zeros(104)
     return b
 
 def test_token_parsing_mutating_bitstring():
@@ -133,20 +133,20 @@ def test_token_parsing_mutating_bitstring():
 def test_token_parsing_joining_bitformat():
     s = []
     for i in range(10000):
-        s.append(bitformat.Bits.from_string('u12=244, f32=0.4'))
-        s.append(bitformat.Bits.from_string('0x3e44f, 0b11011, 0o75523'))
-        s.append(bitformat.Bits.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
-        s.append(bitformat.Bits.from_zeros(104))
-    return bitformat.Bits.from_joined(s)
+        s.append(bitformat.Tibs.from_string('u12=244, f32=0.4'))
+        s.append(bitformat.Tibs.from_string('0x3e44f, 0b11011, 0o75523'))
+        s.append(bitformat.Tibs.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
+        s.append(bitformat.Tibs.from_zeros(104))
+    return bitformat.Tibs.from_joined(s)
 
 def test_token_parsing_joining_bitstring():
     s = []
     for i in range(10000):
-        s.append(bitstring.Bits.fromstring('uint:12=244, float:32=0.4'))
-        s.append(bitstring.Bits.fromstring('0x3e44f, 0b11011, 0o75523'))
-        s.append(bitstring.Bits([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
-        s.append(bitstring.Bits(104))
-    return bitstring.Bits().join(s)
+        s.append(bitstring.Tibs.fromstring('uint:12=244, float:32=0.4'))
+        s.append(bitstring.Tibs.fromstring('0x3e44f, 0b11011, 0o75523'))
+        s.append(bitstring.Tibs([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
+        s.append(bitstring.Tibs(104))
+    return bitstring.Tibs().join(s)
 
 
 def test_count_bitstring():
@@ -155,7 +155,7 @@ def test_count_bitstring():
     return s.count(1)
 
 def test_count_bitformat():
-    s = bitformat.MutableBits.from_zeros(1_000_000_000)
+    s = bitformat.Mutibs.from_zeros(1_000_000_000)
     s.set(1, range(0, 1_000_000_000, 7))
     return s.count(1)
 
@@ -170,7 +170,7 @@ def test_finding_bitstring():
 def test_finding_bitformat():
     random.seed(999)
     i = random.randrange(0, 2 ** 20000000)
-    s = bitformat.Bits.from_dtype('u20000000', i)
+    s = bitformat.Tibs.from_dtype('u20000000', i)
     for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
         x = len(list(s.find_all(ss, count=100)))
     return x

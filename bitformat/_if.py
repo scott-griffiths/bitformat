@@ -4,7 +4,7 @@ from ._fieldtype import FieldType
 from ._pass import Pass
 from ._common import override, Expression, ExpressionError, Indenter
 from typing import Any
-from ._bits import Bits
+from ._bits import Tibs
 
 __all__ = ["If"]
 
@@ -94,7 +94,7 @@ class If(FieldType):
             return self.else_._pack(value, kwargs)
 
     @override
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         self.condition_value = self.condition.evaluate(**vars_)
         if self.condition_value:
             return self.then_._parse(b, startbit, vars_)
@@ -157,13 +157,13 @@ class If(FieldType):
         return s
 
     @override
-    def to_bits(self) -> Bits:
+    def to_tibs(self) -> Tibs:
         if self.condition_value is None:
             raise ValueError("Cannot get value of If field before parsing.")
         if self.condition_value:
-            return self.then_.to_bits()
+            return self.then_.to_tibs()
         else:
-            return self.else_.to_bits()
+            return self.else_.to_tibs()
 
     @override
     def __eq__(self, other) -> bool:

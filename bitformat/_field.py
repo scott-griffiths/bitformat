@@ -1,20 +1,20 @@
 from __future__ import annotations
 
-from bitformat import Bits
+from ._bits import Tibs
 from ._dtypes import Dtype, DtypeSingle, DtypeTuple
 from ast import literal_eval
 from ._common import override, Indenter, Colour, DtypeKind, validate_name, ExpressionError
 from typing import Any, Iterable, Self
 from ._fieldtype import FieldType
 from ._options import Options
-from .rust import bits_from_any
+from ._tibs import tibs_from_any
 
 __all__ = ["Field"]
 
 
 class Field(FieldType):
     _const: bool
-    _bits: Bits | None
+    _bits: Tibs | None
     # The dtype may include expressions that haven't yet been evaluated.
     _dtype: Dtype
     # the concrete type is the real dtype after parsing.
@@ -86,19 +86,19 @@ class Field(FieldType):
         return x
 
     @classmethod
-    def from_bits(cls, b: Bits | str | Iterable | bytearray | bytes | memoryview, /,
+    def from_tibs(cls, b: Tibs | str | Iterable | bytearray | bytes | memoryview, /,
                   name: str = "", const: bool = False) -> Self:
         """
-        Create a Field instance of dtype Bits.
+        Create a Field instance of dtype Tibs.
 
-        :param b: The Bits or something that can be converted to Bits (such as a formatted string).
+        :param b: The Tibs or something that can be converted to Tibs (such as a formatted string).
         :param name: The name of the field, optional.
         :param const: Whether the field is constant, defaults to False.
         :return: The Field instance.
         """
-        b = bits_from_any(b)
+        b = tibs_from_any(b)
         if len(b) == 0:
-            raise ValueError("Can't create a Field from an empty Bits object.")
+            raise ValueError("Can't create a Field from an empty Tibs object.")
         return cls.from_params(DtypeSingle.from_params(DtypeKind.BITS, len(b)), name, b, const)
 
     @classmethod
@@ -114,10 +114,10 @@ class Field(FieldType):
         return cls.from_params(DtypeSingle.from_params(DtypeKind.BYTES, len(b)), name, b, const)
 
     @override
-    def to_bits(self) -> Bits:
+    def to_tibs(self) -> Tibs:
         if self._dtype._is_padding():
             # Return zeroed bits for padding.
-            return Bits.from_zeros(self._dtype.bit_length)
+            return Tibs.from_zeros(self._dtype.bit_length)
         if self._bits is None:
             raise ValueError(f"Field '{self}' has no value, so can't be converted to bits.")
         return self._bits
@@ -145,7 +145,7 @@ class Field(FieldType):
         return x
 
     @override
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         if self._const:
             assert self._bits is not None
             value = b[startbit : startbit + len(self._bits)]

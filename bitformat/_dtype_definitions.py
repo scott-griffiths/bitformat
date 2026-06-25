@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import struct
 from typing import Literal
 from bitformat._common import DtypeKind
 from ._dtypes import DtypeDefinition, AllowedSizes
-from ._bits import Bits
-from .rust import bits_from_any
+from ._tibs import Tibs, TibsLike, tibs_from_any, tibs_to_padded_bytes
 
 
 # The definitions for each of the data types.
@@ -13,20 +11,17 @@ from .rust import bits_from_any
 
 # ----- Integer types -----
 
-def to_u(bs: Bits, start: int, length: int) -> int:
+def to_u(bs: Tibs, start: int, length: int) -> int:
     """Return data as an unsigned int from a slice of the bits."""
-    assert start >= 0
-    assert length >= 0
     if length == 0:
-        raise ValueError("Cannot interpret empty Bits as an integer.")
-    if length <= 64:
-        return bs._to_u64(start, length)
-    else:
-        # Longer stores are unlikely in practice - this method is slower.
-        bs = bs._getslice(start, length)
-        return int.from_bytes(bs._to_int_byte_data(False), byteorder="big", signed=False)
+        raise ValueError("Cannot interpret empty Tibs as an integer.")
+    bits = tibs_from_any(bs)[start:start + length]
+    if length <= 128:
+        return bits.to_u()
+    padding = -length % 8
+    return int.from_bytes(tibs_to_padded_bytes(bits), "big") >> padding
 
-def from_u(u: int, length: int) -> Bits:
+def from_u(u: int, length: int) -> Tibs:
     if length == 0:
         raise ValueError("A non-zero length must be specified with a 'u' initialiser.")
     u = int(u)
@@ -35,15 +30,11 @@ def from_u(u: int, length: int) -> Bits:
     if u >= (1 << length):
         raise ValueError(f"{u} is too large an unsigned integer for a bit length of {length}. "
                          f"The allowed range is[0, {(1 << length) - 1}].")
-    if length <= 64:
-        return Bits._from_u64(u, length)
-    else:
-        b = u.to_bytes((length + 7) // 8, byteorder="big", signed=False)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return Bits.from_bytes(b)
-        else:
-            return Bits._from_bytes_with_offset(b, offset=offset)
+    if length <= 128:
+        return Tibs.from_u(u, length=length)
+    byte_length = (length + 7) // 8
+    offset = byte_length * 8 - length
+    return Tibs.from_bytes(u.to_bytes(byte_length, "big"), offset=offset, length=length)
 
 def u_bits2chars(bit_length: int) -> int:
     # How many characters is largest possible int of this length?
@@ -62,34 +53,27 @@ u_defn = DtypeDefinition(DtypeKind.UINT,
                          endianness_variants=True)
 
 
-def to_i(bs: Bits, start: int, length: int) -> int:
+def to_i(bs: Tibs, start: int, length: int) -> int:
     """Return data as a signed int from a slice of the bits."""
     if length == 0:
-        raise ValueError("Cannot interpret empty Bits as an integer.")
-    if length <= 64:
-        return bs._to_i64(start, length)
-    else:
-        # Longer store are unlikely in practice - this method is slower.
-        bs = bs._getslice(start, length)
-        return int.from_bytes(bs._to_int_byte_data(True), byteorder="big", signed=True)
+        raise ValueError("Cannot interpret empty Tibs as an integer.")
+    bits = tibs_from_any(bs)[start:start + length]
+    if length <= 128:
+        return bits.to_i()
+    u = to_u(bits, 0, length)
+    return u - (1 << length) if bits[0] else u
 
-def from_i(i: int, length: int) -> Bits:
+def from_i(i: int, length: int) -> Tibs:
     if length == 0:
         raise ValueError("A non-zero length must be specified with an 'i' initialiser.")
     i = int(i)
     if i >= (1 << (length - 1)) or i < -(1 << (length - 1)):
         raise ValueError(f"{i} is too large a signed integer for a bit length of {length}. "
                          f"The allowed range is[{-(1 << (length - 1))}, {(1 << (length - 1)) - 1}")
-    if length < 64:
-        # Faster method for shorter lengths.
-        return Bits._from_i64(i, length)
-    else:
-        b = i.to_bytes((length + 7) // 8, byteorder="big", signed=True)
-        offset = 8 - (length % 8)
-        if offset == 8:
-            return Bits.from_bytes(b)
-        else:
-            return Bits._from_bytes_with_offset(b, offset=offset)
+    if length <= 128:
+        return Tibs.from_i(i, length=length)
+    u = (1 << length) + i if i < 0 else i
+    return from_u(u, length)
 
 def i_bits2chars(bit_length: int) -> int:
     # How many characters is largest negative int of this length? (To include minus sign).
@@ -110,37 +94,37 @@ i_defn = DtypeDefinition(DtypeKind.INT,
 
 # ----- Literal types -----
 
-def to_bin(bs: Bits, start: int, length: int) -> str:
+def to_bin(bs: Tibs, start: int, length: int) -> str:
     """Return interpretation as a binary string."""
-    return bs._slice_to_bin(start, length)
+    return tibs_from_any(bs)[start:start + length].to_bin()
 
-def from_bin(binstring: str, length: None = None) -> Bits:
+def from_bin(binstring: str, length: None = None) -> Tibs:
     """Create from the value given in binstring."""
-    return Bits._from_bin(binstring)
+    return Tibs.from_bin(binstring)
 
-def to_oct(bs: Bits, start: int, length: int) -> str:
+def to_oct(bs: Tibs, start: int, length: int) -> str:
     """Return interpretation as an octal string."""
-    return bs._slice_to_oct(start, length)
+    return tibs_from_any(bs)[start:start + length].to_oct()
 
-def from_oct(octstring: str, length: None = None) -> Bits:
+def from_oct(octstring: str, length: None = None) -> Tibs:
     """Create from the value given in octstring."""
-    return Bits._from_oct(octstring)
+    return Tibs.from_oct(octstring)
 
-def to_hex(bs: Bits, start: int, length: int) -> str:
+def to_hex(bs: Tibs, start: int, length: int) -> str:
     """Return interpretation as a hexadecimal string."""
-    return bs._slice_to_hex(start, length)
+    return tibs_from_any(bs)[start:start + length].to_hex()
 
-def from_hex(hexstring: str, length: None = None) -> Bits:
+def from_hex(hexstring: str, length: None = None) -> Tibs:
     """Create from the value given in hexstring."""
-    return Bits._from_hex(hexstring)
+    return Tibs.from_hex(hexstring)
 
-def to_bytes(bs: Bits, start: int, length: int) -> bytes:
+def to_bytes(bs: Tibs, start: int, length: int) -> bytes:
     """Return interpretation as bytes."""
-    return bs._slice_to_bytes(start, length)
+    return tibs_from_any(bs)[start:start + length].to_bytes()
 
-def from_bytes(data: bytearray | bytes | list, length: None = None) -> Bits:
+def from_bytes(data: bytearray | bytes | list, length: None = None) -> Tibs:
     """Create from a bytes or bytearray object."""
-    return Bits.from_bytes(bytes(data))
+    return Tibs.from_bytes(bytes(data))
 
 
 bin_defn = DtypeDefinition(DtypeKind.BIN,
@@ -183,22 +167,14 @@ bytes_defn = DtypeDefinition(DtypeKind.BYTES,
 
 # ----- Float types -----
 
-def to_f(bs: Bits, start: int, length: int) -> float:
+def to_f(bs: Tibs, start: int, length: int) -> float:
     """Interpret as a big-endian float."""
-    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-    return struct.unpack(fmt, to_bytes(bs, start, length))[0]
+    return tibs_from_any(bs)[start:start + length].to_f()
 
-def from_f(f: float | str, length: int | None) -> Bits:
+def from_f(f: float | str, length: int | None) -> Tibs:
     if length is None:
         raise ValueError("No length can be inferred for the float initialiser.")
-    f = float(f)
-    fmt = {16: ">e", 32: ">f", 64: ">d"}[length]
-    try:
-        b = struct.pack(fmt, f)
-    except OverflowError:
-        # If float64 doesn't fit it automatically goes to 'inf'. This reproduces that behaviour for other types.
-        b = struct.pack(fmt, float("inf") if f > 0 else float("-inf"))
-    return Bits.from_bytes(b)
+    return Tibs.from_f(float(f), length=length)
 
 def f_bits2chars(bit_length: Literal[16, 32, 64]) -> int:
     # These bit lengths were found by looking at lots of possible values
@@ -222,37 +198,37 @@ f_defn = DtypeDefinition(DtypeKind.FLOAT,
 
 # ----- Other known length types -----
 
-def to_bits(bs: Bits, start: int, length: int) -> Bits:
-    """Just return as a Bits."""
-    return bs._getslice(start, length)
+def to_tibs(bs: Tibs, start: int, length: int) -> Tibs:
+    """Just return as a Tibs."""
+    return tibs_from_any(bs)[start:start + length]
 
-def from_bits(bs: BitsType, length: None = None) -> Bits:
-    return bits_from_any(bs)
+def from_tibs(bs: TibsLike, length: None = None) -> Tibs:
+    return tibs_from_any(bs)
 
 def bits_bits2chars(bit_length: int) -> int:
     # For bits type we can see how long it needs to be printed by trying any value
-    temp = Bits.from_zeros(bit_length)
+    temp = Tibs.from_zeros(bit_length)
     return len(str(temp))
 
 
 bits_defn = DtypeDefinition(DtypeKind.BITS,
-                            "a Bits object",
-                            "Bits",
+                            "a Tibs object",
+                            "Tibs",
                             AllowedSizes(0, None),
-                            from_bits,
-                            to_bits,
-                            Bits,
+                            from_tibs,
+                            to_tibs,
+                            Tibs,
                             False,
                             bits_bits2chars)
 
 
-def to_bool(bs: Bits, start: int, _length: int) -> bool:
+def to_bool(bs: Tibs, start: int, _length: int) -> bool:
     """Interpret as a bool"""
     assert _length == 1
     return bs[start]
 
-def from_bool(value: bool, length: None = None) -> Bits:
-    return Bits.from_bools([value])
+def from_bool(value: bool, length: None = None) -> Tibs:
+    return Tibs.from_bools([value])
 
 def bool_bits2chars(_: Literal[1]) -> int:
     # Bools are printed as 1 or 0, not True or False, so are one character each
@@ -272,7 +248,7 @@ bool_defn = DtypeDefinition(DtypeKind.BOOL,
 
 # ----- Special case pad type -----
 
-def to_pad(_bs: Bits, _start: int, _length: int) -> None:
+def to_pad(_bs: Tibs, _start: int, _length: int) -> None:
     return None
 
 def from_pad(value: None, length: int) -> None:
@@ -307,4 +283,3 @@ dtype_definitions = [
 
     pad_defn,
 ]
-

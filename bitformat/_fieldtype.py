@@ -2,15 +2,15 @@ from __future__ import annotations
 import abc
 import sys
 
-from bitformat import Bits
+from ._bits import Tibs
 from ._dtypes import DtypeTransformer
-from ._bits import BitsType
+from ._bits import TibsLike
 from ._common import final, Indenter, field_parser
 from typing import Any, Sequence, TextIO
 from ._options import Options
 from lark import UnexpectedInput
 import lark
-from .rust import bits_from_any
+from ._tibs import tibs_from_any, tibs_to_padded_bytes
 
 __all__ = ["FieldType"]
 
@@ -84,7 +84,7 @@ class FieldType(abc.ABC):
         fieldtype_classes[cls.__name__] = cls
 
     @final
-    def parse(self, b: BitsType | None = None, /, **kwargs) -> int:
+    def parse(self, b: TibsLike | None = None, /, **kwargs) -> int:
         """
         Parse the field type from the supplied bits.
 
@@ -94,7 +94,7 @@ class FieldType(abc.ABC):
         :param b: The bits to parse.
         :return: The number of bits used.
         """
-        b = bits_from_any(b) if b is not None else Bits()
+        b = tibs_from_any(b) if b is not None else Tibs()
         self.clear()
         try:
             return self._parse(b, 0, kwargs)
@@ -102,22 +102,22 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing field {self}: {str(e)}")
 
     @final
-    def pack(self, values: Sequence[Any] | Any, /, **kwargs) -> Bits:
+    def pack(self, values: Sequence[Any] | Any, /, **kwargs) -> Tibs:
         """
         Pack with values for each non-const field.
 
         :param values: The values to pack.
         :param kwargs: Additional keyword arguments.
 
-        :return: The packed data as a :class:`Bits`.
+        :return: The packed data as a :class:`Tibs`.
         """
         if kwargs is None:
             kwargs = {}
         _ = self._pack(values, kwargs)
-        return self.to_bits()
+        return self.to_tibs()
 
     @final
-    def unpack(self, b: BitsType | None = None, **kwargs) -> Any | list[Any]:
+    def unpack(self, b: TibsLike | None = None, **kwargs) -> Any | list[Any]:
         """
         Unpack the field type from bits.
 
@@ -179,7 +179,7 @@ class FieldType(abc.ABC):
             raise ValueError(f"Error parsing FieldType: {e}")
 
     @abc.abstractmethod
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         """
         Parse the field from the bits, using the vars_ dictionary to resolve any expressions.
 
@@ -198,7 +198,7 @@ class FieldType(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def to_bits(self) -> Bits:
+    def to_tibs(self) -> Tibs:
         """
         Return the bits that represent the field.
 
@@ -213,8 +213,8 @@ class FieldType(abc.ABC):
 
         :return: The bytes that represent the field.
         """
-        b = self.to_bits()
-        return b.to_bytes()
+        b = self.to_tibs()
+        return tibs_to_padded_bytes(b)
 
     @abc.abstractmethod
     def clear(self) -> None:
@@ -310,5 +310,3 @@ class FieldType(abc.ABC):
     @name.setter
     def name(self, name: str) -> None:
         self._set_name(name)
-
-

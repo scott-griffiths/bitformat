@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ._bits import Bits, MutableBits
+from ._bits import Tibs, Mutibs
 from ._fieldtype import FieldType
 from ._dtypes import Dtype, DtypeSingle
 from ._common import DtypeKind
@@ -10,7 +10,7 @@ from ._common import DtypeKind
 
 class Reader:
     """
-    Wraps a :class:`Bits` or :class:`MutableBits` object and a bit position to allow reading and parsing as a stream of bits.
+    Wraps a :class:`Tibs` or :class:`Mutibs` object and a bit position to allow reading and parsing as a stream of bits.
 
     **Methods:**
 
@@ -20,30 +20,30 @@ class Reader:
 
     **Properties:**
 
-    - ``bits``: The :class:`Bits` or :class:`MutableBits` object.
+    - ``bits``: The :class:`Tibs` or :class:`Mutibs` object.
     - ``pos``: The current bit position to read and parse from.
 
     """
 
-    def __init__(self, bits: Bits | MutableBits, pos: int = 0) -> None:
+    def __init__(self, bits: Tibs | Mutibs, pos: int = 0) -> None:
         Reader._validate_bits(bits)
         self._bits = bits
         self._pos = pos
 
     @staticmethod
     def _validate_bits(value):
-        if not isinstance(value, (Bits, MutableBits)):
+        if not isinstance(value, (Tibs, Mutibs)):
             help_ = ""
             if isinstance(value, str):
-                help_ = " Perhaps use 'Bits.from_string()'?"
+                help_ = " Perhaps use 'Tibs.from_string()'?"
             elif isinstance(value, (bytes, bytearray, memoryview)):
-                help_ = " Perhaps use 'Bits.from_bytes()'?"
-            raise TypeError(f"A Reader should be initialised with a 'Bits' or 'MutableBits' object, but received a {type(value)}.{help_}")
+                help_ = " Perhaps use 'Tibs.from_bytes()'?"
+            raise TypeError(f"A Reader should be initialised with a 'Tibs' or 'Mutibs' object, but received a {type(value)}.{help_}")
 
     @property
-    def bits(self) -> Bits | MutableBits:
+    def bits(self) -> Tibs | Mutibs:
         """
-        Get or set the :class:`Bits` or :class:`MutableBits` object associated with the :class:`Reader`.
+        Get or set the :class:`Tibs` or :class:`Mutibs` object associated with the :class:`Reader`.
 
         Changing this object may invalidate the bit position, but it's left
         to the user to manage this.
@@ -56,7 +56,7 @@ class Reader:
         return self._bits
 
     @bits.setter
-    def bits(self, value: Bits | MutableBits) -> None:
+    def bits(self, value: Tibs | Mutibs) -> None:
         Reader._validate_bits(value)
         self._bits = value
 

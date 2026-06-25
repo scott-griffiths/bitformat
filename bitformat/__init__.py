@@ -31,8 +31,7 @@ __author__ = "Scott Griffiths"
 
 
 from ._version import VERSION as __version__
-from ._bits import Bits, MutableBits
-from ._bits import dtype_token_to_bits as _dtype_token_to_bits
+from ._bits import Tibs, Mutibs
 from ._array import Array
 from ._dtypes import Register, Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ._fieldtype import FieldType
@@ -47,23 +46,20 @@ from ._options import Options
 from ._common import Expression, Endianness, DtypeKind, byteorder
 from ._reader import Reader
 from ._dtype_definitions import dtype_definitions as _dtype_definitions
-from .rust import set_dtype_parser as _set_dtype_parser
 
 
-__all__ = ["Bits", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
-           "Options", "Repeat", "While", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind", "MutableBits"]
+__all__ = ["Tibs", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
+           "Options", "Repeat", "While", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind", "Mutibs"]
 
 
 def _init():
-    # This lets us pass in a Python method for the Rust parser to use.
-    _set_dtype_parser(_dtype_token_to_bits)
     for _dt in _dtype_definitions:
         Register().add_dtype(_dt)
 
 _init()
 
-del rust
-
-# Set the __module__ of each of the types in __all__ to 'bitformat' so that they appear as bitformat.Bits instead of bitformat._bits.Bits etc.
+# Set the __module__ of each bitformat-defined type in __all__ to 'bitformat'
+# so that they appear as bitformat.Dtype instead of bitformat._dtypes.Dtype etc.
 for _name in __all__:
-    locals()[_name].__module__ = "bitformat"
+    if _name not in {"Tibs", "Mutibs"}:
+        locals()[_name].__module__ = "bitformat"

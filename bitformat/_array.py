@@ -4,25 +4,26 @@ import math
 from collections.abc import Sized, Sequence
 from typing import Union, Iterable, Any, overload, TextIO
 
-from bitformat._bits import Bits, BitsType, MutableBits
+from bitformat._bits import Mutibs, Tibs, TibsLike
+from bitformat._bits import _pp_data
 from bitformat._dtypes import Dtype, Register, DtypeTuple, DtypeSingle
 from bitformat._options import Options
 from bitformat._common import Colour, DtypeKind
-from bitformat.rust import bits_from_any, mutable_bits_from_any
+from bitformat._tibs import mutibs_from_any, tibs_from_any, tibs_to_padded_bytes
 import operator
 import sys
 
 __all__ = ["Array"]
 
 # The possible types stored in each element of the Array
-ElementType = Union[float, str, int, bytes, bool, Bits, MutableBits]
+ElementType = Union[float, str, int, bytes, bool, Tibs, Mutibs]
 
 
 class Array:
     """
     An Array whose elements are all a single data type.
 
-    The ``Array`` data is stored compactly as a :class:`MutableBits` object and the ``Array`` behaves very like
+    The ``Array`` data is stored compactly as a :class:`Mutibs` object and the ``Array`` behaves very like
     a list of items of the given format.
 
     If the data length is not a multiple of the dtype length then the ``Array`` will have :attr:`~Array.trailing_bits`
@@ -31,12 +32,12 @@ class Array:
     To construct, use a builder 'from' method:
 
     * ``Array.from_iterable(dtype, iterable)`` - Create and initialise from an iterable.
-    * ``Array.from_bits(dtype, bits)`` - Create with data from a :class:`Bits` or :class:`MutableBits` object.
+    * ``Array.from_tibs(dtype, bits)`` - Create with data from a :class:`Tibs` or :class:`Mutibs` object.
     * ``Array.from_bytes(dtype, bytes_data)`` - Create with data from a ``bytes`` -like object.
     * ``Array.from_zeros(dtype, n)`` - Initialise with enough zero bits for ``n`` elements.
 
     Using the constructor ``Array(dtype, iterable)`` is an alias for ``Array.from_iterable(dtype, iterable)``,
-    but this does not accept either ``Bits`` or ``bytes`` objects as the iterable to avoid confusion.
+    but this does not accept either ``Tibs`` or ``bytes`` objects as the iterable to avoid confusion.
 
     **Other methods:**
 
@@ -50,7 +51,7 @@ class Array:
     - ``pop([index])``: Remove and return an item. Default is the last item.
     - ``pp([dtype1, dtype2, groups, width, show_offset, stream])``: Pretty print the Array.
     - ``reverse()``: Reverse the order of all items.
-    - ``to_bits()``: Return a copy of the Array data as an immutable ``Bits``.
+    - ``to_tibs()``: Return a copy of the Array data as an immutable ``Tibs``.
     - ``to_bytes()``: Return Array data as bytes object, padding with zero bits at the end if needed.
     - ``to_list()``: Return Array items as a list of values.
 
@@ -61,21 +62,21 @@ class Array:
 
     **Properties:**
 
-    - ``bits``: The binary data of the ``Array`` as a ``MutableBits`` object.
+    - ``bits``: The binary data of the ``Array`` as a ``Mutibs`` object.
     - ``dtype``: The data type of the elements in the ``Array``.
     - ``item_size``: The length *in bits* of a single item. Read only.
-    - ``trailing_bits``: If the data length is not a multiple of the dtype length, this ``Bits``
+    - ``trailing_bits``: If the data length is not a multiple of the dtype length, this ``Tibs``
       gives the leftovers at the end of the data.
     """
 
-    _bitstore: MutableBits
+    _bitstore: Mutibs
     _dtype: Dtype
     _item_size: int
 
     def __new__(cls, dtype: str | Dtype, iterable: Iterable | None = None) -> Array:
-        if isinstance(iterable, (Bits, MutableBits)):
-            raise TypeError("The iterable argument in the Array init method should not be a Bits or MutableBits object. "
-                            "Choose either from_bits() or from_iterable() instead.")
+        if isinstance(iterable, (Tibs, Mutibs)):
+            raise TypeError("The iterable argument in the Array init method should not be a Tibs or Mutibs object. "
+                            "Choose either from_tibs() or from_iterable() instead.")
         if isinstance(iterable, (bytes, bytearray)):
             raise TypeError("The iterable argument in the Array init method should not be a bytes or bytearray object. "
                             "Choose either from_bytes() or from_iterable() instead.")
@@ -87,7 +88,7 @@ class Array:
         """Create a new :class:`Array` from a data type and a bytes object.
 
         :param dtype: The data type of the elements in the ``Array``.
-        :param bytes_data: The bytes object to convert to a :class:`Bits`.
+        :param bytes_data: The bytes object to convert to a :class:`Tibs`.
 
         .. code-block:: python
 
@@ -97,17 +98,17 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBits.from_bytes(bytes_data)
+        x._bitstore = Mutibs.from_bytes(bytes_data)
         return x
 
     @classmethod
-    def from_bits(cls, dtype: str | Dtype, bits: BitsType) -> Array:
+    def from_tibs(cls, dtype: str | Dtype, bits: TibsLike) -> Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        bits = bits_from_any(bits)
-        # We may change the Bits, so need to make a copy here.
-        x._bitstore = bits.to_mutable_bits()
+        bits = tibs_from_any(bits)
+        # We may change the Tibs, so need to make a copy here.
+        x._bitstore = bits.to_mutibs()
         return x
 
     @classmethod
@@ -115,7 +116,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBits.from_zeros(n * x._item_size)
+        x._bitstore = Mutibs.from_zeros(n * x._item_size)
         return x
 
     @classmethod
@@ -123,7 +124,7 @@ class Array:
         x = super().__new__(cls)
         x._set_dtype(dtype)
         x._item_size = x._dtype.bit_length
-        x._bitstore = MutableBits()
+        x._bitstore = Mutibs()
         x.extend(iterable)
         return x
 
@@ -136,20 +137,20 @@ class Array:
         return f"Array of {self._dtype.info()} with {len(self)} items and {len(self._bitstore)} bits of data."
 
     @property
-    def bits(self) -> MutableBits:
-        """Property that provides access to the ``Array`` data as a :class:`MutableBits`.
+    def bits(self) -> Mutibs:
+        """Property that provides access to the ``Array`` data as a :class:`Mutibs`.
 
         Note that this is the actual data of the ``Array`` and any changes made to it will affect the ``Array``.
-        Use the :meth:`~Array.to_bits()` method if you need a copy of the data instead.
+        Use the :meth:`~Array.to_tibs()` method if you need a copy of the data instead.
         """
         return self._bitstore
 
     @bits.setter
-    def bits(self, value: BitsType) -> None:
-        self._bitstore = mutable_bits_from_any(value)
+    def bits(self, value: TibsLike) -> None:
+        self._bitstore = mutibs_from_any(value)
 
-    def _get_bit_slice(self, start: int, length: int) -> MutableBits:
-        return self._bitstore._getslice(start, length)
+    def _get_bit_slice(self, start: int, length: int) -> Mutibs:
+        return self._bitstore[start:start + length]
 
     @property
     def item_size(self) -> int:
@@ -157,13 +158,13 @@ class Array:
         return self._item_size
 
     @property
-    def trailing_bits(self) -> Bits:
-        """The ``Bits`` at the end of the ``Array`` that don't fit into a whole number of elements."""
+    def trailing_bits(self) -> Tibs:
+        """The ``Tibs`` at the end of the ``Array`` that don't fit into a whole number of elements."""
         bitstore_length = len(self._bitstore)
         trailing_bit_length = bitstore_length % self._item_size
         if trailing_bit_length == 0:
-            return Bits()
-        return self._get_bit_slice(bitstore_length - trailing_bit_length, trailing_bit_length).to_bits()
+            return Tibs()
+        return self._get_bit_slice(bitstore_length - trailing_bit_length, trailing_bit_length).to_tibs()
 
     @property
     def dtype(self) -> Dtype:
@@ -187,8 +188,8 @@ class Array:
             raise ValueError(f"A fixed length data type is needed for an Array, received '{new_dtype}'.")
         self._item_size = self._dtype.bit_length
 
-    def _create_element(self, value: ElementType) -> Bits:
-        """Create Bits from value according to the token_name and token_length"""
+    def _create_element(self, value: ElementType) -> Tibs:
+        """Create Tibs from value according to the token_name and token_length"""
         return self._dtype.pack(value)
 
     def __len__(self) -> int:
@@ -207,9 +208,9 @@ class Array:
             if step != 1:
                 d = []
                 for s in range(start * self._item_size, stop * self._item_size, step * self._item_size):
-                    d.append(self._get_bit_slice(s, self._item_size).to_bits())
+                    d.append(self._get_bit_slice(s, self._item_size).to_tibs())
                 a = self.__class__(self._dtype)
-                a._bitstore = MutableBits.from_joined(d)
+                a._bitstore = Mutibs.from_joined(d)
                 return a
             else:
                 a = self.__class__(self._dtype)
@@ -234,8 +235,8 @@ class Array:
             if not isinstance(value, Iterable):
                 raise TypeError("Can only assign an iterable to a slice.")
             if step == 1:
-                new_data = Bits.from_joined([self._create_element(x) for x in value])
-                self._bitstore._set_slice(start * self._item_size, stop * self._item_size, new_data)
+                new_data = Tibs.from_joined([self._create_element(x) for x in value])
+                self._bitstore[start * self._item_size:stop * self._item_size] = new_data
                 return
             items_in_slice = len(range(start, stop, step))
             if not isinstance(value, Sized):
@@ -243,7 +244,7 @@ class Array:
             if len(value) == items_in_slice:
                 for s, v in zip(range(start, stop, step), value):
                     x = self._create_element(v)
-                    self._bitstore._set_slice(s * self._item_size, s * self._item_size + len(x), x)
+                    self._bitstore[s * self._item_size:s * self._item_size + len(x)] = x
             else:
                 raise ValueError(f"Can't assign {len(value)} values to an extended slice of length {items_in_slice}.")
         else:
@@ -253,7 +254,7 @@ class Array:
                 raise IndexError(f"Index {key} out of range for Array of length {len(self)}.")
             start = self._item_size * key
             x = self._create_element(value)
-            self._bitstore._overwrite(start, x)
+            self._bitstore[start:start + len(x)] = x
             return
 
     def __delitem__(self, key: slice | int, /) -> None:
@@ -283,7 +284,7 @@ class Array:
         if bitstore_length % self._item_size == 0:
             list_str = f"{self.to_list()}"
             return f"Array('{self._dtype}', {list_str})"
-        return f"Array.from_bits('{self._dtype}', {self.to_bits()!r})"
+        return f"Array.from_tibs('{self._dtype}', {self.to_tibs()!r})"
 
     def as_type(self, dtype: str | Dtype, /) -> Array:
         """
@@ -348,22 +349,22 @@ class Array:
         """
         if len(self._bitstore) % self._item_size != 0:
             raise ValueError("Cannot append to Array as its length is not a multiple of the format length.")
-        self._bitstore.append(self._create_element(x))
+        self._bitstore.extend(self._create_element(x))
         return self
 
-    def extend(self, iterable: Array | bytes | bytearray | Bits | Iterable[Any], /) -> Array:
+    def extend(self, iterable: Array | bytes | bytearray | Tibs | Iterable[Any], /) -> Array:
         """
         Append new items to the end of the Array from an iterable.
 
         This method allows you to extend the Array by appending elements from another iterable.
-        The iterable can be another Array, bytes, bytearray, Bits, or any other iterable containing elements of a compatible type.
+        The iterable can be another Array, bytes, bytearray, Tibs, or any other iterable containing elements of a compatible type.
 
         :param iterable: The iterable containing elements to append to the Array.
         :return: The extended Array.
         """
         if isinstance(iterable, (bytes, bytearray)):
             # extend the bit data by appending on the end
-            self._bitstore.append(Bits.from_bytes(iterable))
+            self._bitstore.extend(Tibs.from_bytes(iterable))
             return self
         if len(self._bitstore) % self._item_size != 0:
             raise ValueError(f"Cannot extend Array as its data length ({len(self._bitstore)} bits) "
@@ -373,12 +374,12 @@ class Array:
                 raise TypeError(f"Cannot extend an Array with format '{self._dtype}' "
                                 f"from an Array of format '{iterable._dtype}'.")
             # No need to iterate over the elements, we can just append the data
-            self._bitstore.append(iterable._bitstore.to_bits())
+            self._bitstore.extend(iterable._bitstore.to_tibs())
         else:
             if isinstance(iterable, str):
                 raise TypeError("Can't extend an Array with a str.")
             to_join = [self._create_element(item) for item in iterable]
-            self._bitstore.append(Bits.from_joined(to_join))
+            self._bitstore.extend(Tibs.from_joined(to_join))
         return self
 
     def insert(self, pos: int, x: ElementType, /) -> Array:
@@ -445,11 +446,11 @@ class Array:
         Up to seven zero bits will be added at the end to byte align.
 
         """
-        return self._bitstore.to_bytes()
+        return tibs_to_padded_bytes(self._bitstore)
 
-    def to_bits(self) -> Bits:
-        """Return as a Bits object. This is an immutable copy of the current Array data."""
-        return self._bitstore.to_bits()
+    def to_tibs(self) -> Tibs:
+        """Return as a Tibs object. This is an immutable copy of the current Array data."""
+        return self._bitstore.to_tibs()
 
     def reverse(self) -> Array:
         """Reverse the order of all items in the Array in place.
@@ -469,7 +470,7 @@ class Array:
         if trailing_bit_length != 0:
             raise ValueError(f"Cannot reverse the items in the Array as its data length ({len(self._bitstore)} bits) "
                              f"is not a multiple of the format length ({self._item_size} bits).")
-        self._bitstore = MutableBits.from_joined([self._get_bit_slice(s - self._item_size, self._item_size)
+        self._bitstore = Mutibs.from_joined([self._get_bit_slice(s - self._item_size, self._item_size)
                                            for s in range(len(self._bitstore), 0, -self._item_size)])
         return self
 
@@ -527,7 +528,7 @@ class Array:
         stream.write(
             f"<{self.__class__.__name__} dtype1='{dtype1_str}'{dtype2_str}, length={len_str}, item_size={token_length} bits, total data size={(len(self._bitstore) + 7) // 8} bytes> [\n"
         )
-        data._pp(dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
+        _pp_data(data, dtype1, dtype2, token_length, width, sep, format_sep, show_offset, stream, token_length, groups)
         stream.write("]")
         if trailing_bit_length != 0:
             stream.write(" + trailing_bits = 0b" + self._get_bit_slice(len(self._bitstore) - trailing_bit_length, trailing_bit_length).unpack("bin"))
@@ -561,7 +562,7 @@ class Array:
             start += length
 
     def __copy__(self) -> Array:
-        a_copy = self.__class__.from_bits(self._dtype, self.to_bits())
+        a_copy = self.__class__.from_tibs(self._dtype, self.to_tibs())
         return a_copy
 
     def _apply_op_to_all_elements(self, op, value: int | float | None, is_comparison: bool = False) -> Array:
@@ -569,7 +570,7 @@ class Array:
         if isinstance(self._dtype, DtypeTuple):
             raise ValueError(f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeTuple dtype.")
         new_array = self.__class__("bool" if is_comparison else self._dtype)
-        new_data = MutableBits()
+        new_data = Mutibs()
         failures = index = 0
         msg = ""
         if value is not None:
@@ -600,7 +601,7 @@ class Array:
         # This isn't really being done in-place, but it's simpler and faster for now?
         if isinstance(self._dtype, DtypeTuple):
             raise ValueError(f"Cannot apply operators such as '{op.__name__}' to an Array with a DtypeTuple dtype.")
-        new_data = MutableBits()
+        new_data = Mutibs()
         failures = index = 0
         msg = ""
         for i in range(len(self)):
@@ -619,28 +620,28 @@ class Array:
         self._bitstore = new_data
         return self
 
-    def _apply_bitwise_op_to_all_elements(self, op, value: BitsType) -> Array:
+    def _apply_bitwise_op_to_all_elements(self, op, value: TibsLike) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer and return a new Array"""
         a_copy = Array(self.dtype)
         a_copy._bitstore = self._bitstore.__copy__()
         a_copy._apply_bitwise_op_to_all_elements_inplace(op, value)
         return a_copy
 
-    def _apply_bitwise_op_to_all_elements_inplace(self, op, value: BitsType) -> Array:
+    def _apply_bitwise_op_to_all_elements_inplace(self, op, value: TibsLike) -> Array:
         """Apply op with value to each element of the Array as an unsigned integer in place."""
-        value = mutable_bits_from_any(value)
+        value = mutibs_from_any(value)
         if len(value) != self._item_size:
-            raise ValueError(f"Bitwise op {op} needs a Bits of length {self._item_size} to match "
+            raise ValueError(f"Bitwise op {op} needs a Tibs of length {self._item_size} to match "
                              f"format {self._dtype}, but received '{value}' which has a length of {len(value)} bits.")
         for start in range(0, len(self) * self._item_size, self._item_size):
             mutablebits_slice = self._get_bit_slice(start, self._item_size)
             if op == operator.ixor:
-                mutablebits_slice._ixor(value)
+                mutablebits_slice ^= value
             elif op == operator.iand:
-                mutablebits_slice._iand(value)
+                mutablebits_slice &= value
             elif op == operator.ior:
-                mutablebits_slice._ior(value)
-            self._bitstore._set_slice(start, start + self._item_size, mutablebits_slice.as_bits())
+                mutablebits_slice |= value
+            self._bitstore[start:start + self._item_size] = mutablebits_slice.to_tibs()
         return self
 
     def _apply_op_between_arrays(self, op, other: Array, is_comparison: bool = False) -> Array:
@@ -656,7 +657,7 @@ class Array:
         else:
             new_type = self._promote_type(self._dtype, other._dtype)
         new_array = self.__class__(new_type)
-        new_data = MutableBits()
+        new_data = Mutibs()
         failures = index = 0
         msg = ""
         for i in range(len(self)):
@@ -800,22 +801,22 @@ class Array:
 
     # Bitwise operators
 
-    def __and__(self, other: BitsType) -> Array:
+    def __and__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.iand, other)
 
-    def __iand__(self, other: BitsType) -> Array:
+    def __iand__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements_inplace(operator.iand, other)
 
-    def __or__(self, other: BitsType) -> Array:
+    def __or__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.ior, other)
 
-    def __ior__(self, other: BitsType) -> Array:
+    def __ior__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements_inplace(operator.ior, other)
 
-    def __xor__(self, other: BitsType) -> Array:
+    def __xor__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.ixor, other)
 
-    def __ixor__(self, other: BitsType) -> Array:
+    def __ixor__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements_inplace(operator.ixor, other)
 
     # Reverse operators between a scalar value and an Array
@@ -831,15 +832,15 @@ class Array:
         neg = self._apply_op_to_all_elements(operator.neg, None)
         return neg._apply_op_to_all_elements(operator.add, other)
 
-    # Reverse operators between a scalar and something that can be a Bits.
+    # Reverse operators between a scalar and something that can be a Tibs.
 
-    def __rand__(self, other: BitsType) -> Array:
+    def __rand__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.iand, other)
 
-    def __ror__(self, other: BitsType) -> Array:
+    def __ror__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.ior, other)
 
-    def __rxor__(self, other: BitsType) -> Array:
+    def __rxor__(self, other: TibsLike) -> Array:
         return self._apply_bitwise_op_to_all_elements(operator.ixor, other)
 
     # Comparison operators
@@ -865,7 +866,7 @@ class Array:
         return self._apply_op_to_all_elements(operator.le, other, is_comparison=True)
 
     def _eq_ne(self, op, other: Any) -> Array:
-        if isinstance(other, (int, float, str, Bits, MutableBits)):
+        if isinstance(other, (int, float, str, Tibs, Mutibs)):
             return self._apply_op_to_all_elements(op, other, is_comparison=True)
         other = self.__class__(self.dtype, other)
         return self._apply_op_between_arrays(op, other, is_comparison=True)

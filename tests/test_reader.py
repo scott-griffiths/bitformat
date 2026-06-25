@@ -1,17 +1,17 @@
 import pytest
-from bitformat import Reader, Field, Bits, Dtype, DtypeTuple, MutableBits
+from bitformat import Reader, Field, Tibs, Dtype, DtypeTuple, Mutibs
 
 
 def test_creation():
-    r = Reader(Bits())
+    r = Reader(Tibs())
     assert len(r.bits) == 0
     assert r.pos == 0
 
-    r = Reader(Bits.from_string("0x12345"), 4)
+    r = Reader(Tibs.from_string("0x12345"), 4)
     assert len(r.bits) == 20
     assert r.pos == 4
 
-    r = Reader(Bits.from_bytes(b"hello"))
+    r = Reader(Tibs.from_bytes(b"hello"))
     assert len(r.bits) == 40
 
     with pytest.raises(TypeError):
@@ -20,7 +20,7 @@ def test_creation():
         _ = Reader(b'hello')
 
 def test_read():
-    r = Reader(Bits("0x12345"), 4)
+    r = Reader(Tibs("0x12345"), 4)
     assert r.pos == 4
     assert r.read("bits4") == "0x2"
     assert r.pos == 8
@@ -31,7 +31,7 @@ def test_read():
     assert b == '0x12'
 
 def test_peek():
-    r = Reader(Bits("0xff000001"))
+    r = Reader(Tibs("0xff000001"))
     assert r.peek('hex2') == 'ff'
     assert r.peek(Dtype('hex2')) == 'ff'
     assert r.pos == 0
@@ -42,7 +42,7 @@ def test_peek():
     assert r.peek(1) == '0b1'
 
 def test_parse():
-    r = Reader(Bits.from_bytes(b"hello_world"))
+    r = Reader(Tibs.from_bytes(b"hello_world"))
     r.pos = 6 * 8
     f = Field("bytes3")
     assert r.parse(f) == 24
@@ -53,27 +53,27 @@ def test_parse():
         _ = r.parse('bin2')
 
 def test_read_tuple():
-    r = Reader(Bits('0x00ffff'))
+    r = Reader(Tibs('0x00ffff'))
     x = r.peek(DtypeTuple('(hex3, u4)'))
     assert x == ('00f', 15)
     x = r.read('(u8, bool, bool)')
     assert x == (0, True, True)
 
 def test_with_mutable_bits():
-    mb = MutableBits('0x00ff')
+    mb = Mutibs('0x00ff')
     r = Reader(mb)
     assert r.pos == 0
     assert r.read('u9') == 1
     assert r.pos == 9
-    mb.prepend('0b111111111')
+    mb.extend_left('0b111111111')
     assert r.pos == 9
     assert r.read('u9') == 1
     x = r.bits
-    assert isinstance(x, MutableBits)
+    assert isinstance(x, Mutibs)
     assert x is mb
 
 def test_open_ended_read():
-    a = Bits.from_zeros(100)
+    a = Tibs.from_zeros(100)
     r = Reader(a)
     r.pos = 1
     x = r.peek('[u11;]')

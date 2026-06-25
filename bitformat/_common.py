@@ -50,7 +50,7 @@ class DtypeKind(Enum):
     HEX = 'hex'  # doc: A hexadecimal string, each character representing 4 bits.
     BYTES = 'bytes'  # doc: A Python ``bytes`` object.
     FLOAT = 'f'  # doc: An IEEE floating point value. Either 16, 32 or 64 bits.
-    BITS = 'bits'  # doc: A bitformat ``Bits`` object.
+    BITS = 'bits'  # doc: A bitformat ``Tibs`` object.
     BOOL = 'bool'  # doc: A single bit boolean value.
     PAD = 'pad'  # doc: Padding can be used to skip over a section of data.
 

@@ -1,5 +1,5 @@
 import pytest
-from bitformat import Format, If, Bits
+from bitformat import Format, If, Tibs
 
 
 def test_creation():
@@ -73,7 +73,7 @@ def test_slightly_more_complex_things():
     assert f == h
     i = eval(repr(f))
     assert f == i
-    b = Bits("0x47, 0b1, 0x050403020100, f32=6.5")
+    b = Tibs.from_joined(["0x47", "0b1", "0x050403020100", Tibs.from_dtype("f32", 6.5)])
     f.parse(b)
     # assert f.fields[-1].value == 6.5
     # assert f['flag'].value is True
@@ -97,4 +97,4 @@ def test_eq():
 # def test_expressions():
 #     f = Format('(x:bool, if {x is True}: pass else: f32)')
 #     f.pack([True])
-#     assert f.to_bits() == '0b1'
+#     assert f.to_tibs() == '0b1'

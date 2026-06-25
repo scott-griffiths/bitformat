@@ -1,12 +1,12 @@
 import pytest
-from bitformat import Pass, Format, Bits
+from bitformat import Pass, Format, Tibs
 
 
 def test_pass_creation():
     p = Pass()
     assert p.bit_length == 0
     p.clear()
-    assert p.to_bits() == Bits()
+    assert p.to_tibs() == Tibs()
     assert p.to_bytes() == b""
     with pytest.raises(AttributeError):
         _ = p.value

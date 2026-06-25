@@ -1,18 +1,30 @@
 #!/usr/bin/env python
 
-from bitformat import Format, Dtype, DtypeSingle, Bits, Field, Array, FieldType, Repeat, DtypeKind, Expression, While, \
-    MutableBits
+from bitformat import Format, Dtype, DtypeSingle, Tibs, Field, Array, FieldType, Repeat, DtypeKind, Expression, While, \
+    Mutibs
 from hypothesis import given
 import pytest
 import hypothesis.strategies as st
 import random
 
 
+def tibs_of(*items) -> Tibs:
+    parts = []
+    for item in items:
+        if isinstance(item, tuple):
+            parts.append(Tibs.from_dtype(item[0], item[1]))
+        elif isinstance(item, bytes):
+            parts.append(Tibs.from_bytes(item))
+        else:
+            parts.append(Tibs(item))
+    return Tibs.from_joined(parts)
+
+
 class TestCreation:
     def test_create_empty(self):
         f = Format()
         f.pack([])
-        b = f.to_bits()
+        b = f.to_tibs()
         assert len(b) == 0
         assert f.name == ""
         assert len(f) == 0
@@ -26,16 +38,16 @@ class TestCreation:
         d = Dtype.from_string("u12")
         f = Format.from_params([Field.from_params(d)], "x")
         f.pack([1000])
-        x = f.to_bits()
+        x = f.to_tibs()
         assert f.name == "x"
-        assert x == "u12=1000"
+        assert x == Tibs.from_dtype("u12", 1000)
         assert len(x) == 12
         assert len(f) == 1
 
-    def test_create_from_bits_string(self):
+    def test_create_from_tibs_string(self):
         f = Format.from_params([Field.from_params("f16", "foo", 12.5)], "x")
         g = Format.from_params(["foo: f16=12.5"], "y")
-        assert f.to_bits() == g.to_bits()
+        assert f.to_tibs() == g.to_tibs()
         assert f.name == "x"
 
     def test_create_from_dtype_string(self):
@@ -49,27 +61,27 @@ class TestCreation:
     def test_building_field(self, name):
         f = Field(name)
         f.pack(0)
-        b = f.to_bits()
-        assert b == Bits.from_string(f"{name}=0")
+        b = f.to_tibs()
+        assert b == Tibs.from_dtype(name, 0)
 
-    def test_create_from_bits(self):
-        b = Bits.from_string("0xabc")
-        field = Field.from_bits(b)
+    def test_create_from_tibs(self):
+        b = Tibs.from_string("0xabc")
+        field = Field.from_tibs(b)
         f = Format.from_params([field])
-        x = f.to_bits()
+        x = f.to_tibs()
         assert f.name == ""
         assert x == "0xabc"
-        assert isinstance(x, Bits)
+        assert isinstance(x, Tibs)
 
-    def test_create_from_bits_with_name(self):
-        f = Format.from_params([Field.from_bits("0xabc", "some_bits")])
-        assert f.to_bits() == "0xabc"
+    def test_create_from_tibs_with_name(self):
+        f = Format.from_params([Field.from_tibs("0xabc", "some_bits")])
+        assert f.to_tibs() == "0xabc"
 
     def test_create_from_list(self):
         f = Format.from_params(["const bits = 0xabc", "u5", "u5"])
         f.pack([3, 10])
-        x = f.to_bits()
-        assert x == "bits = 0xabc, u5=3, u5=10"
+        x = f.to_tibs()
+        assert x == tibs_of("0xabc", ("u5", 3), ("u5", 10))
         f.parse(x)
         assert isinstance(f, Format)
 
@@ -91,7 +103,7 @@ class TestCreation:
         assert f == g
         assert f.name == "header"
         f.pack([352])
-        assert f.to_bits() == "0x000001b3, u12=352, u12=288, 0b1"
+        assert f.to_tibs() == tibs_of("0x000001b3", ("u12", 352), ("u12", 288), "0b1")
         _ = Format.from_params([f, "bytes5"], "main")
 
     def test_stretchy_token_at_start(self):
@@ -105,8 +117,8 @@ class TestCreation:
         assert f3.value == [None, [None], [None], None]
         f3.pack([1, [2], [3], 4])
         assert f3.value == [1, [2], [3], 4]
-        assert f3.to_bits() == 'u4=1, u8=2, u16=3, u32=4'
-        b = f3.to_bits()
+        assert f3.to_tibs() == tibs_of(("u4", 1), ("u8", 2), ("u16", 3), ("u32", 4))
+        b = f3.to_tibs()
         f3.clear()
         assert f3.value == [None, [None], [None], None]
         f3.parse(b)
@@ -118,10 +130,11 @@ class TestCreation:
             "header",
         )
         main = Format.from_params(["const bits = 0b1", "v1:i7", "v2:i9"], "main")
-        m = Bits("0b1, i7=5, i9=-99, 0x47")
+        m = tibs_of("0b1", ("i7", 5), ("i9", -99), "0x47")
         main.parse(m)
         f = Format.from_params([header, main, "const hex = 0x47"], "all")
-        b = Bits("0x000001b3, u12=100, u12=200, 0b1, 0b0, 0b1, i7=5, i9=-99, 0x47, 0x00000000000000")
+        b = tibs_of("0x000001b3", ("u12", 100), ("u12", 200), "0b1", "0b0", "0b1",
+                    ("i7", 5), ("i9", -99), "0x47", "0x00000000000000")
         f.parse(b)
         print(f)
         t = f["header"]
@@ -173,7 +186,7 @@ def test_packing_bug():
 class TestAddition:
     def test_adding_bits(self):
         f = Format()
-        f += Field.from_bits("0xff")
+        f += Field.from_tibs("0xff")
         assert f.to_bytes() == b"\xff"
         assert f[0].to_bytes() == b"\xff"
         assert len(f) == 1
@@ -196,9 +209,9 @@ class TestArray:
         assert f2[0].dtype.items == 20
         assert f2[0].value is None
         with pytest.raises(ValueError):
-            f2["new_array"].value = f.to_bits()[2:]
-        f2["new_array"].value = f.to_bits()
-        assert f.to_bits() == f2.to_bits()
+            f2["new_array"].value = f.to_tibs()[2:]
+        f2["new_array"].value = f.to_tibs()
+        assert f.to_tibs() == f2.to_tibs()
 
     @given(w=st.integers(1, 5), h=st.integers(1, 5))
     def test_example_with_array(self, w, h):
@@ -213,7 +226,7 @@ class TestArray:
         )
         p = tuple(random.randint(0, 255) for _ in range(w * h))
         f.pack([w, h, p])
-        b = f.to_bits()
+        b = f.to_tibs()
         f.clear()
         f.parse(b)
         assert f["width"].value == w
@@ -223,7 +236,7 @@ class TestArray:
 
 def test_example_from_docs():
     f = Format("_:(x: u8, y: u{x}, bool)")
-    b = Bits.from_string("u8=10, u10=987, bool=1")
+    b = tibs_of(("u8", 10), ("u10", 987), ("bool", True))
     assert f.parse(b) == 19  # Number of parsed bits
     assert f["y"].value == 987
 
@@ -238,16 +251,16 @@ def test_example_from_docs():
 
 def test_items():
     f = Format.from_params(["q:i5", "[u3; {q + 1}]"])
-    b = Bits.from_string("i5=1, u3=2, u3=0")
+    b = tibs_of(("i5", 1), ("u3", 2), ("u3", 0))
     f.parse(b)
     assert f[0].value == 1
     assert f[1].value == (2, 0)
     f.clear()
     f.pack([1, [2, 0]])
-    assert b == f.to_bits()
+    assert b == f.to_tibs()
     f.clear()
     f.pack([3, [1, 2, 3, 4]])
-    assert f.to_bits() == Bits.from_string("i5=3, u3=1, u3=2, u3=3, u3=4")
+    assert f.to_tibs() == tibs_of(("i5", 3), ("u3", 1), ("u3", 2), ("u3", 3), ("u3", 4))
 
 
 class TestMethods:
@@ -278,7 +291,7 @@ class TestMethods:
 
 def test_repeating_field():
     f = Repeat.from_params(5, "u8")
-    d = Array("u8", [1, 5, 9, 7, 6]).to_bits()
+    d = Array("u8", [1, 5, 9, 7, 6]).to_tibs()
     f.unpack(d)
     assert f.value == [1, 5, 9, 7, 6]
 
@@ -299,26 +312,26 @@ def test_format_get_and_set():
 def test_repeating_from_expression():
     f = Format.from_params(["x: u8", Repeat.from_params(Expression("{2*x}"), "hex1")], "my_little_format")
     f.pack([2, ["a", "b", "c", "d"]])
-    assert f.to_bits() == "u8=2, hex1=a, hex1=b, hex1=c, hex1=d"
+    assert f.to_tibs() == tibs_of(("u8", 2), ("hex1", "a"), ("hex1", "b"), ("hex1", "c"), ("hex1", "d"))
 
 def test_if_with_const_value():
     f = Format('(if {False}: const u8=255 else: const u8=0)')
     f.pack([])
-    assert f.to_bits() == "u8=0"
+    assert f.to_tibs() == Tibs.from_dtype("u8", 0)
 
 def test_repeat_with_const_expression():
     f = Format("(the_size: i9, repeat {the_size}: (const u5=0, const bin3=111))")
     f.pack([3])
-    assert f.to_bits() == "i9=3, 0x070707"
+    assert f.to_tibs() == tibs_of(("i9", 3), "0x070707")
 
 def test_repeat_with_bits():
     f = Repeat.from_params(3, "const bits=0xab")
     f.pack([])
-    b = f.to_bits()
+    b = f.to_tibs()
     assert b == "0xababab"
-    f2 = Repeat.from_params(2, Field.from_bits(b, const=True))
+    f2 = Repeat.from_params(2, Field.from_tibs(b, const=True))
     f2.pack([])
-    b2 = f2.to_bits()
+    b2 = f2.to_tibs()
     assert b2 == "0xabababababab"
 
 def test_repeat_with_dtype():
@@ -335,7 +348,7 @@ def test_repeat_with_dtype():
 def test_field_array_str():
     f = Field.from_string("test   :  f32_le = 0.25  ")
     assert str(f) == "test: f32_le = 0.25"
-    assert f.to_bits().unpack('f_le') == 0.25
+    assert f.to_tibs().unpack('f_le') == 0.25
     f = Field.from_string("test: [f32_le ; 3]")
     assert str(f) == "test: [f32_le; 3]"
 
@@ -346,27 +359,27 @@ def test_format_repr_string():
     assert r == "Format.from_params(['x: const u8 = 12', 'u: bool = False', '[u3; 44]'], name='dave')"
 
 
-def test_to_bits():
+def test_to_tibs():
     f1 = Format.from_params(["u8_le", "u8_be", "u8_ne"])
     f = Format("(u8_le, u8_be, u8_ne)")
     assert f == f1
     f.pack([1, 2, 3])
-    b = f.to_bits()
-    assert b == "u8=1, u8=2, u8=3"
+    b = f.to_tibs()
+    assert b == tibs_of(("u8", 1), ("u8", 2), ("u8", 3))
     f[1].clear()
     assert f[0].value == 1
     assert f[1].value is None
     assert f[2].value == 3
-    assert f[0].to_bits() == "u8=1"
+    assert f[0].to_tibs() == Tibs.from_dtype("u8", 1)
     with pytest.raises(ValueError):
-        _ = f[1].to_bits()
+        _ = f[1].to_tibs()
     with pytest.raises(ValueError):
-        _ = f.to_bits()
+        _ = f.to_tibs()
 
 
 def test_partial_parse():
     f = Format.from_params(["bool", "[f16;3]"])
-    b = Bits.from_string("0b1, f16=1.0, f16=2.0, f16=3.0")
+    b = tibs_of(("bool", True), ("f16", 1.0), ("f16", 2.0), ("f16", 3.0))
     f.parse(b)
     assert f[0].value is True
     assert f[1].value == (1.0, 2.0, 3.0)
@@ -406,15 +419,16 @@ def test_interesting_types_from_string():
 def test_expression_literals():
     a = Field.from_string("u{4 + 4}")
     a.pack(255)
-    assert a.to_bits() == Bits('0xff')
+    assert a.to_tibs() == Tibs('0xff')
     b = Field.from_string("[bool; {4 + 4}]")
     b.pack([1, 1, 1, 1, 0, 0, 0, 0])
-    assert b.to_bits() == Bits('0b11110000')
+    assert b.to_tibs() == Tibs('0b11110000')
     c = Field.from_string("[u{5 + 5}; {4 + 4}]")
     assert c.bit_length == 80
     d = Format("(a: u{4 + 4}, b: [u{5 + 5}; {4 + 4}])")
     d.pack([255, [1, 10, 55, 4, 3, 2, 1, 0]])
-    assert d.to_bits() == Bits('0xff, u10=1, u10=10, u10=55, u10=4, u10=3, u10=2, u10=1, u10=0')
+    assert d.to_tibs() == tibs_of("0xff", ("u10", 1), ("u10", 10), ("u10", 55), ("u10", 4),
+                                  ("u10", 3), ("u10", 2), ("u10", 1), ("u10", 0))
 
 def test_passed_in_value():
     a = Field.from_string("u{x}")
@@ -426,7 +440,7 @@ def test_expression_dtypes():
     d = Field.from_string('my_name: [f{4*e}; {a + b}]')
     assert str(d) == 'my_name: [f{4*e}; {a + b}]'
     f = Format('(x: u8, [u{x}; {x + 1}])')
-    b = Bits('u8=3, u3=1, u3=2, u3=3, u3=4')
+    b = tibs_of(("u8", 3), ("u3", 1), ("u3", 2), ("u3", 3), ("u3", 4))
     f.parse(b)
     assert f['x'].value == 3
     assert f[1].value == (1, 2, 3, 4)
@@ -435,7 +449,7 @@ def test_expression_dtypes():
 
 def test_unpack():
     f = Format.from_string("header: (u8, u4, bool)")
-    b = Bits.from_string("u8=1, u4=2, 0b1")
+    b = tibs_of(("u8", 1), ("u4", 2), "0b1")
     assert f.unpack(b) == [1, 2, True]
     f[1].clear()
     assert f.unpack() == [1, None, True]
@@ -546,7 +560,7 @@ header :(
 
 def test_format_with_repeat():
     f = Format(s)
-    b = Bits.from_bytes(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d")
+    b = Tibs.from_bytes(b"\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d")
     f.parse(b)
     assert f["x"].value == 1
     assert f["y"].value == 2
@@ -672,7 +686,7 @@ def test_open_ended_array():
     f = Format("([u8;])")
     f.pack([[1, 2, 3]])
     assert f.value == [(1, 2, 3)]
-    b = f.to_bits()
+    b = f.to_tibs()
     f.parse(b)
     assert f.value == [(1, 2, 3)]
 
@@ -685,15 +699,15 @@ def test_expressions_more():
 #     f = Format("(a: u8, b: u{a} = 5)")
 #     f.pack([3])
 #     assert f.value == [3, 5]
-#     assert f.to_bits() == "u8=3, u8=5"
+#     assert f.to_tibs() == "u8=3, u8=5"
 #     f2 = Format.from_params(["a: u8", "b: const u8 = 5"])
 #     f2.pack([4])
 #     assert f2.value == [4, 5]
-#     assert f2.to_bits() == "u8=4, u8=5"
+#     assert f2.to_tibs() == "u8=4, u8=5"
 
 def test_const_variable():
     f = FieldType.from_string('(x: const u8 = 5, [u4; {x}])')
-    f.parse('u8=5, u4=1, u4=2, u4=3, u4=4, u4=5')
+    f.parse(tibs_of(("u8", 5), ("u4", 1), ("u4", 2), ("u4", 3), ("u4", 4), ("u4", 5)))
     assert f.value == [5, (1, 2, 3, 4, 5)]
 
 def test_format_with_simple_fields():
@@ -704,7 +718,7 @@ def test_format_with_simple_fields():
 
     # Try packing with values
     fmt.pack([42, 1000, True])
-    assert fmt.to_bits() == Bits.from_string("u8=42, u16=1000, 0b1")
+    assert fmt.to_tibs() == tibs_of(("u8", 42), ("u16", 1000), "0b1")
     assert fmt.value == [42, 1000, 1]
 
     # Try accessing named fields
@@ -719,10 +733,10 @@ def test_format_with_field_expressions():
 
     # Pack with size 4 and data
     fmt.pack([4, b"test"])
-    assert fmt.to_bits() == Bits.from_string("0x0474657374")  # 4, "test"
+    assert fmt.to_tibs() == Tibs.from_string("0x0474657374")  # 4, "test"
 
     # Test unpacking
-    data = Bits.from_string("0x0348656c")  # 3, "Hel"
+    data = Tibs.from_string("0x0348656c")  # 3, "Hel"
     fmt.parse(data)
     assert fmt.value == [3, b"Hel"]
     assert fmt["size"].value == 3
@@ -743,8 +757,8 @@ def test_format_with_nested_formats():
     full_msg.pack([header.value, payload.value])
 
     # Check the whole message
-    expected = Bits.from_string("0x010005" + "".join(f"{ord(c):02x}" for c in "hello"))
-    assert full_msg.to_bits() == expected
+    expected = Tibs.from_string("0x010005" + "".join(f"{ord(c):02x}" for c in "hello"))
+    assert full_msg.to_tibs() == expected
 
     # Test direct access to nested field
     assert full_msg["header"]["version"].value == 1
@@ -759,10 +773,10 @@ def test_format_with_repeat():
 
     # Pack with count 3 and values
     fmt.pack([3, [10, 20, 30]])
-    assert fmt.to_bits() == Bits.from_string("0x030a141e")  # 3, [10, 20, 30]
+    assert fmt.to_tibs() == Tibs.from_string("0x030a141e")  # 3, [10, 20, 30]
 
     # Test unpacking
-    data = Bits.from_string("0x0201020304")  # 2, [1, 2], extra bytes 0x0304 ignored
+    data = Tibs.from_string("0x0201020304")  # 2, [1, 2], extra bytes 0x0304 ignored
     fmt.parse(data)
     assert fmt.value[0] == 2  # count
     assert fmt.value[1] == [1, 2]  # values
@@ -773,11 +787,11 @@ def test_format_with_conditional_fields():
 
     # Test with name (has_name=True)
     fmt.pack([True, b"ABCD", 1234])
-    assert fmt.to_bits() == Bits('0b1') + b'ABCD' + 'u16 = 1234'
+    assert fmt.to_tibs() == tibs_of("0b1", b"ABCD", ("u16", 1234))
 
     # Test without name (has_name=False)
     fmt.pack([False, 5678])  # No name needed
-    assert fmt.to_bits() == Bits.from_string('0b0, u16=5678')
+    assert fmt.to_tibs() == tibs_of("0b0", ("u16", 5678))
 
 def test_format_with_complex_expressions():
     """Test a format with more complex expressions"""
@@ -785,10 +799,10 @@ def test_format_with_complex_expressions():
 
     # Pack a 2x3 grid of pixels
     fmt.pack([2, 3, [10, 20, 30, 40, 50, 60]])
-    assert fmt.to_bits() == Bits.from_string("0x02030a141e28323c")
+    assert fmt.to_tibs() == Tibs.from_string("0x02030a141e28323c")
 
     # Unpack
-    data = Bits.from_string("0x0102010203")  # 1x2 grid with pixels [1, 2]
+    data = Tibs.from_string("0x0102010203")  # 1x2 grid with pixels [1, 2]
     fmt.parse(data)
     assert fmt.value == [1, 2, [1, 2]]
 
@@ -798,10 +812,10 @@ def test_format_with_padding():
 
     # Pack
     fmt.pack([0xA, 0xBC])
-    assert fmt.to_bits() == Bits.from_string("0xA0BC")  # 0xA with 4 bits of padding, then 0xBC
+    assert fmt.to_tibs() == Tibs.from_string("0xA0BC")  # 0xA with 4 bits of padding, then 0xBC
 
     # Unpack
-    data = Bits.from_string("0xF0AB")  # 0xF with 4 bits of padding, then 0xAB
+    data = Tibs.from_string("0xF0AB")  # 0xF with 4 bits of padding, then 0xAB
     fmt.parse(data)
     assert fmt.value == [0xF, 0xAB]
 
@@ -813,19 +827,19 @@ def test_format_with_dynamic_dtype():
 
     # Test with type 0: u8
     fmt.pack([0, 200])
-    assert fmt.to_bits() == Bits('0b00, u8=200')
+    assert fmt.to_tibs() == tibs_of("0b00", ("u8", 200))
 
     # Test with type 1: i8
     fmt.pack([1, -50])
-    assert fmt.to_bits() == Bits('0b01, i8=-50')
+    assert fmt.to_tibs() == tibs_of("0b01", ("i8", -50))
 
     # Test with type 2: f16
     fmt.pack([2, 1.5])
-    assert fmt.to_bits() == Bits('0b10, f16=1.5')
+    assert fmt.to_tibs() == tibs_of("0b10", ("f16", 1.5))
 
     # Test with type 3: bool
     fmt.pack([3, True])
-    assert fmt.to_bits() == Bits.from_string("0b111")
+    assert fmt.to_tibs() == Tibs.from_string("0b111")
 
 def test_format_with_expressions_in_if_condition():
     """Test a format with expressions in if condition that reference other fields"""
@@ -833,19 +847,19 @@ def test_format_with_expressions_in_if_condition():
 
     # Neither option present
     fmt.pack([0, 5])
-    assert len(fmt.to_bits()) == 16  # 8 + 8 bits
+    assert len(fmt.to_tibs()) == 16  # 8 + 8 bits
 
     # First option present
     fmt.pack([1, 5, 42])
-    assert fmt.to_bits() == Bits.from_string("0x01052A")
+    assert fmt.to_tibs() == Tibs.from_string("0x01052A")
 
     # Second option present
     fmt.pack([2, 5, 1000])
-    assert fmt.to_bits() == Bits.from_string("0x020503E8")
+    assert fmt.to_tibs() == Tibs.from_string("0x020503E8")
 
     # Both options present
     fmt.pack([3, 5, 42, 1000])
-    assert fmt.to_bits() == Bits.from_string("0x03052A03E8")
+    assert fmt.to_tibs() == Tibs.from_string("0x03052A03E8")
 
 @pytest.mark.skip  # TODO
 def test_format_with_nested_repeat():
@@ -859,17 +873,17 @@ def test_format_with_nested_repeat():
     fmt.pack([2, [row1, row2]])
 
     # Should be [2, [3, [1, 2, 3], 2, [4, 5]]]
-    expected = Bits.from_string("0x0203010203020405")
-    assert fmt.to_bits() == expected
+    expected = Tibs.from_string("0x0203010203020405")
+    assert fmt.to_tibs() == expected
 
 def test_let():
     f = FieldType.from_string('let x = {2}')
     assert str(f) == 'let x = {2}'
     f = Format("(let x = {5}, u{x+y})")
     f.pack([22], y=3)
-    assert f.to_bits() == 'u8=22'
+    assert f.to_tibs() == Tibs.from_dtype("u8", 22)
     f.pack([1], y=1000)
-    assert f.to_bits() == 'u1005=1'
+    assert f.to_tibs() == Tibs.from_dtype("u1005", 1)
 
 def test_while():
     f = While("while {x > 0}: (bool, let x = {x - 1})")
@@ -897,6 +911,6 @@ def test_appending_fields():
 
 def test_string_value():
     f = Format("(x: const hex4 = dead, if {x == 'dead'}: u8)")
-    b = MutableBits('0xdeadff')
+    b = Mutibs('0xdeadff')
     f.parse(b)
     assert f.value == ['dead', 255]

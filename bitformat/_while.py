@@ -3,7 +3,7 @@ from __future__ import annotations
 from ._fieldtype import FieldType
 from ._common import override, Indenter, Expression, ExpressionError
 from typing import Sequence, Any
-from ._bits import Bits
+from ._bits import Tibs
 
 __all__ = ["While"]
 
@@ -12,7 +12,7 @@ class While(FieldType):
 
     field: FieldType
     _expr: Expression
-    _bits_list: list[Bits]
+    _bits_list: list[Tibs]
     _values_list = list[Any]
 
     def __new__(cls, s: str) -> While:
@@ -88,13 +88,13 @@ class While(FieldType):
         return s
 
     @override
-    def _parse(self, b: Bits, startbit: int, kwargs: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, kwargs: dict[str, Any]) -> int:
         self._bits_list = []
         self._values_list = []
         pos = startbit
         while self._expr.evaluate(**kwargs):
             pos += self.field._parse(b, pos, kwargs)
-            self._bits_list.append(self.field.to_bits())
+            self._bits_list.append(self.field.to_tibs())
             self._values_list.extend(self.field.value)
         return pos - startbit
 
@@ -106,7 +106,7 @@ class While(FieldType):
         while self._expr.evaluate(**kwargs):
             value = next(value_iter)
             self.field._pack(value, kwargs)
-            self._bits_list.append(self.field.to_bits())
+            self._bits_list.append(self.field.to_tibs())
             self._values_list.extend(value)
         try:
             next(value_iter)
@@ -120,8 +120,8 @@ class While(FieldType):
         return x
 
     @override
-    def to_bits(self) -> Bits:
-        return Bits.from_joined(self._bits_list)
+    def to_tibs(self) -> Tibs:
+        return Tibs.from_joined(self._bits_list)
 
     @override
     def clear(self) -> None:

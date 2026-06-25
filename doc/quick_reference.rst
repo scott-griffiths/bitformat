@@ -66,10 +66,10 @@ You shouldn't need to deal with this type directly but its methods are available
 Methods
 ^^^^^^^
 
-* :meth:`~FieldType.build`: Given positional and keyword values, fill in the any empty field(s) and build a `Bits` object.
-* :meth:`~FieldType.parse`: Takes a `Bits` object, parses it according to the field structure and returns the number of bits used.
+* :meth:`~FieldType.build`: Given positional and keyword values, fill in the any empty field(s) and build a `Tibs` object.
+* :meth:`~FieldType.parse`: Takes a `Tibs` object, parses it according to the field structure and returns the number of bits used.
 * :meth:`~FieldType.flatten`: Removes any nesting of fields and returns a flat list of FieldsTypes.
-* :meth:`~FieldType.to_bits`: Converts the contents to a `Bits` bit literal.
+* :meth:`~FieldType.to_tibs`: Converts the contents to a `Tibs` bit literal.
 * :meth:`~FieldType.to_bytes`: Converts the contents to a `bytes` object.
 * :meth:`~FieldType.vars`: Returns the positional and keyword values that are contained in the field.
 * :meth:`~FieldType.clear`: Sets the `value` of everything that is not a marked as const to `None`.
@@ -93,7 +93,7 @@ It represents a well-defined amount of binary data with a single data type.
 Additional methods
 ^^^^^^^^^^^^^^^^^^
 
-* :meth:`~Field.from_bits`: Construct from ``bytes``, ``bytearray``, a ``Bits`` object or a string that can be used to construct a `Bits` object.
+* :meth:`~Field.from_tibs`: Construct from ``bytes``, ``bytearray``, a ``Tibs`` object or a string that can be used to construct a `Tibs` object.
 * :meth:`~Field.from_bytes`: Construct from a ``bytes`` or ``bytearray`` object.
 * :meth:`~Field.from_string`: Construct from a formatted string to set the `dtype`, `name`, `value` and `const` parameters.
 
@@ -136,7 +136,7 @@ Repeat
 
 A `Repeat` field repeats another field type a given number of times.
 
-``Repeat(count: int | Iterable[int] | str, fieldtype: FieldType | str | Dtype | Bits | None = None, name: str = '')``
+``Repeat(count: int | Iterable[int] | str, fieldtype: FieldType | str | Dtype | Tibs | None = None, name: str = '')``
 
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from ._fieldtype import FieldType
 from ._common import override, Indenter
 from typing import Any
-from ._bits import Bits
+from ._bits import Tibs
 
 __all__ = ["Pass"]
 
@@ -47,7 +47,7 @@ class Pass(FieldType):
         return False
 
     @override
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         return 0
 
     @override
@@ -81,9 +81,9 @@ class Pass(FieldType):
         return "Pass()"
 
     @override
-    def to_bits(self) -> Bits:
-        """Returns an empty :class:`Bits`."""
-        return Bits()
+    def to_tibs(self) -> Tibs:
+        """Returns an empty :class:`Tibs`."""
+        return Tibs()
 
     @override
     def has_dynamic_size(self) -> bool:

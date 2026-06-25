@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 
-from ._bits import Bits
+from ._bits import Tibs
 from typing import Sequence, Any, Iterable, Self
 import copy
 from ._common import override, Indenter, Colour, validate_name
@@ -139,7 +139,7 @@ class Format(FieldType):
         return False  # Didn't use up all of values
 
     @override
-    def _parse(self, b: Bits, startbit: int, vars_: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, vars_: dict[str, Any]) -> int:
         self.vars = vars_
         pos = startbit
         for fieldtype in self._fields:
@@ -193,8 +193,8 @@ class Format(FieldType):
             fieldtype._set_value_with_kwargs(v, kwargs)
 
     @override
-    def to_bits(self) -> Bits:
-        return Bits.from_joined(fieldtype.to_bits() for fieldtype in self._fields)
+    def to_tibs(self) -> Tibs:
+        return Tibs.from_joined(fieldtype.to_tibs() for fieldtype in self._fields)
 
     def __len__(self) -> int:
         return len(self._fields)

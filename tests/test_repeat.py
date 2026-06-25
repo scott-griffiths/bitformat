@@ -1,4 +1,4 @@
-from bitformat import Repeat, Bits, Field, Format, Expression
+from bitformat import Repeat, Tibs, Field, Format, Expression
 import pytest
 
 def test_creation():
@@ -19,7 +19,7 @@ def test_from_string():
     """
     q = Repeat(s)
     assert q.count == 2
-    assert q.unpack(Bits("0x8710")) == [[True, 7], [False, 16]]
+    assert q.unpack(Tibs("0x8710")) == [[True, 7], [False, 16]]
 
 
 def test_pack():
@@ -85,7 +85,7 @@ def test_not_using_all_values():
     assert g[0].value == [1, 2, 3]
     assert f == g
     assert str(f) == str(g)
-    assert f.to_bits() == '0x01020304'
+    assert f.to_tibs() == '0x01020304'
     f.clear()
     f.pack([[1, 2, 3], 5])
 

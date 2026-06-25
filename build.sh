@@ -28,10 +28,6 @@ fi
 log "Installing dependencies"
 uv pip install ".[dev]"
 
-# Build and install the entire package
-log "Building and installing package"
-uvx maturin develop --release --uv
-
 # Run tests
 log "Running tests"
 uv run pytest --benchmark-skip

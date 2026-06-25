@@ -12,7 +12,7 @@
 
 ### September 2025: version 0.8.
 
-* Allowing property setters for `MutableBits`. So for example you can now write `b.u = 34` to set the unsigned int
+* Allowing property setters for `Mutibs`. So for example you can now write `b.u = 34` to set the unsigned int
   interpretation of `b` to 34 (for whatever length `b` currently has).
 * Slice assignments / deletion are more capable, so you can set slices with a step not equal to 1, for example.
 * from_random() now takes a bytes object as the optional seed instead of an int.
@@ -20,16 +20,16 @@
 
 ### August 2025: version 0.7.
 
-* Added `MutableBits.as_bits()` to complement `MutableBits.to_bits()`. Rather than copying the data, `as_bits` moves it
-  for better efficiency, leaving the original `MutableBits` empty.
-* New `MutableBits.reserve()` and `capacity()` methods to help avoid memory reallocation when constructing a large `MutableBits`.
-* Added `Bits.rfind_all()` to complement the forwards version.
+* Added `Mutibs.as_tibs()` to complement `Mutibs.to_tibs()`. Rather than copying the data, `as_tibs` moves it
+  for better efficiency, leaving the original `Mutibs` empty.
+* New `Mutibs.reserve()` and `capacity()` methods to help avoid memory reallocation when constructing a large `Mutibs`.
+* Added `Tibs.rfind_all()` to complement the forwards version.
 * Performance improvements and bug fixes.
 
 ### August 2025: version 0.6.
 
 * Moved endianness modifier to the end of dtype strings. So it's now `f64_le` instead of `f_le64` for example.
-* Lots of Python code moved into Rust module, including the base `Bits` and `MutableBits` classes.
+* Lots of Python code moved into Rust module, including the base `Tibs` and `Mutibs` classes.
 * Other significant performance improvements. About 80% of my test suite is now as fast or faster than competing libraries.
 * Added `Let` field type. It's still a bit of a work in progress.
 * Improved platform compatibility - still work to do here though.
@@ -37,10 +37,10 @@
 
 ### June 2025: version 0.5.
 
-* Added the `MutableBits` class. The 'mutating' methods from `Bits` (which previously returned a new object) have been 
+* Added the `Mutibs` class. The 'mutating' methods from `Tibs` (which previously returned a new object) have been 
   moved to the new class and now mutate it. The new class was needed as some performance targets were just impossible to hit without it.
 * Mutating methods in `Array` now return self so they can be chained.
-* `Array.data` has been renamed to `Array.bits` as it's now just a `MutableBits` (`BitsProxy` has been removed as it's 
+* `Array.data` has been renamed to `Array.bits` as it's now just a `Mutibs` (`BitsProxy` has been removed as it's 
   no longer needed).
 * Significant performance improvements. Most tests now run as fast or faster than competing libraries - there are still
   some outliers to be worked on though.
@@ -74,7 +74,7 @@ move to use a Rust backend.
 
 Other additions:
 
-* `Reader` -- A new class that wraps a `Bits` to provide a bit position and read / parse functionality.
+* `Reader` -- A new class that wraps a `Tibs` to provide a bit position and read / parse functionality.
 
 ### September 2024: version 0.1.0
 
@@ -91,7 +91,7 @@ no guarantees are made about backwards compatibility at this stage.
 
 Things included:
 
-* `Bits` -- An immutable container for storing binary data.
+* `Tibs` -- An immutable container for storing binary data.
 * `Dtype` -- A data type used to interpret binary data.
 * `Array` -- A mutable container for contiguously allocated objects with the same `Dtype`.
 * `Field` -- Represents an optionally named, well-defined amount of binary data with a single data type.
@@ -99,7 +99,7 @@ Things included:
 
 Things not included yet:
 
-* **Streaming methods.** There is no concept of a bit position, or of reading through a `Bits`.
+* **Streaming methods.** There is no concept of a bit position, or of reading through a `Tibs`.
 * **Field expressions.** Rather than hard coding everything in a field, some parts will be calculated during the
   parsing process. For example in the format `'[w: u16, h: u16, [u8; {w * h}]]'` the size of the `'u8'` array would
   depend on the values parsed just before it.

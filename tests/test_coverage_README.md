@@ -8,7 +8,7 @@ The `test_coverage.py` file focuses on testing edge cases and scenarios that may
 
 ## Test Categories
 
-### 1. Bits Edge Cases (`TestBitsEdgeCases`)
+### 1. Tibs Edge Cases (`TestBitsEdgeCases`)
 - Empty bits operations
 - Single bit manipulations  
 - Large integer roundtrip testing

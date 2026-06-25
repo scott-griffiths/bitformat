@@ -12,16 +12,16 @@ For a more structured introduction to the library see the `Tour of bitformat <ht
 
 The Basics
 ----------
-The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to use and understand.
+The :class:`Tibs` and :class:`Dtype` classes are the most fundamental ones to use and understand.
 
-* :ref:`Bits <bits>` -- An immutable container for storing binary data.
-* :ref:`MutableBits <mutable_bits>` -- A mutable version of :class:`Bits`.
+* :ref:`Tibs <bits>` -- An immutable container for storing binary data.
+* :ref:`Mutibs <mutable_bits>` -- A mutable version of :class:`Tibs`.
 * :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
 * :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
 * :ref:`DtypeArray <dtypearray>` -- A :class:`Dtype` representing a sequence of objects of the same type.
 * :ref:`DtypeTuple <dtypetuple>` -- A :class:`Dtype` representing a sequence of objects of different types.
 * :ref:`Array <array>` -- A mutable container for contiguously allocated objects with the same :class:`Dtype`.
-* :ref:`Reader <reader>` -- Read and parse :class:`Bits` as a bit stream with a bit position.
+* :ref:`Reader <reader>` -- Read and parse :class:`Tibs` as a bit stream with a bit position.
 
 .. mermaid::
 
@@ -33,13 +33,13 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
     ---
     classDiagram
         direction BT
-        class MutableBits {
+        class Mutibs {
             + append()
             + byte_swap()
             + replace()
             + ...()
         }
-        class Bits {
+        class Tibs {
             + from_string()
             + from_dtype()
             + from_bytes()
@@ -51,14 +51,14 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
             + ...()
         }
         class Reader {
-            + Bits bits
+            + Tibs bits
             + int pos
             + read()
             + peek()
             + parse()
         }
-        Reader --* "1" Bits : contains
-        MutableBits --* Bits : extends
+        Reader --* "1" Tibs : contains
+        Mutibs --* Tibs : extends
 
 
 .. mermaid::
@@ -71,11 +71,11 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
     ---
     classDiagram
         direction BT
-        class MutableBits
+        class Mutibs
         class Array {
             + int item_size
             + Dtype dtype
-            + MutableBits data
+            + Mutibs data
             + from_iterable()
             + from_bytes()
             + ...()
@@ -110,7 +110,7 @@ The :class:`Bits` and :class:`Dtype` classes are the most fundamental ones to us
         DtypeArray --|> Dtype
         DtypeTuple --|> Dtype
         Array --* "1" Dtype : contains
-        Array --* "1" MutableBits : contains
+        Array --* "1" Mutibs : contains
 
 
 Field Types
@@ -136,7 +136,7 @@ These classes build upon those above to provide richer and more complex data str
     ---
     classDiagram
         direction BT
-        class Bits
+        class Tibs
         class Dtype
         class FieldType{
             <<abstract>>
@@ -162,7 +162,7 @@ These classes build upon those above to provide richer and more complex data str
         If --|> FieldType
         Repeat --|> FieldType
         Field --* "1" Dtype : contains
-        Field --* "0..1" Bits : contains
+        Field --* "0..1" Tibs : contains
 
 
 Miscellaneous

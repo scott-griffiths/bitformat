@@ -3,7 +3,7 @@ from __future__ import annotations
 from ._fieldtype import FieldType
 from ._common import override, Indenter, Expression, ExpressionError
 from typing import Sequence, Any, Iterable
-from ._bits import Bits
+from ._bits import Tibs
 
 __all__ = ["Repeat"]
 
@@ -13,7 +13,7 @@ class Repeat(FieldType):
     field: FieldType
     _count: Expression
     _concrete_count: int | None
-    _bits_list: list[Bits]
+    _bits_list: list[Tibs]
 
     def __new__(cls, s: str) -> Repeat:
         return cls.from_string(s)
@@ -126,14 +126,14 @@ class Repeat(FieldType):
         return s
 
     @override
-    def _parse(self, b: Bits, startbit: int, kwargs: dict[str, Any]) -> int:
+    def _parse(self, b: Tibs, startbit: int, kwargs: dict[str, Any]) -> int:
         self._bits_list = []
         pos = startbit
         if self._concrete_count is None:
             self._concrete_count = self._count.evaluate(**kwargs)
         for i in range(self._concrete_count):
             pos += self.field._parse(b, pos, kwargs)
-            self._bits_list.append(self.field.to_bits())
+            self._bits_list.append(self.field.to_tibs())
         return pos - startbit
 
     @override
@@ -157,8 +157,8 @@ class Repeat(FieldType):
         return x
 
     @override
-    def to_bits(self) -> Bits:
-        return Bits.from_joined(self._bits_list)
+    def to_tibs(self) -> Tibs:
+        return Tibs.from_joined(self._bits_list)
 
     @override
     def clear(self) -> None:
@@ -190,7 +190,7 @@ class Repeat(FieldType):
             except StopIteration:
                 next_value = None
             self.field._pack(next_value, kwargs)
-            self._bits_list.append(self.field.to_bits())
+            self._bits_list.append(self.field.to_tibs())
             self.field.clear()
 
     @override
