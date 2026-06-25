@@ -204,7 +204,6 @@ def test_len_errors():
 def test_endianness():
     d_le = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.LITTLE)
     d_be = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.BIG)
-    d_ne = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.NATIVE)
 
     be = d_be.pack(0x1234)
     le = d_le.pack(0x1234)
@@ -219,18 +218,18 @@ def test_endianness():
 def test_endianness_type_str():
     d_le = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.LITTLE)
     d_be = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.BIG)
-    d_ne = DtypeSingle.from_params(DtypeKind.UINT, 16, endianness=Endianness.NATIVE)
 
     d_le2 = Dtype("u16_le")
     d_be2 = Dtype("u16_be")
-    d_ne2 = Dtype("u16_ne")
 
     assert d_le == d_le2
     assert d_be == d_be2
-    assert d_ne == d_ne2
 
 
 def test_endianness_errors():
+    assert not hasattr(Endianness, "NATIVE")
+    with pytest.raises(ValueError):
+        _ = Dtype("u16_ne")
     with pytest.raises(ValueError):
         _ = DtypeSingle.from_params(DtypeKind.UINT, 15, endianness=Endianness.BIG)
     with pytest.raises(ValueError):
@@ -273,23 +272,22 @@ def test_dtype_str_with_le():
     assert str(d) == "u16_le"
     d = Dtype.from_string("f16_be")
     assert str(d) == "f16_be"
-    d = Dtype("i16_ne")
-    assert str(d) == "i16_ne"
-    assert repr(d) == "DtypeSingle('i16_ne')"
+    d = Dtype("i16_be")
+    assert str(d) == "i16_be"
+    assert repr(d) == "DtypeSingle('i16_be')"
 
 
 def test_hashing():
     a = Dtype('u8')
     b = Dtype('u8_be')
     c = Dtype('u8_le')
-    d = Dtype('u8_ne')
     e = Dtype('i8')
     f = Dtype('[u8; 1]')
     g = Dtype('[u8; 2]')
     h = Dtype('(u8)')
     i = Dtype('(u8, u8)')
-    s = {a, b, c, d, e, f, g, h, i}
-    assert len(s) == 9
+    s = {a, b, c, e, f, g, h, i}
+    assert len(s) == 8
 
 def test_str():
     a = Dtype('u8_le')

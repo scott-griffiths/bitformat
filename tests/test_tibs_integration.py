@@ -12,6 +12,8 @@ def test_tibs_exports_are_direct_classes():
     assert bitformat.Mutibs is tibs.Mutibs
     assert "TibsLike" in bitformat.__all__
     assert hasattr(bitformat, "TibsLike")
+    assert not hasattr(bitformat, "byteorder")
+    assert not hasattr(bitformat.Endianness, "NATIVE")
     assert "Bits" not in bitformat.__all__
     assert "MutableBits" not in bitformat.__all__
     assert not hasattr(bitformat, "Bits")
@@ -48,9 +50,25 @@ def test_patched_from_dtype_and_unpack(cls):
     assert b.unpack("u16_le") == 0x1234
     assert b.le.u == 0x1234
     assert b.be.u == 0x3412
+    assert Tibs.from_value("u16_le", 0x1234) == Tibs("0x3412")
 
-    native = cls.from_dtype("u16_ne", 0x2345)
-    assert native.unpack("u16_ne") == 0x2345
+    with pytest.raises(ValueError):
+        cls.from_dtype("u16_ne", 0x2345)
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda: bitformat.Dtype("u16_ne"),
+        lambda: bitformat.Field("u16_ne"),
+        lambda: bitformat.Format("(x: u16_ne)"),
+        lambda: bitformat.Array("u16_ne"),
+        lambda: Tibs.from_dtype("u16_ne", 1),
+    ],
+)
+def test_native_endian_dtype_suffix_is_rejected(factory):
+    with pytest.raises(ValueError):
+        factory()
 
 
 @pytest.mark.parametrize("cls", [Tibs, Mutibs])

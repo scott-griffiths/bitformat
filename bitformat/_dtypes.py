@@ -333,11 +333,21 @@ class DtypeSingle(Dtype):
         x._bit_length = None
         if x._size.has_const_value and x._size.const_value is not None:
             x._bit_length = x._size.const_value
-        little_endian = (endianness is Endianness.LITTLE or
-                     (endianness is Endianness.NATIVE and bitformat.byteorder is Endianness.LITTLE))
+        little_endian = endianness is Endianness.LITTLE
         x._endianness = endianness
 
-        if little_endian:
+        tibs_dtype_str = None
+        if x._bit_length is not None and definition.kind in {DtypeKind.UINT, DtypeKind.INT, DtypeKind.FLOAT}:
+            tibs_supports_length = definition.kind is DtypeKind.FLOAT or x._bit_length <= 128
+            if tibs_supports_length:
+                suffix = "" if endianness is Endianness.UNSPECIFIED else "_" + endianness.value
+                tibs_dtype_str = f"{definition.kind}{x._bit_length}{suffix}"
+
+        if tibs_dtype_str is not None:
+            def get_fn_tibs(bits, start, length):
+                return tibs_from_any(bits).to_value(tibs_dtype_str, start, start + length)
+            x._get_fn = get_fn_tibs
+        elif little_endian:
             def get_fn_le(bits, start, length):
                 swapped = tibs_from_any(bits)[start:start + length].byte_swapped()
                 return definition.get_fn(swapped, 0, length)
@@ -352,7 +362,20 @@ class DtypeSingle(Dtype):
 
         def create_bits_le(v):
             return x._set_fn(v, length=x._bit_length).byte_swapped()
-        x._create_fn = create_bits_le if little_endian else create_bits
+
+        if tibs_dtype_str is not None:
+            def create_bits_tibs(v):
+                if definition.kind is DtypeKind.FLOAT:
+                    v = float(v)
+                elif definition.kind in {DtypeKind.UINT, DtypeKind.INT}:
+                    v = int(v)
+                try:
+                    return Tibs.from_value(tibs_dtype_str, v)
+                except OverflowError as e:
+                    raise ValueError(str(e))
+            x._create_fn = create_bits_tibs
+        else:
+            x._create_fn = create_bits_le if little_endian else create_bits
         return x
 
     @classmethod

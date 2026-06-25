@@ -360,17 +360,16 @@ def test_format_repr_string():
 
 
 def test_to_tibs():
-    f1 = Format.from_params(["u8_le", "u8_be", "u8_ne"])
-    f = Format("(u8_le, u8_be, u8_ne)")
+    f1 = Format.from_params(["u16_le", "u16_be"])
+    f = Format("(u16_le, u16_be)")
     assert f == f1
-    f.pack([1, 2, 3])
+    f.pack([0x1234, 0x5678])
     b = f.to_tibs()
-    assert b == tibs_of(("u8", 1), ("u8", 2), ("u8", 3))
+    assert b == tibs_of(("hex16", "3412"), ("hex16", "5678"))
     f[1].clear()
-    assert f[0].value == 1
+    assert f[0].value == 0x1234
     assert f[1].value is None
-    assert f[2].value == 3
-    assert f[0].to_tibs() == Tibs.from_dtype("u8", 1)
+    assert f[0].to_tibs() == Tibs.from_dtype("u16_le", 0x1234)
     with pytest.raises(ValueError):
         _ = f[1].to_tibs()
     with pytest.raises(ValueError):

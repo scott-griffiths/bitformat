@@ -127,10 +127,14 @@ You can therefore interpret them however you'd like:
 [0, 0.0005035400390625, 3]
 >>> d.bytes
 b'\xba\x00'
+>>> word = Tibs.from_value('u16_le', 0x1234)
+>>> word.le.u
+4660
 ```
 
 The `unpack` method is available as a general-case way to unpack the bits into a single or multiple data types.
 If you only want to unpack to a single data type you can use properties of the `Tibs` as a short-cut.
+For byte endianness, use tibs-native views such as `t.le.u`, `t.be.i`, and `t.le.f`.
 
 ### Data types
 
@@ -149,7 +153,7 @@ Some example data type strings are:
 
 Length suffixes are always in bits, including display-oriented dtypes such as `hex`, `oct`, and `bytes`.
 
-Byte endianness for floating point and integer data types is specified with `_le`, `_be` and `_ne` suffixes to the base type. 
+Byte endianness for floating point and integer data types is specified explicitly with `_le` and `_be` suffixes to the base type. 
 
 ### Bit operations
 

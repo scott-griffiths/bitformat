@@ -10,6 +10,21 @@ If you need to modify the data after creation there is also a :class:`Mutibs` cl
 
 You can switch between :class:`Tibs` and :class:`Mutibs` using the :meth:`Tibs.to_mutibs` and :meth:`Mutibs.to_tibs` methods.
 
+For direct byte-endian interpretation, prefer the tibs-native endian views::
+
+    >>> t = Tibs('0x3412')
+    >>> t.le.u
+    4660
+    >>> t.be.u
+    13330
+    >>> Tibs.from_value('u16_le', 0x1234)
+    Tibs('0x3412')
+    >>> Tibs.from_values('u16_le', [0x1234, 0x5678])
+    Tibs('0x34127856')
+
+In bitformat format strings and dtypes, use explicit ``_le`` or ``_be`` suffixes, for example ``u16_le`` or ``f32_be``.
+There is no native-endian suffix.
+
 
 ----
 

@@ -14,7 +14,6 @@ library - they are meant to document and explore the edge cases.
 
 import pytest
 import math
-import sys
 import struct
 from typing import List, Any, Union
 from hypothesis import given, assume, strategies as st, settings, HealthCheck
@@ -24,7 +23,7 @@ from hypothesis import Verbosity
 try:
     from bitformat import (
         Tibs, Mutibs, Array, Format, Field, Dtype, DtypeSingle, DtypeArray, 
-        DtypeTuple, Endianness, DtypeKind
+        DtypeTuple, DtypeKind
     )
     from bitformat._common import Expression, ExpressionError
     BITFORMAT_AVAILABLE = True
@@ -384,26 +383,19 @@ class TestEndiannesssEdgeCases:
         # Test different endianness formats
         big_endian = Tibs.from_dtype("u16_be", value)
         little_endian = Tibs.from_dtype("u16_le", value)
-        native_endian = Tibs.from_dtype("u16_ne", value)
-        
-        # They should be different (unless native happens to match one)
-        if sys.byteorder is Endianness.BIG:
-            assert big_endian == native_endian
-        else:
-            assert little_endian == native_endian
+        assert big_endian != little_endian
             
         # But they should have same length
-        assert len(big_endian) == len(little_endian) == len(native_endian) == 16
+        assert len(big_endian) == len(little_endian) == 16
         
         # And unpack to same value
         assert big_endian.unpack(["u16_be"])[0] == value
         assert little_endian.unpack(["u16_le"])[0] == value
-        assert native_endian.unpack(["u16_ne"])[0] == value
         
     @given(st.integers(0, 2**32 - 1))
     def test_endianness_roundtrip(self, value):
         """Test endianness roundtrip for various values."""
-        for endian in ["_be", "_le", "_ne"]:
+        for endian in ["_be", "_le"]:
             for size in [16, 32]:
                 if value >= 2**size:
                     continue

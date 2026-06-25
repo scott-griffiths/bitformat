@@ -4,7 +4,7 @@ start: field_type
 dtype_kind: /u|i|f|bool|bytes|hex|bin|oct|bits|pad/
 
 // Endian modifiers for dtypes
-dtype_modifier: /le|be|ne/
+dtype_modifier: /le|be/
 
 // Expression strings start with a { and end with a }
 expression: "{" /[^\}]+/ "}"

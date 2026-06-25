@@ -335,13 +335,12 @@ NONE = Expression('{None}')
 
 @enum_tools.documentation.document_enum
 class Endianness(Enum):
-    """For whole-byte data types, the endianness can be specified as big-endian, little-endian or native.
+    """For whole-byte data types, the endianness can be specified as big-endian or little-endian.
 
     If the data type is not a whole number of bytes, the endianness should be set to ``UNSPECIFIED``.
     """
     BIG = "be"  # doc: Big-endian byte order.
     LITTLE = "le"  # doc: Little-endian byte order.
-    NATIVE = "ne"  # doc: Native byte order.
     UNSPECIFIED = ""  # doc: Unspecified byte order.
 
     def __str__(self) -> str:
@@ -349,8 +348,6 @@ class Endianness(Enum):
             return "big-endian"
         if self is Endianness.LITTLE:
             return "little-endian"
-        if self is Endianness.NATIVE:
-            return "native-endian"
         if self is Endianness.UNSPECIFIED:
             return ""
         raise TypeError("Unknown Endianness value")
@@ -367,16 +364,6 @@ def validate_name(name: str) -> str:
         if "__" in name:
             raise ValueError(f"The FieldType name '{name}' contains a double underscore which is not permitted.")
     return name
-
-
-# The byte order of the system, used for the 'native' endianness modifiers ('_ne').
-# If you'd like to emulate a different native endianness, you can set this a different Endianness.
-
-if sys.byteorder == "little":
-    byteorder = Endianness.LITTLE
-else:
-    assert sys.byteorder == "big"
-    byteorder = Endianness.BIG
 
 
 _lark_file_path = os.path.join(os.path.dirname(__file__), "bitformat_grammar.lark")

@@ -43,7 +43,7 @@ from ._let import Let
 from ._repeat import Repeat
 from ._while import While
 from ._options import Options
-from ._common import Expression, Endianness, DtypeKind, byteorder
+from ._common import Expression, Endianness, DtypeKind
 from ._reader import Reader
 from ._dtype_definitions import dtype_definitions as _dtype_definitions
 

@@ -42,6 +42,14 @@ There is also a way to be even more concise when unpacking the whole of a :class
     >>> c.hex
     '439a'
 
+Byte endianness can be selected explicitly using tibs-native views::
+
+    >>> t = Tibs('0x3412')
+    >>> t.le.u
+    4660
+    >>> t.be.u
+    13330
+
 As well as packing and unpacking bits with a dtype, you can also equivalently pack and unpack a dtype with bits::
 
     >>> Dtype('i3').pack(-2)
