@@ -187,5 +187,5 @@ Other classes and enums are :ref:`listed here. <misc>` Some of the more importan
     reader
     fieldtypes
     parser_ref
+    quick_reference
     misc
-

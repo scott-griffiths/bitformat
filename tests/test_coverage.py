@@ -20,8 +20,7 @@ from typing import List, Any, Union
 from hypothesis import given, assume, strategies as st, settings, HealthCheck
 from hypothesis import Verbosity
 
-# NOTE: The following imports will fail until the bitformat package is properly built
-# with its Rust dependencies. In a proper CI environment, these should work.
+# NOTE: Skip this module if bitformat or one of its runtime dependencies is not available.
 try:
     from bitformat import (
         Tibs, Mutibs, Array, Format, Field, Dtype, DtypeSingle, DtypeArray, 
@@ -34,7 +33,7 @@ except ImportError as e:
     pytest.skip(f"bitformat not available: {e}", allow_module_level=True)
 
 
-class TestBitsEdgeCases:
+class TestTibsEdgeCases:
     """Test edge cases for Tibs class."""
     
     def test_empty_bits_operations(self):
@@ -519,21 +518,21 @@ class TestHypothesisPropertyBasedEdgeCases:
 class TestImplementationSpecificEdgeCases:
     """Tests that probe implementation-specific behaviors."""
     
-    def test_bit_rust_integration_edge_cases(self):
-        """Test edge cases in the Rust/Python integration."""
-        # Test that Python/Rust boundary works correctly
+    def test_tibs_integration_edge_cases(self):
+        """Test edge cases in the tibs-backed integration."""
+        # Test that bitformat operations compose with tibs-backed values.
         bits = Tibs("0x42")
         
-        # Operations that might cross the boundary
+        # Operations that exercise native tibs behavior through bitformat.
         concatenated = bits + bits + bits
         assert len(concatenated) == 24
         
-        # Slicing that might involve Rust code
+        # Slicing should preserve expected bit lengths.
         sliced = concatenated[4:12]
         assert len(sliced) == 8
         
     def test_memory_management_edge_cases(self):
-        """Test memory management across Python/Rust boundary."""
+        """Test memory behavior across many tibs-backed values."""
         # Create many objects to test memory management
         objects = []
         for i in range(1000):

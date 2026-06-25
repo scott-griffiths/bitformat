@@ -31,7 +31,7 @@ __author__ = "Scott Griffiths"
 
 
 from ._version import VERSION as __version__
-from ._bits import Tibs, Mutibs
+from ._bits import Tibs, Mutibs, TibsLike
 from ._array import Array
 from ._dtypes import Register, Dtype, DtypeSingle, DtypeArray, DtypeTuple
 from ._fieldtype import FieldType
@@ -48,8 +48,8 @@ from ._reader import Reader
 from ._dtype_definitions import dtype_definitions as _dtype_definitions
 
 
-__all__ = ["Tibs", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
-           "Options", "Repeat", "While", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind", "Mutibs"]
+__all__ = ["Tibs", "Mutibs", "TibsLike", "Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "Format", "FieldType", "Field", "Array", "Expression",
+           "Options", "Repeat", "While", "Register", "Endianness", "If", "Pass", "Let", "Reader", "DtypeKind"]
 
 
 def _init():
@@ -61,5 +61,5 @@ _init()
 # Set the __module__ of each bitformat-defined type in __all__ to 'bitformat'
 # so that they appear as bitformat.Dtype instead of bitformat._dtypes.Dtype etc.
 for _name in __all__:
-    if _name not in {"Tibs", "Mutibs"}:
+    if _name not in {"Tibs", "Mutibs", "TibsLike"}:
         locals()[_name].__module__ = "bitformat"

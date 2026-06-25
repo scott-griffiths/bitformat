@@ -111,7 +111,7 @@ class Field(FieldType):
         :param const: Whether the field is constant, defaults to False.
         :return: The Field instance.
         """
-        return cls.from_params(DtypeSingle.from_params(DtypeKind.BYTES, len(b)), name, b, const)
+        return cls.from_params(DtypeSingle.from_params(DtypeKind.BYTES, len(b) * 8), name, b, const)
 
     @override
     def to_tibs(self) -> Tibs:

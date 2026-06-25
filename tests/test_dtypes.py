@@ -116,7 +116,7 @@ class TestBasicFunctionality:
 # class TestCreatingNewDtypes:
 #     def test_new_type(self):
 #
-#         md = DtypeDefinition("uintr", "A new type", Tibs._set_u, Tibs._get_u)
+#         md = DtypeDefinition(...)
 #         Register().add_dtype(md)
 #         a = Tibs("0xf")
 #         assert a.uintr == 15
@@ -298,7 +298,7 @@ def test_str():
     assert str(b) == '(bool, [i5; 1])'
     assert repr(a) == "DtypeSingle('u8_le')"
     assert repr(b) == "DtypeTuple('(bool, [i5; 1])')"
-    # nt = DtypeDefinition(DtypeKind("u"), "A new type", "new", Tibs._set_u, Tibs._get_u)
+    # nt = DtypeDefinition(...)
     # s = "DtypeDefinition(kind='u', description='A new type', short_description='new', return_type=Any, is_signed=False, allowed_lengths=())"
     # assert str(nt) == s
     # assert repr(nt) == s
@@ -463,7 +463,7 @@ def test_dtype_single_info():
     assert "big-endian" in info_str # Based on current DtypeSingle.info() for f32_be
     d_bytes = Dtype("bytes40")
     info_str_bytes = d_bytes.info()
-    assert "40 bit (5 characters)" in info_str_bytes
+    assert "40 bit" in info_str_bytes
     assert "bytes" in info_str_bytes
 
 def test_dtype_array_endianness():

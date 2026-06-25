@@ -2,15 +2,12 @@ from __future__ import annotations
 
 import abc
 import functools
-from typing import Any, Callable, Iterable, Sequence, overload, Union, Self
+from typing import Any, Callable, Iterable, Sequence, overload, Self
 import bitformat
-from ._common import Expression, Endianness, byteorder, DtypeKind, override, final, parser_str, ExpressionError
+from ._common import Expression, Endianness, DtypeKind, override, final, parser_str, ExpressionError
 from lark import Transformer, UnexpectedInput
 import lark
 from bitformat._tibs import Mutibs, Tibs, TibsLike, tibs_from_any
-
-# Things that can be converted to Tibs when a Tibs type is needed
-TibsLike = Union["Tibs", "Mutibs", str, Iterable[Any], bytearray, bytes, memoryview]
 
 __all__ = ["Dtype", "DtypeSingle", "DtypeArray", "DtypeTuple", "DtypeDefinition", "Register", "DtypeTransformer"]
 
@@ -342,9 +339,8 @@ class DtypeSingle(Dtype):
 
         if little_endian:
             def get_fn_le(bits, start, length):
-                mutable_b = tibs_from_any(bits)[start:start + length].to_mutibs()
-                mutable_b.byte_swap()
-                return definition.get_fn(mutable_b.to_tibs(), 0, length)
+                swapped = tibs_from_any(bits)[start:start + length].byte_swapped()
+                return definition.get_fn(swapped, 0, length)
             x._get_fn = get_fn_le
         else:
             x._get_fn = definition.get_fn
@@ -355,10 +351,7 @@ class DtypeSingle(Dtype):
             return x._set_fn(v, length=x._bit_length)
 
         def create_bits_le(v):
-            bs = x._set_fn(v, length=x._bit_length)
-            mutable = bs.to_mutibs()
-            mutable.byte_swap()
-            return mutable.to_tibs()
+            return x._set_fn(v, length=x._bit_length).byte_swapped()
         x._create_fn = create_bits_le if little_endian else create_bits
         return x
 

@@ -29,7 +29,7 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
     * - :class:`DtypeSingle` (Dtype)
       - ``DtypeKind`` ``<size_expression>`` ``<_modifier>``
     * -
-      - e.g. ``'u8'``, ``'bool'``, ``'f16_le'``, ``'bytes{n + 1}'``
+      - e.g. ``'u8'``, ``'bool'``, ``'f16_le'``, ``'bytes{8 * (n + 1)}'``
     * - :class:`DtypeArray` (Dtype)
       - ``[`` ``DtypeSingle`` ``;`` ``<items_expression>`` ``]``
     * -
@@ -56,5 +56,4 @@ The source of truth for the string parsing is contained in the `Lark grammar fil
       - e.g. ``'repeat {x + 1}: u8'``, ``repeat 10: (bool, f16)``
     * - :class:`Pass` (FieldType)
       - ``pass``
-
 

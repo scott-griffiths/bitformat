@@ -95,10 +95,10 @@ For more complex needs the :class:`Format` class allows a rich specification lan
 
 Combining some of our earlier creations we could make this format::
 
-    >>> fmt = Format("header: (const hex4 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
+    >>> fmt = Format("header: (const hex16 = 0x0147, flags: [bool; 4], w: u12, h: u12)")
     >>> print(fmt)
     header: (
-        const hex4 = 0147
+        const hex16 = 0147
         flags: [bool; 4]
         w: u12
         h: u12
@@ -111,7 +111,7 @@ Here we have introduced named fields and const fields. It's then easy to set and
     >>> fmt['h'].value = 120
     >>> print(fmt)
     header: (
-        const hex4 = 0147
+        const hex16 = 0147
         flags: [bool; 4] = (True, True, False, True)
         w: u12 = 160
         h: u12 = 120
@@ -128,7 +128,7 @@ Another way to create using the format is via the :meth:`Format.pack` method::
     >>> fmt.pack([[0, 0, 0, 0], 999, 5])
     >>> print(fmt)
     header: (
-        const hex4 = 0147
+        const hex16 = 0147
         flags: [bool; 4] = (False, False, False, False)
         w: u12 = 999
         h: u12 = 5

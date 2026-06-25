@@ -244,7 +244,7 @@ def test_example_from_docs():
     #            "items: u16,"
     #            "flags: [bool ; {items + 1} ],"
     #            "repeat {items + 1}: "
-    #            "    (byte_cluster_size: u4, bytes{byte_cluster_size}),"
+    #            "    (byte_cluster_size: u4, bytes{byte_cluster_size * 8}),"
     #            "u8)")
     # f.pack([1, [True, False], [[1, b'a'], [2, b'qz']], 255])
 
@@ -729,7 +729,7 @@ def test_format_with_simple_fields():
 
 def test_format_with_field_expressions():
     """Test a format with fields that use expressions"""
-    fmt = Format("(size: u8, data: bytes{size})")
+    fmt = Format("(size: u8, data: bytes{size * 8})")
 
     # Pack with size 4 and data
     fmt.pack([4, b"test"])
@@ -746,7 +746,7 @@ def test_format_with_field_expressions():
 def test_format_with_nested_formats():
     """Test a format with nested formats"""
     header = Format("header: (version: u8=1, flags: u8=0)")
-    payload = Format("payload: (length: u8, data: bytes{length})")
+    payload = Format("payload: (length: u8, data: bytes{length * 8})")
     full_msg = Format.from_params([header, payload], 'message')
     # TODO: The above is a bit clunky. It would be nice to write something like:
     # full_msg = Format("message: (header, payload)")

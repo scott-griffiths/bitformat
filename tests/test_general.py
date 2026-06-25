@@ -52,7 +52,7 @@ def test_info_strings():
         # print(f"{thing!r} : {info}")
 
 
-def test_rust_bits_creation():
+def test_tibs_creation_helpers():
     a = tibs_from_any("0xf")
     assert a == Tibs('0xf')
     b = tibs_from_any(b'123')

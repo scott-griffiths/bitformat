@@ -8,7 +8,7 @@ The `test_coverage.py` file focuses on testing edge cases and scenarios that may
 
 ## Test Categories
 
-### 1. Tibs Edge Cases (`TestBitsEdgeCases`)
+### 1. Tibs Edge Cases (`TestTibsEdgeCases`)
 - Empty bits operations
 - Single bit manipulations  
 - Large integer roundtrip testing
@@ -52,7 +52,7 @@ The `test_coverage.py` file focuses on testing edge cases and scenarios that may
 - Bytes conversion properties
 
 ### 8. Implementation-Specific Tests (`TestImplementationSpecificEdgeCases`)
-- Rust/Python integration edge cases
+- Tibs integration edge cases
 - Memory management across boundaries
 - Thread safety indicators
 
@@ -89,7 +89,7 @@ The tests require a fully built bitformat package with all dependencies:
 - pytest
 - hypothesis
 - lark parser library
-- Built Rust extension module
+- tibs runtime dependency
 
 ### Execution
 ```bash
@@ -100,7 +100,7 @@ pytest tests/test_coverage.py -v
 pytest tests/test_coverage.py -v --hypothesis-show-statistics
 
 # Run a specific test class
-pytest tests/test_coverage.py::TestBitsEdgeCases -v
+pytest tests/test_coverage.py::TestTibsEdgeCases -v
 ```
 
 ### Demo Version

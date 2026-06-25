@@ -30,7 +30,7 @@ Once created they are all just binary data, so can be interpreted as any other d
 
     >>> a.unpack('i3')  # A 3 bit signed integer
     -2
-    >>> c.unpack('hex4')  # 4 characters of hexadecimal
+    >>> c.unpack('hex16')  # 16 bits / 4 characters of hexadecimal
     '439a'
 
 The strings such as ``'i3'`` used here are another example of strings being promoted to the appropriate types.
@@ -50,7 +50,7 @@ As well as packing and unpacking bits with a dtype, you can also equivalently pa
     3.80078125
     >>> Dtype('u1, u2, u3, u4').pack([1, 1, 1, 1])
     Tibs('0b1010010001')
-    >>> Dtype('hex2, u4, [bool; 4]').unpack('0x439a')
+    >>> Dtype('hex8, u4, [bool; 4]').unpack('0x439a')
     ['43', 9, (True, False, True, False)]
 
 Here the value of ``-2`` was packed into a 3 bit signed integer ``Dtype`` to create a 3 bit ``Tibs`` object.

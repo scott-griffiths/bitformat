@@ -11,6 +11,7 @@ A collection of items that don't fit into any other category.
 * :class:`Register`: Stores information about what data types are supported.
 * :class:`DtypeKind`: The kind of data type.
 * :class:`Endianness`: The endianness of the data type.
+* ``TibsLike``: A type alias for values that can be promoted to :class:`Tibs`.
 
 
 ----

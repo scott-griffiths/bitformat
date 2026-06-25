@@ -1,4 +1,4 @@
-.. currentmodule:: bitstring
+.. currentmodule:: bitformat
 
 .. _quick_reference:
 
@@ -40,17 +40,17 @@ Some of these types will usually be used as part of a larger structure, where th
      -
      - ``'name: [dtype; items] = value'``
    * - :ref:`format_quick_reference`
-     - ×
+     - ✓
      - A sequence of other FieldTypes, with optional name.
    * -
      -
-     - ``Format([field1, field2, ...], 'name'])``
+     - ``'name: (field1, field2, ...)'``
    * - :ref:`repeat_quick_reference`
-     - ×
+     - ✓
      - Repeat another field type a number of times, with optional name.
    * -
      -
-     - ``Repeat(10, 'float64', 'a_name')``
+     - ``'repeat {10}: f64'``
 
 
 .. _fieldtype_quick_reference:
@@ -66,12 +66,11 @@ You shouldn't need to deal with this type directly but its methods are available
 Methods
 ^^^^^^^
 
-* :meth:`~FieldType.build`: Given positional and keyword values, fill in the any empty field(s) and build a `Tibs` object.
+* :meth:`~FieldType.pack`: Given positional and keyword values, fill in empty field(s) and build a `Tibs` object.
 * :meth:`~FieldType.parse`: Takes a `Tibs` object, parses it according to the field structure and returns the number of bits used.
-* :meth:`~FieldType.flatten`: Removes any nesting of fields and returns a flat list of FieldsTypes.
+* :meth:`~FieldType.unpack`: Parses a `Tibs` object when one is supplied and returns the unpacked value.
 * :meth:`~FieldType.to_tibs`: Converts the contents to a `Tibs` bit literal.
 * :meth:`~FieldType.to_bytes`: Converts the contents to a `bytes` object.
-* :meth:`~FieldType.vars`: Returns the positional and keyword values that are contained in the field.
 * :meth:`~FieldType.clear`: Sets the `value` of everything that is not a marked as const to `None`.
 
 Properties
@@ -88,20 +87,21 @@ Field
 The `Field` is the fundamental building block in `bitformat`.
 It represents a well-defined amount of binary data with a single data type.
 
-``Field(dtype: Dtype | str, name: str = '', value: Any = None, const: bool = False)``
+``Field('name: dtype = value')`` or ``Field.from_params(dtype, name='', value=None, const=False)``
 
 Additional methods
 ^^^^^^^^^^^^^^^^^^
 
 * :meth:`~Field.from_tibs`: Construct from ``bytes``, ``bytearray``, a ``Tibs`` object or a string that can be used to construct a `Tibs` object.
 * :meth:`~Field.from_bytes`: Construct from a ``bytes`` or ``bytearray`` object.
+* :meth:`~Field.from_params`: Construct from a :class:`Dtype` or dtype string, with optional `name`, `value`, and `const` parameters.
 * :meth:`~Field.from_string`: Construct from a formatted string to set the `dtype`, `name`, `value` and `const` parameters.
 
 Additional properties
 ^^^^^^^^^^^^^^^^^^^^^
 
 * :attr:`~Field.dtype`: The data type of the field.
-* :attr:`~Field.const`: Whether the field is a constant bit literal.
+* :meth:`~Field.is_const`: Whether the field is a constant bit literal.
 
 
 .. _format_quick_reference:
@@ -112,12 +112,12 @@ Format
 The `Format` type is central to creating useful objects in `bitformat`.
 It contains a sequence of other `FieldType` objects, which can include nested `Format` objects.
 
-``Format(fieldtypes: Sequence[FieldType | str], name: str = '')``
+``Format('name: (field1, field2, ...)')`` or ``Format.from_params(fieldtypes, name='')``
 
 Additional methods
 ^^^^^^^^^^^^^^^^^^
 
-* :meth:`~Format.flatten`: Returns a flat list of `FieldType` objects.
+* :meth:`~Format.from_params`: Construct from a sequence of `FieldType` objects or field strings.
 * :meth:`~Format.append`: Add a `FieldType` object to the end of the `Format`.
 * :meth:`~Format.extend`: Add a sequence of `FieldType` objects to the end of the `Format`.
 
@@ -136,8 +136,5 @@ Repeat
 
 A `Repeat` field repeats another field type a given number of times.
 
-``Repeat(count: int | Iterable[int] | str, fieldtype: FieldType | str | Dtype | Tibs | None = None, name: str = '')``
-
-
-
+``Repeat('repeat {count}: fieldtype')`` or ``Repeat.from_params(count, fieldtype, value=None)``
 

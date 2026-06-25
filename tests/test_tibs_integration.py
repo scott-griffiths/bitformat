@@ -10,6 +10,8 @@ from bitformat import Mutibs, Tibs
 def test_tibs_exports_are_direct_classes():
     assert bitformat.Tibs is tibs.Tibs
     assert bitformat.Mutibs is tibs.Mutibs
+    assert "TibsLike" in bitformat.__all__
+    assert hasattr(bitformat, "TibsLike")
     assert "Bits" not in bitformat.__all__
     assert "MutableBits" not in bitformat.__all__
     assert not hasattr(bitformat, "Bits")
