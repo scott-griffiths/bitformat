@@ -925,7 +925,9 @@ class Register:
     """Returns the singleton register of the dtype definitions.
 
     This is used to maintain a centralized registry of data type definitions.
-    It is not yet part of the public API, so should not be used.
+    It is an experimental public API for advanced introspection and extension
+    work. User code should generally not depend on it yet, as details may
+    change between releases.
 
     .. code-block:: pycon
 

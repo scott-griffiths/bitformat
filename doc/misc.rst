@@ -8,7 +8,7 @@ A collection of items that don't fit into any other category.
 
 * :class:`Expression`: Allows values parsed to be used in an f-string like way elsewhere in a :class:`Format`.
 * :class:`Options`: Used to set and get global options for the module.
-* :class:`Register`: Stores information about what data types are supported.
+* :class:`Register`: Experimental registry for supported data types. It is public for advanced use, but ordinary code should not depend on it yet.
 * :class:`DtypeKind`: The kind of data type.
 * :class:`Endianness`: The endianness of the data type.
 * ``TibsLike``: A type alias for values that can be promoted to :class:`Tibs`.

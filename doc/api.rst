@@ -15,7 +15,7 @@ The Basics
 The :class:`Tibs` and :class:`Dtype` classes are the most fundamental ones to use and understand.
 
 * :ref:`Tibs <bits>` -- An immutable container for storing binary data.
-* :ref:`Mutibs <mutable_bits>` -- A mutable version of :class:`Tibs`.
+* :ref:`Mutibs <mutable_bits>` -- A mutable bit container that converts to and from :class:`Tibs`.
 * :ref:`Dtype <dtype>` -- An abstract base class for data types used to interpret binary data.
 * :ref:`DtypeSingle <dtypesingle>` -- A :class:`Dtype` representing a single value.
 * :ref:`DtypeArray <dtypearray>` -- A :class:`Dtype` representing a sequence of objects of the same type.
@@ -58,7 +58,7 @@ The :class:`Tibs` and :class:`Dtype` classes are the most fundamental ones to us
             + parse()
         }
         Reader --* "1" Tibs : contains
-        Mutibs --* Tibs : extends
+        Mutibs .. Tibs : converts to/from
 
 
 .. mermaid::

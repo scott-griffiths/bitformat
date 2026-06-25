@@ -348,7 +348,7 @@ def test_repeat_with_dtype():
 def test_field_array_str():
     f = Field.from_string("test   :  f32_le = 0.25  ")
     assert str(f) == "test: f32_le = 0.25"
-    assert f.to_tibs().unpack('f_le') == 0.25
+    assert f.to_tibs().le.f == 0.25
     f = Field.from_string("test: [f32_le ; 3]")
     assert str(f) == "test: [f32_le; 3]"
 

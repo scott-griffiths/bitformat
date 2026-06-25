@@ -89,7 +89,7 @@ Format creation and parsing:
 
 ## Installation
 
-There should be pre-built wheels available for most platforms so you can just `pip install bitformat`. If a wheel isn't available then please file a bug report and optionally take a look at the `build.sh` script.
+Install with `pip install bitformat`. The package is pure Python and uses the `tibs` package for bit storage and core operations.
 
 ## Documentation
 

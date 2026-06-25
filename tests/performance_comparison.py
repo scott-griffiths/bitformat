@@ -102,12 +102,12 @@ def test_primes_bitformat():
     limit = 50_000_000
     is_prime = bitformat.Mutibs.from_ones(limit)
     # Manually set 0 and 1 to be not prime.
-    is_prime.set(False, [0, 1])
+    is_prime.unset([0, 1])
     # For every other integer, if it's set as prime then unset all of its multiples
     for i in range(2, math.ceil(math.sqrt(limit))):
         if is_prime[i]:
-            is_prime.set(False, range(i * i, limit, i))
-    twin_primes = len(list(is_prime.as_tibs().find_all('0b101')))
+            is_prime.unset(range(i * i, limit, i))
+    twin_primes = len(is_prime.to_tibs().find_all('0b101'))
     assert twin_primes == 239101
     return twin_primes
 
@@ -115,10 +115,13 @@ def test_token_parsing_mutating_bitformat():
     b = bitformat.Mutibs()
     b.reserve(10000*200)
     for i in range(10000):
-        b += "u12=244, f32=0.4"
-        b += "0x3e44f, 0b11011, 0o75523"
-        b += [0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]
-        b += bitformat.Tibs.from_zeros(104)
+        b.extend(bitformat.Tibs.from_joined([
+            bitformat.Tibs.from_dtype("u12", 244),
+            bitformat.Tibs.from_dtype("f32", 0.4),
+        ]))
+        b.extend("0x3e44f, 0b11011, 0o75523")
+        b.extend(bitformat.Tibs.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, "hello"]))
+        b.extend(bitformat.Tibs.from_zeros(104))
     return b
 
 def test_token_parsing_mutating_bitstring():
@@ -133,7 +136,10 @@ def test_token_parsing_mutating_bitstring():
 def test_token_parsing_joining_bitformat():
     s = []
     for i in range(10000):
-        s.append(bitformat.Tibs.from_string('u12=244, f32=0.4'))
+        s.append(bitformat.Tibs.from_joined([
+            bitformat.Tibs.from_dtype("u12", 244),
+            bitformat.Tibs.from_dtype("f32", 0.4),
+        ]))
         s.append(bitformat.Tibs.from_string('0x3e44f, 0b11011, 0o75523'))
         s.append(bitformat.Tibs.from_bools([0, 1, 2, 0, 0, 1, 2, 0, -1, 0, 'hello']))
         s.append(bitformat.Tibs.from_zeros(104))
@@ -156,7 +162,7 @@ def test_count_bitstring():
 
 def test_count_bitformat():
     s = bitformat.Mutibs.from_zeros(1_000_000_000)
-    s.set(1, range(0, 1_000_000_000, 7))
+    s.set(range(0, 1_000_000_000, 7))
     return s.count(1)
 
 def test_finding_bitstring():
@@ -172,7 +178,7 @@ def test_finding_bitformat():
     i = random.randrange(0, 2 ** 20000000)
     s = bitformat.Tibs.from_dtype('u20000000', i)
     for ss in ['0b11010010101', '0xabcdef1234, 0b000101111010101010011010100100101010101', '0x4321']:
-        x = len(list(s.find_all(ss, count=100)))
+        x = len(s.find_all(ss)[:100])
     return x
 
 class FunctionPairs:

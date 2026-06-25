@@ -25,6 +25,10 @@ For direct byte-endian interpretation, prefer the tibs-native endian views::
 In bitformat format strings and dtypes, use explicit ``_le`` or ``_be`` suffixes, for example ``u16_le`` or ``f32_be``.
 There is no native-endian suffix.
 
+Because :class:`Tibs` is the actual :class:`tibs.Tibs` class, the reference below also includes methods inherited directly from the :mod:`tibs` package.
+If a tibs method documents a ``byte_order`` parameter, it expects :class:`tibs.Endianness`, not :class:`bitformat.Endianness`.
+The :class:`bitformat.Endianness` enum is only used for bitformat dtype objects; direct :class:`Tibs` code should normally use the ``le`` and ``be`` views shown above.
+
 
 ----
 

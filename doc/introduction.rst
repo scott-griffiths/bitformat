@@ -24,7 +24,7 @@ To install the module, use pip::
 
     pip install bitformat
 
-There are pre-built wheels for Windows, Linux and MacOS, and more will be added later. It is compatible with Python 3.11 and later.
+It is a pure-Python package compatible with Python 3.11 and later.
 
 To download the library, as well as for defect reports, enhancement requests and Git repository browsing go to `the project's home on GitHub. <https://github.com/scott-griffiths/bitformat/>`_
 

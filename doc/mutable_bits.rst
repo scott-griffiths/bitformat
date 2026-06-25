@@ -4,9 +4,9 @@
 Mutibs
 ===========
 
-The ``Mutibs`` class is the mutable version of :class:`Tibs`.
+The ``Mutibs`` class is the mutable counterpart to :class:`Tibs`.
 
-It has almost all of the methods and properties of :class:`Tibs` and adds capabilities for changing the bits in-place.
+It has a very similar API to :class:`Tibs` and adds capabilities for changing the bits in-place.
 
 The new methods are:
 

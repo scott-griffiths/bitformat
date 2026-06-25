@@ -3,7 +3,6 @@ from __future__ import annotations
 import io
 import math
 import sys
-from ast import literal_eval
 from collections.abc import Sequence
 from typing import Any, TextIO
 
@@ -102,24 +101,15 @@ def _process_pp_tokens(dtype1: Dtype, dtype2: Dtype | None) -> tuple[int, bool]:
     return bits_per_group, has_length_in_fmt
 
 
-def dtype_token_to_tibs(token: str) -> Tibs:
-    try:
-        dtype_str, value_str = token.split("=", 1)
-        dtype = Dtype.from_string(dtype_str)
-    except ValueError:
-        raise ValueError(f"Can't parse token '{token}'. It should be in the form 'kind[length][_endianness]=value' "
-                         f"(e.g. 'u16_le = 44') or a literal starting with '0b', '0o' or '0x'.")
-    if isinstance(dtype, DtypeSingle) and dtype._definition.return_type not in (bool, bytes):
-        return dtype.pack(value_str)
-    try:
-        value = literal_eval(value_str)
-    except ValueError:
-        raise ValueError(f"Can't parse token '{token}'. The value '{value_str}' can't be converted to the appropriate type.")
-    return dtype.pack(value)
-
-
 def _unpack(self: Tibs | Mutibs, dtype: Dtype | str | Sequence[Dtype | str], /,
-            start: int | None = None, end: int | None = None) -> Any | list[Any]:
+            start: int | None = None, end: int | None = None) -> Any | tuple[Any, ...]:
+    """Unpack bits using a bitformat dtype.
+
+    :param dtype: A :class:`Dtype`, dtype string, or sequence of dtypes to unpack.
+    :param start: Optional start bit position.
+    :param end: Optional end bit position.
+    :return: The unpacked value. Tuple and array dtypes return tuples.
+    """
     if isinstance(dtype, str):
         dtype = Dtype.from_string(dtype)
     elif isinstance(dtype, Sequence):
@@ -196,6 +186,16 @@ def _pp_data(bits: Tibs | Mutibs, dtype1: Dtype, dtype2: Dtype | None, bits_per_
 
 def _pp(self: Tibs | Mutibs, dtype1: str | Dtype | None = None, dtype2: str | Dtype | None = None,
         groups: int | None = None, width: int = 80, show_offset: bool = True, stream: TextIO = sys.stdout) -> None:
+    """Pretty-print the bits using one or two bitformat dtypes.
+
+    :param dtype1: First dtype to display. Defaults to binary, with hexadecimal alongside for whole-byte data.
+    :param dtype2: Optional second dtype to display alongside ``dtype1``.
+    :param groups: Number of groups to display per line. Overrides ``width`` when supplied.
+    :param width: Approximate maximum line width in characters.
+    :param show_offset: Whether to show bit offsets.
+    :param stream: Text stream to write to. Defaults to ``sys.stdout``.
+    :return: None
+    """
     colour = Colour(not Options().no_color)
     if dtype1 is None and dtype2 is not None:
         dtype1, dtype2 = dtype2, dtype1
@@ -224,6 +224,7 @@ def _pp(self: Tibs | Mutibs, dtype1: str | Dtype | None = None, dtype2: str | Dt
 
 
 def _info(self: Tibs | Mutibs) -> str:
+    """Return a short human-readable description of the bits."""
     def with_underscores(s: str) -> str:
         return "_".join(s[x:x + 4] for x in range(0, len(s), 4))
 
@@ -250,6 +251,12 @@ def _info(self: Tibs | Mutibs) -> str:
 
 
 def _tibs_from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Tibs:
+    """Pack a value into a :class:`Tibs` using a bitformat dtype.
+
+    :param dtype: The bitformat dtype to pack with.
+    :param value: The value to pack.
+    :return: The packed bits as a :class:`Tibs`.
+    """
     if isinstance(dtype, str):
         dtype = Dtype.from_string(dtype)
     try:
@@ -259,6 +266,12 @@ def _tibs_from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Tibs:
 
 
 def _mutibs_from_dtype(cls, dtype: Dtype | str, value: Any, /) -> Mutibs:
+    """Pack a value into a :class:`Mutibs` using a bitformat dtype.
+
+    :param dtype: The bitformat dtype to pack with.
+    :param value: The value to pack.
+    :return: The packed bits as a :class:`Mutibs`.
+    """
     return _tibs_from_dtype(Tibs, dtype, value).to_mutibs()
 
 
